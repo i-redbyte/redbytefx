@@ -1,4 +1,4 @@
-package ru.redbyte.redbytefx.views
+package ru.redbyte.redbytefx.compose
 
 import org.junit.Test
 

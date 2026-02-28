@@ -1,18 +1,14 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "ru.redbyte.redbytefx.sample"
+    namespace = "ru.redbyte.redbytefx.compose"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "ru.redbyte.redbytefx.sample"
         minSdk = 33
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
     }
 
     buildFeatures {
@@ -27,14 +23,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":redbytefx-compose"))
+    api(project(":redbytefx-core"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui.graphics)
-
-    debugImplementation(libs.androidx.compose.ui.tooling)
 }

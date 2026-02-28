@@ -23,6 +23,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "redbytefx"
-include(":sample")
 include(":redbytefx-core")
-include(":redbytefx-views")
+include(":redbytefx-compose")
+include(":sample")
