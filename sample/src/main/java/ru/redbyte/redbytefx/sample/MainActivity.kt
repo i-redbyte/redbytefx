@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.FxEffect
 import ru.redbyte.redbytefx.FxParam
+import ru.redbyte.redbytefx.MirrorXFrom
+import ru.redbyte.redbytefx.MirrorXParams
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
 import ru.redbyte.redbytefx.redbytefx
@@ -41,14 +43,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class MirrorSide { Right, Left }
-
 private data class FxSetup(
     val effect: FxEffect,
     val flipX: FxParam.Float,
     val flipY: FxParam.Float,
-    val mirrorRight: FxParam.Float,
-    val mirrorLeft: FxParam.Float,
+    val mirrorX: MirrorXParams,
     val angle: FxParam.Float
 )
 
@@ -58,46 +57,31 @@ private fun SampleScreen() {
     var flipYEnabled by rememberSaveable { mutableStateOf(false) }
 
     var mirrorEnabled by rememberSaveable { mutableStateOf(false) }
-    var mirrorSide by rememberSaveable { mutableStateOf(MirrorSide.Right) }
+    var mirrorFrom by rememberSaveable { mutableStateOf(MirrorXFrom.Right) }
 
     var angle by rememberSaveable { mutableFloatStateOf(0f) }
 
     val setup = remember {
         var pFlipX: FxParam.Float? = null
         var pFlipY: FxParam.Float? = null
-        var pMirrorRight: FxParam.Float? = null
-        var pMirrorLeft: FxParam.Float? = null
+        var pMirror: MirrorXParams? = null
         var pAngle: FxParam.Float? = null
 
         val effect = redbytefx {
             pFlipX = flipX(0f)
             pFlipY = flipY(0f)
-            pMirrorRight = mirrorXFromRight(0f)
-            pMirrorLeft = mirrorXFromLeft(0f)
+            pMirror = mirrorX(enabled = 0f, from = MirrorXFrom.Right)
             pAngle = rotate(0f)
         }
 
-        FxSetup(effect, pFlipX!!, pFlipY!!, pMirrorRight!!, pMirrorLeft!!, pAngle!!)
+        FxSetup(effect, pFlipX!!, pFlipY!!, pMirror!!, pAngle!!)
     }
 
     val fx = rememberFxController(setup.effect)
 
-    fun applyMirrorState() {
-        if (!mirrorEnabled) {
-            fx.setFloat(setup.mirrorRight, 0f)
-            fx.setFloat(setup.mirrorLeft, 0f)
-            return
-        }
-        when (mirrorSide) {
-            MirrorSide.Right -> {
-                fx.setFloat(setup.mirrorRight, 1f)
-                fx.setFloat(setup.mirrorLeft, 0f)
-            }
-            MirrorSide.Left -> {
-                fx.setFloat(setup.mirrorRight, 0f)
-                fx.setFloat(setup.mirrorLeft, 1f)
-            }
-        }
+    fun applyMirror() {
+        fx.setFloat(setup.mirrorX.enabled, if (mirrorEnabled) 1f else 0f)
+        fx.setFloat(setup.mirrorX.from, mirrorFrom.v)
     }
 
     MaterialTheme {
@@ -107,12 +91,12 @@ private fun SampleScreen() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Box(
-                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp)
                         .redbyteFx(fx)
-//                        .background(Color.Red)
+                        .background(Color.Red),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(text = "RedByteFX", style = MaterialTheme.typography.displayLarge, color = Color.Black)
                 }
@@ -157,7 +141,7 @@ private fun SampleScreen() {
                         checked = mirrorEnabled,
                         onCheckedChange = {
                             mirrorEnabled = it
-                            applyMirrorState()
+                            applyMirror()
                         }
                     )
                 }
@@ -170,10 +154,10 @@ private fun SampleScreen() {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = mirrorSide == MirrorSide.Right,
+                                selected = mirrorFrom == MirrorXFrom.Right,
                                 onClick = {
-                                    mirrorSide = MirrorSide.Right
-                                    applyMirrorState()
+                                    mirrorFrom = MirrorXFrom.Right
+                                    applyMirror()
                                 }
                             )
                             Text(text = "From Right")
@@ -181,10 +165,10 @@ private fun SampleScreen() {
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = mirrorSide == MirrorSide.Left,
+                                selected = mirrorFrom == MirrorXFrom.Left,
                                 onClick = {
-                                    mirrorSide = MirrorSide.Left
-                                    applyMirrorState()
+                                    mirrorFrom = MirrorXFrom.Left
+                                    applyMirror()
                                 }
                             )
                             Text(text = "From Left")

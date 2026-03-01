@@ -28,61 +28,54 @@ internal data class OpFlipY(val enabled: FxParam.Float) : Op {
         sb.append("  p.y = rb_lerp(p.y, uResolution.y - p.y, ").append(t).append(");\n")
     }
 }
-
 internal data class OpMirrorX(
     val enabled: FxParam.Float,
-    val from: MirrorXFrom
+    val from: FxParam.Float
 ) : Op {
     override fun collect(layout: UniformLayout) {
         layout.float(enabled)
+        layout.float(from)
     }
 
     override fun emit(ctx: EmitContext, sb: StringBuilder) {
         val t = ctx.tmp("t")
+        val f = ctx.tmp("f")
+        val dir = ctx.tmp("dir")
         val cx = ctx.tmp("cx")
         val mx = ctx.tmp("mx")
 
         sb.append("  float ").append(t).append(" = clamp(").append(ctx.u(enabled)).append(", 0.0, 1.0);\n")
+        sb.append("  float ").append(f).append(" = clamp(").append(ctx.u(from)).append(", 0.0, 1.0);\n")
+        sb.append("  float ").append(dir).append(" = ").append(f).append(" * 2.0 - 1.0;\n")
         sb.append("  float ").append(cx).append(" = ").append(RB_RESOLUTION_UNIFORM).append(".x * 0.5;\n")
-
-        when (from) {
-            MirrorXFrom.Right -> {
-                sb.append("  float ").append(mx).append(" = ").append(cx).append(" + abs(p.x - ").append(cx).append(");\n")
-            }
-            MirrorXFrom.Left -> {
-                sb.append("  float ").append(mx).append(" = ").append(cx).append(" - abs(p.x - ").append(cx).append(");\n")
-            }
-        }
-
+        sb.append("  float ").append(mx).append(" = ").append(cx).append(" + ")
+            .append(dir).append(" * abs(p.x - ").append(cx).append(");\n")
         sb.append("  p.x = rb_lerp(p.x, ").append(mx).append(", ").append(t).append(");\n")
     }
 }
 
 internal data class OpMirrorY(
     val enabled: FxParam.Float,
-    val from: MirrorYFrom
+    val from: FxParam.Float
 ) : Op {
     override fun collect(layout: UniformLayout) {
         layout.float(enabled)
+        layout.float(from)
     }
 
     override fun emit(ctx: EmitContext, sb: StringBuilder) {
         val t = ctx.tmp("t")
+        val f = ctx.tmp("f")
+        val dir = ctx.tmp("dir")
         val cy = ctx.tmp("cy")
         val my = ctx.tmp("my")
 
         sb.append("  float ").append(t).append(" = clamp(").append(ctx.u(enabled)).append(", 0.0, 1.0);\n")
+        sb.append("  float ").append(f).append(" = clamp(").append(ctx.u(from)).append(", 0.0, 1.0);\n")
+        sb.append("  float ").append(dir).append(" = ").append(f).append(" * 2.0 - 1.0;\n")
         sb.append("  float ").append(cy).append(" = ").append(RB_RESOLUTION_UNIFORM).append(".y * 0.5;\n")
-
-        when (from) {
-            MirrorYFrom.Bottom -> {
-                sb.append("  float ").append(my).append(" = ").append(cy).append(" + abs(p.y - ").append(cy).append(");\n")
-            }
-            MirrorYFrom.Top -> {
-                sb.append("  float ").append(my).append(" = ").append(cy).append(" - abs(p.y - ").append(cy).append(");\n")
-            }
-        }
-
+        sb.append("  float ").append(my).append(" = ").append(cy).append(" + ")
+            .append(dir).append(" * abs(p.y - ").append(cy).append(");\n")
         sb.append("  p.y = rb_lerp(p.y, ").append(my).append(", ").append(t).append(");\n")
     }
 }
