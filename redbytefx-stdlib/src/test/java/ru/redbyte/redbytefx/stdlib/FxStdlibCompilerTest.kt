@@ -286,4 +286,95 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("cos"))
         assertTrue(source.contains("?"))
     }
+
+    @Test
+    fun signalHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val density by autoUniformFloat(7.5f)
+            val warp by autoUniformFloat(0.028f)
+            val amount by autoUniformFloat(0.82f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val driftUv = let(
+                scanWarp(
+                    uv = uv,
+                    time = time,
+                    amplitude = warp,
+                    density = density,
+                    speed = 2.2f,
+                    noiseAmount = 0.55f
+                ),
+                "drift_uv"
+            )
+            val drifted = let(sample(driftUv * resolution), "drifted")
+            val bars = let(
+                signalBars(
+                    position = uv.y,
+                    density = density,
+                    width = 0.28f,
+                    phase = time * 0.65f,
+                    feather = 0.1f
+                ),
+                "bars"
+            )
+            val lock = let(
+                bandMask(
+                    position = uv.y,
+                    center = 0.36f,
+                    width = 0.14f,
+                    feather = 0.08f
+                ),
+                "lock"
+            )
+
+            maskedMix(base, drifted, max(bars, lock), amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_density;"))
+        assertTrue(source.contains("uniform float u_warp;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("abs"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("sin"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("rb_sample"))
+    }
+
+    @Test
+    fun gradientHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.78f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val sweepCenter = let(0.16f + pingPong(time * 0.18f, 1f) * 0.68f, "sweep_center")
+            val ramp = let(linearRamp(uv, direction = float2(1f, -0.35f), start = 0.08f, end = 0.92f), "ramp")
+            val sweep = let(
+                directionalSweep(
+                    uv = uv,
+                    direction = float2(1f, -0.35f),
+                    center = sweepCenter,
+                    width = 0.22f,
+                    feather = 0.08f
+                ),
+                "sweep"
+            )
+            val vignette = let(radialRamp(uv, innerRadius = 0.12f, outerRadius = 0.68f), "vignette")
+
+            maskedScreen(base, color(float3(ramp, sweep, vignette), base.a), sweep * vignette, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("clamp"))
+        assertTrue(source.contains("mix"))
+    }
 }

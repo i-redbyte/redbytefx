@@ -18,7 +18,40 @@ enum class DemoId {
     Beacon,
     Composite,
     Reveal,
+    Sweep,
+    Glitch,
     Duotone
+}
+
+enum class DemoSection(
+    val title: String,
+    val subtitle: String
+) {
+    Foundations(
+        title = "Foundations",
+        subtitle = "Core transforms, direct coordinate math, and the smallest useful shader building blocks."
+    ),
+    Motion(
+        title = "Motion",
+        subtitle = "Time-driven effects, eased timelines, and animated runtime bindings."
+    ),
+    Procedural(
+        title = "Procedural",
+        subtitle = "Noise, signals, warp fields, and pattern helpers layered on top of the DSL."
+    ),
+    Color(
+        title = "Color",
+        subtitle = "Palettes, grading, quantization, and color-first shader authoring."
+    ),
+    Compositing(
+        title = "Compositing",
+        subtitle = "Masks, reveals, and layered UI treatments built from reusable recipe helpers."
+    )
+}
+
+enum class DemoLayer(val label: String) {
+    Core("CORE DSL"),
+    Stdlib("STDLIB")
 }
 
 data class DemoInfo(
@@ -28,6 +61,84 @@ data class DemoInfo(
     val focus: String,
     val snippet: String
 )
+
+val DemoInfo.section: DemoSection
+    get() = when (id) {
+        DemoId.Flip,
+        DemoId.Mirror,
+        DemoId.Rotate,
+        DemoId.Scale,
+        DemoId.Offset,
+        DemoId.Wave -> DemoSection.Foundations
+
+        DemoId.Pulse,
+        DemoId.Beacon,
+        DemoId.Sweep -> DemoSection.Motion
+
+        DemoId.Signal,
+        DemoId.Film,
+        DemoId.Warp,
+        DemoId.Glitch -> DemoSection.Procedural
+
+        DemoId.Posterize,
+        DemoId.Grade,
+        DemoId.Prism,
+        DemoId.Duotone -> DemoSection.Color
+
+        DemoId.Spotlight,
+        DemoId.Composite,
+        DemoId.Reveal -> DemoSection.Compositing
+    }
+
+val DemoInfo.layer: DemoLayer
+    get() = when (id) {
+        DemoId.Flip,
+        DemoId.Mirror,
+        DemoId.Rotate,
+        DemoId.Scale,
+        DemoId.Offset,
+        DemoId.Wave,
+        DemoId.Duotone -> DemoLayer.Core
+
+        DemoId.Pulse,
+        DemoId.Signal,
+        DemoId.Posterize,
+        DemoId.Film,
+        DemoId.Grade,
+        DemoId.Warp,
+        DemoId.Prism,
+        DemoId.Spotlight,
+        DemoId.Beacon,
+        DemoId.Composite,
+        DemoId.Reveal,
+        DemoId.Sweep,
+        DemoId.Glitch -> DemoLayer.Stdlib
+    }
+
+val DemoInfo.isAnimated: Boolean
+    get() = when (id) {
+        DemoId.Pulse,
+        DemoId.Film,
+        DemoId.Warp,
+        DemoId.Beacon,
+        DemoId.Reveal,
+        DemoId.Sweep,
+        DemoId.Glitch -> true
+
+        DemoId.Flip,
+        DemoId.Mirror,
+        DemoId.Rotate,
+        DemoId.Scale,
+        DemoId.Offset,
+        DemoId.Wave,
+        DemoId.Signal,
+        DemoId.Posterize,
+        DemoId.Grade,
+        DemoId.Prism,
+        DemoId.Spotlight,
+        DemoId.Composite,
+        DemoId.Duotone -> false
+    }
 
 val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
@@ -225,6 +336,30 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val horizontal = horizontalReveal(uv, progress, feather = 0.07f)
             val vertical = verticalReveal(uv, progress, feather = 0.07f, fromTop = false)
             val radial = radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Sweep,
+        title = "Sweep",
+        subtitle = "Directional ramps and moving sweep bands for UI lighting.",
+        focus = "Shows linearRamp(...), radialRamp(...), and directionalSweep(...) as reusable helpers for panel light passes, scanning beams, and stylized UI highlights.",
+        snippet = """
+            val center = 0.16f + pingPong(time * 0.18f, 1f) * 0.68f
+            val ramp = linearRamp(uv, direction = float2(1f, -0.35f), start = 0.08f, end = 0.92f)
+            val sweep = directionalSweep(uv, direction = float2(1f, -0.35f), center = center, width = 0.22f, feather = 0.08f)
+            val vignette = radialRamp(uv, innerRadius = 0.12f, outerRadius = 0.68f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Glitch,
+        title = "Glitch",
+        subtitle = "Signal bars, lock bands, and scan warp from the stdlib layer.",
+        focus = "Shows the next v0.2 recipe slice: reusable signal helpers that make tearing bands, rolling locks, and scan distortion readable without hiding the AGSL underneath.",
+        snippet = """
+            val bars = signalBars(uv.y, density = density, width = 0.28f, phase = time * 0.65f, feather = 0.10f)
+            val lock = bandMask(uv.y, center = 0.22f + pingPong(time * 0.12f, 1f) * 0.56f, width = 0.14f, feather = 0.08f)
+            val driftUv = scanWarp(uv, time = time, amplitude = warp, density = density, speed = 2.2f, noiseAmount = 0.55f)
+            maskedMix(base, glitched, max(bars, lock), amount)
         """.trimIndent()
     ),
     DemoInfo(

@@ -6,12 +6,14 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,7 +31,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,9 +46,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.DemoInfo
+import ru.redbyte.redbytefx.sample.model.isAnimated
+import ru.redbyte.redbytefx.sample.model.layer
+import ru.redbyte.redbytefx.sample.model.section
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
+val LocalDemoNavigation = staticCompositionLocalOf<DemoNavigation?> { null }
+
+data class DemoNavigation(
+    val previous: DemoInfo?,
+    val next: DemoInfo?,
+    val onOpen: (DemoId) -> Unit
+)
 
 @Composable
 fun DemoLayout(
@@ -51,6 +68,7 @@ fun DemoLayout(
     controls: @Composable () -> Unit
 ) {
     val demo = LocalDemoInfo.current
+    val navigation = LocalDemoNavigation.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -90,6 +108,10 @@ fun DemoLayout(
                 controls()
             }
         }
+
+        if (navigation != null && (navigation.previous != null || navigation.next != null)) {
+            DemoNavigationStrip(navigation = navigation)
+        }
     }
 }
 
@@ -111,6 +133,27 @@ private fun DemoInfoCard(
                 text = "sample://${demo.id.name.lowercase()}",
                 accent = MaterialTheme.colorScheme.secondary
             )
+            CyberBadge(
+                text = demo.section.title.uppercase(),
+                accent = MaterialTheme.colorScheme.tertiary
+            )
+        }
+        Row(
+            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = demo.layer.label,
+                accent = MaterialTheme.colorScheme.secondary
+            )
+            CyberBadge(
+                text = if (demo.isAnimated) "ANIMATED" else "STATIC",
+                accent = if (demo.isAnimated) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.outline
+                }
+            )
         }
         Text(
             text = demo.subtitle,
@@ -124,26 +167,58 @@ private fun DemoInfoCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
         )
-        SelectionContainer(
+        ExpandableCodeBlock(
+            title = "DSL snippet",
+            text = demo.snippet,
+            collapsedLines = 10,
+            stateKey = "${demo.id.name}-dsl",
             modifier = Modifier.padding(top = 14.dp)
-        ) {
-            CyberCodeBlock(
-                title = "DSL snippet",
-                text = demo.snippet,
-                maxLines = 10
+        )
+        if (generatedAgsl != null) {
+            ExpandableCodeBlock(
+                title = "Generated AGSL",
+                text = generatedAgsl,
+                collapsedLines = 18,
+                stateKey = "${demo.id.name}-agsl",
+                modifier = Modifier.padding(top = 12.dp)
             )
         }
-        if (generatedAgsl != null) {
-            SelectionContainer(
-                modifier = Modifier.padding(top = 12.dp)
-            ) {
-                CyberCodeBlock(
-                    title = "Generated AGSL",
-                    text = previewShaderSource(generatedAgsl),
-                    maxLines = 18
-                )
+    }
+}
+
+@Composable
+private fun ExpandableCodeBlock(
+    title: String,
+    text: String,
+    collapsedLines: Int,
+    stateKey: String,
+    modifier: Modifier = Modifier
+) {
+    val totalLines = previewLineCount(text)
+    val canExpand = totalLines > collapsedLines
+    var expanded by rememberSaveable(stateKey) { mutableStateOf(false) }
+
+    SelectionContainer(modifier = modifier) {
+        CyberCodeBlock(
+            title = title,
+            text = if (expanded || !canExpand) {
+                text
+            } else {
+                previewShaderSource(text, collapsedLines)
+            },
+            maxLines = if (expanded || !canExpand) Int.MAX_VALUE else collapsedLines,
+            meta = "$totalLines lines",
+            actionLabel = if (canExpand) {
+                if (expanded) "COLLAPSE" else "EXPAND"
+            } else {
+                null
+            },
+            onAction = if (canExpand) {
+                { expanded = !expanded }
+            } else {
+                null
             }
-        }
+        )
     }
 }
 
@@ -156,6 +231,81 @@ internal fun previewShaderSource(
     return buildString {
         append(lines.take(maxLines).joinToString(separator = "\n"))
         append("\n...")
+    }
+}
+
+private fun previewLineCount(source: String): Int = source.lineSequence().count()
+
+@Composable
+private fun DemoNavigationStrip(navigation: DemoNavigation) {
+    CyberPanel(
+        accent = MaterialTheme.colorScheme.secondary,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            NavigationCard(
+                label = "PREV",
+                demo = navigation.previous,
+                modifier = Modifier.weight(1f),
+                onOpen = navigation.onOpen
+            )
+            NavigationCard(
+                label = "NEXT",
+                demo = navigation.next,
+                modifier = Modifier.weight(1f),
+                onOpen = navigation.onOpen
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavigationCard(
+    label: String,
+    demo: DemoInfo?,
+    modifier: Modifier = Modifier,
+    onOpen: (DemoId) -> Unit
+) {
+    if (demo == null) {
+        Spacer(modifier = modifier)
+        return
+    }
+
+    CyberPanel(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .clickable { onOpen(demo.id) },
+        accent = if (label == "NEXT") {
+            MaterialTheme.colorScheme.secondary
+        } else {
+            MaterialTheme.colorScheme.tertiary
+        },
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberBadge(
+                text = label,
+                accent = MaterialTheme.colorScheme.secondary
+            )
+            CyberBadge(
+                text = demo.layer.label,
+                accent = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = demo.title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        Text(
+            text = demo.subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 

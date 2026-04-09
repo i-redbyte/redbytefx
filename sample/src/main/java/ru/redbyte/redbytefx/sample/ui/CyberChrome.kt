@@ -8,13 +8,16 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -223,7 +226,10 @@ fun CyberCodeBlock(
     title: String,
     text: String,
     modifier: Modifier = Modifier,
-    maxLines: Int
+    maxLines: Int,
+    meta: String? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
     val shape = RoundedCornerShape(18.dp)
     Box(
@@ -246,12 +252,31 @@ fun CyberCodeBlock(
             .padding(14.dp)
     ) {
         Column {
-            CyberBadge(
-                text = title.uppercase(),
-                accent = NeonMint,
-                fill = SurfaceOne.copy(alpha = 0.92f),
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CyberBadge(
+                    text = title.uppercase(),
+                    accent = NeonMint,
+                    fill = SurfaceOne.copy(alpha = 0.92f),
+                    textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (meta != null) {
+                    CyberBadge(
+                        text = meta.uppercase(),
+                        accent = MaterialTheme.colorScheme.secondary,
+                        fill = SurfaceOne.copy(alpha = 0.9f),
+                        textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (actionLabel != null && onAction != null) {
+                    CyberBadge(
+                        text = actionLabel,
+                        modifier = Modifier.clickable(onClick = onAction),
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        fill = SurfaceOne.copy(alpha = 0.94f),
+                        textColor = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,

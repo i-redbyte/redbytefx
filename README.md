@@ -172,6 +172,12 @@ The first `stdlib` helpers now being prepared are:
 - `horizontalReveal(...)`
 - `verticalReveal(...)`
 - `radialReveal(...)`
+- `bandMask(...)`
+- `signalBars(...)`
+- `scanWarp(...)`
+- `linearRamp(...)`
+- `radialRamp(...)`
+- `directionalSweep(...)`
 
 ## Procedural Example
 
