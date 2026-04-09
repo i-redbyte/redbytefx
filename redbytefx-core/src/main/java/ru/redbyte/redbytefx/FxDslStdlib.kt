@@ -594,6 +594,24 @@ public fun length(value: Float4Expr): FloatExpr =
     callFloat("length", value)
 
 /**
+ * Returns the dot product of two `float2` expressions.
+ */
+public fun dot(left: Float2Expr, right: Float2Expr): FloatExpr =
+    callFloat("dot", left, right)
+
+/**
+ * Returns the dot product of two `float3` expressions.
+ */
+public fun dot(left: Float3Expr, right: Float3Expr): FloatExpr =
+    callFloat("dot", left, right)
+
+/**
+ * Returns the dot product of two `float4` expressions.
+ */
+public fun dot(left: Float4Expr, right: Float4Expr): FloatExpr =
+    callFloat("dot", left, right)
+
+/**
  * Converts degrees to radians.
  */
 public fun radians(value: FloatExpr): FloatExpr =

@@ -47,6 +47,8 @@ fun DemoScreen(
             DemoId.Glitch -> DemoGlitch()
             DemoId.Radar -> DemoRadar()
             DemoId.Halo -> DemoHalo()
+            DemoId.Circuit -> DemoCircuit()
+            DemoId.Sigil -> DemoSigil()
             DemoId.Duotone -> DemoDuotone()
         }
     }

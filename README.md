@@ -188,6 +188,17 @@ The first `stdlib` helpers now being prepared are:
 - `radialDirection(...)`
 - `centerGlow(...)`
 - `rimLight(...)`
+- `sdCircle(...)`
+- `sdBox(...)`
+- `sdRoundedBox(...)`
+- `sdSegment(...)`
+- `fill(...)`
+- `softFill(...)`
+- `stroke(...)`
+- `softStroke(...)`
+- `segmentMask(...)`
+- `segmentProgress(...)`
+- `segmentPulse(...)`
 - `edgeDistance(...)`
 - `edgeFade(...)`
 - `frameMask(...)`

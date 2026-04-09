@@ -199,4 +199,21 @@ class FxDslCompilerTest {
         assertTrue(source.contains("atan"))
         assertTrue(source.contains("float l_angle"))
     }
+
+    @Test
+    fun emitsDotMathForVectorHelpers() {
+        val effect = redbytefx {
+            val direction = uniformFloat2(1f, 0f, "direction")
+            val uv = let(fragCoord / resolution, "uv")
+            val projection = let(dot(uv, direction), "projection")
+
+            color(projection, projection, projection)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float2 u_direction;"))
+        assertTrue(source.contains("dot"))
+        assertTrue(source.contains("float l_projection"))
+    }
 }

@@ -24,6 +24,8 @@ enum class DemoId {
     Glitch,
     Radar,
     Halo,
+    Circuit,
+    Sigil,
     Duotone
 }
 
@@ -83,7 +85,8 @@ val DemoInfo.section: DemoSection
         DemoId.Film,
         DemoId.Warp,
         DemoId.Glitch,
-        DemoId.Radar -> DemoSection.Procedural
+        DemoId.Radar,
+        DemoId.Circuit -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
@@ -95,6 +98,7 @@ val DemoInfo.section: DemoSection
         DemoId.Frame,
         DemoId.Corner,
         DemoId.Halo,
+        DemoId.Sigil,
         DemoId.Reveal -> DemoSection.Compositing
     }
 
@@ -124,7 +128,9 @@ val DemoInfo.layer: DemoLayer
         DemoId.Sweep,
         DemoId.Glitch,
         DemoId.Radar,
-        DemoId.Halo -> DemoLayer.Stdlib
+        DemoId.Halo,
+        DemoId.Circuit,
+        DemoId.Sigil -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -139,7 +145,9 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Sweep,
         DemoId.Glitch,
         DemoId.Radar,
-        DemoId.Halo -> true
+        DemoId.Halo,
+        DemoId.Circuit,
+        DemoId.Sigil -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -424,6 +432,31 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val dir = radialDirection(uv, resolution)
             val glow = centerGlow(uv, resolution, radius = radius * pulse, feather = 0.18f)
             val rim = rimLight(uv, resolution, radius = radius + 0.08f * pulse, width = 0.075f, feather = 0.024f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Circuit,
+        title = "Circuit",
+        subtitle = "A small PCB scene with tappable nodes and animated signal routes.",
+        focus = "Shows how SDF primitives, segmentMask(...), segmentPulse(...), and ordinary Compose interaction can already build a board-like scene where taps switch active electrical paths.",
+        snippet = """
+            val chip = softFill(sdRoundedBox(point = board - chipPos, halfSize = float2(0.22f, 0.13f), radius = 0.035f), 0.016f)
+            val trace = segmentMask(point = board, start = sourcePos, end = chipPos, thickness = 0.05f, feather = 0.018f)
+            val pulse = segmentPulse(point = board, start = sourcePos, end = chipPos, phase = fract(time * 0.42f), bandWidth = 0.22f, thickness = 0.05f)
+            val routeMask = ifElse(route lt 0.5f, sourceFlow, ifElse(route lt 1.5f, chipFlow, outputFlow))
+            maskedOverlay(copper, signalTint, routeMask, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Sigil,
+        title = "Sigil",
+        subtitle = "Signed-distance shapes composed into a cyber glyph.",
+        focus = "Shows sdCircle(...), sdBox(...), sdRoundedBox(...), fill(...), softFill(...), stroke(...), and softStroke(...) as a reusable SDF authoring layer instead of hand-written edge math in every shader.",
+        snippet = """
+            val sigil = aspectCenteredUv(uv, resolution)
+            val frame = softStroke(sdRoundedBox(sigil, halfSize = float2(0.35f, 0.35f), radius = 0.16f), width = 0.028f, feather = 0.012f)
+            val ring = softStroke(sdCircle(sigil, radius = 0.26f + pulse * 0.03f), width = 0.032f, feather = 0.014f)
+            val spine = softFill(sdBox(sigil, halfSize = float2(0.05f, 0.22f + pulse * 0.05f)), feather = 0.012f)
         """.trimIndent()
     ),
     DemoInfo(

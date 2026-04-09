@@ -542,4 +542,142 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("max"))
         assertTrue(source.contains("mix"))
     }
+
+    @Test
+    fun sigilSdfHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.84f)
+            val uv = let(fragCoord / resolution, "uv")
+            val sigil = let(aspectCenteredUv(uv, resolution), "sigil")
+            val pulse = let(easeInOutSine(pingPong(time * 0.18f, 1f)), "pulse")
+            val frame = let(
+                softStroke(
+                    distance = sdRoundedBox(sigil, halfSize = float2(0.35f, 0.35f), radius = 0.16f),
+                    width = 0.028f,
+                    feather = 0.012f
+                ),
+                "frame"
+            )
+            val ring = let(
+                softStroke(
+                    distance = sdCircle(sigil, radius = 0.26f + pulse * 0.03f),
+                    width = 0.032f,
+                    feather = 0.014f
+                ),
+                "ring"
+            )
+            val spine = let(
+                softFill(
+                    distance = sdBox(sigil, halfSize = float2(0.05f, 0.22f + pulse * 0.05f)),
+                    feather = 0.012f
+                ),
+                "spine"
+            )
+
+            maskedScreen(
+                base = sample(),
+                blend = color(float3(frame, ring, spine), 1f),
+                mask = max(frame, max(ring, spine)),
+                amount = amount
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("abs"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("step"))
+        assertTrue(source.contains("max"))
+        assertTrue(source.contains("mix"))
+    }
+
+    @Test
+    fun traceSdfHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.88f)
+            val uv = let(fragCoord / resolution, "uv")
+            val board = let(aspectCenteredUv(uv, resolution), "board")
+            val circle = let(fill(sdCircle(board - float2(-0.22f, -0.08f), 0.05f)), "circle")
+            val chip = let(
+                softFill(
+                    sdRoundedBox(board - float2(0.12f, 0.02f), halfSize = float2(0.16f, 0.1f), radius = 0.035f),
+                    0.02f
+                ),
+                "chip"
+            )
+            val trace = let(
+                segmentMask(
+                    point = board,
+                    start = float2(-0.22f, -0.08f),
+                    end = float2(0.12f, 0.02f),
+                    thickness = 0.034f,
+                    feather = 0.016f
+                ),
+                "trace"
+            )
+
+            color(circle, chip, trace, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("clamp"))
+        assertTrue(source.contains("abs"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("step"))
+    }
+
+    @Test
+    fun routingHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.9f)
+            val uv = let(fragCoord / resolution, "uv")
+            val board = let(aspectCenteredUv(uv, resolution), "board")
+            val start = let(float2(-0.46f, -0.10f), "start")
+            val end = let(float2(0.32f, 0.12f), "end")
+            val trace = let(
+                segmentMask(
+                    point = board,
+                    start = start,
+                    end = end,
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ),
+                "trace"
+            )
+            val progress = let(segmentProgress(board, start, end), "progress")
+            val pulse = let(
+                segmentPulse(
+                    point = board,
+                    start = start,
+                    end = end,
+                    phase = fract(time * 0.42f),
+                    bandWidth = 0.22f,
+                    thickness = 0.05f,
+                    bandFeather = 0.08f,
+                    feather = 0.018f
+                ),
+                "pulse"
+            )
+
+            color(trace, progress, pulse, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("dot"))
+        assertTrue(source.contains("clamp"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("length"))
+    }
 }

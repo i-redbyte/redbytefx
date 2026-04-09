@@ -1,8 +1,16 @@
 package ru.redbyte.redbytefx.sample.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,7 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
@@ -62,12 +74,22 @@ import ru.redbyte.redbytefx.stdlib.rimLight
 import ru.redbyte.redbytefx.stdlib.scanWarp
 import ru.redbyte.redbytefx.stdlib.scanlines
 import ru.redbyte.redbytefx.stdlib.signalBars
+import ru.redbyte.redbytefx.stdlib.sdCircle
+import ru.redbyte.redbytefx.stdlib.sdBox
+import ru.redbyte.redbytefx.stdlib.sdRoundedBox
+import ru.redbyte.redbytefx.stdlib.sdSegment
+import ru.redbyte.redbytefx.stdlib.segmentMask
+import ru.redbyte.redbytefx.stdlib.segmentPulse
+import ru.redbyte.redbytefx.stdlib.softFill
+import ru.redbyte.redbytefx.stdlib.softStroke
+import ru.redbyte.redbytefx.stdlib.stroke
 import ru.redbyte.redbytefx.stdlib.valueNoise
 import ru.redbyte.redbytefx.stdlib.verticalReveal
 import ru.redbyte.redbytefx.stdlib.vignette
 import ru.redbyte.redbytefx.stdlib.frameMask
 
 private enum class Axis { X, Y }
+private enum class CircuitNode { Source, Processor, Output }
 
 private data class MirrorSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
@@ -114,6 +136,20 @@ private data class HaloSetup(
     val amount: FxParam.Float
 )
 
+private data class CircuitSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val route: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class SigilSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val amount: FxParam.Float
+)
+
 private data class DuotoneSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
     val amount: FxParam.Float,
@@ -140,6 +176,84 @@ private data class GradeSetup(
     val warmth: FxParam.Float,
     val glow: FxParam.Float
 )
+
+@Composable
+private fun CircuitPreviewStage(
+    modifier: Modifier = Modifier,
+    selected: CircuitNode,
+    onSelect: (CircuitNode) -> Unit
+) {
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(244.dp)
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f)
+                    )
+                )
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.26f),
+                shape = shape
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .then(modifier)
+        )
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = "PCB PREVIEW",
+                accent = MaterialTheme.colorScheme.secondary,
+                fill = MaterialTheme.colorScheme.surface.copy(alpha = 0.24f)
+            )
+            CyberBadge(
+                text = "TAP NODES",
+                accent = MaterialTheme.colorScheme.tertiary,
+                fill = MaterialTheme.colorScheme.surface.copy(alpha = 0.24f)
+            )
+        }
+
+        CircuitTapTarget(
+            text = "SRC",
+            selected = selected == CircuitNode.Source,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 18.dp, top = 10.dp),
+            onClick = { onSelect(CircuitNode.Source) }
+        )
+        CircuitTapTarget(
+            text = "CPU",
+            selected = selected == CircuitNode.Processor,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(top = 8.dp),
+            onClick = { onSelect(CircuitNode.Processor) }
+        )
+        CircuitTapTarget(
+            text = "OUT",
+            selected = selected == CircuitNode.Output,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 18.dp, top = 36.dp),
+            onClick = { onSelect(CircuitNode.Output) }
+        )
+    }
+}
 
 private data class WarpSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
@@ -1881,6 +1995,415 @@ fun DemoHalo() {
             }
             SliderRow("Radius", radiusUi, 12f..36f) {
                 radiusUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoCircuit() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var selected by rememberSaveable { mutableStateOf(CircuitNode.Source) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(90f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var routeParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val route by autoUniformFloat(0f)
+            val amount by autoUniformFloat(0.9f)
+            timeParam = time
+            routeParam = route
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val board = let(aspectCenteredUv(uv, resolution), "board")
+
+            val sourcePos = let(float2(-0.56f, -0.14f), "source_pos")
+            val chipPos = let(float2(0f, 0f), "chip_pos")
+            val outputPos = let(float2(0.56f, 0.16f), "output_pos")
+            val capPos = let(float2(0.20f, -0.24f), "cap_pos")
+
+            val boardMask = let(
+                softFill(
+                    distance = sdRoundedBox(
+                        point = board,
+                        halfSize = float2(0.86f, 0.48f),
+                        radius = 0.06f
+                    ),
+                    feather = 0.03f
+                ),
+                "board_mask"
+            )
+            val sourceMask = let(
+                softFill(
+                    distance = sdCircle(board - sourcePos, 0.075f),
+                    feather = 0.018f
+                ),
+                "source_mask"
+            )
+            val chipMask = let(
+                softFill(
+                    distance = sdRoundedBox(
+                        point = board - chipPos,
+                        halfSize = float2(0.22f, 0.13f),
+                        radius = 0.035f
+                    ),
+                    feather = 0.016f
+                ),
+                "chip_mask"
+            )
+            val outputMask = let(
+                softFill(
+                    distance = sdRoundedBox(
+                        point = board - outputPos,
+                        halfSize = float2(0.13f, 0.09f),
+                        radius = 0.026f
+                    ),
+                    feather = 0.016f
+                ),
+                "output_mask"
+            )
+            val capMask = let(
+                softFill(
+                    distance = sdBox(
+                        point = board - capPos,
+                        halfSize = float2(0.06f, 0.11f)
+                    ),
+                    feather = 0.014f
+                ),
+                "cap_mask"
+            )
+
+            val sourceToChip = let(
+                segmentMask(
+                    point = board,
+                    start = sourcePos,
+                    end = float2(-0.18f, -0.14f),
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ) + segmentMask(
+                    point = board,
+                    start = float2(-0.18f, -0.14f),
+                    end = chipPos + float2(-0.22f, 0f),
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ),
+                "source_to_chip"
+            )
+            val chipToOutput = let(
+                segmentMask(
+                    point = board,
+                    start = chipPos + float2(0.22f, 0f),
+                    end = float2(0.34f, 0f),
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ) + segmentMask(
+                    point = board,
+                    start = float2(0.34f, 0f),
+                    end = outputPos,
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ),
+                "chip_to_output"
+            )
+            val chipToCap = let(
+                segmentMask(
+                    point = board,
+                    start = chipPos + float2(0.04f, -0.12f),
+                    end = float2(0.20f, -0.12f),
+                    thickness = 0.038f,
+                    feather = 0.014f
+                ) + segmentMask(
+                    point = board,
+                    start = float2(0.20f, -0.12f),
+                    end = capPos,
+                    thickness = 0.038f,
+                    feather = 0.014f
+                ),
+                "chip_to_cap"
+            )
+
+            val sourceFlow = let(
+                segmentPulse(
+                    point = board,
+                    start = sourcePos,
+                    end = chipPos + float2(-0.22f, 0f),
+                    phase = fract(time * 0.42f),
+                    bandWidth = 0.22f,
+                    thickness = 0.05f,
+                    bandFeather = 0.08f,
+                    feather = 0.018f
+                ),
+                "source_flow"
+            )
+            val outputFlow = let(
+                segmentPulse(
+                    point = board,
+                    start = chipPos + float2(0.22f, 0f),
+                    end = outputPos,
+                    phase = fract((time + 0.18f) * 0.38f),
+                    bandWidth = 0.22f,
+                    thickness = 0.05f,
+                    bandFeather = 0.08f,
+                    feather = 0.018f
+                ),
+                "output_flow"
+            )
+            val capFlow = let(
+                segmentPulse(
+                    point = board,
+                    start = chipPos + float2(0.04f, -0.12f),
+                    end = capPos,
+                    phase = fract((time + 0.33f) * 0.34f),
+                    bandWidth = 0.24f,
+                    thickness = 0.046f,
+                    bandFeather = 0.08f,
+                    feather = 0.016f
+                ),
+                "cap_flow"
+            )
+
+            val routeMask = let(
+                ifElse(
+                    route lt 0.5f,
+                    sourceMask + sourceToChip + sourceFlow + chipMask * 0.55f,
+                    ifElse(
+                        route lt 1.5f,
+                        chipMask + chipToCap + chipToOutput + capFlow + outputFlow * 0.4f,
+                        outputMask + chipToOutput + outputFlow + chipMask * 0.45f
+                    )
+                ),
+                "route_mask"
+            )
+            val passiveCopper = let(
+                max(max(sourceToChip, chipToOutput), chipToCap),
+                "passive_copper"
+            )
+            val boardTint = let(color(float3(0.03f, 0.14f, 0.09f), base.a), "board_tint")
+            val copperTint = let(color(float3(0.24f, 0.72f, 0.48f), base.a), "copper_tint")
+            val signalTint = let(color(float3(1f, 0.94f, 0.58f), base.a), "signal_tint")
+
+            val substrate = let(maskedMix(base, boardTint, boardMask, 0.92f), "substrate")
+            val copper = let(
+                maskedScreen(
+                    base = substrate,
+                    blend = copperTint,
+                    mask = passiveCopper + sourceMask * 0.65f + chipMask * 0.75f + outputMask * 0.65f + capMask * 0.6f,
+                    amount = amount * 0.58f
+                ),
+                "copper"
+            )
+
+            maskedOverlay(
+                base = copper,
+                blend = signalTint,
+                mask = routeMask,
+                amount = amount
+            )
+        }
+        CircuitSetup(
+            effect = effect,
+            time = timeParam!!,
+            route = routeParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(
+        setup.route,
+        when (selected) {
+            CircuitNode.Source -> 0f
+            CircuitNode.Processor -> 1f
+            CircuitNode.Output -> 2f
+        }
+    )
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            CircuitPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                selected = selected,
+                onSelect = { selected = it }
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            Text(text = "Active Node", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                RadioRow("Source", selected = selected == CircuitNode.Source) {
+                    selected = CircuitNode.Source
+                }
+                RadioRow("Processor", selected = selected == CircuitNode.Processor) {
+                    selected = CircuitNode.Processor
+                }
+                RadioRow("Output", selected = selected == CircuitNode.Output) {
+                    selected = CircuitNode.Output
+                }
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+private fun CircuitTapTarget(
+    text: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    CyberBadge(
+        text = text,
+        modifier = modifier
+            .size(width = 58.dp, height = 32.dp)
+            .clickable(onClick = onClick),
+        accent = if (selected) {
+            MaterialTheme.colorScheme.tertiary
+        } else {
+            MaterialTheme.colorScheme.primary
+        },
+        fill = if (selected) {
+            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.16f)
+        },
+        textColor = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+fun DemoSigil() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(72f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(84f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.72f)
+            val amount by autoUniformFloat(0.84f)
+            timeParam = time
+            speedParam = speed
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val sigil = let(aspectCenteredUv(uv, resolution), "sigil")
+            val pulse = let(easeInOutSine(pingPong(time * speed * 0.18f, 1f)), "pulse")
+            val frame = let(
+                softStroke(
+                    distance = sdRoundedBox(
+                        point = sigil,
+                        halfSize = float2(0.35f, 0.35f),
+                        radius = 0.16f
+                    ),
+                    width = 0.028f,
+                    feather = 0.012f
+                ),
+                "frame"
+            )
+            val ring = let(
+                softStroke(
+                    distance = sdCircle(sigil, radius = 0.26f + pulse * 0.03f),
+                    width = 0.032f,
+                    feather = 0.014f
+                ),
+                "ring"
+            )
+            val core = let(
+                softFill(
+                    distance = sdCircle(sigil, radius = 0.10f + pulse * 0.05f),
+                    feather = 0.015f
+                ),
+                "core"
+            )
+            val spine = let(
+                softFill(
+                    distance = sdBox(
+                        point = sigil,
+                        halfSize = float2(0.05f, 0.22f + pulse * 0.05f)
+                    ),
+                    feather = 0.012f
+                ),
+                "spine"
+            )
+            val cross = let(
+                stroke(
+                    distance = sdBox(
+                        point = sigil,
+                        halfSize = float2(0.21f, 0.05f)
+                    ),
+                    width = 0.05f
+                ),
+                "cross"
+            )
+            val mask = let(max(max(frame, ring), max(core, max(spine, cross))), "mask")
+            val tint = let(
+                color(
+                    mix(0.06f, 0.18f, pulse),
+                    mix(0.32f, 1f, ring + core * 0.25f),
+                    mix(0.18f, 0.74f, frame + spine * 0.35f),
+                    base.a
+                ),
+                "tint"
+            )
+            val screened = let(maskedScreen(base, tint, mask, amount), "screened")
+
+            maskedOverlay(
+                base = screened,
+                blend = color(float3(0.90f, 1f, 0.80f), base.a),
+                mask = core + ring * 0.5f,
+                amount = amount * 0.26f
+            )
+        }
+        SigilSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Sigil//SDF"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
