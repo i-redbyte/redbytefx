@@ -133,11 +133,14 @@ internal class FxInstanceImpl(
 ) : FxInstance {
 
     private val shader = RuntimeShader(program.agsl)
-    private val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
+    // Platform RenderEffect instances do not reliably observe later RuntimeShader uniform updates,
+    // so we recreate the effect after runtime state changes.
+    private var renderEffect = createRenderEffect()
 
     init {
         applyDefaults()
-        setResolution(1f, 1f)
+        updateResolution(1f, 1f)
+        refreshRenderEffect()
     }
 
     override fun renderEffect(): RenderEffect = renderEffect
@@ -145,28 +148,44 @@ internal class FxInstanceImpl(
     override fun setFloat(param: FxParam.Float, value: Float) {
         val name = program.layout.floatUniforms[param] ?: error("Unknown float param")
         shader.setFloatUniform(name, value)
+        refreshRenderEffect()
     }
 
     override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
         val name = program.layout.float2Uniforms[param] ?: error("Unknown float2 param")
         shader.setFloatUniform(name, x, y)
+        refreshRenderEffect()
     }
 
     override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
         val name = program.layout.float3Uniforms[param] ?: error("Unknown float3 param")
         shader.setFloatUniform(name, x, y, z)
+        refreshRenderEffect()
     }
 
     override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
         val name = program.layout.float4Uniforms[param] ?: error("Unknown float4 param")
         shader.setFloatUniform(name, x, y, z, w)
+        refreshRenderEffect()
     }
 
     override fun setResolution(widthPx: Float, heightPx: Float) {
+        updateResolution(widthPx, heightPx)
+        refreshRenderEffect()
+    }
+
+    private fun updateResolution(widthPx: Float, heightPx: Float) {
         val w = if (widthPx > 0f) widthPx else 1f
         val h = if (heightPx > 0f) heightPx else 1f
         shader.setFloatUniform(RB_RESOLUTION_UNIFORM, w, h)
     }
+
+    private fun refreshRenderEffect() {
+        renderEffect = createRenderEffect()
+    }
+
+    private fun createRenderEffect(): RenderEffect =
+        RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
 
     private fun applyDefaults() {
         for ((param, dv) in program.defaults) {

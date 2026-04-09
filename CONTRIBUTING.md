@@ -20,7 +20,8 @@
 - User-facing API changes should usually update tests, sample code, and README examples together.
 - Keep Compose integration thin and focused on runtime ergonomics, not on hiding the underlying effect model.
 - Keep the `v0.1` core stdlib limited to essential shader building blocks: constructors, branching, component access, operators, and fundamental math/color helpers.
-- Recipe-style helpers, visual presets, noise generators, and effect packs should stay out of `core` until they justify a separate module or a clearly stable extension layer.
+- Recipe-style helpers, visual presets, noise generators, and effect packs should stay out of `core`.
+- When a reusable authoring recipe earns a public home, prefer placing it in `:redbytefx-stdlib` instead of expanding `core`.
 
 ## Quality Bar
 

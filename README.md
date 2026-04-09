@@ -12,11 +12,13 @@ The current direction is:
 
 - `:redbytefx-core`: the DSL, compiler, uniform model, and runtime shader bridge
 - `:redbytefx-compose`: Compose adapter with `Modifier.redbyteFx(...)`
+- `:redbytefx-stdlib`: recipe-level authoring helpers that build on top of the core DSL
 - `:sample`: manual demo app for exploring the DSL and testing effects visually
 
 ## Quickstart
 
 1. Define an effect with `redbytefx { ... }` and keep typed uniform handles when you need runtime updates.
+   Names are optional: use `uniformFloat(0f)` for anonymous generated uniforms, or `val amount by autoUniformFloat(0f)` when you want the Kotlin property name to become the shader name automatically.
 2. In Compose, create one controller per render target with `rememberFxController(effect)`.
 3. Bind ordinary Compose state with `bindFloat(...)` / `bindFloat2(...)` or drive time with `bindTime(...)`.
 4. Apply the effect with `Modifier.redbyteFx(fx)`.
@@ -25,7 +27,7 @@ The current direction is:
 val grayscaleSetup = run {
     var amountParam: FxParam.Float? = null
     val effect = redbytefx {
-        val amount = uniformFloat(0f, "amount")
+        val amount by autoUniformFloat(0f)
         amountParam = amount
         val base = let(sample(), "base")
         mix(base, grayscale(base), amount)
@@ -69,6 +71,7 @@ val effect = redbytefx {
 The DSL is intentionally expression-oriented:
 
 - create uniforms with `uniformFloat(...)` or `uniformFloat2(...)`
+- skip manual string labels when you want to with `autoUniformFloat(...)`, `autoUniformTime(...)`, `autoUniformFloat2(...)`, `autoUniformFloat3(...)`, and `autoUniformFloat4(...)`
 - animate effects over time with `uniformTime(...)` and `FxController.bindTime(...)` in Compose, with pause/resume preserving the current phase
 - bind Compose state directly to uniforms with `bindFloat(...)`, `bindFloat2(...)`, `bindFloat3(...)`, and `bindFloat4(...)`
 - cache intermediate expressions with `let(...)` when you want real local variables in generated AGSL
@@ -126,7 +129,36 @@ What is deliberately *not* part of the `v0.1` core stdlib:
 - noise, hash, palette, scanline, vignette, posterize, or other recipe-level helpers
 - large convenience layers that hide the generated AGSL too much
 
-Those can come later as a separate stdlib/effects layer once the core language feels settled.
+Those belong in separate layers once the core language feels settled.
+
+## v0.2 Direction
+
+The next step is to grow outward instead of bloating `core`.
+
+- keep `:redbytefx-core` focused on the language, compiler, and essential math/color primitives
+- move recipe-style helpers into `:redbytefx-stdlib`
+- keep generated AGSL predictable even when authoring through higher-level helpers
+
+The first `stdlib` helpers now being prepared are:
+
+- `inverseLerp(...)`
+- `remap(...)`
+- `posterize(...)`
+- `pulse(...)`
+- `gridMask(...)`
+- `scanlines(...)`
+- `hash21(...)`
+- `valueNoise(...)`
+- `grain(...)`
+- `vignette(...)`
+- `adjustSaturation(...)`
+- `blendMultiply(...)`
+- `blendScreen(...)`
+- `blendOverlay(...)`
+- `fbm(...)`
+- `domainWarp(...)`
+- `cosinePalette(...)`
+- `chromaticOffset(...)`
 
 ## Procedural Example
 
@@ -193,6 +225,7 @@ Text(
 - Call `effect.agslSource()` whenever you want to inspect the generated shader source.
 - Keep one `FxController` per render target so resolution and runtime state stay unambiguous.
 - Use `:sample` as a cookbook: each demo now shows what part of the DSL it is exercising, plus a preview of the generated AGSL.
+- Reach for `:redbytefx-stdlib` when a helper reads like a reusable recipe instead of a fundamental shader primitive.
 
 ## Current focus
 

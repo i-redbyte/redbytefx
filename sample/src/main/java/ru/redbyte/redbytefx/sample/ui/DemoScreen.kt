@@ -17,6 +17,11 @@ fun DemoScreen(id: DemoId) {
             DemoId.Wave -> DemoWave()
             DemoId.Pulse -> DemoPulse()
             DemoId.Signal -> DemoSignal()
+            DemoId.Posterize -> DemoPosterize()
+            DemoId.Film -> DemoFilm()
+            DemoId.Grade -> DemoGrade()
+            DemoId.Warp -> DemoWarp()
+            DemoId.Prism -> DemoPrism()
             DemoId.Duotone -> DemoDuotone()
         }
     }

@@ -20,6 +20,22 @@ import ru.redbyte.redbytefx.compose.bindFloat2
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.stdlib.adjustSaturation
+import ru.redbyte.redbytefx.stdlib.blendMultiply
+import ru.redbyte.redbytefx.stdlib.blendOverlay
+import ru.redbyte.redbytefx.stdlib.blendScreen
+import ru.redbyte.redbytefx.stdlib.chromaticOffset
+import ru.redbyte.redbytefx.stdlib.cosinePalette
+import ru.redbyte.redbytefx.stdlib.domainWarp
+import ru.redbyte.redbytefx.stdlib.fbm
+import ru.redbyte.redbytefx.stdlib.gridMask
+import ru.redbyte.redbytefx.stdlib.grain
+import ru.redbyte.redbytefx.stdlib.posterize
+import ru.redbyte.redbytefx.stdlib.pulse
+import ru.redbyte.redbytefx.stdlib.remap
+import ru.redbyte.redbytefx.stdlib.scanlines
+import ru.redbyte.redbytefx.stdlib.valueNoise
+import ru.redbyte.redbytefx.stdlib.vignette
 
 private enum class Axis { X, Y }
 
@@ -58,6 +74,42 @@ private data class DuotoneSetup(
     val warmth: FxParam.Float
 )
 
+private data class PosterizeSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val levels: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class FilmSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val grainAmount: FxParam.Float,
+    val grainScale: FxParam.Float,
+    val vignetteAmount: FxParam.Float
+)
+
+private data class GradeSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val amount: FxParam.Float,
+    val warmth: FxParam.Float,
+    val glow: FxParam.Float
+)
+
+private data class WarpSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val warpAmount: FxParam.Float,
+    val scale: FxParam.Float,
+    val driftAmount: FxParam.Float
+)
+
+private data class PrismSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val amount: FxParam.Float,
+    val spread: FxParam.Float,
+    val shift: FxParam.Float
+)
+
 @Composable
 private fun rememberGeneratedAgsl(effect: FxEffect): String = remember(effect) { effect.agslSource() }
 
@@ -91,11 +143,7 @@ fun DemoFlip() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.first),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SwitchRow("Flip X", flipX) {
@@ -154,11 +202,7 @@ fun DemoMirror() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SwitchRow("Enabled", enabled) {
@@ -238,11 +282,7 @@ fun DemoRotate() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.first),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow("Angle", angle, 0f..360f) {
@@ -273,11 +313,7 @@ fun DemoScale() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.first),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow("Scale X", sx * 100f, 25f..300f) {
@@ -311,11 +347,7 @@ fun DemoOffset() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.first),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow("Offset X", dx, -200f..200f) {
@@ -359,11 +391,7 @@ fun DemoWave() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow("Amplitude", amplitude, 0f..120f) {
@@ -410,7 +438,7 @@ fun DemoPulse() {
             val pixelBase = let(sample(pixelUv * resolution), "pixel_base")
             val row = let(floor(uv.y * safeGrid), "row")
             val wave = let(
-                0.5f + 0.5f * sin(timeUniform * speedUniform + row * 0.7f),
+                pulse(timeUniform, speedUniform, row * 0.7f),
                 "wave"
             )
             val glow = let(pow(wave, 3f), "glow")
@@ -442,11 +470,7 @@ fun DemoPulse() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SwitchRow("Play", playing) {
@@ -498,20 +522,8 @@ fun DemoSignal() {
 
             val base = let(sample(), "base")
             val uv = let(fragCoord / resolution, "uv")
-            val cell = let(fract(uv * densityUniform), "cell")
-            val edgeX = let(min(cell.x, 1f - cell.x), "edge_x")
-            val edgeY = let(min(cell.y, 1f - cell.y), "edge_y")
-            val grid = let(
-                max(
-                    1f - smoothstep(0f, lineWidthUniform, edgeX),
-                    1f - smoothstep(0f, lineWidthUniform, edgeY)
-                ),
-                "grid"
-            )
-            val scan = let(
-                1f - smoothstep(0f, 3f, mod(fragCoord.y, 14f)),
-                "scan"
-            )
+            val grid = let(gridMask(uv, densityUniform, lineWidthUniform), "grid")
+            val scan = let(scanlines(fragCoord.y, 14f, 3f), "scan")
             val pulse = let(
                 pulseBand(uv.y * densityUniform * 0.5f + grid * 0.35f, 0.55f),
                 "pulse"
@@ -541,11 +553,7 @@ fun DemoSignal() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow("Density", density, 2f..20f) {
@@ -561,6 +569,340 @@ fun DemoSignal() {
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoPosterize() {
+    var levelsUi by rememberSaveable { mutableFloatStateOf(5f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(85f) }
+
+    val setup = remember {
+        var levelsParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val levels by autoUniformFloat(5f)
+            val amount by autoUniformFloat(0.85f)
+            levelsParam = levels
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val quantized = let(posterize(base, levels), "quantized")
+            mix(base, quantized, amount)
+        }
+        PosterizeSetup(effect, levelsParam!!, amountParam!!)
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindFloat(setup.levels, levelsUi)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SliderRow("Levels", levelsUi, 2f..12f) {
+                levelsUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoFilm() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var grainAmountUi by rememberSaveable { mutableFloatStateOf(18f) }
+    var grainScaleUi by rememberSaveable { mutableFloatStateOf(190f) }
+    var vignetteAmountUi by rememberSaveable { mutableFloatStateOf(55f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var grainAmountParam: FxParam.Float? = null
+        var grainScaleParam: FxParam.Float? = null
+        var vignetteAmountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val grainAmount by autoUniformFloat(0.18f)
+            val grainScale by autoUniformFloat(190f)
+            val vignetteAmount by autoUniformFloat(0.55f)
+            timeParam = time
+            grainAmountParam = grainAmount
+            grainScaleParam = grainScale
+            vignetteAmountParam = vignetteAmount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val noise = let(grain(uv, time, grainScale), "noise")
+            val drift = let(
+                remap(
+                    valueNoise(uv * 6f + float2(time * 0.08f, 0f)),
+                    0f,
+                    1f,
+                    0.92f,
+                    1.05f
+                ),
+                "drift"
+            )
+            val mask = let(mix(1f, vignette(uv, 0.35f, 1.05f), vignetteAmount), "mask")
+            val lift = let(noise * grainAmount, "lift")
+            val grainRgb = let(
+                float3(
+                    saturate(base.r * drift + lift),
+                    saturate(base.g * drift + lift),
+                    saturate(base.b * drift + lift)
+                ),
+                "grain_rgb"
+            )
+
+            color(
+                grainRgb.x * mask,
+                grainRgb.y * mask,
+                grainRgb.z * mask,
+                base.a
+            )
+        }
+        FilmSetup(
+            effect = effect,
+            time = timeParam!!,
+            grainAmount = grainAmountParam!!,
+            grainScale = grainScaleParam!!,
+            vignetteAmount = vignetteAmountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.grainAmount, grainAmountUi / 100f)
+    fx.bindFloat(setup.grainScale, grainScaleUi)
+    fx.bindFloat(setup.vignetteAmount, vignetteAmountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Grain", grainAmountUi, 0f..40f) {
+                grainAmountUi = it
+            }
+            SliderRow("Scale", grainScaleUi, 60f..320f) {
+                grainScaleUi = it
+            }
+            SliderRow("Vignette", vignetteAmountUi, 0f..100f) {
+                vignetteAmountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoGrade() {
+    var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
+    var warmthUi by rememberSaveable { mutableFloatStateOf(58f) }
+    var glowUi by rememberSaveable { mutableFloatStateOf(38f) }
+
+    val setup = remember {
+        var amountParam: FxParam.Float? = null
+        var warmthParam: FxParam.Float? = null
+        var glowParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.82f)
+            val warmth by autoUniformFloat(0.58f)
+            val glow by autoUniformFloat(0.38f)
+            amountParam = amount
+            warmthParam = warmth
+            glowParam = glow
+
+            val base = let(sample(), "base")
+            val saturated = let(
+                adjustSaturation(base, mix(0.9f, 1.55f, amount)),
+                "saturated"
+            )
+            val tint = let(
+                color(
+                    mix(0.26f, 0.94f, warmth),
+                    mix(0.48f, 0.72f, warmth),
+                    mix(0.92f, 0.38f, warmth),
+                    base.a
+                ),
+                "tint"
+            )
+            val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
+            val screened = let(blendScreen(multiplied, tint, glow), "screened")
+
+            blendOverlay(base, screened, amount)
+        }
+        GradeSetup(
+            effect = effect,
+            amount = amountParam!!,
+            warmth = warmthParam!!,
+            glow = glowParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+    fx.bindFloat(setup.warmth, warmthUi / 100f)
+    fx.bindFloat(setup.glow, glowUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+            SliderRow("Warmth", warmthUi, 0f..100f) {
+                warmthUi = it
+            }
+            SliderRow("Glow", glowUi, 0f..100f) {
+                glowUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoWarp() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var warpAmountUi by rememberSaveable { mutableFloatStateOf(35f) }
+    var scaleUi by rememberSaveable { mutableFloatStateOf(320f) }
+    var driftAmountUi by rememberSaveable { mutableFloatStateOf(18f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var warpAmountParam: FxParam.Float? = null
+        var scaleParam: FxParam.Float? = null
+        var driftAmountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val warpAmount by autoUniformFloat(0.35f)
+            val scale by autoUniformFloat(3.2f)
+            val driftAmount by autoUniformFloat(18f)
+            timeParam = time
+            warpAmountParam = warpAmount
+            scaleParam = scale
+            driftAmountParam = driftAmount
+
+            val uv = let(fragCoord / resolution, "uv")
+            val noiseUv = let(
+                uv * scale + float2(time * 0.06f, -time * 0.04f),
+                "noise_uv"
+            )
+            val warpedUv = let(domainWarp(noiseUv, time * 0.25f, warpAmount), "warped_uv")
+            val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount, "drift")
+
+            sample(fragCoord + float2(0f, drift))
+        }
+        WarpSetup(
+            effect = effect,
+            time = timeParam!!,
+            warpAmount = warpAmountParam!!,
+            scale = scaleParam!!,
+            driftAmount = driftAmountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.warpAmount, warpAmountUi / 100f)
+    fx.bindFloat(setup.scale, scaleUi / 100f)
+    fx.bindFloat(setup.driftAmount, driftAmountUi)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Warp", warpAmountUi, 0f..80f) {
+                warpAmountUi = it
+            }
+            SliderRow("Scale", scaleUi, 120f..520f) {
+                scaleUi = it
+            }
+            SliderRow("Drift", driftAmountUi, 0f..48f) {
+                driftAmountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoPrism() {
+    var amountUi by rememberSaveable { mutableFloatStateOf(76f) }
+    var spreadUi by rememberSaveable { mutableFloatStateOf(22f) }
+    var shiftUi by rememberSaveable { mutableFloatStateOf(10f) }
+
+    val setup = remember {
+        var amountParam: FxParam.Float? = null
+        var spreadParam: FxParam.Float? = null
+        var shiftParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.76f)
+            val spread by autoUniformFloat(0.22f)
+            val shift by autoUniformFloat(10f)
+            amountParam = amount
+            spreadParam = spread
+            shiftParam = shift
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
+            val tint = let(color(palette, base.a), "tint")
+            val refracted = let(
+                chromaticOffset(
+                    offset = shift,
+                    direction = float2(1f, 0.3f),
+                    amount = amount
+                ),
+                "refracted"
+            )
+
+            blendScreen(refracted, tint, amount)
+        }
+        PrismSetup(
+            effect = effect,
+            amount = amountParam!!,
+            spread = spreadParam!!,
+            shift = shiftParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+    fx.bindFloat(setup.spread, spreadUi / 100f)
+    fx.bindFloat(setup.shift, shiftUi)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+            SliderRow("Spread", spreadUi, 0f..60f) {
+                spreadUi = it
+            }
+            SliderRow("Shift", shiftUi, 0f..24f) {
+                shiftUi = it
             }
         }
     )
@@ -621,11 +963,7 @@ fun DemoDuotone() {
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
-            Text(
-                text = "RedByteFX",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.redbyteFx(fx)
-            )
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
             SliderRow(

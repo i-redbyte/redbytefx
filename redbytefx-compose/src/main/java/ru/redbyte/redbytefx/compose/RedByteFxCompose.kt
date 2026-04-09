@@ -1,17 +1,23 @@
 package ru.redbyte.redbytefx.compose
 
+import android.graphics.RenderEffect as AndroidRenderEffect
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.CompositingStrategy
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
 import java.util.IdentityHashMap
@@ -31,8 +37,6 @@ import ru.redbyte.redbytefx.FxParam
 public class FxController internal constructor(
     internal val instance: FxInstance
 ) {
-    internal val composeRenderEffect = instance.renderEffect().asComposeRenderEffect()
-
     private var lastW = -1f
     private var lastH = -1f
     private var hostViewRef: WeakReference<View>? = null
@@ -40,6 +44,19 @@ public class FxController internal constructor(
     private val float2Values = IdentityHashMap<FxParam.Float2, Float2Value>()
     private val float3Values = IdentityHashMap<FxParam.Float3, Float3Value>()
     private val float4Values = IdentityHashMap<FxParam.Float4, Float4Value>()
+    internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
+        private set
+    private var cachedPlatformRenderEffect: AndroidRenderEffect? = null
+    private var cachedComposeRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
+    internal val composeRenderEffect: androidx.compose.ui.graphics.RenderEffect
+        get() {
+            val platformRenderEffect = instance.renderEffect()
+            if (cachedPlatformRenderEffect !== platformRenderEffect) {
+                cachedPlatformRenderEffect = platformRenderEffect
+                cachedComposeRenderEffect = platformRenderEffect.asComposeRenderEffect()
+            }
+            return checkNotNull(cachedComposeRenderEffect)
+        }
 
     /**
      * Updates a scalar float uniform and invalidates the host view.
@@ -49,7 +66,7 @@ public class FxController internal constructor(
         if (previous != null && sameFloat(previous, value)) return
         floatValues[param] = value
         instance.setFloat(param, value)
-        bump()
+        invalidateRuntime()
     }
 
     /**
@@ -59,7 +76,7 @@ public class FxController internal constructor(
         if (sameFloat2(float2Values[param], x, y)) return
         float2Values[param] = Float2Value(x, y)
         instance.setFloat2(param, x, y)
-        bump()
+        invalidateRuntime()
     }
 
     /**
@@ -69,7 +86,7 @@ public class FxController internal constructor(
         if (sameFloat3(float3Values[param], x, y, z)) return
         float3Values[param] = Float3Value(x, y, z)
         instance.setFloat3(param, x, y, z)
-        bump()
+        invalidateRuntime()
     }
 
     /**
@@ -79,18 +96,15 @@ public class FxController internal constructor(
         if (sameFloat4(float4Values[param], x, y, z, w)) return
         float4Values[param] = Float4Value(x, y, z, w)
         instance.setFloat4(param, x, y, z, w)
-        bump()
+        invalidateRuntime()
     }
 
     /**
      * Updates the shader resolution in pixels and invalidates the host view when it changes.
      */
     public fun setResolution(widthPx: Float, heightPx: Float) {
-        if (widthPx == lastW && heightPx == lastH) return
-        lastW = widthPx
-        lastH = heightPx
-        instance.setResolution(widthPx, heightPx)
-        bump()
+        if (!updateResolution(widthPx, heightPx)) return
+        invalidateRuntime()
     }
 
     internal fun attachHost(view: View) {
@@ -98,7 +112,20 @@ public class FxController internal constructor(
         hostViewRef = WeakReference(view)
     }
 
-    private fun bump() {
+    internal fun syncResolution(widthPx: Float, heightPx: Float) {
+        updateResolution(widthPx, heightPx)
+    }
+
+    private fun updateResolution(widthPx: Float, heightPx: Float): Boolean {
+        if (widthPx == lastW && heightPx == lastH) return false
+        lastW = widthPx
+        lastH = heightPx
+        instance.setResolution(widthPx, heightPx)
+        return true
+    }
+
+    private fun invalidateRuntime() {
+        runtimeInvalidationTick += 1
         hostViewRef?.get()?.postInvalidateOnAnimation()
     }
 }
@@ -231,15 +258,21 @@ public fun FxController.bindFloat4(
  * in sync with the content size.
  */
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
-    this
-        .graphicsLayer {
-            compositingStrategy = CompositingStrategy.Offscreen
-            renderEffect = controller.composeRenderEffect
+    composed {
+        val layer = rememberGraphicsLayer()
+        drawWithCache {
+            layer.compositingStrategy = CompositingStrategy.Offscreen
+            onDrawWithContent {
+                controller.runtimeInvalidationTick
+                controller.syncResolution(size.width, size.height)
+                layer.renderEffect = controller.composeRenderEffect
+                layer.record {
+                    this@onDrawWithContent.drawContent()
+                }
+                drawLayer(layer)
+            }
         }
-        .drawWithContent {
-            controller.setResolution(size.width, size.height)
-            drawContent()
-        }
+    }
 
 @Stable
 internal class TimeBindingState {

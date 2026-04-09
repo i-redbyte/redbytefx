@@ -1,6 +1,13 @@
 package ru.redbyte.redbytefx
 
 /**
+ * Creates a scalar float literal expression.
+ *
+ * This is mainly useful for extension modules and helper libraries built on top of RedByteFX.
+ */
+public fun float(value: Float): FloatExpr = floatLiteral(value)
+
+/**
  * Creates a `float2` expression from two scalar expressions.
  */
 public fun float2(x: FloatExpr, y: FloatExpr): Float2Expr =

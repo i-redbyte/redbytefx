@@ -164,4 +164,21 @@ class FxDslCompilerTest {
         assertTrue(source.contains("ceil"))
         assertTrue(source.contains("pow"))
     }
+
+    @Test
+    fun autoNamedUniformsUseDelegatedPropertyNames() {
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.5f)
+            val time by autoUniformTime()
+            val base = let(sample(), "base")
+            val wave = let(0.5f + 0.5f * sin(time * 1.5f), "wave")
+
+            mix(base, grayscale(base), amount * wave)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uniform float u_time;"))
+    }
 }

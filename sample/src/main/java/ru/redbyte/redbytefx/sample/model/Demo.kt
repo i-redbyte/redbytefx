@@ -9,6 +9,11 @@ enum class DemoId {
     Wave,
     Pulse,
     Signal,
+    Posterize,
+    Film,
+    Grade,
+    Warp,
+    Prism,
     Duotone
 }
 
@@ -94,10 +99,10 @@ val DemoCatalog: List<DemoInfo> = listOf(
         id = DemoId.Pulse,
         title = "Pulse",
         subtitle = "Animated time uniform with floor/ceil/pow and pixel quantization.",
-        focus = "Shows bindTime(...), temporal animation, and a richer stack of procedural math helpers.",
+        focus = "Shows bindTime(...), temporal animation, and how stdlib helpers like pulse(...) can shrink noisy shader math.",
         snippet = """
             val time = uniformTime(name = "pulse_time")
-            val wave = 0.5f + 0.5f * sin(time * speed + row * 0.7f)
+            val wave = pulse(time, speed, row * 0.7f)
             val glow = pow(wave, 3f)
             mix(base, mix(pixelBase, accent, active * glow), amount)
         """.trimIndent()
@@ -106,12 +111,68 @@ val DemoCatalog: List<DemoInfo> = listOf(
         id = DemoId.Signal,
         title = "Signal",
         subtitle = "Procedural lines with fract/mod/step/smoothstep and bool branches.",
-        focus = "Shows fn(...), boolean expressions, procedural masks, and a shader that feels much closer to hand-written AGSL.",
+        focus = "Shows how stdlib helpers like gridMask(...) and scanlines(...) can clean up procedural shaders without hiding the generated AGSL.",
         snippet = """
-            val pulseBand = fn(name = "pulse_band", arg1 = FloatType, arg2 = FloatType, returns = FloatType) { phase, threshold ->
-                step(threshold, smoothstep(0.08f, 0.92f, fract(phase)))
-            }
+            val grid = let(gridMask(uv, density, lineWidth), "grid")
+            val scan = let(scanlines(fragCoord.y, 14f, 3f), "scan")
             ifElse(active, mix(base, mixed, amount), base)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Posterize,
+        title = "Posterize",
+        subtitle = "Recipe-level stdlib helper layered on top of the core DSL.",
+        focus = "Shows the new v0.2 direction: keep core low-level, then build readable authoring helpers like posterize(...) in a separate stdlib module.",
+        snippet = """
+            val levels by autoUniformFloat(5f)
+            val amount by autoUniformFloat(0.85f)
+            val base = let(sample(), "base")
+            mix(base, posterize(base, levels), amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Film,
+        title = "Film",
+        subtitle = "Procedural grain, noise drift, and vignette from the stdlib layer.",
+        focus = "Shows the second v0.2 stdlib wave: reusable procedural helpers that stay readable in Kotlin while still compiling into ordinary AGSL math.",
+        snippet = """
+            val noise = let(grain(uv, time, grainScale), "grain")
+            val drift = let(remap(valueNoise(uv * 6f + float2(time * 0.08f, 0f)), 0f, 1f, 0.92f, 1.05f), "drift")
+            val mask = let(vignette(uv, 0.35f, 1.05f), "mask")
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Grade,
+        title = "Grade",
+        subtitle = "Color grading helpers and blend modes from the stdlib layer.",
+        focus = "Shows the new color-oriented v0.2 stdlib surface: adjustSaturation(...), blendMultiply(...), blendScreen(...), and blendOverlay(...) layered on top of plain DSL math.",
+        snippet = """
+            val saturated = let(adjustSaturation(base, 1.35f), "saturated")
+            val tinted = let(blendMultiply(saturated, tint, 0.25f), "tinted")
+            val lifted = let(blendScreen(tinted, tint, glow), "lifted")
+            blendOverlay(base, lifted, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Warp,
+        title = "Warp",
+        subtitle = "fBm and domain warp helpers for fluid coordinate distortion.",
+        focus = "Shows the v0.2 procedural stack growing beyond one-off noise helpers into reusable space-warp building blocks.",
+        snippet = """
+            val warpedUv = let(domainWarp(uv * scale, time * 0.25f, warpAmount), "warped_uv")
+            val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount, "drift")
+            sample(fragCoord + float2(0f, drift))
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Prism,
+        title = "Prism",
+        subtitle = "Cosine palette plus chromatic offset in the stdlib layer.",
+        focus = "Shows palette authoring and multi-sample color separation without dropping down to hand-written AGSL strings.",
+        snippet = """
+            val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
+            val refracted = let(chromaticOffset(offset = shift, direction = float2(1f, 0.3f), amount = amount), "refracted")
+            blendScreen(refracted, color(palette, base.a), amount)
         """.trimIndent()
     ),
     DemoInfo(

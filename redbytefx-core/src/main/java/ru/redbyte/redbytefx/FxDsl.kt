@@ -1,5 +1,9 @@
 package ru.redbyte.redbytefx
 
+import kotlin.properties.PropertyDelegateProvider
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
+
 /**
  * Marker interface for scalar float expressions in the RedByteFX DSL.
  */
@@ -53,6 +57,10 @@ public class FxDsl internal constructor(
 
     /**
      * Declares a scalar float uniform.
+     *
+     * [name] is optional. When omitted, RedByteFX generates a deterministic internal name for the
+     * compiled shader. Supplying a name is mainly useful for debugging and for keeping generated
+     * AGSL readable.
      */
     public fun uniformFloat(
         default: Float = 0f,
@@ -73,6 +81,9 @@ public class FxDsl internal constructor(
 
     /**
      * Declares a `float2` uniform.
+     *
+     * [name] is optional. When omitted, RedByteFX generates a deterministic internal name for the
+     * compiled shader.
      */
     public fun uniformFloat2(
         x: Float = 0f,
@@ -86,6 +97,9 @@ public class FxDsl internal constructor(
 
     /**
      * Declares a `float3` uniform.
+     *
+     * [name] is optional. When omitted, RedByteFX generates a deterministic internal name for the
+     * compiled shader.
      */
     public fun uniformFloat3(
         x: Float = 0f,
@@ -100,6 +114,9 @@ public class FxDsl internal constructor(
 
     /**
      * Declares a `float4` uniform.
+     *
+     * [name] is optional. When omitted, RedByteFX generates a deterministic internal name for the
+     * compiled shader.
      */
     public fun uniformFloat4(
         x: Float = 0f,
@@ -112,6 +129,72 @@ public class FxDsl internal constructor(
         defaults[param] = DefaultValue.F4(x, y, z, w)
         return param
     }
+
+    /**
+     * Declares a scalar float uniform and derives its debug name from the delegated Kotlin
+     * property name.
+     *
+     * Example:
+     *
+     * ```kotlin
+     * val amount by autoUniformFloat(0.5f)
+     * ```
+     */
+    public fun autoUniformFloat(
+        default: Float = 0f
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, FxParam.Float>> =
+        autoNamedUniform { propertyName -> uniformFloat(default, propertyName) }
+
+    /**
+     * Declares a time uniform and derives its debug name from the delegated Kotlin property name.
+     */
+    public fun autoUniformTime(
+        default: Float = 0f
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, FxParam.Float>> =
+        autoNamedUniform { propertyName -> uniformTime(default, propertyName) }
+
+    /**
+     * Declares a `float2` uniform and derives its debug name from the delegated Kotlin property
+     * name.
+     */
+    public fun autoUniformFloat2(
+        x: Float = 0f,
+        y: Float = 0f
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, FxParam.Float2>> =
+        autoNamedUniform { propertyName -> uniformFloat2(x, y, propertyName) }
+
+    /**
+     * Declares a `float3` uniform and derives its debug name from the delegated Kotlin property
+     * name.
+     */
+    public fun autoUniformFloat3(
+        x: Float = 0f,
+        y: Float = 0f,
+        z: Float = 0f
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, FxParam.Float3>> =
+        autoNamedUniform { propertyName -> uniformFloat3(x, y, z, propertyName) }
+
+    /**
+     * Declares a `float4` uniform and derives its debug name from the delegated Kotlin property
+     * name.
+     */
+    public fun autoUniformFloat4(
+        x: Float = 0f,
+        y: Float = 0f,
+        z: Float = 0f,
+        w: Float = 0f
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, FxParam.Float4>> =
+        autoNamedUniform { propertyName -> uniformFloat4(x, y, z, w, propertyName) }
+
+    private fun <T> autoNamedUniform(
+        factory: (String) -> T
+    ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, T>> =
+        PropertyDelegateProvider { _, property ->
+            val value = factory(property.name)
+            object : ReadOnlyProperty<Any?, T> {
+                override fun getValue(thisRef: Any?, property: KProperty<*>): T = value
+            }
+        }
 
     /**
      * Stores a scalar expression in a generated AGSL local variable.
