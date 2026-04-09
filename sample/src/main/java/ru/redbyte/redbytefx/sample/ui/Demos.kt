@@ -21,10 +21,15 @@ import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
 import ru.redbyte.redbytefx.stdlib.adjustSaturation
+import ru.redbyte.redbytefx.stdlib.angularSweep
+import ru.redbyte.redbytefx.stdlib.arcMask
+import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.bandMask
 import ru.redbyte.redbytefx.stdlib.blendMultiply
 import ru.redbyte.redbytefx.stdlib.blendOverlay
 import ru.redbyte.redbytefx.stdlib.blendScreen
+import ru.redbyte.redbytefx.stdlib.centerGlow
+import ru.redbyte.redbytefx.stdlib.centeredUv
 import ru.redbyte.redbytefx.stdlib.chromaticOffset
 import ru.redbyte.redbytefx.stdlib.cosinePalette
 import ru.redbyte.redbytefx.stdlib.circleMask
@@ -41,6 +46,7 @@ import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.pingPong
+import ru.redbyte.redbytefx.stdlib.polarCoordinates
 import ru.redbyte.redbytefx.stdlib.posterize
 import ru.redbyte.redbytefx.stdlib.pulse
 import ru.redbyte.redbytefx.stdlib.rectMask
@@ -51,6 +57,8 @@ import ru.redbyte.redbytefx.stdlib.directionalSweep
 import ru.redbyte.redbytefx.stdlib.edgeFade
 import ru.redbyte.redbytefx.stdlib.radialReveal
 import ru.redbyte.redbytefx.stdlib.radialRamp
+import ru.redbyte.redbytefx.stdlib.radialDirection
+import ru.redbyte.redbytefx.stdlib.rimLight
 import ru.redbyte.redbytefx.stdlib.scanWarp
 import ru.redbyte.redbytefx.stdlib.scanlines
 import ru.redbyte.redbytefx.stdlib.signalBars
@@ -87,6 +95,22 @@ private data class SignalSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
     val density: FxParam.Float,
     val lineWidth: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class RadarSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val radius: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class HaloSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val radius: FxParam.Float,
     val amount: FxParam.Float
 )
 
@@ -1626,6 +1650,237 @@ fun DemoSweep() {
             }
             SliderRow("Width", widthUi, 8f..40f) {
                 widthUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoRadar() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(72f) }
+    var radiusUi by rememberSaveable { mutableFloatStateOf(34f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(86f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var radiusParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.72f)
+            val radius by autoUniformFloat(0.34f)
+            val amount by autoUniformFloat(0.86f)
+            timeParam = time
+            speedParam = speed
+            radiusParam = radius
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val polar = let(polarCoordinates(uv), "polar")
+            val sweepAngle = let(fract(time * speed * 0.08f), "sweep_angle")
+            val sweep = let(
+                angularSweep(
+                    uv = uv,
+                    angle = sweepAngle,
+                    width = 0.12f,
+                    feather = 0.03f
+                ),
+                "sweep"
+            )
+            val arc = let(
+                arcMask(
+                    uv = uv,
+                    radius = radius,
+                    ringWidth = 0.09f,
+                    angle = sweepAngle,
+                    arcWidth = 0.18f,
+                    feather = 0.03f
+                ),
+                "arc"
+            )
+            val outerRing = let(ringMask(uv, radius = radius, width = 0.016f, feather = 0.012f), "outer_ring")
+            val innerRing = let(
+                ringMask(
+                    uv = uv,
+                    radius = max(radius * 0.58f, 0.08f),
+                    width = 0.014f,
+                    feather = 0.012f
+                ),
+                "inner_ring"
+            )
+            val beam = let(
+                radialRamp(
+                    uv = uv,
+                    innerRadius = float(0.06f),
+                    outerRadius = radius + 0.18f
+                ),
+                "beam"
+            )
+            val mask = let(max(max(sweep * beam, arc), max(outerRing, innerRing)), "mask")
+            val tint = let(
+                color(
+                    mix(0.05f, 0.18f, polar.x * 1.4f),
+                    mix(0.24f, 1f, sweep + arc * 0.55f),
+                    mix(0.10f, 0.62f, polar.y * 0.45f + outerRing * 0.35f),
+                    base.a
+                ),
+                "tint"
+            )
+            val screened = let(maskedScreen(base, tint, mask, amount), "screened")
+
+            maskedOverlay(
+                base = screened,
+                blend = color(float3(0.82f, 1f, 0.72f), base.a),
+                mask = arc,
+                amount = amount * 0.32f
+            )
+        }
+        RadarSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            radius = radiusParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.radius, radiusUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Radar//Polar"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
+            }
+            SliderRow("Radius", radiusUi, 18f..44f) {
+                radiusUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoHalo() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(68f) }
+    var radiusUi by rememberSaveable { mutableFloatStateOf(24f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var radiusParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.68f)
+            val radius by autoUniformFloat(0.24f)
+            val amount by autoUniformFloat(0.82f)
+            timeParam = time
+            speedParam = speed
+            radiusParam = radius
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val local = let(centeredUv(uv), "local")
+            val aspectLocal = let(aspectCenteredUv(uv, resolution), "aspect_local")
+            val dir = let(radialDirection(uv, resolution), "dir")
+            val phase = let(easeInOutSine(pingPong(time * speed * 0.18f, 1f)), "phase")
+            val glow = let(
+                centerGlow(
+                    uv = uv,
+                    resolution = resolution,
+                    radius = radius * (0.82f + phase * 0.32f),
+                    feather = 0.18f
+                ),
+                "glow"
+            )
+            val rim = let(
+                rimLight(
+                    uv = uv,
+                    resolution = resolution,
+                    radius = radius + 0.08f * phase,
+                    width = 0.075f,
+                    feather = 0.024f
+                ),
+                "rim"
+            )
+            val drift = let(saturate(0.5f + aspectLocal.x * 0.55f - local.y * 0.25f), "drift")
+            val facing = let(saturate(dir.x * 0.5f - dir.y * 0.35f + 0.5f), "facing")
+            val mask = let(max(glow * 0.9f, rim), "mask")
+            val tint = let(
+                color(
+                    mix(0.04f, 0.18f, drift),
+                    mix(0.22f, 1f, glow + rim * 0.45f),
+                    mix(0.12f, 0.72f, facing),
+                    base.a
+                ),
+                "tint"
+            )
+            val screened = let(maskedScreen(base, tint, mask, amount), "screened")
+
+            maskedOverlay(
+                base = screened,
+                blend = color(float3(0.82f, 1f, 0.74f), base.a),
+                mask = rim,
+                amount = amount * 0.28f
+            )
+        }
+        HaloSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            radius = radiusParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.radius, radiusUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Halo//Light"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
+            }
+            SliderRow("Radius", radiusUi, 12f..36f) {
+                radiusUi = it
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it

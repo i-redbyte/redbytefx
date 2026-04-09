@@ -13,6 +13,32 @@ public fun cos(value: FloatExpr): FloatExpr =
     callFloat("cos", value)
 
 /**
+ * Returns the arc tangent of a scalar expression.
+ */
+public fun atan(value: FloatExpr): FloatExpr =
+    callFloat("atan", value)
+
+/**
+ * Returns the arc tangent of the vector formed by [y] and [x].
+ *
+ * This maps to AGSL's two-argument `atan(y, x)` form and is useful for polar coordinate helpers.
+ */
+public fun atan(y: FloatExpr, x: FloatExpr): FloatExpr =
+    callFloat("atan", y, x)
+
+/**
+ * Returns the arc tangent of the vector formed by [y] and a literal [x].
+ */
+public fun atan(y: FloatExpr, x: Float): FloatExpr =
+    atan(y, floatLiteral(x))
+
+/**
+ * Returns the arc tangent of the vector formed by a literal [y] and [x].
+ */
+public fun atan(y: Float, x: FloatExpr): FloatExpr =
+    atan(floatLiteral(y), x)
+
+/**
  * Returns the absolute value of a scalar expression.
  */
 public fun abs(value: FloatExpr): FloatExpr =

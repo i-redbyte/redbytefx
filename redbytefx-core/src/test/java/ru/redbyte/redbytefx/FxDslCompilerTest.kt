@@ -181,4 +181,22 @@ class FxDslCompilerTest {
         assertTrue(source.contains("uniform float u_amount;"))
         assertTrue(source.contains("uniform float u_time;"))
     }
+
+    @Test
+    fun emitsAtanMathForPolarHelpers() {
+        val effect = redbytefx {
+            val center = uniformFloat2(0.5f, 0.5f, "center")
+            val uv = let(fragCoord / resolution, "uv")
+            val delta = let(uv - center, "delta")
+            val angle = let(atan(delta.y, delta.x), "angle")
+
+            color(angle, angle, angle)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float2 u_center;"))
+        assertTrue(source.contains("atan"))
+        assertTrue(source.contains("float l_angle"))
+    }
 }

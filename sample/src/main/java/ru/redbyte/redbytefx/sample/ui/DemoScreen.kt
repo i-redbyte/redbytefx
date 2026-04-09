@@ -45,6 +45,8 @@ fun DemoScreen(
             DemoId.Reveal -> DemoReveal()
             DemoId.Sweep -> DemoSweep()
             DemoId.Glitch -> DemoGlitch()
+            DemoId.Radar -> DemoRadar()
+            DemoId.Halo -> DemoHalo()
             DemoId.Duotone -> DemoDuotone()
         }
     }

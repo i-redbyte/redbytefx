@@ -178,6 +178,16 @@ The first `stdlib` helpers now being prepared are:
 - `linearRamp(...)`
 - `radialRamp(...)`
 - `directionalSweep(...)`
+- `radialDistance(...)`
+- `polarAngle01(...)`
+- `polarCoordinates(...)`
+- `angularSweep(...)`
+- `arcMask(...)`
+- `centeredUv(...)`
+- `aspectCenteredUv(...)`
+- `radialDirection(...)`
+- `centerGlow(...)`
+- `rimLight(...)`
 - `edgeDistance(...)`
 - `edgeFade(...)`
 - `frameMask(...)`

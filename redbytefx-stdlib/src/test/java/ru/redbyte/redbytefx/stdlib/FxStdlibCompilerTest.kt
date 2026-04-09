@@ -455,4 +455,91 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("smoothstep"))
         assertTrue(source.contains("mix"))
     }
+
+    @Test
+    fun polarHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.72f)
+            val radius by autoUniformFloat(0.34f)
+            val amount by autoUniformFloat(0.86f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val polar = let(polarCoordinates(uv), "polar")
+            val sweepAngle = let(fract(time * speed * 0.08f), "sweep_angle")
+            val sweep = let(angularSweep(uv, angle = sweepAngle, width = 0.12f, feather = 0.03f), "sweep")
+            val arc = let(
+                arcMask(
+                    uv = uv,
+                    radius = radius,
+                    ringWidth = 0.09f,
+                    angle = sweepAngle,
+                    arcWidth = 0.18f,
+                    feather = 0.03f
+                ),
+                "arc"
+            )
+
+            maskedScreen(
+                base = base,
+                blend = color(float3(polar.x, polar.y, sweep), base.a),
+                mask = sweep + arc,
+                amount = amount
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_speed;"))
+        assertTrue(source.contains("uniform float u_radius;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("atan"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("mix"))
+    }
+
+    @Test
+    fun lightingHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val radius by autoUniformFloat(0.24f)
+            val amount by autoUniformFloat(0.82f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val local = let(centeredUv(uv), "local")
+            val dir = let(radialDirection(uv, resolution), "dir")
+            val glow = let(centerGlow(uv, resolution, radius = radius, feather = 0.18f), "glow")
+            val rim = let(
+                rimLight(
+                    uv = uv,
+                    resolution = resolution,
+                    radius = radius + 0.08f,
+                    width = 0.075f,
+                    feather = 0.024f
+                ),
+                "rim"
+            )
+
+            maskedScreen(
+                base = base,
+                blend = color(local.x + 0.5f, dir.y * 0.5f + 0.5f, glow + rim * 0.25f, base.a),
+                mask = max(glow, rim),
+                amount = amount
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_radius;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uResolution"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("max"))
+        assertTrue(source.contains("mix"))
+    }
 }

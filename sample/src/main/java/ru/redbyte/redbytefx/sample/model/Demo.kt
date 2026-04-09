@@ -22,6 +22,8 @@ enum class DemoId {
     Reveal,
     Sweep,
     Glitch,
+    Radar,
+    Halo,
     Duotone
 }
 
@@ -80,7 +82,8 @@ val DemoInfo.section: DemoSection
         DemoId.Signal,
         DemoId.Film,
         DemoId.Warp,
-        DemoId.Glitch -> DemoSection.Procedural
+        DemoId.Glitch,
+        DemoId.Radar -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
@@ -91,6 +94,7 @@ val DemoInfo.section: DemoSection
         DemoId.Composite,
         DemoId.Frame,
         DemoId.Corner,
+        DemoId.Halo,
         DemoId.Reveal -> DemoSection.Compositing
     }
 
@@ -118,7 +122,9 @@ val DemoInfo.layer: DemoLayer
         DemoId.Corner,
         DemoId.Reveal,
         DemoId.Sweep,
-        DemoId.Glitch -> DemoLayer.Stdlib
+        DemoId.Glitch,
+        DemoId.Radar,
+        DemoId.Halo -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -131,7 +137,9 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Corner,
         DemoId.Reveal,
         DemoId.Sweep,
-        DemoId.Glitch -> true
+        DemoId.Glitch,
+        DemoId.Radar,
+        DemoId.Halo -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -391,6 +399,31 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val lock = bandMask(uv.y, center = 0.22f + pingPong(time * 0.12f, 1f) * 0.56f, width = 0.14f, feather = 0.08f)
             val driftUv = scanWarp(uv, time = time, amplitude = warp, density = density, speed = 2.2f, noiseAmount = 0.55f)
             maskedMix(base, glitched, max(bars, lock), amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Radar,
+        title = "Radar",
+        subtitle = "Polar sweep masks and arc helpers for rotating scan interfaces.",
+        focus = "Shows polarAngle01(...), polarCoordinates(...), angularSweep(...), and arcMask(...) as reusable polar authoring blocks for scanners, orbital indicators, and radial UI logic.",
+        snippet = """
+            val polar = polarCoordinates(uv)
+            val sweep = angularSweep(uv, angle = sweepAngle, width = 0.12f, feather = 0.03f)
+            val arc = arcMask(uv, radius = radius, ringWidth = 0.09f, angle = sweepAngle, arcWidth = 0.18f, feather = 0.03f)
+            maskedScreen(base, tint, sweep * beam + arc, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Halo,
+        title = "Halo",
+        subtitle = "Aspect-corrected glow and rim lighting for sci-fi UI accents.",
+        focus = "Shows centeredUv(...), aspectCenteredUv(...), radialDirection(...), centerGlow(...), and rimLight(...) as coordinate-first lighting helpers instead of one-off radial math inside every effect.",
+        snippet = """
+            val local = centeredUv(uv)
+            val aspectLocal = aspectCenteredUv(uv, resolution)
+            val dir = radialDirection(uv, resolution)
+            val glow = centerGlow(uv, resolution, radius = radius * pulse, feather = 0.18f)
+            val rim = rimLight(uv, resolution, radius = radius + 0.08f * pulse, width = 0.075f, feather = 0.024f)
         """.trimIndent()
     ),
     DemoInfo(
