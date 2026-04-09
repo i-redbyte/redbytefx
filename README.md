@@ -159,6 +159,19 @@ The first `stdlib` helpers now being prepared are:
 - `domainWarp(...)`
 - `cosinePalette(...)`
 - `chromaticOffset(...)`
+- `circleMask(...)`
+- `ringMask(...)`
+- `rectMask(...)`
+- `pingPong(...)`
+- `easeInOutSine(...)`
+- `easeInOutCubic(...)`
+- `maskedMix(...)`
+- `alphaMask(...)`
+- `maskedScreen(...)`
+- `maskedOverlay(...)`
+- `horizontalReveal(...)`
+- `verticalReveal(...)`
+- `radialReveal(...)`
 
 ## Procedural Example
 

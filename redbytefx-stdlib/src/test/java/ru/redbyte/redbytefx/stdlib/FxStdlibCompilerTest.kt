@@ -149,4 +149,141 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("rb_sample"))
         assertTrue(source.contains("half4"))
     }
+
+    @Test
+    fun shapeMasksCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val center = uniformFloat2(0.36f, 0.52f, "center")
+            val radius = uniformFloat(0.18f, "radius")
+            val amount = uniformFloat(0.8f, "amount")
+            val uv = let(fragCoord / resolution, "uv")
+            val focus = let(circleMask(uv, center = center, radius = radius, feather = 0.14f), "focus")
+            val halo = let(
+                ringMask(
+                    uv,
+                    center = center,
+                    radius = radius + 0.07f,
+                    width = 0.1f,
+                    feather = 0.05f
+                ),
+                "halo"
+            )
+            val panel = let(
+                rectMask(
+                    uv,
+                    center = float2(0.78f, 0.5f),
+                    size = float2(0.26f, 0.58f),
+                    feather = 0.04f
+                ),
+                "panel"
+            )
+
+            color(focus, halo, panel, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float2 u_center;"))
+        assertTrue(source.contains("uniform float u_radius;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("abs"))
+        assertTrue(source.contains("smoothstep"))
+    }
+
+    @Test
+    fun timingHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time = uniformTime(name = "time")
+            val speed = uniformFloat(0.65f, "speed")
+            val phase = let(pingPong(time * speed, 1f), "phase")
+            val eased = let(easeInOutSine(phase), "eased")
+            val glow = let(easeInOutCubic(phase), "glow")
+
+            color(eased, glow, phase)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_speed;"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("abs"))
+        assertTrue(source.contains("cos"))
+        assertTrue(source.contains("pow"))
+        assertTrue(source.contains("?"))
+    }
+
+    @Test
+    fun compositingHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val amount = uniformFloat(0.82f, "amount")
+            val radius = uniformFloat(0.18f, "radius")
+            val uv = let(fragCoord / resolution, "uv")
+            val base = let(sample(), "base")
+            val mask = let(circleMask(uv, radius = radius, feather = 0.12f), "mask")
+            val glow = let(alphaMask(color(float3(0.12f, 0.95f, 1f), 1f), mask, amount), "glow")
+            val screened = let(maskedScreen(base, glow, mask, amount), "screened")
+            val overlaid = let(
+                maskedOverlay(
+                    screened,
+                    color(float3(1f, 0.82f, 0.32f), base.a),
+                    mask,
+                    amount * 0.5f
+                ),
+                "overlaid"
+            )
+
+            maskedMix(base, overlaid, mask, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uniform float u_radius;"))
+        assertTrue(source.contains("mix"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("half4"))
+    }
+
+    @Test
+    fun transitionHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time = uniformTime(name = "time")
+            val speed = uniformFloat(0.75f, "speed")
+            val mode = uniformFloat(0f, "mode")
+            val amount = uniformFloat(0.88f, "amount")
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val progress = let(easeInOutSine(pingPong(time * speed, 1f)), "progress")
+            val horizontal = let(horizontalReveal(uv, progress, feather = 0.07f), "horizontal")
+            val vertical = let(verticalReveal(uv, progress, feather = 0.07f, fromTop = false), "vertical")
+            val radial = let(radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f), "radial")
+            val reveal = let(
+                ifElse(mode lt 0.5f, horizontal, ifElse(mode lt 1.5f, vertical, radial)),
+                "reveal"
+            )
+            val stylized = let(
+                blendScreen(
+                    posterize(base, 5f),
+                    color(float3(0.16f, 0.94f, 1f), base.a),
+                    0.55f
+                ),
+                "stylized"
+            )
+
+            maskedMix(base, stylized, reveal, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_speed;"))
+        assertTrue(source.contains("uniform float u_mode;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("cos"))
+        assertTrue(source.contains("?"))
+    }
 }

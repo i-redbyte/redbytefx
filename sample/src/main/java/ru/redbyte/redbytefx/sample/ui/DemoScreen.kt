@@ -22,6 +22,10 @@ fun DemoScreen(id: DemoId) {
             DemoId.Grade -> DemoGrade()
             DemoId.Warp -> DemoWarp()
             DemoId.Prism -> DemoPrism()
+            DemoId.Spotlight -> DemoSpotlight()
+            DemoId.Beacon -> DemoBeacon()
+            DemoId.Composite -> DemoComposite()
+            DemoId.Reveal -> DemoReveal()
             DemoId.Duotone -> DemoDuotone()
         }
     }

@@ -14,6 +14,10 @@ enum class DemoId {
     Grade,
     Warp,
     Prism,
+    Spotlight,
+    Beacon,
+    Composite,
+    Reveal,
     Duotone
 }
 
@@ -173,6 +177,54 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
             val refracted = let(chromaticOffset(offset = shift, direction = float2(1f, 0.3f), amount = amount), "refracted")
             blendScreen(refracted, color(palette, base.a), amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Spotlight,
+        title = "Spotlight",
+        subtitle = "Circle, ring, and rect masks from the stdlib layer.",
+        focus = "Shows the next v0.2 helper layer: reusable soft masks for focus halos, selective grading, and shape-driven UI emphasis.",
+        snippet = """
+            val focus = circleMask(uv, center = center, radius = radius, feather = 0.18f)
+            val halo = ringMask(uv, center = center, radius = radius + 0.07f, width = 0.10f, feather = 0.05f)
+            val panel = rectMask(uv, center = float2(0.78f, 0.5f), size = float2(0.26f, 0.58f), feather = 0.04f)
+            blendOverlay(focused, panelTint, panel * amount * 0.35f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Beacon,
+        title = "Beacon",
+        subtitle = "Timing and easing helpers layered on top of masks.",
+        focus = "Shows pingPong(...), easeInOutSine(...), and easeInOutCubic(...) driving animated focus motion without dropping into noisy hand-written timeline math.",
+        snippet = """
+            val phase = pingPong(time * speed, 1f)
+            val travel = easeInOutSine(phase)
+            val glow = easeInOutCubic(pingPong(time * speed + 0.22f, 1f))
+            val center = float2(mix(0.18f, 0.82f, travel), 0.5f + sin(time * 0.8f) * 0.12f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Composite,
+        title = "Composite",
+        subtitle = "Mask-driven compositing recipes for layered UI treatments.",
+        focus = "Shows maskedMix(...), alphaMask(...), maskedScreen(...), and maskedOverlay(...) as reusable high-level authoring blocks instead of one-off blend math.",
+        snippet = """
+            val glowLayer = alphaMask(color(float3(0.12f, 0.95f, 1f), 1f), halo, amount)
+            val screened = maskedScreen(base, glowLayer, halo, amount)
+            val overlaid = maskedOverlay(screened, panelTint, panel, amount * 0.6f)
+            maskedMix(base, overlaid, focus, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Reveal,
+        title = "Reveal",
+        subtitle = "Horizontal, vertical, and radial transitions from the stdlib layer.",
+        focus = "Shows horizontalReveal(...), verticalReveal(...), and radialReveal(...) driving stylized content transitions without hand-written threshold math in every shader.",
+        snippet = """
+            val progress = easeInOutSine(pingPong(time * speed, 1f))
+            val horizontal = horizontalReveal(uv, progress, feather = 0.07f)
+            val vertical = verticalReveal(uv, progress, feather = 0.07f, fromTop = false)
+            val radial = radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f)
         """.trimIndent()
     ),
     DemoInfo(

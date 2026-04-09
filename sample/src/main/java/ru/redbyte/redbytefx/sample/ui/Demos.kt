@@ -26,15 +26,28 @@ import ru.redbyte.redbytefx.stdlib.blendOverlay
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.chromaticOffset
 import ru.redbyte.redbytefx.stdlib.cosinePalette
+import ru.redbyte.redbytefx.stdlib.circleMask
 import ru.redbyte.redbytefx.stdlib.domainWarp
+import ru.redbyte.redbytefx.stdlib.easeInOutCubic
+import ru.redbyte.redbytefx.stdlib.easeInOutSine
 import ru.redbyte.redbytefx.stdlib.fbm
 import ru.redbyte.redbytefx.stdlib.gridMask
 import ru.redbyte.redbytefx.stdlib.grain
+import ru.redbyte.redbytefx.stdlib.horizontalReveal
+import ru.redbyte.redbytefx.stdlib.maskedMix
+import ru.redbyte.redbytefx.stdlib.maskedOverlay
+import ru.redbyte.redbytefx.stdlib.maskedScreen
+import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.posterize
 import ru.redbyte.redbytefx.stdlib.pulse
+import ru.redbyte.redbytefx.stdlib.rectMask
 import ru.redbyte.redbytefx.stdlib.remap
+import ru.redbyte.redbytefx.stdlib.ringMask
+import ru.redbyte.redbytefx.stdlib.alphaMask
+import ru.redbyte.redbytefx.stdlib.radialReveal
 import ru.redbyte.redbytefx.stdlib.scanlines
 import ru.redbyte.redbytefx.stdlib.valueNoise
+import ru.redbyte.redbytefx.stdlib.verticalReveal
 import ru.redbyte.redbytefx.stdlib.vignette
 
 private enum class Axis { X, Y }
@@ -109,6 +122,38 @@ private data class PrismSetup(
     val spread: FxParam.Float,
     val shift: FxParam.Float
 )
+
+private data class SpotlightSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val center: FxParam.Float2,
+    val radius: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class BeaconSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val radius: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class CompositeSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val radius: FxParam.Float,
+    val panelWidth: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class RevealSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val mode: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private enum class RevealMode { Horizontal, Vertical, Radial }
 
 @Composable
 private fun rememberGeneratedAgsl(effect: FxEffect): String = remember(effect) { effect.agslSource() }
@@ -903,6 +948,383 @@ fun DemoPrism() {
             }
             SliderRow("Shift", shiftUi, 0f..24f) {
                 shiftUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoSpotlight() {
+    var centerXUi by rememberSaveable { mutableFloatStateOf(36f) }
+    var centerYUi by rememberSaveable { mutableFloatStateOf(52f) }
+    var radiusUi by rememberSaveable { mutableFloatStateOf(18f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
+
+    val setup = remember {
+        var centerParam: FxParam.Float2? = null
+        var radiusParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val center by autoUniformFloat2(0.36f, 0.52f)
+            val radius by autoUniformFloat(0.18f)
+            val amount by autoUniformFloat(0.82f)
+            centerParam = center
+            radiusParam = radius
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val focus = let(
+                circleMask(
+                    uv,
+                    center = center,
+                    radius = radius,
+                    feather = 0.18f
+                ),
+                "focus"
+            )
+            val halo = let(
+                ringMask(
+                    uv,
+                    center = center,
+                    radius = radius + 0.07f,
+                    width = 0.1f,
+                    feather = 0.05f
+                ),
+                "halo"
+            )
+            val panel = let(
+                rectMask(
+                    uv,
+                    center = float2(0.78f, 0.5f),
+                    size = float2(0.26f, 0.58f),
+                    feather = 0.04f
+                ),
+                "panel"
+            )
+            val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
+            val haloTint = let(color(float3(0.15f, 0.92f, 0.98f), base.a), "halo_tint")
+            val panelTint = let(color(float3(0.98f, 0.73f, 0.26f), base.a), "panel_tint")
+            val focused = let(blendScreen(dimmed, haloTint, halo * amount), "focused")
+
+            blendOverlay(focused, panelTint, panel * amount * 0.35f)
+        }
+        SpotlightSetup(
+            effect = effect,
+            center = centerParam!!,
+            radius = radiusParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindFloat2(setup.center, centerXUi / 100f, centerYUi / 100f)
+    fx.bindFloat(setup.radius, radiusUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SliderRow("Center X", centerXUi, 10f..90f) {
+                centerXUi = it
+            }
+            SliderRow("Center Y", centerYUi, 18f..82f) {
+                centerYUi = it
+            }
+            SliderRow("Radius", radiusUi, 8f..32f) {
+                radiusUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoBeacon() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(65f) }
+    var radiusUi by rememberSaveable { mutableFloatStateOf(17f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(88f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var radiusParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.65f)
+            val radius by autoUniformFloat(0.17f)
+            val amount by autoUniformFloat(0.88f)
+            timeParam = time
+            speedParam = speed
+            radiusParam = radius
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val phase = let(pingPong(time * speed, 1f), "phase")
+            val travel = let(easeInOutSine(phase), "travel")
+            val glow = let(easeInOutCubic(pingPong(time * speed + 0.22f, 1f)), "glow")
+            val center = let(
+                float2(
+                    mix(0.18f, 0.82f, travel),
+                    0.5f + sin(time * 0.8f) * 0.12f
+                ),
+                "center"
+            )
+            val focus = let(circleMask(uv, center = center, radius = radius, feather = 0.16f), "focus")
+            val halo = let(
+                ringMask(
+                    uv,
+                    center = center,
+                    radius = radius + 0.06f,
+                    width = 0.08f,
+                    feather = 0.05f
+                ),
+                "halo"
+            )
+            val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
+            val beamTint = let(color(float3(0.12f, 0.94f, 0.98f), base.a), "beam_tint")
+            val haloTint = let(color(float3(1f, 0.86f, 0.35f), base.a), "halo_tint")
+            val focused = let(blendScreen(dimmed, beamTint, focus * amount * 0.7f), "focused")
+
+            blendScreen(focused, haloTint, halo * glow * amount)
+        }
+        BeaconSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            radius = radiusParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.radius, radiusUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
+            }
+            SliderRow("Radius", radiusUi, 10f..28f) {
+                radiusUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoComposite() {
+    var radiusUi by rememberSaveable { mutableFloatStateOf(20f) }
+    var panelWidthUi by rememberSaveable { mutableFloatStateOf(34f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
+
+    val setup = remember {
+        var radiusParam: FxParam.Float? = null
+        var panelWidthParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val radius by autoUniformFloat(0.2f)
+            val panelWidth by autoUniformFloat(0.34f)
+            val amount by autoUniformFloat(0.82f)
+            radiusParam = radius
+            panelWidthParam = panelWidth
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val focus = let(
+                circleMask(
+                    uv,
+                    center = float2(0.34f, 0.5f),
+                    radius = radius,
+                    feather = 0.16f
+                ),
+                "focus"
+            )
+            val halo = let(
+                ringMask(
+                    uv,
+                    center = float2(0.34f, 0.5f),
+                    radius = radius + 0.05f,
+                    width = 0.1f,
+                    feather = 0.05f
+                ),
+                "halo"
+            )
+            val panel = let(
+                rectMask(
+                    uv,
+                    center = float2(0.77f, 0.5f),
+                    size = float2(panelWidth, 0.62f),
+                    feather = 0.04f
+                ),
+                "panel"
+            )
+            val glowLayer = let(
+                alphaMask(color(float3(0.12f, 0.95f, 1f), 1f), halo, amount),
+                "glow_layer"
+            )
+            val panelTint = let(
+                alphaMask(color(float3(1f, 0.79f, 0.3f), 1f), panel, amount * 0.6f),
+                "panel_tint"
+            )
+            val screened = let(maskedScreen(base, glowLayer, halo, amount), "screened")
+            val overlaid = let(maskedOverlay(screened, panelTint, panel, amount), "overlaid")
+            val focusTint = let(color(float3(0.92f, 0.98f, 1f), base.a), "focus_tint")
+
+            maskedMix(base, maskedMix(overlaid, focusTint, focus, amount * 0.45f), focus + halo * 0.2f, amount)
+        }
+        CompositeSetup(
+            effect = effect,
+            radius = radiusParam!!,
+            panelWidth = panelWidthParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindFloat(setup.radius, radiusUi / 100f)
+    fx.bindFloat(setup.panelWidth, panelWidthUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SliderRow("Radius", radiusUi, 10f..32f) {
+                radiusUi = it
+            }
+            SliderRow("Panel Width", panelWidthUi, 20f..50f) {
+                panelWidthUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoReveal() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(72f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(90f) }
+    var mode by rememberSaveable { mutableStateOf(RevealMode.Horizontal) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var modeParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.72f)
+            val modeValue by autoUniformFloat(0f)
+            val amount by autoUniformFloat(0.9f)
+            timeParam = time
+            speedParam = speed
+            modeParam = modeValue
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val progress = let(easeInOutSine(pingPong(time * speed, 1f)), "progress")
+            val horizontal = let(horizontalReveal(uv, progress, feather = 0.07f), "horizontal")
+            val vertical = let(verticalReveal(uv, progress, feather = 0.07f, fromTop = false), "vertical")
+            val radial = let(radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f), "radial")
+            val reveal = let(
+                ifElse(
+                    modeValue lt 0.5f,
+                    horizontal,
+                    ifElse(modeValue lt 1.5f, vertical, radial)
+                ),
+                "reveal"
+            )
+            val stylized = let(
+                blendScreen(
+                    posterize(base, 5f),
+                    color(float3(0.16f, 0.94f, 1f), base.a),
+                    0.55f
+                ),
+                "stylized"
+            )
+
+            maskedMix(base, stylized, reveal, amount)
+        }
+        RevealSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            mode = modeParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(
+        setup.mode,
+        when (mode) {
+            RevealMode.Horizontal -> 0f
+            RevealMode.Vertical -> 1f
+            RevealMode.Radial -> 2f
+        }
+    )
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            Text(text = "Mode", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                RadioRow("Horizontal", selected = mode == RevealMode.Horizontal) {
+                    mode = RevealMode.Horizontal
+                }
+                RadioRow("Vertical", selected = mode == RevealMode.Vertical) {
+                    mode = RevealMode.Vertical
+                }
+                RadioRow("Radial", selected = mode == RevealMode.Radial) {
+                    mode = RevealMode.Radial
+                }
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
             }
         }
     )

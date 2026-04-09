@@ -1,17 +1,14 @@
 package ru.redbyte.redbytefx.sample.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,58 +25,76 @@ fun HomeScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                )
+            CyberPanel(
+                accent = MaterialTheme.colorScheme.secondary,
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
             ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CyberBadge(
+                        text = "AGSL // Kotlin DSL",
+                        accent = MaterialTheme.colorScheme.primary
+                    )
+                    CyberBadge(
+                        text = "Android runtime",
+                        accent = MaterialTheme.colorScheme.tertiary
+                    )
+                }
                 Text(
-                    text = "A live cookbook for the Kotlin-first AGSL DSL. Each demo shows one effect, the shader ideas behind it, and the Compose/runtime API used to drive it.",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "A live shader field manual for RedByteFX.",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+                Text(
+                    text = "Green signal, moving chrome, and generated AGSL in the same place. Each card opens a focused demo with live controls, DSL snippets, and compiled shader output.",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(top = 10.dp)
                 )
             }
         }
 
-        items(demos, key = { it.id.name }) { demo ->
-            Card(
+        itemsIndexed(demos, key = { _, demo -> demo.id.name }) { index, demo ->
+            CyberPanel(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 92.dp)
                     .clickable { onOpen(demo.id) },
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                accent = if (index % 2 == 0) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.secondary
+                },
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
             ) {
-                Text(
-                    text = demo.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 16.dp, top = 14.dp, end = 16.dp)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CyberBadge(
+                        text = "#${(index + 1).toString().padStart(2, '0')}",
+                        accent = MaterialTheme.colorScheme.tertiary
+                    )
+                    CyberBadge(
+                        text = demo.title.uppercase(),
+                        accent = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Text(
                     text = demo.subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 14.dp)
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+                Text(
+                    text = demo.focus,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 10.dp)
                 )
             }
         }

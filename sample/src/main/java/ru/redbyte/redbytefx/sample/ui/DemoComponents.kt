@@ -1,11 +1,17 @@
 package ru.redbyte.redbytefx.sample.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,12 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
@@ -29,15 +33,13 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import ru.redbyte.redbytefx.sample.model.DemoInfo
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
@@ -63,21 +65,30 @@ fun DemoLayout(
             )
         }
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        CyberPanel(
+            accent = MaterialTheme.colorScheme.secondary,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) { preview() }
+            preview()
         }
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        CyberPanel(
+            accent = MaterialTheme.colorScheme.tertiary,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) { controls() }
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CyberBadge(
+                        text = "LIVE CONTROLS",
+                        accent = MaterialTheme.colorScheme.tertiary
+                    )
+                    CyberBadge(
+                        text = "RUNTIME BINDINGS",
+                        accent = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                controls()
+            }
         }
     }
 }
@@ -87,75 +98,50 @@ private fun DemoInfoCard(
     demo: DemoInfo,
     generatedAgsl: String?
 ) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    CyberPanel(
+        accent = MaterialTheme.colorScheme.primary,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberBadge(
+                text = demo.title.uppercase(),
+                accent = MaterialTheme.colorScheme.primary
+            )
+            CyberBadge(
+                text = "sample://${demo.id.name.lowercase()}",
+                accent = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Text(
+            text = demo.subtitle,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            text = demo.focus,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        SelectionContainer(
+            modifier = Modifier.padding(top = 14.dp)
         ) {
-            Text(
-                text = demo.subtitle,
-                style = MaterialTheme.typography.bodyLarge
+            CyberCodeBlock(
+                title = "DSL snippet",
+                text = demo.snippet,
+                maxLines = 10
             )
-            Text(
-                text = demo.focus,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = MaterialTheme.shapes.medium
-                    )
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        }
+        if (generatedAgsl != null) {
+            SelectionContainer(
+                modifier = Modifier.padding(top = 12.dp)
             ) {
-                Text(
-                    text = "DSL snippet",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                CyberCodeBlock(
+                    title = "Generated AGSL",
+                    text = previewShaderSource(generatedAgsl),
+                    maxLines = 18
                 )
-                SelectionContainer {
-                    Text(
-                        text = demo.snippet,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 10,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            if (generatedAgsl != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Generated AGSL",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    SelectionContainer {
-                        Text(
-                            text = previewShaderSource(generatedAgsl),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            maxLines = 18,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
             }
         }
     }
@@ -175,12 +161,16 @@ internal fun previewShaderSource(
 
 @Composable
 fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = title)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }
@@ -194,18 +184,29 @@ fun SliderRow(
     onChange: (Float) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "$title: ${formatValue(value)}")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberBadge(
+                text = title.uppercase(),
+                accent = MaterialTheme.colorScheme.secondary
+            )
+            CyberBadge(
+                text = formatValue(value),
+                accent = MaterialTheme.colorScheme.tertiary
+            )
+        }
         Slider(value = value, onValueChange = onChange, valueRange = range)
     }
 }
 
 @Composable
 fun RadioRow(title: String, selected: Boolean, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-    ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         RadioButton(selected = selected, onClick = onClick)
-        Text(text = title)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -215,129 +216,142 @@ fun DemoPreviewStage(
     label: String = "RedByteFX"
 ) {
     val shape = MaterialTheme.shapes.large
-    val badgeShape = RoundedCornerShape(14.dp)
+    val sweepTint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
+    val lineTint = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+    val transition = rememberInfiniteTransition(label = "preview_stage")
+    val sweep = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 6_400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "preview_stage_sweep"
+    )
+    val pulse = transition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1.18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2_800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "preview_stage_pulse"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(244.dp)
             .then(modifier)
             .clip(shape)
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.tertiaryContainer
+                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.96f)
                     )
                 )
             )
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
                 shape = shape
             )
+            .drawWithCache {
+                onDrawWithContent {
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                sweepTint,
+                                Color.Transparent
+                            ),
+                            startX = size.width * (sweep.value - 0.18f),
+                            endX = size.width * (sweep.value + 0.18f)
+                        ),
+                        blendMode = BlendMode.Screen
+                    )
+                    var y = 0f
+                    while (y < size.height) {
+                        drawLine(
+                            color = lineTint,
+                            start = androidx.compose.ui.geometry.Offset(0f, y),
+                            end = androidx.compose.ui.geometry.Offset(size.width, y),
+                            strokeWidth = 1f
+                        )
+                        y += 16f
+                    }
+                    drawContent()
+                }
+            }
             .padding(24.dp)
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .size(92.dp)
+                .size(94.dp)
                 .graphicsLayer {
-                    rotationZ = 16f
-                    alpha = 0.22f
+                    rotationZ = 18f
+                    translationX = -10f + 12f * sweep.value
+                    translationY = 8f * pulse.value
+                    alpha = 0.22f + 0.08f * pulse.value
                 }
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onPrimaryContainer)
+                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 14.dp, bottom = 8.dp)
+                .size(width = 62.dp, height = 150.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.18f))
         )
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .width(108.dp)
-                .height(24.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.34f))
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 8.dp)
-                .size(width = 56.dp, height = 132.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.22f))
-        )
-        AssistChip(
-            onClick = {},
-            enabled = false,
-            label = {
-                Text(text = "Shader Preview")
-            },
-            modifier = Modifier.align(Alignment.TopStart),
-            colors = AssistChipDefaults.assistChipColors(
-                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-                disabledLabelColor = MaterialTheme.colorScheme.onSurface
-            )
+                .width(126.dp)
+                .height(26.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
         )
         Column(
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(top = 18.dp, end = 72.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .align(Alignment.TopStart),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            StageBadge(
-                text = "Live uniforms",
-                shape = badgeShape,
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CyberBadge(
+                    text = "SHADER PREVIEW",
+                    accent = MaterialTheme.colorScheme.secondary
+                )
+                CyberBadge(
+                    text = "LIVE UNIFORMS",
+                    accent = MaterialTheme.colorScheme.tertiary
+                )
+            }
             Text(
                 text = label,
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 8.dp)
             )
             Text(
-                text = "Kotlin DSL / AGSL / Compose",
+                text = "kotlin.dsl // agsl // compose.runtime",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StageBadge(
-                    text = "Type-safe",
-                    shape = badgeShape,
-                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                CyberBadge(
+                    text = "TYPE-SAFE",
+                    accent = MaterialTheme.colorScheme.primary
                 )
-                StageBadge(
-                    text = "Runtime shader",
-                    shape = badgeShape,
-                    containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                CyberBadge(
+                    text = "HOT SIGNAL",
+                    accent = MaterialTheme.colorScheme.secondary
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun StageBadge(
-    text: String,
-    shape: Shape,
-    containerColor: Color,
-    contentColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .clip(shape)
-            .background(containerColor)
-            .border(
-                width = 1.dp,
-                color = contentColor.copy(alpha = 0.12f),
-                shape = shape
-            )
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
-            color = contentColor
-        )
     }
 }
