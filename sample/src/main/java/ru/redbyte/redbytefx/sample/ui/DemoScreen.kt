@@ -40,6 +40,8 @@ fun DemoScreen(
             DemoId.Spotlight -> DemoSpotlight()
             DemoId.Beacon -> DemoBeacon()
             DemoId.Composite -> DemoComposite()
+            DemoId.Frame -> DemoFrame()
+            DemoId.Corner -> DemoCorner()
             DemoId.Reveal -> DemoReveal()
             DemoId.Sweep -> DemoSweep()
             DemoId.Glitch -> DemoGlitch()

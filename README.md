@@ -178,6 +178,10 @@ The first `stdlib` helpers now being prepared are:
 - `linearRamp(...)`
 - `radialRamp(...)`
 - `directionalSweep(...)`
+- `edgeDistance(...)`
+- `edgeFade(...)`
+- `frameMask(...)`
+- `cornerMask(...)`
 
 ## Procedural Example
 

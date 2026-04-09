@@ -17,6 +17,8 @@ enum class DemoId {
     Spotlight,
     Beacon,
     Composite,
+    Frame,
+    Corner,
     Reveal,
     Sweep,
     Glitch,
@@ -87,6 +89,8 @@ val DemoInfo.section: DemoSection
 
         DemoId.Spotlight,
         DemoId.Composite,
+        DemoId.Frame,
+        DemoId.Corner,
         DemoId.Reveal -> DemoSection.Compositing
     }
 
@@ -110,6 +114,8 @@ val DemoInfo.layer: DemoLayer
         DemoId.Spotlight,
         DemoId.Beacon,
         DemoId.Composite,
+        DemoId.Frame,
+        DemoId.Corner,
         DemoId.Reveal,
         DemoId.Sweep,
         DemoId.Glitch -> DemoLayer.Stdlib
@@ -121,6 +127,8 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Film,
         DemoId.Warp,
         DemoId.Beacon,
+        DemoId.Frame,
+        DemoId.Corner,
         DemoId.Reveal,
         DemoId.Sweep,
         DemoId.Glitch -> true
@@ -324,6 +332,29 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val screened = maskedScreen(base, glowLayer, halo, amount)
             val overlaid = maskedOverlay(screened, panelTint, panel, amount * 0.6f)
             maskedMix(base, overlaid, focus, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Frame,
+        title = "Frame",
+        subtitle = "Viewport frame masks and inner edge fades for UI shells.",
+        focus = "Shows edgeDistance(...), edgeFade(...), and frameMask(...) working together with directionalSweep(...) to build animated panel borders and inner shell lighting.",
+        snippet = """
+            val frame = frameMask(uv, thickness, feather = 0.03f)
+            val interior = edgeFade(uv, thickness + 0.08f)
+            val sweep = directionalSweep(uv, direction = float2(1f, -0.24f), center = center, width = 0.20f, feather = 0.08f)
+            maskedOverlay(screened, shellTint, frame + (1f - interior) * 0.28f, amount * 0.45f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Corner,
+        title = "Corner",
+        subtitle = "Bracket-style corner accents for terminal and HUD panels.",
+        focus = "Shows cornerMask(...) layered with directionalSweep(...) to build animated cyber corners without hand-written per-corner mask math in every shader.",
+        snippet = """
+            val corners = cornerMask(uv, size = size, thickness = thickness, feather = 0.03f)
+            val sweep = directionalSweep(uv, direction = float2(1f, -0.20f), center = center, width = 0.16f, feather = 0.08f)
+            maskedScreen(base, accent, corners * sweep, amount)
         """.trimIndent()
     ),
     DemoInfo(

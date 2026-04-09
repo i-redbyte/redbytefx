@@ -28,6 +28,7 @@ import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.chromaticOffset
 import ru.redbyte.redbytefx.stdlib.cosinePalette
 import ru.redbyte.redbytefx.stdlib.circleMask
+import ru.redbyte.redbytefx.stdlib.cornerMask
 import ru.redbyte.redbytefx.stdlib.domainWarp
 import ru.redbyte.redbytefx.stdlib.easeInOutCubic
 import ru.redbyte.redbytefx.stdlib.easeInOutSine
@@ -47,6 +48,7 @@ import ru.redbyte.redbytefx.stdlib.remap
 import ru.redbyte.redbytefx.stdlib.ringMask
 import ru.redbyte.redbytefx.stdlib.alphaMask
 import ru.redbyte.redbytefx.stdlib.directionalSweep
+import ru.redbyte.redbytefx.stdlib.edgeFade
 import ru.redbyte.redbytefx.stdlib.radialReveal
 import ru.redbyte.redbytefx.stdlib.radialRamp
 import ru.redbyte.redbytefx.stdlib.scanWarp
@@ -55,6 +57,7 @@ import ru.redbyte.redbytefx.stdlib.signalBars
 import ru.redbyte.redbytefx.stdlib.valueNoise
 import ru.redbyte.redbytefx.stdlib.verticalReveal
 import ru.redbyte.redbytefx.stdlib.vignette
+import ru.redbyte.redbytefx.stdlib.frameMask
 
 private enum class Axis { X, Y }
 
@@ -148,6 +151,22 @@ private data class CompositeSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
     val radius: FxParam.Float,
     val panelWidth: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class FrameSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val speed: FxParam.Float,
+    val thickness: FxParam.Float,
+    val amount: FxParam.Float
+)
+
+private data class CornerSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val size: FxParam.Float,
+    val thickness: FxParam.Float,
     val amount: FxParam.Float
 )
 
@@ -1241,6 +1260,174 @@ fun DemoComposite() {
             }
             SliderRow("Panel Width", panelWidthUi, 20f..50f) {
                 panelWidthUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoFrame() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(72f) }
+    var thicknessUi by rememberSaveable { mutableFloatStateOf(10f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var thicknessParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val speed by autoUniformFloat(0.72f)
+            val thickness by autoUniformFloat(0.1f)
+            val amount by autoUniformFloat(0.82f)
+            timeParam = time
+            speedParam = speed
+            thicknessParam = thickness
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val frame = let(frameMask(uv, thickness, 0.03f), "frame")
+            val interior = let(edgeFade(uv, thickness + 0.08f), "interior")
+            val sweepCenter = let(0.12f + pingPong(time * speed * 0.2f, 1f) * 0.76f, "sweep_center")
+            val sweep = let(
+                directionalSweep(
+                    uv = uv,
+                    direction = float2(1f, -0.24f),
+                    center = sweepCenter,
+                    width = 0.2f,
+                    feather = 0.08f
+                ),
+                "sweep"
+            )
+            val shellTint = let(color(float3(0.12f, 0.96f, 0.72f), base.a), "shell_tint")
+            val innerTint = let(color(float3(0.08f, 0.24f, 0.16f), base.a), "inner_tint")
+            val screened = let(maskedScreen(base, shellTint, frame * sweep, amount), "screened")
+
+            maskedOverlay(
+                base = screened,
+                blend = innerTint,
+                mask = frame + (1f - interior) * 0.28f,
+                amount = amount * 0.45f
+            )
+        }
+        FrameSetup(
+            effect = effect,
+            time = timeParam!!,
+            speed = speedParam!!,
+            thickness = thicknessParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.thickness, thicknessUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Frame//Shell"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Speed", speedUi, 20f..140f) {
+                speedUi = it
+            }
+            SliderRow("Thickness", thicknessUi, 4f..24f) {
+                thicknessUi = it
+            }
+            SliderRow("Amount", amountUi, 0f..100f) {
+                amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoCorner() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var sizeUi by rememberSaveable { mutableFloatStateOf(22f) }
+    var thicknessUi by rememberSaveable { mutableFloatStateOf(8f) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(84f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var sizeParam: FxParam.Float? = null
+        var thicknessParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val size by autoUniformFloat(0.22f)
+            val thickness by autoUniformFloat(0.08f)
+            val amount by autoUniformFloat(0.84f)
+            timeParam = time
+            sizeParam = size
+            thicknessParam = thickness
+            amountParam = amount
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val corners = let(cornerMask(uv, size = size, thickness = thickness, feather = 0.03f), "corners")
+            val sweepCenter = let(0.18f + pingPong(time * 0.18f, 1f) * 0.64f, "sweep_center")
+            val sweep = let(
+                directionalSweep(
+                    uv = uv,
+                    direction = float2(1f, -0.2f),
+                    center = sweepCenter,
+                    width = 0.16f,
+                    feather = 0.08f
+                ),
+                "sweep"
+            )
+            val accent = let(color(float3(0.1f, 0.98f, 0.68f), base.a), "accent")
+
+            maskedScreen(base, accent, corners * sweep, amount)
+        }
+        CornerSetup(
+            effect = effect,
+            time = timeParam!!,
+            size = sizeParam!!,
+            thickness = thicknessParam!!,
+            amount = amountParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.size, sizeUi / 100f)
+    fx.bindFloat(setup.thickness, thicknessUi / 100f)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Corner//HUD"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Corner Size", sizeUi, 10f..36f) {
+                sizeUi = it
+            }
+            SliderRow("Thickness", thicknessUi, 4f..18f) {
+                thicknessUi = it
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it

@@ -377,4 +377,82 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("clamp"))
         assertTrue(source.contains("mix"))
     }
+
+    @Test
+    fun frameHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val thickness by autoUniformFloat(0.1f)
+            val amount by autoUniformFloat(0.82f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val frame = let(frameMask(uv, thickness, 0.03f), "frame")
+            val interior = let(edgeFade(uv, thickness + 0.08f), "interior")
+            val sweepCenter = let(0.12f + pingPong(time * 0.2f, 1f) * 0.76f, "sweep_center")
+            val sweep = let(
+                directionalSweep(
+                    uv = uv,
+                    direction = float2(1f, -0.24f),
+                    center = sweepCenter,
+                    width = 0.2f,
+                    feather = 0.08f
+                ),
+                "sweep"
+            )
+
+            maskedOverlay(
+                maskedScreen(base, color(float3(0.12f, 0.96f, 0.72f), base.a), frame * sweep, amount),
+                color(float3(0.08f, 0.24f, 0.16f), base.a),
+                frame + (1f - interior) * 0.28f,
+                amount * 0.45f
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_thickness;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("min"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("clamp"))
+        assertTrue(source.contains("mix"))
+    }
+
+    @Test
+    fun cornerHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val size by autoUniformFloat(0.22f)
+            val thickness by autoUniformFloat(0.08f)
+            val amount by autoUniformFloat(0.84f)
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val corners = let(cornerMask(uv, size = size, thickness = thickness, feather = 0.03f), "corners")
+            val sweepCenter = let(0.18f + pingPong(time * 0.18f, 1f) * 0.64f, "sweep_center")
+            val sweep = let(
+                directionalSweep(
+                    uv = uv,
+                    direction = float2(1f, -0.2f),
+                    center = sweepCenter,
+                    width = 0.16f,
+                    feather = 0.08f
+                ),
+                "sweep"
+            )
+
+            maskedScreen(base, color(float3(0.1f, 0.98f, 0.68f), base.a), corners * sweep, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_size;"))
+        assertTrue(source.contains("uniform float u_thickness;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("min"))
+        assertTrue(source.contains("max"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("mix"))
+    }
 }
