@@ -3,11 +3,11 @@ agp = "9.0.1"
 kotlin = "2.3.10"
 compose-bom = "2026.02.01"
 activity-compose = "1.12.4"
+junit4 = "4.13.2"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [libraries]
@@ -19,3 +19,4 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }

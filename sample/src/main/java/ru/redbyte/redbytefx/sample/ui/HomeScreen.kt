@@ -4,9 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,11 +31,31 @@ fun HomeScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                )
+            ) {
+                Text(
+                    text = "A live cookbook for the Kotlin-first AGSL DSL. Each demo shows one effect, the shader ideas behind it, and the Compose/runtime API used to drive it.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
         items(demos, key = { it.id.name }) { demo ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(92.dp)
+                    .defaultMinSize(minHeight = 92.dp)
                     .clickable { onOpen(demo.id) },
                 border = BorderStroke(
                     1.dp,
@@ -57,9 +77,9 @@ fun HomeScreen(
                     text = demo.subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 14.dp)
                 )
             }
         }

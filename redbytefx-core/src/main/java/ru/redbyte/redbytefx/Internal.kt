@@ -6,12 +6,9 @@ import android.graphics.RuntimeShader
 internal sealed interface DefaultValue {
     data class F(val v: Float) : DefaultValue
     data class F2(val x: Float, val y: Float) : DefaultValue
+    data class F3(val x: Float, val y: Float, val z: Float) : DefaultValue
+    data class F4(val x: Float, val y: Float, val z: Float, val w: Float) : DefaultValue
 }
-
-internal data class FxGraph(
-    val ops: List<Op>,
-    val defaults: Map<FxParam, DefaultValue>
-)
 
 internal data class FxProgram(
     val agsl: String,
@@ -19,30 +16,107 @@ internal data class FxProgram(
     val defaults: Map<FxParam, DefaultValue>
 )
 
-internal class UniformLayout {
-    private var fIndex = 0
-    private var v2Index = 0
+internal fun sanitizeIdentifier(
+    raw: String,
+    prefix: String
+): String {
+    val cleaned = buildString {
+        raw.forEach { ch ->
+            when {
+                ch.isLetterOrDigit() -> append(ch.lowercaseChar())
+                ch == '_' -> append(ch)
+                else -> append('_')
+            }
+        }
+    }.trim('_').ifBlank { "value" }
+
+    val normalized = if (cleaned.firstOrNull()?.isDigit() == true) {
+        "${prefix}${cleaned}"
+    } else {
+        cleaned
+    }
+
+    return if (normalized.startsWith(prefix)) normalized else prefix + normalized
+}
+
+internal class UniformLayout(
+    additionalOccupied: Set<String> = emptySet()
+) {
+    private var floatIndex = 0
+    private var float2Index = 0
+    private var float3Index = 0
+    private var float4Index = 0
+    private val occupiedNames = linkedSetOf(
+        RB_INPUT_UNIFORM,
+        RB_RESOLUTION_UNIFORM,
+        "fragCoord",
+        "main",
+        "rb_maxCoord",
+        "rb_sample"
+    ).apply { addAll(additionalOccupied) }
 
     val floatUniforms = LinkedHashMap<FxParam.Float, String>()
     val float2Uniforms = LinkedHashMap<FxParam.Float2, String>()
+    val float3Uniforms = LinkedHashMap<FxParam.Float3, String>()
+    val float4Uniforms = LinkedHashMap<FxParam.Float4, String>()
 
-    fun float(p: FxParam.Float): String = floatUniforms.getOrPut(p) { "uF${fIndex++}" }
-    fun float2(p: FxParam.Float2): String = float2Uniforms.getOrPut(p) { "uV${v2Index++}" }
+    fun register(param: FxParam) {
+        when (param) {
+            is FxParam.Float -> uniformName(param)
+            is FxParam.Float2 -> uniformName(param)
+            is FxParam.Float3 -> uniformName(param)
+            is FxParam.Float4 -> uniformName(param)
+        }
+    }
+
+    fun uniformName(param: FxParam.Float): String =
+        floatUniforms.getOrPut(param) { nextName(param.debugName, "uF${floatIndex++}") }
+
+    fun uniformName(param: FxParam.Float2): String =
+        float2Uniforms.getOrPut(param) { nextName(param.debugName, "uV${float2Index++}") }
+
+    fun uniformName(param: FxParam.Float3): String =
+        float3Uniforms.getOrPut(param) { nextName(param.debugName, "uV3_${float3Index++}") }
+
+    fun uniformName(param: FxParam.Float4): String =
+        float4Uniforms.getOrPut(param) { nextName(param.debugName, "uV4_${float4Index++}") }
+
+    private fun nextName(debugName: String?, fallback: String): String {
+        val base = debugName
+            ?.takeIf { it.isNotBlank() }
+            ?.let { sanitizeIdentifier(it, "u_") }
+            ?: fallback
+
+        var candidate = base
+        var suffix = 1
+        while (!occupiedNames.add(candidate)) {
+            candidate = "${base}_${suffix++}"
+        }
+        return candidate
+    }
+
+    fun occupiedIdentifiers(): Set<String> = occupiedNames.toSet()
 }
 
 internal object FxBuilder {
-    fun build(block: FxDsl.() -> Unit): FxEffect {
-        val ops = mutableListOf<Op>()
+    fun build(block: FxDsl.() -> ColorExpr): FxEffect {
         val defaults = LinkedHashMap<FxParam, DefaultValue>()
-        val dsl = FxDsl(ops, defaults)
-        dsl.block()
-
-        val graph = FxGraph(
-            ops = ops.toList(),
-            defaults = defaults.toMap()
+        val functions = mutableListOf<UserFunctionDefinition>()
+        val usedFunctionNames = mutableSetOf(
+            RB_INPUT_UNIFORM,
+            RB_RESOLUTION_UNIFORM,
+            "fragCoord",
+            "main",
+            "rb_maxCoord",
+            "rb_sample"
         )
-
-        val program = FxCompiler.compile(graph)
+        val dsl = FxDsl(defaults, functions, usedFunctionNames)
+        val output = dsl.block()
+        val program = FxCompiler.compile(
+            output = output,
+            defaults = defaults.toMap(),
+            functions = functions.toList()
+        )
         return FxEffectImpl(program)
     }
 }
@@ -51,6 +125,7 @@ internal class FxEffectImpl(
     private val program: FxProgram
 ) : FxEffect {
     override fun newInstance(): FxInstance = FxInstanceImpl(program)
+    override fun agslSource(): String = program.agsl
 }
 
 internal class FxInstanceImpl(
@@ -58,23 +133,33 @@ internal class FxInstanceImpl(
 ) : FxInstance {
 
     private val shader = RuntimeShader(program.agsl)
+    private val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
 
     init {
         applyDefaults()
         setResolution(1f, 1f)
     }
 
-    override fun renderEffect(): RenderEffect =
-        RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
+    override fun renderEffect(): RenderEffect = renderEffect
 
     override fun setFloat(param: FxParam.Float, value: Float) {
-        val name = program.layout.floatUniforms[param] ?: error("Unknown param")
+        val name = program.layout.floatUniforms[param] ?: error("Unknown float param")
         shader.setFloatUniform(name, value)
     }
 
     override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        val name = program.layout.float2Uniforms[param] ?: error("Unknown param")
+        val name = program.layout.float2Uniforms[param] ?: error("Unknown float2 param")
         shader.setFloatUniform(name, x, y)
+    }
+
+    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
+        val name = program.layout.float3Uniforms[param] ?: error("Unknown float3 param")
+        shader.setFloatUniform(name, x, y, z)
+    }
+
+    override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
+        val name = program.layout.float4Uniforms[param] ?: error("Unknown float4 param")
+        shader.setFloatUniform(name, x, y, z, w)
     }
 
     override fun setResolution(widthPx: Float, heightPx: Float) {
@@ -95,6 +180,16 @@ internal class FxInstanceImpl(
                     val name = program.layout.float2Uniforms[param] ?: continue
                     val v = dv as? DefaultValue.F2 ?: continue
                     shader.setFloatUniform(name, v.x, v.y)
+                }
+                is FxParam.Float3 -> {
+                    val name = program.layout.float3Uniforms[param] ?: continue
+                    val v = dv as? DefaultValue.F3 ?: continue
+                    shader.setFloatUniform(name, v.x, v.y, v.z)
+                }
+                is FxParam.Float4 -> {
+                    val name = program.layout.float4Uniforms[param] ?: continue
+                    val v = dv as? DefaultValue.F4 ?: continue
+                    shader.setFloatUniform(name, v.x, v.y, v.z, v.w)
                 }
             }
         }

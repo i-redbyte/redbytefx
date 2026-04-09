@@ -20,5 +20,10 @@ android {
     }
 }
 
+kotlin {
+    explicitApi()
+}
+
 dependencies {
+    testImplementation(libs.junit4)
 }

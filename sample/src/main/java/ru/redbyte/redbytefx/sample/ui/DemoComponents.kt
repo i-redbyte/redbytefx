@@ -1,11 +1,13 @@
 package ru.redbyte.redbytefx.sample.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -15,14 +17,22 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ru.redbyte.redbytefx.sample.model.DemoInfo
+
+val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
 
 @Composable
 fun DemoLayout(
+    generatedAgsl: String? = null,
     preview: @Composable () -> Unit,
     controls: @Composable () -> Unit
 ) {
+    val demo = LocalDemoInfo.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -30,6 +40,13 @@ fun DemoLayout(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (demo != null) {
+            DemoInfoCard(
+                demo = demo,
+                generatedAgsl = generatedAgsl
+            )
+        }
+
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -50,6 +67,97 @@ fun DemoLayout(
 }
 
 @Composable
+private fun DemoInfoCard(
+    demo: DemoInfo,
+    generatedAgsl: String?
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = demo.subtitle,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = demo.focus,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "DSL snippet",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                SelectionContainer {
+                    Text(
+                        text = demo.snippet,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 10,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (generatedAgsl != null) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Generated AGSL",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SelectionContainer {
+                        Text(
+                            text = previewShaderSource(generatedAgsl),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 18,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+internal fun previewShaderSource(
+    source: String,
+    maxLines: Int = 18
+): String {
+    val lines = source.lineSequence().toList()
+    if (lines.size <= maxLines) return source
+    return buildString {
+        append(lines.take(maxLines).joinToString(separator = "\n"))
+        append("\n...")
+    }
+}
+
+@Composable
 fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier.fillMaxWidth(),
@@ -62,9 +170,15 @@ fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 @Composable
-fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRange<Float>, onChange: (Float) -> Unit) {
+fun SliderRow(
+    title: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    formatValue: (Float) -> String = { it.toInt().toString() },
+    onChange: (Float) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "$title: ${value.toInt()}")
+        Text(text = "$title: ${formatValue(value)}")
         Slider(value = value, onValueChange = onChange, valueRange = range)
     }
 }

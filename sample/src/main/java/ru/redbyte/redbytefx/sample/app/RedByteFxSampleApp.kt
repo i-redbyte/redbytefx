@@ -16,6 +16,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import ru.redbyte.redbytefx.sample.R
 import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.ui.DemoScreen
@@ -25,10 +27,11 @@ import ru.redbyte.redbytefx.sample.ui.HomeScreen
 @Composable
 fun RedByteFxSampleApp() {
     var currentDemo: DemoId? by rememberSaveable { mutableStateOf(null) }
+    val appName = stringResource(id = R.string.app_name)
 
     val title = currentDemo?.let { id ->
         DemoCatalog.firstOrNull { it.id == id }?.title ?: "Demo"
-    } ?: "redbytefx"
+    } ?: appName
 
     BackHandler(enabled = currentDemo != null) {
         currentDemo = null

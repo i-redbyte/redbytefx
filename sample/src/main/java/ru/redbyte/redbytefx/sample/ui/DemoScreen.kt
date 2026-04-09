@@ -1,15 +1,23 @@
 package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import ru.redbyte.redbytefx.sample.model.DemoId
+import ru.redbyte.redbytefx.sample.model.demoInfo
 
 @Composable
 fun DemoScreen(id: DemoId) {
-    when (id) {
-        DemoId.Flip -> DemoFlip()
-        DemoId.Mirror -> DemoMirror()
-        DemoId.Rotate -> DemoRotate()
-        DemoId.Scale -> DemoScale()
-        DemoId.Offset -> DemoOffset()
+    CompositionLocalProvider(LocalDemoInfo provides demoInfo(id)) {
+        when (id) {
+            DemoId.Flip -> DemoFlip()
+            DemoId.Mirror -> DemoMirror()
+            DemoId.Rotate -> DemoRotate()
+            DemoId.Scale -> DemoScale()
+            DemoId.Offset -> DemoOffset()
+            DemoId.Wave -> DemoWave()
+            DemoId.Pulse -> DemoPulse()
+            DemoId.Signal -> DemoSignal()
+            DemoId.Duotone -> DemoDuotone()
+        }
     }
 }

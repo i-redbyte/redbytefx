@@ -22,10 +22,16 @@ android {
     }
 }
 
+kotlin {
+    explicitApi()
+}
+
 dependencies {
     api(project(":redbytefx-core"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
+
+    testImplementation(libs.junit4)
 }
