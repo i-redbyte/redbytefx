@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -27,9 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import ru.redbyte.redbytefx.sample.model.DemoInfo
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
@@ -207,10 +215,11 @@ fun DemoPreviewStage(
     label: String = "RedByteFX"
 ) {
     val shape = MaterialTheme.shapes.large
+    val badgeShape = RoundedCornerShape(14.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(220.dp)
             .then(modifier)
             .clip(shape)
             .background(
@@ -228,6 +237,33 @@ fun DemoPreviewStage(
             )
             .padding(24.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(92.dp)
+                .graphicsLayer {
+                    rotationZ = 16f
+                    alpha = 0.22f
+                }
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.onPrimaryContainer)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .width(108.dp)
+                .height(24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.34f))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 8.dp)
+                .size(width = 56.dp, height = 132.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.22f))
+        )
         AssistChip(
             onClick = {},
             enabled = false,
@@ -240,11 +276,68 @@ fun DemoPreviewStage(
                 disabledLabelColor = MaterialTheme.colorScheme.onSurface
             )
         )
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(top = 18.dp, end = 72.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            StageBadge(
+                text = "Live uniforms",
+                shape = badgeShape,
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = "Kotlin DSL / AGSL / Compose",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StageBadge(
+                    text = "Type-safe",
+                    shape = badgeShape,
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                StageBadge(
+                    text = "Runtime shader",
+                    shape = badgeShape,
+                    containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageBadge(
+    text: String,
+    shape: Shape,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .clip(shape)
+            .background(containerColor)
+            .border(
+                width = 1.dp,
+                color = contentColor.copy(alpha = 0.12f),
+                shape = shape
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.align(Alignment.Center)
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            color = contentColor
         )
     }
 }
