@@ -11,8 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -29,16 +35,50 @@ fun HomeScreen(
     demos: List<DemoInfo>,
     onOpen: (DemoId) -> Unit
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val normalizedQuery = remember(searchQuery) { searchQuery.trim().lowercase() }
+    val visibleDemos = remember(demos, normalizedQuery) {
+        if (normalizedQuery.isEmpty()) {
+            demos
+        } else {
+            demos.filter { demo ->
+                buildString {
+                    append(demo.id.name)
+                    append(' ')
+                    append(demo.title)
+                    append(' ')
+                    append(demo.subtitle)
+                    append(' ')
+                    append(demo.focus)
+                    append(' ')
+                    append(demo.section.title)
+                    append(' ')
+                    append(demo.section.subtitle)
+                    append(' ')
+                    append(demo.layer.label)
+                }.lowercase().contains(normalizedQuery)
+            }
+        }
+    }
     val demoIndexById = remember(demos) {
         demos.mapIndexed { index, demo -> demo.id to index }.toMap()
     }
-    val coreCount = remember(demos) { demos.count { it.layer == DemoLayer.Core } }
-    val animatedCount = remember(demos) { demos.count { it.isAnimated } }
+    val coreCount = remember(visibleDemos) { visibleDemos.count { it.layer == DemoLayer.Core } }
+    val animatedCount = remember(visibleDemos) { visibleDemos.count { it.isAnimated } }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        item(key = "search") {
+            ShowcaseSearchPanel(
+                query = searchQuery,
+                resultCount = visibleDemos.size,
+                totalCount = demos.size,
+                onQueryChange = { searchQuery = it }
+            )
+        }
+
         item {
             CyberPanel(
                 accent = MaterialTheme.colorScheme.secondary,
@@ -71,8 +111,8 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     ShowcaseMetric(
-                        value = demos.size.toString(),
-                        label = "demos",
+                        value = visibleDemos.size.toString(),
+                        label = if (normalizedQuery.isEmpty()) "demos" else "results",
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.primary
                     )
@@ -92,8 +132,34 @@ fun HomeScreen(
             }
         }
 
+        if (visibleDemos.isEmpty()) {
+            item(key = "empty") {
+                CyberPanel(
+                    accent = MaterialTheme.colorScheme.tertiary,
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CyberBadge(
+                            text = "NO MATCHES",
+                            accent = MaterialTheme.colorScheme.tertiary
+                        )
+                        CyberBadge(
+                            text = "TRY TITLE OR SECTION",
+                            accent = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    Text(
+                        text = "No demos matched \"$searchQuery\". Try a shorter term or search by helper name, section, or demo title.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
+            }
+        }
+
         DemoSection.entries.forEach { section ->
-            val sectionDemos = demos.filter { it.section == section }
+            val sectionDemos = visibleDemos.filter { it.section == section }
             if (sectionDemos.isNotEmpty()) {
                 item(key = "section-${section.name}") {
                     ShowcaseSectionHeader(
@@ -114,6 +180,60 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ShowcaseSearchPanel(
+    query: String,
+    resultCount: Int,
+    totalCount: Int,
+    onQueryChange: (String) -> Unit
+) {
+    CyberPanel(
+        accent = MaterialTheme.colorScheme.tertiary,
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberBadge(
+                text = "SEARCH",
+                accent = MaterialTheme.colorScheme.tertiary
+            )
+            CyberBadge(
+                text = "$resultCount / $totalCount",
+                accent = MaterialTheme.colorScheme.secondary
+            )
+            if (query.isNotBlank()) {
+                CyberBadge(
+                    text = "CLEAR",
+                    modifier = Modifier.clickable { onQueryChange("") },
+                    accent = MaterialTheme.colorScheme.primary,
+                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
+                )
+            }
+        }
+        TextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            singleLine = true,
+            label = {
+                Text("Search demos")
+            },
+            placeholder = {
+                Text("Circuit, reveal, stdlib, glow...")
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.8f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                focusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+                cursorColor = MaterialTheme.colorScheme.tertiary
+            ),
+            shape = MaterialTheme.shapes.large
+        )
     }
 }
 

@@ -16,7 +16,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -68,6 +75,11 @@ fun RedByteFxSampleApp() {
                 CyberPanel(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.statusBars.only(
+                                WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                            )
+                        )
                         .padding(start = 12.dp, end = 12.dp, top = 12.dp)
                         .clip(RoundedCornerShape(28.dp)),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -135,7 +147,16 @@ fun RedByteFxSampleApp() {
                 }
             }
         ) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
+            Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .windowInsetsPadding(
+                        WindowInsets.navigationBars.only(
+                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
+                        )
+                    )
+                    .imePadding()
+            ) {
                 AnimatedContent(
                     targetState = currentDemo,
                     transitionSpec = {
