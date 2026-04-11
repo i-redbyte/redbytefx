@@ -5,6 +5,8 @@ import org.junit.Test
 
 class AuthoringDiagnosticsTest {
 
+    private class CustomFloatExpr : FloatExpr
+
     @Test
     fun missingUniformBindingMessageExplainsEffectScope() {
         val message = missingUniformBindingMessage(
@@ -61,5 +63,51 @@ class AuthoringDiagnosticsTest {
         assertTrue(message.contains("Shader helpers only accept DSL expressions"))
         assertTrue(message.contains("float(...)"))
         assertTrue(message.contains("uniform"))
+    }
+
+    @Test
+    fun customFloatExprInsideLetExplainsHowToFixIt() {
+        val error = runCatching {
+            redbytefx {
+                val custom = CustomFloatExpr()
+                val bad = let(custom, "badValue")
+                color(bad, bad, bad)
+            }.agslSource()
+        }.exceptionOrNull()
+
+        check(error is IllegalStateException) {
+            "Expected IllegalStateException for custom FloatExpr in let(...), got ${error?.javaClass?.name}"
+        }
+
+        val message = checkNotNull(error.message)
+        assertTrue(message.contains("Unsupported FloatExpr implementation"))
+        assertTrue(message.contains("Do not implement FloatExpr directly"))
+        assertTrue(message.contains("let(...)"))
+        assertTrue(message.contains("custom marker-interface implementation"))
+    }
+
+    @Test
+    fun customFloatExprReturnedFromFnExplainsHowToFixIt() {
+        val error = runCatching {
+            redbytefx {
+                val broken = fn(
+                    name = "brokenSignal",
+                    returns = FloatType
+                ) {
+                    CustomFloatExpr()
+                }
+                val value = let(broken(), "value")
+                color(value, value, value)
+            }.agslSource()
+        }.exceptionOrNull()
+
+        check(error is IllegalStateException) {
+            "Expected IllegalStateException for custom FloatExpr returned from fn(...), got ${error?.javaClass?.name}"
+        }
+
+        val message = checkNotNull(error.message)
+        assertTrue(message.contains("Unsupported FloatExpr implementation"))
+        assertTrue(message.contains("fn(...)"))
+        assertTrue(message.contains("return a composed DSL expression"))
     }
 }

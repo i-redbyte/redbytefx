@@ -90,6 +90,19 @@ internal fun unsupportedExpressionArgumentMessage(expr: Any): String {
         "float3(...), float4(...), or color(...), or declare a uniform for runtime-driven inputs."
 }
 
+internal fun unsupportedDslImplementationMessage(
+    typeLabel: String,
+    expr: Any
+): String {
+    val typeName = expr::class.qualifiedName ?: expr::class.simpleName ?: "unknown"
+    return "Unsupported $typeLabel implementation: $typeName. " +
+        "Do not implement $typeLabel directly in author code. Build shader values by composing " +
+        "existing DSL expressions, constructors such as float(...), float2(...), float3(...), " +
+        "float4(...), color(...), uniforms, and stdlib helpers instead. If this value came from " +
+        "let(...) or was returned from fn(...), return a composed DSL expression rather than a " +
+        "custom marker-interface implementation."
+}
+
 internal class UniformLayout(
     additionalOccupied: Set<String> = emptySet()
 ) {

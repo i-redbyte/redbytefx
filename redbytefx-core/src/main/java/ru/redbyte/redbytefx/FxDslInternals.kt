@@ -87,7 +87,7 @@ internal fun emit(expr: FloatExpr, ctx: EmitContext): String =
         is LocalFloatExprImpl -> ctx.localName(expr)
         is ParamFloatExprImpl -> expr.name
         is FxParam.Float -> ctx.uniformName(expr)
-        else -> error("Unsupported FloatExpr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("FloatExpr", expr))
     }
 
 internal fun emit(expr: BoolExpr, ctx: EmitContext): String =
@@ -95,7 +95,7 @@ internal fun emit(expr: BoolExpr, ctx: EmitContext): String =
         is BoolExprImpl -> expr.emitter(ctx)
         is LocalBoolExprImpl -> ctx.localName(expr)
         is ParamBoolExprImpl -> expr.name
-        else -> error("Unsupported BoolExpr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("BoolExpr", expr))
     }
 
 internal fun emit(expr: Float2Expr, ctx: EmitContext): String =
@@ -104,7 +104,7 @@ internal fun emit(expr: Float2Expr, ctx: EmitContext): String =
         is LocalFloat2ExprImpl -> ctx.localName(expr)
         is ParamFloat2ExprImpl -> expr.name
         is FxParam.Float2 -> ctx.uniformName(expr)
-        else -> error("Unsupported Float2Expr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("Float2Expr", expr))
     }
 
 internal fun emit(expr: Float3Expr, ctx: EmitContext): String =
@@ -113,7 +113,7 @@ internal fun emit(expr: Float3Expr, ctx: EmitContext): String =
         is LocalFloat3ExprImpl -> ctx.localName(expr)
         is ParamFloat3ExprImpl -> expr.name
         is FxParam.Float3 -> ctx.uniformName(expr)
-        else -> error("Unsupported Float3Expr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("Float3Expr", expr))
     }
 
 internal fun emit(expr: Float4Expr, ctx: EmitContext): String =
@@ -122,7 +122,7 @@ internal fun emit(expr: Float4Expr, ctx: EmitContext): String =
         is LocalFloat4ExprImpl -> ctx.localName(expr)
         is ParamFloat4ExprImpl -> expr.name
         is FxParam.Float4 -> ctx.uniformName(expr)
-        else -> error("Unsupported Float4Expr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("Float4Expr", expr))
     }
 
 internal fun emit(expr: ColorExpr, ctx: EmitContext): String =
@@ -130,7 +130,7 @@ internal fun emit(expr: ColorExpr, ctx: EmitContext): String =
         is ColorExprImpl -> expr.emitter(ctx)
         is LocalColorExprImpl -> ctx.localName(expr)
         is ParamColorExprImpl -> expr.name
-        else -> error("Unsupported ColorExpr implementation: ${expr::class.qualifiedName}")
+        else -> error(unsupportedDslImplementationMessage("ColorExpr", expr))
     }
 
 internal fun floatExpr(

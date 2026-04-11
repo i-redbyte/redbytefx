@@ -13,6 +13,7 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 - Uniforms become `uniform float …` / `uniform float2 …` with stable names when you pass explicit labels, or generated names when you use anonymous/auto uniforms.
 - Kotlin-style names are normalized into readable AGSL identifiers: `waveAmplitude` becomes `u_wave_amplitude`, `let(..., "waveOffset")` becomes `l_wave_offset`, and `fn(name = "PulseBand", ...)` becomes `pulse_band`.
 - Built-in AGSL function names are reserved for user helpers: if you ask for `fn(name = "mix", ...)` or `fn(name = "sin", ...)`, RedByteFX suffixes the generated helper name instead of shadowing the built-in.
+- Marker interfaces such as `FloatExpr` and `ColorExpr` are authoring types, not extension points to implement directly. If a value flows through `let(...)` or `fn(...)`, return a composed DSL expression instead of a custom marker-interface object.
 - Input sampling goes through the runtime bridge (`rb_sample` / content shader); that wrapper is generated, not something you hand-edit per effect.
 - Common whole-number math also stays readable when porting line by line: expressions such as `1 - amount` and `2 * uv` are accepted directly instead of forcing `1f` on the left-hand side before the first translation is working.
 
