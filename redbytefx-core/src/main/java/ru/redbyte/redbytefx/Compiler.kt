@@ -32,6 +32,11 @@ internal object FxCompiler {
         definition: UserFunctionDefinition,
         layout: UniformLayout
     ): String {
+        validateFnBodyMatchesReturnType(
+            functionName = definition.name,
+            returnType = definition.returnType,
+            body = definition.body
+        )
         val ctx = EmitContext(layout)
         val bodyExpr = emitAny(definition.body, ctx)
         val params = definition.parameters.joinToString(", ") {

@@ -39,6 +39,14 @@ public interface FxEffect {
  * This is the low-level imperative runtime surface. Higher-level UI layers can wrap it with their
  * own controller/binding model, but the same ownership rules still apply here: params come from
  * one compiled effect, mutable runtime state belongs to one runtime instance.
+ *
+ * **Threading:** call [renderEffect] and all uniform setters from the thread that owns the UI
+ * surface (typically the main thread). [android.graphics.RuntimeShader] is not documented for
+ * concurrent use.
+ *
+ * **Performance:** when a setter returns `true`, the implementation may rebuild the backing
+ * [RenderEffect] so the GPU picks up new uniform values. Redundant writes that return `false`
+ * avoid that work.
  */
 public interface FxInstance {
     /**
@@ -50,29 +58,38 @@ public interface FxInstance {
      * Updates a scalar float uniform.
      *
      * The [param] handle must come from the same compiled [FxEffect] that created this instance.
+     *
+     * @return `true` if the runtime accepted a new value and refreshed the backing effect; `false`
+     * when the value was unchanged (see [sameFloatUniformValue]).
      */
-    public fun setFloat(param: FxParam.Float, value: Float)
+    public fun setFloat(param: FxParam.Float, value: Float): Boolean
 
     /**
      * Updates a `float2` uniform.
      *
      * The [param] handle must come from the same compiled [FxEffect] that created this instance.
+     *
+     * @return `true` when a new value was written; `false` when identical to the last write.
      */
-    public fun setFloat2(param: FxParam.Float2, x: Float, y: Float)
+    public fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean
 
     /**
      * Updates a `float3` uniform.
      *
      * The [param] handle must come from the same compiled [FxEffect] that created this instance.
+     *
+     * @return `true` when a new value was written; `false` when identical to the last write.
      */
-    public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float)
+    public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean
 
     /**
      * Updates a `float4` uniform.
      *
      * The [param] handle must come from the same compiled [FxEffect] that created this instance.
+     *
+     * @return `true` when a new value was written; `false` when identical to the last write.
      */
-    public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float)
+    public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float): Boolean
 
     /**
      * Updates the logical resolution used by the shader in pixels.
@@ -80,8 +97,13 @@ public interface FxInstance {
      * Call this when the host runtime owns the draw size explicitly. If a higher-level UI layer is
      * already synchronizing the shader size from the render target, prefer letting that layer own
      * resolution updates instead of duplicating them manually.
+     *
+     * Non-positive inputs are clamped to `1f` per component before comparing to the last update.
+     *
+     * @return `true` when resolution changed; `false` when the clamped size matched the previous
+     * update.
      */
-    public fun setResolution(widthPx: Float, heightPx: Float)
+    public fun setResolution(widthPx: Float, heightPx: Float): Boolean
 }
 
 /**

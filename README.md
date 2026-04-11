@@ -56,6 +56,12 @@
 4. Inspect `effect.agslSource()` when the shader shape is unclear.
 5. Apply the effect with `Modifier.redbyteFx(fx)`.
 
+### Runtime API (`FxInstance`)
+
+- Setters (`setFloat`, `setFloat2`, `setFloat3`, `setFloat4`, `setResolution`) return **`Boolean`**: `true` when a new value was written and the implementation may rebuild the backing `RenderEffect`; `false` when the value was unchanged (so redundant writes avoid extra GPU work). If you implement `FxInstance` yourself, preserve this contract.
+- Deduplication uses bitwise float equality via **`sameFloatUniformValue(a, b)`** (same rules as the built-in runtime).
+- Call `renderEffect()` and all setters from the **UI thread** that owns the surface. `RuntimeShader` is not documented for use from multiple threads concurrently.
+
 ```kotlin
 val grayscaleSetup = run {
     var amountParam: FxParam.Float? = null

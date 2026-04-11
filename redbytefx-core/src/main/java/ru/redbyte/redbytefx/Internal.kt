@@ -90,6 +90,50 @@ internal fun unsupportedExpressionArgumentMessage(expr: Any): String {
         "float3(...), float4(...), or color(...), or declare a uniform for runtime-driven inputs."
 }
 
+internal fun fnBodyReturnTypeMismatchMessage(
+    functionName: String,
+    expected: FxValueType<*>,
+    body: Any
+): String {
+    val expectedLabel = expected.agslType
+    val actual = describeShaderExprKind(body)
+    return "fn `$functionName` declares return type `$expectedLabel`, but the body is $actual. " +
+        "Return an expression that matches the declared type (for example " +
+        "`float(...)` / `float2(...)` / `color(...)`, stdlib helpers, or composed DSL math)."
+}
+
+private fun describeShaderExprKind(body: Any): String =
+    when (body) {
+        is BoolExpr -> "a bool expression"
+        is ColorExpr -> "a color expression (half4)"
+        is Float2Expr -> "a float2 expression"
+        is Float3Expr -> "a float3 expression"
+        is Float4Expr -> "a float4 expression"
+        is FloatExpr -> "a float expression"
+        else -> {
+            val name = body::class.qualifiedName ?: body::class.simpleName ?: "unknown"
+            "not a DSL expression type ($name)"
+        }
+    }
+
+internal fun validateFnBodyMatchesReturnType(
+    functionName: String,
+    returnType: FxValueType<*>,
+    body: Any
+) {
+    val ok = when (returnType) {
+        BoolType -> body is BoolExpr
+        FloatType -> body is FloatExpr
+        Float2Type -> body is Float2Expr
+        Float3Type -> body is Float3Expr
+        Float4Type -> body is Float4Expr
+        ColorType -> body is ColorExpr
+    }
+    if (!ok) {
+        error(fnBodyReturnTypeMismatchMessage(functionName, returnType, body))
+    }
+}
+
 internal fun unsupportedDslImplementationMessage(
     typeLabel: String,
     expr: Any
@@ -228,25 +272,20 @@ internal class FxInstanceImpl(
 
     override fun renderEffect(): RenderEffect = renderEffect
 
-    override fun setFloat(param: FxParam.Float, value: Float) {
+    override fun setFloat(param: FxParam.Float, value: Float): Boolean =
         runtimeState.setFloat(param, value)
-    }
 
-    override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
+    override fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean =
         runtimeState.setFloat2(param, x, y)
-    }
 
-    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
+    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean =
         runtimeState.setFloat3(param, x, y, z)
-    }
 
-    override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
+    override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float): Boolean =
         runtimeState.setFloat4(param, x, y, z, w)
-    }
 
-    override fun setResolution(widthPx: Float, heightPx: Float) {
+    override fun setResolution(widthPx: Float, heightPx: Float): Boolean =
         runtimeState.setResolution(widthPx, heightPx)
-    }
 
     private fun refreshRenderEffect() {
         renderEffect = createRenderEffect()

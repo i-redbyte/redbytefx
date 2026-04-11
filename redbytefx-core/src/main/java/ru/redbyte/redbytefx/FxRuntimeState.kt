@@ -51,43 +51,48 @@ internal class FxRuntimeState(
         }
     }
 
-    fun setFloat(param: FxParam.Float, value: Float) {
+    fun setFloat(param: FxParam.Float, value: Float): Boolean {
         val previous = floatValues[param]
-        if (previous != null && sameRuntimeFloat(previous, value)) return
+        if (previous != null && sameFloatUniformValue(previous, value)) return false
         floatValues[param] = value
         writer.setFloat(requireFloatUniformName(param), value)
         onRuntimeChanged()
+        return true
     }
 
-    fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        if (sameRuntimeFloat2(float2Values[param], x, y)) return
+    fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean {
+        if (sameRuntimeFloat2(float2Values[param], x, y)) return false
         float2Values[param] = RuntimeFloat2(x, y)
         writer.setFloat2(requireFloat2UniformName(param), x, y)
         onRuntimeChanged()
+        return true
     }
 
-    fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        if (sameRuntimeFloat3(float3Values[param], x, y, z)) return
+    fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean {
+        if (sameRuntimeFloat3(float3Values[param], x, y, z)) return false
         float3Values[param] = RuntimeFloat3(x, y, z)
         writer.setFloat3(requireFloat3UniformName(param), x, y, z)
         onRuntimeChanged()
+        return true
     }
 
-    fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        if (sameRuntimeFloat4(float4Values[param], x, y, z, w)) return
+    fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float): Boolean {
+        if (sameRuntimeFloat4(float4Values[param], x, y, z, w)) return false
         float4Values[param] = RuntimeFloat4(x, y, z, w)
         writer.setFloat4(requireFloat4UniformName(param), x, y, z, w)
         onRuntimeChanged()
+        return true
     }
 
-    fun setResolution(widthPx: Float, heightPx: Float) {
+    fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         val width = sanitizeResolution(widthPx)
         val height = sanitizeResolution(heightPx)
-        if (sameRuntimeResolution(width, height)) return
+        if (sameRuntimeResolution(width, height)) return false
         lastResolutionWidth = width
         lastResolutionHeight = height
         writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)
         onRuntimeChanged()
+        return true
     }
 
     private fun requireFloatUniformName(param: FxParam.Float): String =
@@ -111,8 +116,8 @@ internal class FxRuntimeState(
     private fun sameRuntimeResolution(width: Float, height: Float): Boolean =
         lastResolutionWidth != null &&
             lastResolutionHeight != null &&
-            sameRuntimeFloat(checkNotNull(lastResolutionWidth), width) &&
-            sameRuntimeFloat(checkNotNull(lastResolutionHeight), height)
+            sameFloatUniformValue(checkNotNull(lastResolutionWidth), width) &&
+            sameFloatUniformValue(checkNotNull(lastResolutionHeight), height)
 }
 
 private data class RuntimeFloat2(
@@ -133,16 +138,13 @@ private data class RuntimeFloat4(
     val w: Float
 )
 
-private fun sameRuntimeFloat(left: Float, right: Float): Boolean =
-    left.toBits() == right.toBits()
-
 private fun sameRuntimeFloat2(
     value: RuntimeFloat2?,
     x: Float,
     y: Float
 ): Boolean = value != null &&
-    sameRuntimeFloat(value.x, x) &&
-    sameRuntimeFloat(value.y, y)
+    sameFloatUniformValue(value.x, x) &&
+    sameFloatUniformValue(value.y, y)
 
 private fun sameRuntimeFloat3(
     value: RuntimeFloat3?,
@@ -150,9 +152,9 @@ private fun sameRuntimeFloat3(
     y: Float,
     z: Float
 ): Boolean = value != null &&
-    sameRuntimeFloat(value.x, x) &&
-    sameRuntimeFloat(value.y, y) &&
-    sameRuntimeFloat(value.z, z)
+    sameFloatUniformValue(value.x, x) &&
+    sameFloatUniformValue(value.y, y) &&
+    sameFloatUniformValue(value.z, z)
 
 private fun sameRuntimeFloat4(
     value: RuntimeFloat4?,
@@ -161,7 +163,7 @@ private fun sameRuntimeFloat4(
     z: Float,
     w: Float
 ): Boolean = value != null &&
-    sameRuntimeFloat(value.x, x) &&
-    sameRuntimeFloat(value.y, y) &&
-    sameRuntimeFloat(value.z, z) &&
-    sameRuntimeFloat(value.w, w)
+    sameFloatUniformValue(value.x, x) &&
+    sameFloatUniformValue(value.y, y) &&
+    sameFloatUniformValue(value.z, z) &&
+    sameFloatUniformValue(value.w, w)

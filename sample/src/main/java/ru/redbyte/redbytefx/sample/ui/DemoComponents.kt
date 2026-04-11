@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -76,6 +79,8 @@ import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.pathSignal
 import ru.redbyte.redbytefx.sample.model.section
+import ru.redbyte.redbytefx.compose.FxController
+import ru.redbyte.redbytefx.compose.redbyteFx
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
 val LocalDemoNavigation = staticCompositionLocalOf<DemoNavigation?> { null }
@@ -1397,6 +1402,106 @@ fun DemoPreviewStage(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Preview for the Liquid Glass demo: a centered translucent pill with a label, on a busy gradient so
+ * refraction and rim highlights read clearly through [Modifier.redbyteFx].
+ */
+@Composable
+fun DemoLiquidGlassPreviewStage(
+    fx: FxController,
+    modifier: Modifier = Modifier
+) {
+    val shape = MaterialTheme.shapes.large
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val compactPreview = maxWidth < 380.dp
+        val stageHeight = when {
+            maxWidth < 380.dp -> 168.dp
+            maxWidth < 420.dp -> 184.dp
+            else -> 244.dp
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(stageHeight)
+                .then(modifier)
+                .redbyteFx(fx)
+                .clip(shape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
+                            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.97f),
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                        )
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
+                    shape = shape
+                )
+                .padding(horizontal = if (compactPreview) 16.dp else 24.dp, vertical = 20.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.08f),
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.07f)
+                            )
+                        )
+                    )
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .widthIn(max = 300.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp)
+            ) {
+                Text(
+                    text = "Glass surface",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (compactPreview) 46.dp else 52.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.58f)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Open",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.94f)
+                        )
+                    }
+                }
+                Text(
+                    text = "Translucent fill + rim — shader adds flow and edge chroma",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                )
             }
         }
     }
