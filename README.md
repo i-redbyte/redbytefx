@@ -219,6 +219,15 @@ The current first-pass “teach this first” shortlist looks like:
 - timing/signal/gradients: `pulse(...)`, `bandMask(...)`, `linearRamp(...)`, `radialRamp(...)`, `angularSweep(...)`
 - routing/scene structure: `segmentMask(...)`, `segmentProgress(...)`, `segmentPulse(...)`
 
+In practice, the healthiest teaching order is:
+
+- coordinates first: `normalizedUv(...)`, `centeredUv(...)`, `aspectCenteredUv(...)`
+- then readable masks/reveals: `bandMask(...)`, `circleMask(...)`, `rectMask(...)`, `horizontalReveal(...)`, `verticalReveal(...)`, `radialReveal(...)`
+- then compositing and local shaping: `maskedMix(...)`, `alphaMask(...)`, `sdCircle(...)`, `sdRoundedBox(...)`, `softFill(...)`, `softStroke(...)`
+- then richer motion/scene helpers: `pulse(...)`, `linearRamp(...)`, `angularSweep(...)`, `segmentMask(...)`, `segmentPulse(...)`
+
+Mapping helpers like `inverseLerp(...)` and `remap(...)` support that path without defining it. Procedural noise, palette, frame, scanline, warp, and other style-heavy helpers are useful, but they belong after the base mental model is already in place.
+
 Broader helpers like `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`, `frameMask(...)`, and `cornerMask(...)` remain useful, but they should not define the first mental model for the library.
 
 They currently make the most sense as a secondary exploratory layer:

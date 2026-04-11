@@ -6,7 +6,8 @@ import ru.redbyte.redbytefx.*
  * Computes a lightweight scalar hash from a `float2` position.
  *
  * The result is in the `[0, 1)` range and is intended for procedural modulation, not for
- * cryptographic or statistically rigorous randomness.
+ * cryptographic or statistically rigorous randomness. Treat it as a procedural support primitive,
+ * not as part of the first canonical authoring path.
  */
 public fun hash21(point: Float2Expr): FloatExpr =
     fract(sin(point.x * 127.1f + point.y * 311.7f) * 43758.5453f)
@@ -14,7 +15,9 @@ public fun hash21(point: Float2Expr): FloatExpr =
 /**
  * Computes value noise from a `float2` position.
  *
- * The returned value is smoothly interpolated in the `[0, 1]` range.
+ * The returned value is smoothly interpolated in the `[0, 1]` range. This is useful when a shader
+ * is already deliberately entering procedural territory, but it should not crowd out the simpler
+ * canonical mask/ramp/shape helpers in the first teaching pass.
  */
 public fun valueNoise(point: Float2Expr): FloatExpr {
     val cell = floor(point)
@@ -34,7 +37,8 @@ public fun valueNoise(point: Float2Expr): FloatExpr {
 /**
  * Builds centered grain in the `[-1, 1]` range from UV coordinates and time.
  *
- * [scale] controls how dense the grain becomes across UV space.
+ * [scale] controls how dense the grain becomes across UV space. This is a secondary style helper
+ * for texture/noise passes once the main scene logic is already readable.
  */
 public fun grain(
     uv: Float2Expr,
@@ -75,7 +79,8 @@ public fun grain(
 /**
  * Builds a radial vignette mask from normalized UV coordinates.
  *
- * The result stays near `1` at the center and fades toward `0` near the edges.
+ * The result stays near `1` at the center and fades toward `0` near the edges. This is useful for
+ * final framing or grading passes, not as the first mask helper to teach.
  */
 public fun vignette(
     uv: Float2Expr,

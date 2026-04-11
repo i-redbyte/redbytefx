@@ -8,7 +8,7 @@ private const val TAU: Float = 6.2831855f
  * Returns the radial distance from [center] in normalized UV space.
  *
  * This is a small convenience helper around `length(uv - center)` that keeps polar math readable
- * in higher-level shader recipes.
+ * in higher-level shader recipes. Treat it as one of the tiny canonical polar primitives.
  */
 public fun radialDistance(
     uv: Float2Expr,
@@ -18,7 +18,8 @@ public fun radialDistance(
 /**
  * Returns the normalized polar angle of [uv] around [center] in the `[0, 1)` range.
  *
- * `0` points to the positive X axis and the value increases counter-clockwise.
+ * `0` points to the positive X axis and the value increases counter-clockwise. This is the
+ * canonical angular primitive to inspect before reaching for higher-level polar masks.
  */
 public fun polarAngle01(
     uv: Float2Expr,
@@ -31,7 +32,8 @@ public fun polarAngle01(
 /**
  * Packs the radial distance and normalized angle of [uv] around [center] into a `float2`.
  *
- * The resulting vector is laid out as `(radius, polarAngle01)`.
+ * The resulting vector is laid out as `(radius, polarAngle01)`. Use this when the shader wants to
+ * stay in explicit polar space instead of recomputing radius/angle separately.
  */
 public fun polarCoordinates(
     uv: Float2Expr,
@@ -45,6 +47,7 @@ public fun polarCoordinates(
  * Builds a soft angular sweep mask around [angle] in normalized polar space.
  *
  * [width] and [feather] are also interpreted in normalized angle units, where `1` is a full turn.
+ * This is the canonical polar mask helper for radar sweeps, arcs, and rotating wedges.
  */
 public fun angularSweep(
     uv: Float2Expr,
@@ -81,7 +84,9 @@ public fun angularSweep(
 /**
  * Builds a soft polar arc mask by intersecting a ring with an angular sweep.
  *
- * This is useful for rotating radar arcs, orbital indicators, and other circular UI accents.
+ * This is useful for rotating radar arcs, orbital indicators, and other circular UI accents. It is
+ * a good second-step polar helper once [ringMask] and [angularSweep] already make sense on their
+ * own.
  */
 public fun arcMask(
     uv: Float2Expr,

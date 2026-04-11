@@ -31,7 +31,9 @@ public fun pulse(
  * Creates a grid-like mask from normalized UV coordinates.
  *
  * [density] controls how many cells appear across the UV space, while [lineWidth] controls
- * the soft line thickness at cell borders in normalized cell space.
+ * the soft line thickness at cell borders in normalized cell space. This is useful once the author
+ * already understands simpler one-dimensional masks like [bandMask] and broad panel masks like
+ * [rectMask]; it is not the first pattern helper to teach.
  */
 public fun gridMask(
     uv: Float2Expr,
@@ -66,7 +68,8 @@ public fun gridMask(
  * Creates a horizontal scanline mask from a coordinate, repeated every [spacing] units.
  *
  * This helper is typically driven by pixel-space coordinates such as `fragCoord.y`. [softness]
- * controls how quickly the line fades away from its origin.
+ * controls how quickly the line fades away from its origin. Treat it as a display-style secondary
+ * helper after the main content, mask, and sampling path are already clear.
  */
 public fun scanlines(
     position: FloatExpr,

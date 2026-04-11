@@ -25,9 +25,22 @@
  *   [angularSweep]
  * - routing / scene structure: [segmentMask], [segmentProgress], [segmentPulse]
  *
+ * A useful teaching order is:
+ *
+ * 1. move from sample space into normalized or local space with [normalizedUv], [centeredUv], and
+ *    [aspectCenteredUv]
+ * 2. build readable masks with [bandMask], [circleMask], [rectMask], and the reveal helpers
+ * 3. turn those masks into layers with [maskedMix], [alphaMask], and [maskedScreen]
+ * 4. switch into local SDF authoring with [sdCircle], [sdRoundedBox], [softFill], and [softStroke]
+ * 5. add richer motion or scene structure through [pulse], [linearRamp], [angularSweep], and the
+ *    routing helpers
+ *
  * Broader helpers such as `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`,
  * `frameMask(...)`, and `cornerMask(...)` remain useful, but they are better treated as
  * exploratory helpers than the first teaching surface.
+ * Mapping helpers like [inverseLerp] and [remap] support the canonical path without defining it;
+ * decorative quantization, procedural noise, palette, frame, and distortion helpers should
+ * usually come after the base mask/composite/shape mental model is already clear.
  *
  * Helpers are grouped by topic across source files (mapping, patterns, masks, compositing, …).
  * Prefer composing a few clear helpers over growing the surface with one-off variants. The sample

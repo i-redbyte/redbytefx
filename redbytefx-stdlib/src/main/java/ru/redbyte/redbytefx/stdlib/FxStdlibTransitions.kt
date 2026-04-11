@@ -6,7 +6,8 @@ import ru.redbyte.redbytefx.*
  * Builds a horizontal reveal mask from normalized UV coordinates.
  *
  * [progress] is normalized to the `[0, 1]` range. When [fromLeft] is `true`, the reveal expands
- * from the left edge; otherwise it expands from the right edge.
+ * from the left edge; otherwise it expands from the right edge. This is one of the canonical
+ * reveal helpers to teach before richer transition or scene-graph-like flows.
  */
 public fun horizontalReveal(
     uv: Float2Expr,
@@ -54,7 +55,8 @@ public fun horizontalReveal(
  * Builds a vertical reveal mask from normalized UV coordinates.
  *
  * [progress] is normalized to the `[0, 1]` range. When [fromTop] is `true`, the reveal expands
- * from the top edge; otherwise it expands from the bottom edge.
+ * from the top edge; otherwise it expands from the bottom edge. Treat it as the vertical companion
+ * to [horizontalReveal] in the same canonical reveal family.
  */
 public fun verticalReveal(
     uv: Float2Expr,
@@ -101,7 +103,9 @@ public fun verticalReveal(
 /**
  * Builds a radial reveal mask from normalized UV coordinates.
  *
- * [progress] is normalized to the `[0, 1]` range and scales [maxRadius].
+ * [progress] is normalized to the `[0, 1]` range and scales [maxRadius]. This is the circular
+ * companion to [horizontalReveal] and [verticalReveal] when the reveal wants to read as a growing
+ * focus region instead of an edge wipe.
  */
 public fun radialReveal(
     uv: Float2Expr,

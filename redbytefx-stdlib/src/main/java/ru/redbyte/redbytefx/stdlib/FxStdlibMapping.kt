@@ -7,6 +7,8 @@ import ru.redbyte.redbytefx.*
  *
  * The result is not clamped, so values outside the input range may produce values below `0` or
  * above `1`. Collapsed input ranges are undefined, just like the equivalent hand-written AGSL.
+ * This is a small canonical support helper when a shader already has a clear numeric range model
+ * and simply needs readable normalization math.
  */
 public fun inverseLerp(
     inputStart: FloatExpr,
@@ -27,7 +29,9 @@ public fun inverseLerp(
  * Remaps [value] from `[inputStart, inputEnd]` into `[outputStart, outputEnd]`.
  *
  * The interpolation amount is not clamped. Use [saturate] on the result when the output should
- * stay inside the destination range.
+ * stay inside the destination range. This is the main canonical mapping helper in `stdlib`: it
+ * turns raw numeric ranges into readable mask, blend, or motion intensities without inventing
+ * ad-hoc inline math every time.
  */
 public fun remap(
     value: FloatExpr,
@@ -58,7 +62,9 @@ public fun remap(
  * Posterizes a normalized scalar expression into [levels] discrete values.
  *
  * Inputs are clamped to the `[0, 1]` range before quantization. Values smaller than `2` are
- * treated as `2`, and non-integer level counts are floored.
+ * treated as `2`, and non-integer level counts are floored. This is intentionally more stylized
+ * than [inverseLerp] or [remap], so it belongs after the underlying color or mask path is already
+ * clear.
  */
 public fun posterize(
     value: FloatExpr,

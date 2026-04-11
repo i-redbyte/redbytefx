@@ -16,7 +16,9 @@ private fun projectedUv(
  * Builds a normalized linear ramp from UV space along [direction].
  *
  * The returned value is clamped to the `[0, 1]` range and is useful for directional fades,
- * panel lighting, and beam-like compositing masks.
+ * panel lighting, and beam-like compositing masks. This is the main canonical gradient helper in
+ * `stdlib`: pair it with [maskedMix], [alphaMask], or reveal logic before reaching for richer
+ * directional effects.
  */
 public fun linearRamp(
     uv: Float2Expr,
@@ -46,7 +48,8 @@ public fun linearRamp(
 /**
  * Builds a radial ramp around [center].
  *
- * The result stays near `1` inside [innerRadius] and fades toward `0` at [outerRadius].
+ * The result stays near `1` inside [innerRadius] and fades toward `0` at [outerRadius]. Treat it
+ * as the radial companion to [linearRamp] for soft falloff, glow, or vignette-style masks.
  */
 public fun radialRamp(
     uv: Float2Expr,
@@ -78,7 +81,9 @@ public fun radialRamp(
  * Creates a soft directional sweep band from UV space.
  *
  * [center] controls the sweep position along the projected direction, while [width] and
- * [feather] control the visible body and softness of the band.
+ * [feather] control the visible body and softness of the band. This is a richer second-step
+ * helper built on the same mental model as [linearRamp] + [bandMask], rather than the first
+ * gradient helper to teach.
  */
 public fun directionalSweep(
     uv: Float2Expr,

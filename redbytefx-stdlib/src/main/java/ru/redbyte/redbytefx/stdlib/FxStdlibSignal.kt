@@ -6,7 +6,9 @@ import ru.redbyte.redbytefx.*
  * Creates a soft one-dimensional band around [center].
  *
  * This is useful for scan windows, lock bands, and other effects that need a reusable
- * horizontal or vertical mask instead of ad-hoc `abs(...)` and `smoothstep(...)` chains.
+ * horizontal or vertical mask instead of ad-hoc `abs(...)` and `smoothstep(...)` chains. This is
+ * the canonical one-dimensional mask helper to teach before richer directional or repeated signal
+ * patterns.
  */
 public fun bandMask(
     position: FloatExpr,
@@ -55,7 +57,9 @@ public fun bandMask(
  * Creates repeated soft bars along a single axis.
  *
  * [density] controls how many bars appear across the normalized range, [width] controls the
- * visible body of each bar, and [phase] scrolls the pattern over time or space.
+ * visible body of each bar, and [phase] scrolls the pattern over time or space. Treat this as the
+ * repeated/animated companion to [bandMask], not as a replacement for first understanding the
+ * simpler band itself.
  */
 public fun signalBars(
     position: FloatExpr,
@@ -112,7 +116,9 @@ public fun signalBars(
  * Applies a lightweight horizontal scan distortion to normalized UV coordinates.
  *
  * The returned UVs stay in normalized space, which makes the helper easy to compose with
- * further sampling, masking, or color processing steps.
+ * further sampling, masking, or color processing steps. This is intentionally a secondary
+ * distortion helper: use it after the base `normalizedUv() -> sampleUv(...)` sampling path is
+ * already explicit and readable.
  */
 public fun scanWarp(
     uv: Float2Expr,
