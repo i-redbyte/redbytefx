@@ -232,6 +232,35 @@ class FxDslCompilerTest {
     }
 
     @Test
+    fun sharedMathWrappersCompileVectorAndLiteralBuiltins() {
+        val effect = redbytefx {
+            val uv = let(fragCoord / resolution, "uv")
+            val tiled = let(fract(floor(uv * 6f)), "tiled")
+            val softened = let(smoothstep(0.15f, 0.85f, tiled), "softened")
+            val gates = let(step(0.45f, softened), "gates")
+            val mixed = let(
+                mix(float3(tiled, 0.25f), float3(gates, 1f), 0.5f),
+                "mixed"
+            )
+            val distance = let(length(gates), "distance")
+            val projection = let(dot(tiled, gates), "projection")
+
+            color(mixed.x + distance, mixed.y + projection, mixed.z)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float2 l_tiled"))
+        assertTrue(source.contains("floor"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("float2 l_softened = smoothstep(0.15, 0.85, l_tiled);"))
+        assertTrue(source.contains("float2 l_gates = step(0.45, l_softened);"))
+        assertTrue(source.contains("float3 l_mixed = mix(float3(l_tiled, 0.25), float3(l_gates, 1.0), 0.5);"))
+        assertTrue(source.contains("float l_distance = length(l_gates);"))
+        assertTrue(source.contains("float l_projection = dot(l_tiled, l_gates);"))
+    }
+
+    @Test
     fun functionAndLocalNamesNormalizeCamelCaseAndSuffixCollisions() {
         val effect = redbytefx {
             val pulseBand = fn(

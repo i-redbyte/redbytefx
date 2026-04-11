@@ -1,22 +1,132 @@
 package ru.redbyte.redbytefx
 
+private fun scalarLiteral(value: Float): FloatExpr =
+    floatLiteral(value)
+
+private fun unaryBuiltin(function: String, value: FloatExpr): FloatExpr =
+    callFloat(function, value)
+
+private fun unaryBuiltin(function: String, value: Float2Expr): Float2Expr =
+    callFloat2(function, value)
+
+private fun unaryBuiltin(function: String, value: Float3Expr): Float3Expr =
+    callFloat3(function, value)
+
+private fun unaryBuiltin(function: String, value: Float4Expr): Float4Expr =
+    callFloat4(function, value)
+
+private fun binaryBuiltin(function: String, left: FloatExpr, right: FloatExpr): FloatExpr =
+    callFloat(function, left, right)
+
+private fun binaryBuiltin(function: String, left: Float2Expr, right: FloatExpr): Float2Expr =
+    callFloat2(function, left, right)
+
+private fun binaryBuiltin(function: String, left: Float3Expr, right: FloatExpr): Float3Expr =
+    callFloat3(function, left, right)
+
+private fun binaryBuiltin(function: String, left: Float4Expr, right: FloatExpr): Float4Expr =
+    callFloat4(function, left, right)
+
+private fun binaryBuiltin(function: String, left: FloatExpr, right: Float2Expr): Float2Expr =
+    callFloat2(function, left, right)
+
+private fun binaryBuiltin(function: String, left: FloatExpr, right: Float3Expr): Float3Expr =
+    callFloat3(function, left, right)
+
+private fun binaryBuiltin(function: String, left: FloatExpr, right: Float4Expr): Float4Expr =
+    callFloat4(function, left, right)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: FloatExpr,
+    second: FloatExpr,
+    third: FloatExpr
+): FloatExpr = callFloat(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: Float2Expr,
+    second: Float2Expr,
+    third: FloatExpr
+): Float2Expr = callFloat2(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: Float3Expr,
+    second: Float3Expr,
+    third: FloatExpr
+): Float3Expr = callFloat3(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: Float4Expr,
+    second: Float4Expr,
+    third: FloatExpr
+): Float4Expr = callFloat4(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: ColorExpr,
+    second: ColorExpr,
+    third: FloatExpr
+): ColorExpr = callColor(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: FloatExpr,
+    second: FloatExpr,
+    third: Float2Expr
+): Float2Expr = callFloat2(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: FloatExpr,
+    second: FloatExpr,
+    third: Float3Expr
+): Float3Expr = callFloat3(function, first, second, third)
+
+private fun ternaryBuiltin(
+    function: String,
+    first: FloatExpr,
+    second: FloatExpr,
+    third: Float4Expr
+): Float4Expr = callFloat4(function, first, second, third)
+
+private fun scalarResultBuiltin(function: String, value: Float2Expr): FloatExpr =
+    callFloat(function, value)
+
+private fun scalarResultBuiltin(function: String, value: Float3Expr): FloatExpr =
+    callFloat(function, value)
+
+private fun scalarResultBuiltin(function: String, value: Float4Expr): FloatExpr =
+    callFloat(function, value)
+
+private fun scalarResultBuiltin(function: String, left: Float2Expr, right: Float2Expr): FloatExpr =
+    callFloat(function, left, right)
+
+private fun scalarResultBuiltin(function: String, left: Float3Expr, right: Float3Expr): FloatExpr =
+    callFloat(function, left, right)
+
+private fun scalarResultBuiltin(function: String, left: Float4Expr, right: Float4Expr): FloatExpr =
+    callFloat(function, left, right)
+
 /**
  * Returns the sine of a scalar expression.
  */
 public fun sin(value: FloatExpr): FloatExpr =
-    callFloat("sin", value)
+    unaryBuiltin("sin", value)
 
 /**
  * Returns the cosine of a scalar expression.
  */
 public fun cos(value: FloatExpr): FloatExpr =
-    callFloat("cos", value)
+    unaryBuiltin("cos", value)
 
 /**
  * Returns the arc tangent of a scalar expression.
  */
 public fun atan(value: FloatExpr): FloatExpr =
-    callFloat("atan", value)
+    unaryBuiltin("atan", value)
 
 /**
  * Returns the arc tangent of the vector formed by [y] and [x].
@@ -24,121 +134,121 @@ public fun atan(value: FloatExpr): FloatExpr =
  * This maps to AGSL's two-argument `atan(y, x)` form and is useful for polar coordinate helpers.
  */
 public fun atan(y: FloatExpr, x: FloatExpr): FloatExpr =
-    callFloat("atan", y, x)
+    binaryBuiltin("atan", y, x)
 
 /**
  * Returns the arc tangent of the vector formed by [y] and a literal [x].
  */
 public fun atan(y: FloatExpr, x: Float): FloatExpr =
-    atan(y, floatLiteral(x))
+    atan(y, scalarLiteral(x))
 
 /**
  * Returns the arc tangent of the vector formed by a literal [y] and [x].
  */
 public fun atan(y: Float, x: FloatExpr): FloatExpr =
-    atan(floatLiteral(y), x)
+    atan(scalarLiteral(y), x)
 
 /**
  * Returns the absolute value of a scalar expression.
  */
 public fun abs(value: FloatExpr): FloatExpr =
-    callFloat("abs", value)
+    unaryBuiltin("abs", value)
 
 /**
  * Floors a scalar expression.
  */
 public fun floor(value: FloatExpr): FloatExpr =
-    callFloat("floor", value)
+    unaryBuiltin("floor", value)
 
 /**
  * Floors a `float2` expression component-wise.
  */
 public fun floor(value: Float2Expr): Float2Expr =
-    callFloat2("floor", value)
+    unaryBuiltin("floor", value)
 
 /**
  * Floors a `float3` expression component-wise.
  */
 public fun floor(value: Float3Expr): Float3Expr =
-    callFloat3("floor", value)
+    unaryBuiltin("floor", value)
 
 /**
  * Floors a `float4` expression component-wise.
  */
 public fun floor(value: Float4Expr): Float4Expr =
-    callFloat4("floor", value)
+    unaryBuiltin("floor", value)
 
 /**
  * Ceils a scalar expression.
  */
 public fun ceil(value: FloatExpr): FloatExpr =
-    callFloat("ceil", value)
+    unaryBuiltin("ceil", value)
 
 /**
  * Ceils a `float2` expression component-wise.
  */
 public fun ceil(value: Float2Expr): Float2Expr =
-    callFloat2("ceil", value)
+    unaryBuiltin("ceil", value)
 
 /**
  * Ceils a `float3` expression component-wise.
  */
 public fun ceil(value: Float3Expr): Float3Expr =
-    callFloat3("ceil", value)
+    unaryBuiltin("ceil", value)
 
 /**
  * Ceils a `float4` expression component-wise.
  */
 public fun ceil(value: Float4Expr): Float4Expr =
-    callFloat4("ceil", value)
+    unaryBuiltin("ceil", value)
 
 /**
  * Returns the fractional part of a scalar expression.
  */
 public fun fract(value: FloatExpr): FloatExpr =
-    callFloat("fract", value)
+    unaryBuiltin("fract", value)
 
 /**
  * Returns the fractional part of a `float2` expression component-wise.
  */
 public fun fract(value: Float2Expr): Float2Expr =
-    callFloat2("fract", value)
+    unaryBuiltin("fract", value)
 
 /**
  * Returns the fractional part of a `float3` expression component-wise.
  */
 public fun fract(value: Float3Expr): Float3Expr =
-    callFloat3("fract", value)
+    unaryBuiltin("fract", value)
 
 /**
  * Returns the fractional part of a `float4` expression component-wise.
  */
 public fun fract(value: Float4Expr): Float4Expr =
-    callFloat4("fract", value)
+    unaryBuiltin("fract", value)
 
 /**
  * Returns the smaller of two scalar expressions.
  */
 public fun min(left: FloatExpr, right: FloatExpr): FloatExpr =
-    callFloat("min", left, right)
+    binaryBuiltin("min", left, right)
 
 /**
  * Returns the smaller of a scalar expression and a scalar literal.
  */
 public fun min(left: FloatExpr, right: Float): FloatExpr =
-    min(left, floatLiteral(right))
+    min(left, scalarLiteral(right))
 
 /**
  * Returns the larger of two scalar expressions.
  */
 public fun max(left: FloatExpr, right: FloatExpr): FloatExpr =
-    callFloat("max", left, right)
+    binaryBuiltin("max", left, right)
 
 /**
  * Returns the larger of a scalar expression and a scalar literal.
  */
 public fun max(left: FloatExpr, right: Float): FloatExpr =
-    max(left, floatLiteral(right))
+    max(left, scalarLiteral(right))
 
 /**
  * Clamps a scalar expression between [minValue] and [maxValue].
@@ -147,7 +257,7 @@ public fun clamp(
     value: FloatExpr,
     minValue: FloatExpr,
     maxValue: FloatExpr
-): FloatExpr = callFloat("clamp", value, minValue, maxValue)
+): FloatExpr = ternaryBuiltin("clamp", value, minValue, maxValue)
 
 /**
  * Clamps a scalar expression between scalar literals.
@@ -156,7 +266,7 @@ public fun clamp(
     value: FloatExpr,
     minValue: Float,
     maxValue: Float
-): FloatExpr = clamp(value, floatLiteral(minValue), floatLiteral(maxValue))
+): FloatExpr = clamp(value, scalarLiteral(minValue), scalarLiteral(maxValue))
 
 /**
  * Clamps a scalar expression to the `[0, 1]` range.
@@ -168,151 +278,151 @@ public fun saturate(value: FloatExpr): FloatExpr =
  * Computes modulo for two scalar expressions.
  */
 public fun mod(left: FloatExpr, right: FloatExpr): FloatExpr =
-    callFloat("mod", left, right)
+    binaryBuiltin("mod", left, right)
 
 /**
  * Computes modulo for a scalar expression and a scalar literal.
  */
 public fun mod(left: FloatExpr, right: Float): FloatExpr =
-    mod(left, floatLiteral(right))
+    mod(left, scalarLiteral(right))
 
 /**
  * Computes modulo for a `float2` expression with a scalar expression divisor.
  */
 public fun mod(left: Float2Expr, right: FloatExpr): Float2Expr =
-    callFloat2("mod", left, right)
+    binaryBuiltin("mod", left, right)
 
 /**
  * Computes modulo for a `float2` expression with a scalar literal divisor.
  */
 public fun mod(left: Float2Expr, right: Float): Float2Expr =
-    mod(left, floatLiteral(right))
+    mod(left, scalarLiteral(right))
 
 /**
  * Computes modulo for a `float3` expression with a scalar expression divisor.
  */
 public fun mod(left: Float3Expr, right: FloatExpr): Float3Expr =
-    callFloat3("mod", left, right)
+    binaryBuiltin("mod", left, right)
 
 /**
  * Computes modulo for a `float3` expression with a scalar literal divisor.
  */
 public fun mod(left: Float3Expr, right: Float): Float3Expr =
-    mod(left, floatLiteral(right))
+    mod(left, scalarLiteral(right))
 
 /**
  * Computes modulo for a `float4` expression with a scalar expression divisor.
  */
 public fun mod(left: Float4Expr, right: FloatExpr): Float4Expr =
-    callFloat4("mod", left, right)
+    binaryBuiltin("mod", left, right)
 
 /**
  * Computes modulo for a `float4` expression with a scalar literal divisor.
  */
 public fun mod(left: Float4Expr, right: Float): Float4Expr =
-    mod(left, floatLiteral(right))
+    mod(left, scalarLiteral(right))
 
 /**
  * Raises a scalar expression to a scalar expression exponent.
  */
 public fun pow(base: FloatExpr, exponent: FloatExpr): FloatExpr =
-    callFloat("pow", base, exponent)
+    binaryBuiltin("pow", base, exponent)
 
 /**
  * Raises a scalar expression to a scalar literal exponent.
  */
 public fun pow(base: FloatExpr, exponent: Float): FloatExpr =
-    pow(base, floatLiteral(exponent))
+    pow(base, scalarLiteral(exponent))
 
 /**
  * Raises a scalar literal to a scalar expression exponent.
  */
 public fun pow(base: Float, exponent: FloatExpr): FloatExpr =
-    pow(floatLiteral(base), exponent)
+    pow(scalarLiteral(base), exponent)
 
 /**
  * Raises a `float2` expression to a scalar expression exponent component-wise.
  */
 public fun pow(base: Float2Expr, exponent: FloatExpr): Float2Expr =
-    callFloat2("pow", base, exponent)
+    binaryBuiltin("pow", base, exponent)
 
 /**
  * Raises a `float2` expression to a scalar literal exponent component-wise.
  */
 public fun pow(base: Float2Expr, exponent: Float): Float2Expr =
-    pow(base, floatLiteral(exponent))
+    pow(base, scalarLiteral(exponent))
 
 /**
  * Raises a `float3` expression to a scalar expression exponent component-wise.
  */
 public fun pow(base: Float3Expr, exponent: FloatExpr): Float3Expr =
-    callFloat3("pow", base, exponent)
+    binaryBuiltin("pow", base, exponent)
 
 /**
  * Raises a `float3` expression to a scalar literal exponent component-wise.
  */
 public fun pow(base: Float3Expr, exponent: Float): Float3Expr =
-    pow(base, floatLiteral(exponent))
+    pow(base, scalarLiteral(exponent))
 
 /**
  * Raises a `float4` expression to a scalar expression exponent component-wise.
  */
 public fun pow(base: Float4Expr, exponent: FloatExpr): Float4Expr =
-    callFloat4("pow", base, exponent)
+    binaryBuiltin("pow", base, exponent)
 
 /**
  * Raises a `float4` expression to a scalar literal exponent component-wise.
  */
 public fun pow(base: Float4Expr, exponent: Float): Float4Expr =
-    pow(base, floatLiteral(exponent))
+    pow(base, scalarLiteral(exponent))
 
 /**
  * Applies `step(edge, value)` to scalar expressions.
  */
 public fun step(edge: FloatExpr, value: FloatExpr): FloatExpr =
-    callFloat("step", edge, value)
+    binaryBuiltin("step", edge, value)
 
 /**
  * Applies `step(edge, value)` using a scalar literal edge.
  */
 public fun step(edge: Float, value: FloatExpr): FloatExpr =
-    step(floatLiteral(edge), value)
+    step(scalarLiteral(edge), value)
 
 /**
  * Applies `step(edge, value)` to a `float2` expression.
  */
 public fun step(edge: FloatExpr, value: Float2Expr): Float2Expr =
-    callFloat2("step", edge, value)
+    binaryBuiltin("step", edge, value)
 
 /**
  * Applies `step(edge, value)` to a `float2` expression using a scalar literal edge.
  */
 public fun step(edge: Float, value: Float2Expr): Float2Expr =
-    step(floatLiteral(edge), value)
+    step(scalarLiteral(edge), value)
 
 /**
  * Applies `step(edge, value)` to a `float3` expression.
  */
 public fun step(edge: FloatExpr, value: Float3Expr): Float3Expr =
-    callFloat3("step", edge, value)
+    binaryBuiltin("step", edge, value)
 
 /**
  * Applies `step(edge, value)` to a `float3` expression using a scalar literal edge.
  */
 public fun step(edge: Float, value: Float3Expr): Float3Expr =
-    step(floatLiteral(edge), value)
+    step(scalarLiteral(edge), value)
 
 /**
  * Applies `step(edge, value)` to a `float4` expression.
  */
 public fun step(edge: FloatExpr, value: Float4Expr): Float4Expr =
-    callFloat4("step", edge, value)
+    binaryBuiltin("step", edge, value)
 
 /**
  * Applies `step(edge, value)` to a `float4` expression using a scalar literal edge.
  */
 public fun step(edge: Float, value: Float4Expr): Float4Expr =
-    step(floatLiteral(edge), value)
+    step(scalarLiteral(edge), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to scalar expressions.
@@ -321,7 +431,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: FloatExpr,
     value: FloatExpr
-): FloatExpr = callFloat("smoothstep", edge0, edge1, value)
+): FloatExpr = ternaryBuiltin("smoothstep", edge0, edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` using scalar literal edges.
@@ -330,7 +440,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: Float,
     value: FloatExpr
-): FloatExpr = smoothstep(floatLiteral(edge0), floatLiteral(edge1), value)
+): FloatExpr = smoothstep(scalarLiteral(edge0), scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` using a literal lower edge.
@@ -339,7 +449,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: FloatExpr,
     value: FloatExpr
-): FloatExpr = smoothstep(floatLiteral(edge0), edge1, value)
+): FloatExpr = smoothstep(scalarLiteral(edge0), edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` using a literal upper edge.
@@ -348,7 +458,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: Float,
     value: FloatExpr
-): FloatExpr = smoothstep(edge0, floatLiteral(edge1), value)
+): FloatExpr = smoothstep(edge0, scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float2` expression.
@@ -357,7 +467,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: FloatExpr,
     value: Float2Expr
-): Float2Expr = callFloat2("smoothstep", edge0, edge1, value)
+): Float2Expr = ternaryBuiltin("smoothstep", edge0, edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float2` expression using literal edges.
@@ -366,7 +476,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: Float,
     value: Float2Expr
-): Float2Expr = smoothstep(floatLiteral(edge0), floatLiteral(edge1), value)
+): Float2Expr = smoothstep(scalarLiteral(edge0), scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float2` expression using a literal lower edge.
@@ -375,7 +485,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: FloatExpr,
     value: Float2Expr
-): Float2Expr = smoothstep(floatLiteral(edge0), edge1, value)
+): Float2Expr = smoothstep(scalarLiteral(edge0), edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float2` expression using a literal upper edge.
@@ -384,7 +494,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: Float,
     value: Float2Expr
-): Float2Expr = smoothstep(edge0, floatLiteral(edge1), value)
+): Float2Expr = smoothstep(edge0, scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float3` expression.
@@ -393,7 +503,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: FloatExpr,
     value: Float3Expr
-): Float3Expr = callFloat3("smoothstep", edge0, edge1, value)
+): Float3Expr = ternaryBuiltin("smoothstep", edge0, edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float3` expression using literal edges.
@@ -402,7 +512,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: Float,
     value: Float3Expr
-): Float3Expr = smoothstep(floatLiteral(edge0), floatLiteral(edge1), value)
+): Float3Expr = smoothstep(scalarLiteral(edge0), scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float3` expression using a literal lower edge.
@@ -411,7 +521,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: FloatExpr,
     value: Float3Expr
-): Float3Expr = smoothstep(floatLiteral(edge0), edge1, value)
+): Float3Expr = smoothstep(scalarLiteral(edge0), edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float3` expression using a literal upper edge.
@@ -420,7 +530,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: Float,
     value: Float3Expr
-): Float3Expr = smoothstep(edge0, floatLiteral(edge1), value)
+): Float3Expr = smoothstep(edge0, scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float4` expression.
@@ -429,7 +539,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: FloatExpr,
     value: Float4Expr
-): Float4Expr = callFloat4("smoothstep", edge0, edge1, value)
+): Float4Expr = ternaryBuiltin("smoothstep", edge0, edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float4` expression using literal edges.
@@ -438,7 +548,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: Float,
     value: Float4Expr
-): Float4Expr = smoothstep(floatLiteral(edge0), floatLiteral(edge1), value)
+): Float4Expr = smoothstep(scalarLiteral(edge0), scalarLiteral(edge1), value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float4` expression using a literal lower edge.
@@ -447,7 +557,7 @@ public fun smoothstep(
     edge0: Float,
     edge1: FloatExpr,
     value: Float4Expr
-): Float4Expr = smoothstep(floatLiteral(edge0), edge1, value)
+): Float4Expr = smoothstep(scalarLiteral(edge0), edge1, value)
 
 /**
  * Applies `smoothstep(edge0, edge1, value)` to a `float4` expression using a literal upper edge.
@@ -456,7 +566,7 @@ public fun smoothstep(
     edge0: FloatExpr,
     edge1: Float,
     value: Float4Expr
-): Float4Expr = smoothstep(edge0, floatLiteral(edge1), value)
+): Float4Expr = smoothstep(edge0, scalarLiteral(edge1), value)
 
 /**
  * Linearly interpolates between two scalar expressions.
@@ -465,7 +575,7 @@ public fun mix(
     left: FloatExpr,
     right: FloatExpr,
     amount: FloatExpr
-): FloatExpr = callFloat("mix", left, right, amount)
+): FloatExpr = ternaryBuiltin("mix", left, right, amount)
 
 /**
  * Linearly interpolates between a scalar literal and a scalar expression.
@@ -474,7 +584,7 @@ public fun mix(
     left: Float,
     right: FloatExpr,
     amount: FloatExpr
-): FloatExpr = mix(floatLiteral(left), right, amount)
+): FloatExpr = mix(scalarLiteral(left), right, amount)
 
 /**
  * Linearly interpolates between a scalar expression and a scalar literal.
@@ -483,7 +593,7 @@ public fun mix(
     left: FloatExpr,
     right: Float,
     amount: FloatExpr
-): FloatExpr = mix(left, floatLiteral(right), amount)
+): FloatExpr = mix(left, scalarLiteral(right), amount)
 
 /**
  * Linearly interpolates between two scalar literals.
@@ -492,7 +602,7 @@ public fun mix(
     left: Float,
     right: Float,
     amount: FloatExpr
-): FloatExpr = mix(floatLiteral(left), floatLiteral(right), amount)
+): FloatExpr = mix(scalarLiteral(left), scalarLiteral(right), amount)
 
 /**
  * Linearly interpolates between two scalar expressions using a scalar literal amount.
@@ -501,7 +611,7 @@ public fun mix(
     left: FloatExpr,
     right: FloatExpr,
     amount: Float
-): FloatExpr = mix(left, right, floatLiteral(amount))
+): FloatExpr = mix(left, right, scalarLiteral(amount))
 
 /**
  * Linearly interpolates between two `float2` expressions.
@@ -510,7 +620,7 @@ public fun mix(
     left: Float2Expr,
     right: Float2Expr,
     amount: FloatExpr
-): Float2Expr = callFloat2("mix", left, right, amount)
+): Float2Expr = ternaryBuiltin("mix", left, right, amount)
 
 /**
  * Linearly interpolates between two `float2` expressions using a scalar literal amount.
@@ -519,7 +629,7 @@ public fun mix(
     left: Float2Expr,
     right: Float2Expr,
     amount: Float
-): Float2Expr = mix(left, right, floatLiteral(amount))
+): Float2Expr = mix(left, right, scalarLiteral(amount))
 
 /**
  * Linearly interpolates between two `float3` expressions.
@@ -528,7 +638,7 @@ public fun mix(
     left: Float3Expr,
     right: Float3Expr,
     amount: FloatExpr
-): Float3Expr = callFloat3("mix", left, right, amount)
+): Float3Expr = ternaryBuiltin("mix", left, right, amount)
 
 /**
  * Linearly interpolates between two `float3` expressions using a scalar literal amount.
@@ -537,7 +647,7 @@ public fun mix(
     left: Float3Expr,
     right: Float3Expr,
     amount: Float
-): Float3Expr = mix(left, right, floatLiteral(amount))
+): Float3Expr = mix(left, right, scalarLiteral(amount))
 
 /**
  * Linearly interpolates between two `float4` expressions.
@@ -546,7 +656,7 @@ public fun mix(
     left: Float4Expr,
     right: Float4Expr,
     amount: FloatExpr
-): Float4Expr = callFloat4("mix", left, right, amount)
+): Float4Expr = ternaryBuiltin("mix", left, right, amount)
 
 /**
  * Linearly interpolates between two `float4` expressions using a scalar literal amount.
@@ -555,7 +665,7 @@ public fun mix(
     left: Float4Expr,
     right: Float4Expr,
     amount: Float
-): Float4Expr = mix(left, right, floatLiteral(amount))
+): Float4Expr = mix(left, right, scalarLiteral(amount))
 
 /**
  * Linearly interpolates between two color expressions.
@@ -564,7 +674,7 @@ public fun mix(
     left: ColorExpr,
     right: ColorExpr,
     amount: FloatExpr
-): ColorExpr = callColor("mix", left, right, amount)
+): ColorExpr = ternaryBuiltin("mix", left, right, amount)
 
 /**
  * Linearly interpolates between two color expressions using a scalar literal amount.
@@ -573,43 +683,43 @@ public fun mix(
     left: ColorExpr,
     right: ColorExpr,
     amount: Float
-): ColorExpr = mix(left, right, floatLiteral(amount))
+): ColorExpr = mix(left, right, scalarLiteral(amount))
 
 /**
  * Returns the Euclidean length of a `float2` expression.
  */
 public fun length(value: Float2Expr): FloatExpr =
-    callFloat("length", value)
+    scalarResultBuiltin("length", value)
 
 /**
  * Returns the Euclidean length of a `float3` expression.
  */
 public fun length(value: Float3Expr): FloatExpr =
-    callFloat("length", value)
+    scalarResultBuiltin("length", value)
 
 /**
  * Returns the Euclidean length of a `float4` expression.
  */
 public fun length(value: Float4Expr): FloatExpr =
-    callFloat("length", value)
+    scalarResultBuiltin("length", value)
 
 /**
  * Returns the dot product of two `float2` expressions.
  */
 public fun dot(left: Float2Expr, right: Float2Expr): FloatExpr =
-    callFloat("dot", left, right)
+    scalarResultBuiltin("dot", left, right)
 
 /**
  * Returns the dot product of two `float3` expressions.
  */
 public fun dot(left: Float3Expr, right: Float3Expr): FloatExpr =
-    callFloat("dot", left, right)
+    scalarResultBuiltin("dot", left, right)
 
 /**
  * Returns the dot product of two `float4` expressions.
  */
 public fun dot(left: Float4Expr, right: Float4Expr): FloatExpr =
-    callFloat("dot", left, right)
+    scalarResultBuiltin("dot", left, right)
 
 /**
  * Converts degrees to radians.
@@ -631,7 +741,7 @@ public fun withAlpha(
 public fun withAlpha(
     color: ColorExpr,
     alpha: Float
-): ColorExpr = withAlpha(color, floatLiteral(alpha))
+): ColorExpr = withAlpha(color, scalarLiteral(alpha))
 
 /**
  * Computes perceptual luminance from a color expression.
