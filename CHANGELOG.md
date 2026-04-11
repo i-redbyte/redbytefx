@@ -25,6 +25,7 @@
 
 ### Documentation
 
+- **`docs/runtime-measurement-scenario.md`**: repeatable gfxinfo/meminfo measurement checklist and notes on **`FxInstance`** invalidation vs redundant writes; pairs with **`docs/runtime-audit-v0.5.md`** for baselines.
 - **`FxInstance`**: threading guidance (UI thread / **`RuntimeShader`**), performance note on **`RenderEffect`** refresh vs redundant writes.
 
 ## [v0.2-demo] - 2026-04-11
