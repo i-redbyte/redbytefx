@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.sample.model.CanonicalGuide
 import ru.redbyte.redbytefx.sample.model.CanonicalGuideCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
@@ -80,6 +82,8 @@ fun HomeScreen(
     demos: List<DemoInfo>,
     onOpen: (DemoId) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var layerFilter by rememberSaveable { mutableStateOf(LayerFilter.All) }
     var motionFilter by rememberSaveable { mutableStateOf(MotionFilter.All) }
@@ -134,8 +138,25 @@ fun HomeScreen(
     }
     val coreCount = remember(visibleDemos) { visibleDemos.count { it.layer == DemoLayer.Core } }
     val canonicalCount = remember(visibleDemos) { visibleDemos.count { it.isCanonicalDemo } }
+    val sectionAnchors = remember(visibleDemos, normalizedQuery, layerFilter, motionFilter, pathFilter) {
+        val showIntroPanels = normalizedQuery.isEmpty() &&
+            layerFilter == LayerFilter.All &&
+            motionFilter == MotionFilter.All &&
+            pathFilter == PathFilter.All
+        var itemIndex = 2 + if (showIntroPanels) 2 else 0
+        buildMap<DemoSection, Int> {
+            DemoSection.entries.forEach { section ->
+                val count = visibleDemos.count { it.section == section }
+                if (count > 0) {
+                    put(section, itemIndex)
+                    itemIndex += 1 + count
+                }
+            }
+        }
+    }
 
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -156,6 +177,14 @@ fun HomeScreen(
                     layerFilter = LayerFilter.All
                     motionFilter = MotionFilter.All
                     pathFilter = PathFilter.All
+                },
+                sectionAnchors = sectionAnchors,
+                onJumpToSection = { section ->
+                    sectionAnchors[section]?.let { index ->
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(index)
+                        }
+                    }
                 }
             )
         }
@@ -294,7 +323,9 @@ private fun ShowcaseSearchPanel(
     onLayerFilterChange: (LayerFilter) -> Unit,
     onMotionFilterChange: (MotionFilter) -> Unit,
     onPathFilterChange: (PathFilter) -> Unit,
-    onClearAll: () -> Unit
+    onClearAll: () -> Unit,
+    sectionAnchors: Map<DemoSection, Int>,
+    onJumpToSection: (DemoSection) -> Unit
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
@@ -357,6 +388,13 @@ private fun ShowcaseSearchPanel(
             onPathFilterChange = onPathFilterChange,
             modifier = Modifier.padding(top = 14.dp)
         )
+        if (sectionAnchors.size > 1) {
+            SectionJumpRow(
+                anchors = sectionAnchors,
+                onJumpToSection = onJumpToSection,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+        }
     }
 }
 
@@ -455,6 +493,47 @@ private fun <T> FilterRow(
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun SectionJumpRow(
+    anchors: Map<DemoSection, Int>,
+    onJumpToSection: (DemoSection) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = "SECTIONS",
+                accent = MaterialTheme.colorScheme.primary
+            )
+            CyberBadge(
+                text = "${anchors.size} JUMPS",
+                accent = MaterialTheme.colorScheme.secondary
+            )
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DemoSection.entries.forEach { section ->
+                if (section in anchors) {
+                    CyberBadge(
+                        text = section.title.uppercase(),
+                        modifier = Modifier.clickable { onJumpToSection(section) },
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f)
+                    )
+                }
+            }
         }
     }
 }
