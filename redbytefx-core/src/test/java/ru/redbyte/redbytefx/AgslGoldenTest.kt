@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -60,7 +61,8 @@ class AgslGoldenTest {
 
     private fun normalize(text: String): String = text.replace("\r\n", "\n").trimEnd()
 
-    /** Run locally once to refresh golden files under src/test/resources/golden/. */
+    /** Utility test for refreshing golden files under src/test/resources/golden/ when snapshots change. */
+    @Ignore("Utility-only snapshot refresh helper.")
     @Test
     fun dumpGoldenFilesToBuildDir() {
         val outDir = File("build/golden-dump").apply { mkdirs() }

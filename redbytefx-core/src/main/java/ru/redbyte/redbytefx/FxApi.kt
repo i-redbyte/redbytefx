@@ -6,6 +6,8 @@ import android.graphics.RenderEffect
  * Immutable compiled RedByteFX effect.
  *
  * Create a new runtime instance with [newInstance] when you want to apply the effect to content.
+ * The compiled effect itself is reusable and thread-agnostic; mutable runtime state lives in the
+ * returned [FxInstance].
  */
 public interface FxEffect {
     /**
@@ -14,7 +16,7 @@ public interface FxEffect {
     public fun newInstance(): FxInstance
 
     /**
-     * Returns the generated AGSL source for debugging, inspection, or tests.
+     * Returns the generated AGSL source for debugging, inspection, screenshot tests, or docs.
      */
     public fun agslSource(): String
 }
@@ -58,6 +60,9 @@ public interface FxInstance {
 
 /**
  * Typed handle for a shader uniform declared from the DSL.
+ *
+ * A uniform handle is also an expression of the matching DSL type, so it can be referenced
+ * directly inside the shader body after declaration.
  */
 public sealed class FxParam {
     /**
@@ -93,5 +98,9 @@ public sealed class FxParam {
  * Compiles a RedByteFX shader definition into an immutable [FxEffect].
  *
  * The [block] is written against [FxDsl] and must return the final output color.
+ *
+ * The returned effect can be reused to create multiple independent runtime instances via
+ * [FxEffect.newInstance], which is how higher layers such as `rememberFxController(...)` keep
+ * render-target state isolated.
  */
 public fun redbytefx(block: FxDsl.() -> ColorExpr): FxEffect = FxBuilder.build(block)

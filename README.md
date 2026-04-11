@@ -1,19 +1,42 @@
 # redbytefx
 
-`redbytefx` is an Android shader-effect library built around a Kotlin-like DSL that compiles to AGSL.
+`redbytefx` is an Android shader-effect library built around a Kotlin-first DSL that compiles to AGSL and plugs into `RuntimeShader` / `RenderEffect` workflows.
 
-The current direction is:
+## Status
 
-- keep the runtime integration tiny
-- make the shader language expressive enough for real custom effects
-- ship common transforms like `flip`, `mirror`, `rotate`, `scale`, `offset` as helpers, not as hardcoded engine limits
+- current level: `late v0.2 / early v0.3`
+- current platform target: Android `minSdk 33+`
+- current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX`
+- publication is intentionally out of scope for now; the library is still raw
+- current design rule: keep runtime integration tiny, keep generated AGSL predictable, grow reusable helpers in `stdlib` instead of bloating `core`
 
 ## Modules
 
 - `:redbytefx-core`: the DSL, compiler, uniform model, and runtime shader bridge
 - `:redbytefx-compose`: Compose adapter with `Modifier.redbyteFx(...)`
 - `:redbytefx-stdlib`: recipe-level authoring helpers that build on top of the core DSL
-- `:sample`: manual demo app for exploring the DSL and testing effects visually
+- `:sample`: searchable demo app for exploring the DSL, testing effects visually, and inspecting generated AGSL
+
+## Current Capabilities
+
+- low-level shader authoring through typed expressions, uniforms, functions, local variables, and AGSL-like math/color primitives
+- Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
+- a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
+- a strong sample catalog with search, per-demo focus metadata, live controls, DSL snippet, generated AGSL, and visual preview
+
+## Current Limitations
+
+- Android-only for now, built around AGSL-backed `RuntimeShader`
+- `minSdk 33` is currently required
+- the library surface is still raw and not API-frozen
+- `stdlib` is already broad, but it still needs a naming and curation pass before it feels deliberately shaped
+- authoring UX is still early: diagnostics, migration docs, and cookbook material are not at the right level yet
+
+## Project Docs
+
+- `CHANGELOG.md` tracks milestone-level changes.
+- `docs/v0.2-status.md` explains where the shader-stdlib milestone really stands and what is still missing.
+- `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
 
 ## Quickstart
 
@@ -81,6 +104,26 @@ The DSL is intentionally expression-oriented:
 - work with `float2`, `float3`, `float4` and colors through `color(...)`, `withAlpha(...)`, `luminance(...)`, `grayscale(...)`, `mix(...)`
 - return a final color via `sample(...)` or `sampleUnclamped(...)`
 
+## Stdlib Example
+
+`redbytefx-core` stays close to raw shader authoring. `:redbytefx-stdlib` is where reusable recipes live:
+
+```kotlin
+import ru.redbyte.redbytefx.stdlib.gridMask
+import ru.redbyte.redbytefx.stdlib.pulse
+
+val effect = redbytefx {
+    val time by autoUniformTime()
+    val base = let(sample(), "base")
+    val uv = let(fragCoord / resolution, "uv")
+    val grid = let(gridMask(uv, density = 10f, lineWidth = 0.06f), "grid")
+    val drive = let(pulse(time, speed = 1.35f, phase = uv.x * 0.35f), "drive")
+    val tint = color(float3(0.08f, 0.95f, 0.82f), base.a)
+
+    mix(base, tint, grid * drive * 0.85f)
+}
+```
+
 ## DSL vs AGSL
 
 The goal is not to hide shaders. The goal is to keep shader authoring readable, typed, and easier to wire into Android UI.
@@ -131,78 +174,29 @@ What is deliberately *not* part of the `v0.1` core stdlib:
 
 Those belong in separate layers once the core language feels settled.
 
-## v0.2 Direction
+## v0.2 Shader Stdlib
 
-The next step is to grow outward instead of bloating `core`.
+`v0.2` is the shader-stdlib milestone.
 
-- keep `:redbytefx-core` focused on the language, compiler, and essential math/color primitives
-- move recipe-style helpers into `:redbytefx-stdlib`
-- keep generated AGSL predictable even when authoring through higher-level helpers
+- `:redbytefx-core` stays focused on the language, compiler, uniforms, and essential math/color primitives
+- `:redbytefx-compose` keeps runtime integration explicit and small
+- `:redbytefx-stdlib` carries the reusable authoring layer without hiding the generated shader too much
 
-The first `stdlib` helpers now being prepared are:
+The current `stdlib` coverage includes:
 
-- `inverseLerp(...)`
-- `remap(...)`
-- `posterize(...)`
-- `pulse(...)`
-- `gridMask(...)`
-- `scanlines(...)`
-- `hash21(...)`
-- `valueNoise(...)`
-- `grain(...)`
-- `vignette(...)`
-- `adjustSaturation(...)`
-- `blendMultiply(...)`
-- `blendScreen(...)`
-- `blendOverlay(...)`
-- `fbm(...)`
-- `domainWarp(...)`
-- `cosinePalette(...)`
-- `chromaticOffset(...)`
-- `circleMask(...)`
-- `ringMask(...)`
-- `rectMask(...)`
-- `pingPong(...)`
-- `easeInOutSine(...)`
-- `easeInOutCubic(...)`
-- `maskedMix(...)`
-- `alphaMask(...)`
-- `maskedScreen(...)`
-- `maskedOverlay(...)`
-- `horizontalReveal(...)`
-- `verticalReveal(...)`
-- `radialReveal(...)`
-- `bandMask(...)`
-- `signalBars(...)`
-- `scanWarp(...)`
-- `linearRamp(...)`
-- `radialRamp(...)`
-- `directionalSweep(...)`
-- `radialDistance(...)`
-- `polarAngle01(...)`
-- `polarCoordinates(...)`
-- `angularSweep(...)`
-- `arcMask(...)`
-- `centeredUv(...)`
-- `aspectCenteredUv(...)`
-- `radialDirection(...)`
-- `centerGlow(...)`
-- `rimLight(...)`
-- `sdCircle(...)`
-- `sdBox(...)`
-- `sdRoundedBox(...)`
-- `sdSegment(...)`
-- `fill(...)`
-- `softFill(...)`
-- `stroke(...)`
-- `softStroke(...)`
-- `segmentMask(...)`
-- `segmentProgress(...)`
-- `segmentPulse(...)`
-- `edgeDistance(...)`
-- `edgeFade(...)`
-- `frameMask(...)`
-- `cornerMask(...)`
+- mapping and quantization: `inverseLerp(...)`, `remap(...)`, `posterize(...)`
+- procedural and pattern helpers: `pulse(...)`, `gridMask(...)`, `scanlines(...)`, `hash21(...)`, `valueNoise(...)`, `grain(...)`, `vignette(...)`, `fbm(...)`, `domainWarp(...)`
+- color and compositing: `adjustSaturation(...)`, `blendMultiply(...)`, `blendScreen(...)`, `blendOverlay(...)`, `maskedMix(...)`, `alphaMask(...)`, `maskedScreen(...)`, `maskedOverlay(...)`
+- masks and transitions: `circleMask(...)`, `ringMask(...)`, `rectMask(...)`, `horizontalReveal(...)`, `verticalReveal(...)`, `radialReveal(...)`
+- signal, gradients, polar, and lighting helpers: `bandMask(...)`, `signalBars(...)`, `scanWarp(...)`, `linearRamp(...)`, `radialRamp(...)`, `directionalSweep(...)`, `radialDistance(...)`, `polarAngle01(...)`, `polarCoordinates(...)`, `angularSweep(...)`, `arcMask(...)`, `centeredUv(...)`, `aspectCenteredUv(...)`, `radialDirection(...)`, `centerGlow(...)`, `rimLight(...)`
+- SDF, frame, and routing helpers: `sdCircle(...)`, `sdBox(...)`, `sdRoundedBox(...)`, `sdSegment(...)`, `fill(...)`, `softFill(...)`, `stroke(...)`, `softStroke(...)`, `segmentMask(...)`, `segmentProgress(...)`, `segmentPulse(...)`, `edgeDistance(...)`, `edgeFade(...)`, `frameMask(...)`, `cornerMask(...)`
+
+The main remaining work for `v0.2` is no longer raw helper volume. It is curation:
+
+- audit which helpers are truly canonical and which still feel noisy
+- normalize naming, defaults, and parameter ordering
+- improve KotlinDoc and module-level guidance around `core` vs `stdlib`
+- tighten compiler/golden coverage for representative helpers in each family
 
 ## Procedural Example
 
@@ -271,6 +265,6 @@ Text(
 - Use `:sample` as a cookbook: each demo now shows what part of the DSL it is exercising, plus a preview of the generated AGSL.
 - Reach for `:redbytefx-stdlib` when a helper reads like a reusable recipe instead of a fundamental shader primitive.
 
-## Current focus
+## Current Focus
 
-The project is in active redesign. The goal is not just to wrap a few stock transforms, but to grow a real Kotlin-first AGSL authoring experience.
+The sample app already contains a meaningful slice of `v0.3 Tooling`, but the library itself still needs a proper `v0.2` curation pass. The next steps are to finish the shader-stdlib milestone cleanly, then lean into tooling and authoring UX before any publication conversation starts.

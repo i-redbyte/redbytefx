@@ -1,0 +1,25 @@
+uniform shader uContent;
+uniform float2 uResolution;
+uniform float u_amount;
+
+float2 rb_maxCoord(float2 res) {
+  float2 e = float2(0.001);
+  return max(res - e, float2(0.0));
+}
+half4 rb_sample(float2 coord) {
+  float2 p = coord;
+  if (uResolution.x > 2.0 && uResolution.y > 2.0) {
+    p = clamp(p, float2(0.0), rb_maxCoord(uResolution));
+  }
+  return uContent.eval(p);
+}
+
+float3 palette_rgb(float p0, float p1) {
+  return float3(p0, mix(p0, (1.0 - p0), p1), (1.0 - p0));
+}
+
+half4 main(float2 fragCoord) {
+  float3 l_rgb = palette_rgb(u_amount, u_amount);
+  float4 l_rgba = float4(l_rgb, 1.0);
+  return half4(l_rgba);
+}

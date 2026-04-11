@@ -1,0 +1,20 @@
+uniform shader uContent;
+uniform float2 uResolution;
+uniform float u_amp;
+uniform float u_freq;
+
+float2 rb_maxCoord(float2 res) {
+  float2 e = float2(0.001);
+  return max(res - e, float2(0.0));
+}
+half4 rb_sample(float2 coord) {
+  float2 p = coord;
+  if (uResolution.x > 2.0 && uResolution.y > 2.0) {
+    p = clamp(p, float2(0.0), rb_maxCoord(uResolution));
+  }
+  return uContent.eval(p);
+}
+
+half4 main(float2 fragCoord) {
+  return rb_sample((fragCoord + float2(0.0, (sin(((fragCoord).x * u_freq)) * u_amp))));
+}

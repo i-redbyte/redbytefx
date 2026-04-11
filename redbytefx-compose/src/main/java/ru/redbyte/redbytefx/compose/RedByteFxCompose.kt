@@ -134,6 +134,7 @@ public class FxController internal constructor(
  * Remembers a stable [FxController] for the supplied compiled [effect].
  *
  * The remembered controller owns one runtime instance and is intended to back one render target.
+ * If [effect] changes identity, a fresh runtime instance is created for the new compiled shader.
  */
 @Composable
 public fun rememberFxController(effect: FxEffect): FxController {
@@ -256,6 +257,9 @@ public fun FxController.bindFloat4(
  *
  * The supplied [controller] is expected to belong to this render target so its resolution stays
  * in sync with the content size.
+ *
+ * Internally this records the content into an offscreen graphics layer and applies the platform
+ * render effect produced by the controller's runtime shader instance.
  */
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
     composed {
