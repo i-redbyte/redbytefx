@@ -6,7 +6,7 @@ This is a short honest snapshot of where RedByteFX stands right now. It is not a
 
 ## Current level
 
-Primary active level: `v0.2 closed / early v0.3`
+Primary active level: `v0.2 closed / v0.3 tooling closed (sample) / v0.4+ ongoing`
 
 That is still the most important framing:
 
@@ -35,19 +35,19 @@ What is still open after closure:
 
 ### v0.3 Tooling
 
-Status: real and already useful
+Status: **first complete tooling milestone closed** (see [v0.3-tooling.md](v0.3-tooling.md))
 
 What is already solid:
 
 - searchable sample catalog with sections, filters, starter routes, canonical family map, and related-demo routing
-- preview, controls, DSL snippet, generated AGSL, copy flow, and debug/comparison guidance
-- compact-phone layout is substantially better on real hardware
-- runtime measurement flow exists and was run on emulator plus a physical Samsung device
+- shared **DemoLayout**: preview, controls, metadata + inspection, prev/next, follow-ups
+- DSL + generated AGSL panels with **COPY** and **SHARE**, plus compact **COMPARE CODE** dialog on phones
+- wide layout from **~840dp**: deliberate two-column preview | controls on tablets/desktops
+- per-demo debug checklist aligned with path signals
 
-What is still open:
+What can still evolve incrementally:
 
-- there is still room to polish presentation consistency and a few remaining wording/inspection details
-- sample is a strong adoption demo now, but should keep resisting IDE-like sprawl
+- presentation tweaks on new form factors; resist turning the sample into an IDE
 
 ### v0.4 Authoring UX
 

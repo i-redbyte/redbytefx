@@ -4,6 +4,7 @@ package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.animation.animateContentSize
 import android.content.ClipData
+import android.content.Intent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,7 +104,8 @@ fun DemoLayout(
     val navigation = LocalDemoNavigation.current
     BoxWithConstraints {
         val isCompactPhone = maxWidth < 420.dp
-        val usesWideInspectionLayout = maxWidth >= 980.dp
+        // Tablets and wide phones: preview + controls side-by-side (v0.3 tooling layout).
+        val usesWideInspectionLayout = maxWidth >= 840.dp
         val outerPadding = if (isCompactPhone) 8.dp else 16.dp
         val blockSpacing = if (isCompactPhone) 8.dp else 16.dp
         var showInspectionDialog by rememberSaveable(demo?.id?.name) { mutableStateOf(false) }
@@ -260,9 +263,9 @@ private fun DemoControlsPanel(
             }
             Text(
                 text = if (compact) {
-                    "Tune here. Open DSL and AGSL in a quick compare view."
+                    "Tune here. Open DSL and AGSL in a quick compare view; use COPY or SHARE on each panel."
                 } else {
-                    "Tune uniforms first, then compare the DSL and AGSL panels above against the live preview."
+                    "Tune uniforms first, then compare the DSL and AGSL panels above against the live preview. COPY pastes locally; SHARE sends text to another app."
                 },
                 style = if (compact) {
                     MaterialTheme.typography.labelSmall
@@ -490,7 +493,7 @@ private fun DemoInfoCard(
             }
         }
         Text(
-            text = "Use the copy action to compare the authored DSL with the generated shader while iterating on live uniforms.",
+            text = "Use COPY or SHARE on each code panel to compare DSL vs AGSL while iterating on live uniforms.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -587,7 +590,7 @@ private fun DemoInspectionDialog(
                         )
                     }
                     CyberBadge(
-                        text = "COPY READY",
+                        text = "COPY / SHARE",
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -687,6 +690,7 @@ private fun ExpandableCodeBlock(
     stateKey: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val totalLines = previewLineCount(text)
     val canExpand = totalLines > collapsedLines
     val clipboard = LocalClipboard.current
@@ -724,6 +728,21 @@ private fun ExpandableCodeBlock(
                                 )
                             }
                             copyFeedback += 1
+                        }
+                    )
+                )
+                add(
+                    CyberCodeAction(
+                        label = "SHARE",
+                        onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, text)
+                                putExtra(Intent.EXTRA_SUBJECT, "RedByteFX — $title")
+                            }
+                            context.startActivity(
+                                Intent.createChooser(send, "Share $title")
+                            )
                         }
                     )
                 )
@@ -838,7 +857,7 @@ private fun DebugChecklist(
         DebugStep(
             label = "3",
             title = "Compare the generated AGSL shape",
-            body = "After copying the panel, verify uniforms, sample calls, and branches. If the preview feels wrong, simplify back toward `sample()` and add pieces again.",
+            body = "After copying or sharing a panel, verify uniforms, sample calls, and branches. If the preview feels wrong, simplify back toward `sample()` and add pieces again.",
             modifier = Modifier.padding(top = 12.dp),
             compact = compact
         )
