@@ -14,6 +14,16 @@
  * - `width` / `thickness`: visible band or stroke size
  * - `progress`: normalized reveal / timeline position
  *
+ * ### Semantics (read before mixing helpers)
+ *
+ * - **Masked compositing** (`maskedMix`, `maskedScreen`, `maskedOverlay`, `alphaMask`, …): the
+ *   effective weight is always `saturate(mask * amount)` (see `maskedAmount` in
+ *   `FxStdlibCompositing.kt`). Author [mask] in roughly `[0, 1]`; use [amount] to scale how strong
+ *   the effect is, not as a second unrelated alpha.
+ * - **Mapping** (`inverseLerp`, `remap`): [inverseLerp] returns the unclamped normalized `t`
+ *   between two input endpoints; [remap] is exactly `mix(outputStart, outputEnd, inverseLerp(...))` —
+ *   do not duplicate that math with ad-hoc helpers.
+ *
  * ### Canonical (first teaching surface)
  *
  * First-pass starter path in `stdlib`:

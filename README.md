@@ -48,8 +48,10 @@
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
 - **`docs/v0.3-tooling.md`** — **v0.3** sample tooling (preview, controls, DSL/AGSL, copy/share, layouts).
 - **`docs/v0.4-authoring-ux.md`** — **v0.4** authoring hub (AGSL comparison, cookbook, runtime checklist).
+- **`docs/runtime-platform-constraints.md`** — **v0.5** platform notes (minSdk, `RenderEffect` refresh, limits).
 - **`docs/v0.5-runtime-quality.md`** — **v0.5** runtime baseline and measurement pointers.
 - **`docs/v0.6-library-shaping.md`** — **v0.6** canonical vs exploratory library identity.
+- **`docs/library-limitations.md`** — **v0.6** index of limits and supported patterns (links to platform, runtime, sampling docs).
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
 - `docs/cookbook-patterns.md` captures translation patterns from raw AGSL/Shadertoy-style code into the DSL, including end-to-end rewrite examples and a compact porting checklist.
 - `docs/runtime-authoring-checklist.md` is the short practical path for `compile -> inspect -> bind -> apply` when moving from shader authoring into Compose/runtime wiring.

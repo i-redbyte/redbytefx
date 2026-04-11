@@ -2,6 +2,15 @@ package ru.redbyte.redbytefx.stdlib
 
 import ru.redbyte.redbytefx.*
 
+/**
+ * Masked compositing.
+ *
+ * All `masked*` helpers scale the effective mask weight the same way: [maskedAmount] applies the
+ * same **\[0, 1\]** clamp semantics as `saturate(mask * amount)`. The core DSL lowers `saturate`
+ * to `clamp(..., 0, 1)` in generated AGSL. Keep [mask] in a normalized `[0, 1]` band when possible;
+ * use [amount] to dial intensity without changing the mask shape.
+ */
+
 private fun maskedAmount(mask: FloatExpr, amount: FloatExpr): FloatExpr =
     saturate(mask * amount)
 

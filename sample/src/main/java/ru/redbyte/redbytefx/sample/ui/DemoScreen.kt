@@ -6,6 +6,33 @@ import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.demoInfo
 import ru.redbyte.redbytefx.sample.model.recommendedFollowUps
+import ru.redbyte.redbytefx.sample.ui.demos.DemoAurora
+import ru.redbyte.redbytefx.sample.ui.demos.DemoBeacon
+import ru.redbyte.redbytefx.sample.ui.demos.DemoComposite
+import ru.redbyte.redbytefx.sample.ui.demos.DemoCorner
+import ru.redbyte.redbytefx.sample.ui.demos.DemoDuotone
+import ru.redbyte.redbytefx.sample.ui.demos.DemoFilm
+import ru.redbyte.redbytefx.sample.ui.demos.DemoFlip
+import ru.redbyte.redbytefx.sample.ui.demos.DemoFrame
+import ru.redbyte.redbytefx.sample.ui.demos.DemoGlitch
+import ru.redbyte.redbytefx.sample.ui.demos.DemoGrade
+import ru.redbyte.redbytefx.sample.ui.demos.DemoHalo
+import ru.redbyte.redbytefx.sample.ui.demos.DemoLiquidGlass
+import ru.redbyte.redbytefx.sample.ui.demos.DemoMirror
+import ru.redbyte.redbytefx.sample.ui.demos.DemoOffset
+import ru.redbyte.redbytefx.sample.ui.demos.DemoPosterize
+import ru.redbyte.redbytefx.sample.ui.demos.DemoPrism
+import ru.redbyte.redbytefx.sample.ui.demos.DemoPulse
+import ru.redbyte.redbytefx.sample.ui.demos.DemoRadar
+import ru.redbyte.redbytefx.sample.ui.demos.DemoReveal
+import ru.redbyte.redbytefx.sample.ui.demos.DemoRotate
+import ru.redbyte.redbytefx.sample.ui.demos.DemoScale
+import ru.redbyte.redbytefx.sample.ui.demos.DemoSigil
+import ru.redbyte.redbytefx.sample.ui.demos.DemoSignal
+import ru.redbyte.redbytefx.sample.ui.demos.DemoSpotlight
+import ru.redbyte.redbytefx.sample.ui.demos.DemoSweep
+import ru.redbyte.redbytefx.sample.ui.demos.DemoWarp
+import ru.redbyte.redbytefx.sample.ui.demos.DemoWave
 
 @Composable
 fun DemoScreen(

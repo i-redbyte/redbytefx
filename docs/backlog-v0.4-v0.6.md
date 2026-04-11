@@ -76,7 +76,7 @@ Current audit snapshot:
 - The main open risk is still platform-driven `RenderEffect` refresh frequency after real runtime updates, not obvious accidental churn in the controller layer.
 - A reproducible runtime measurement path now exists for `Radar` / `Circuit` via the sample launch extra plus `scripts/measure-sample-runtime.sh`.
 - The project now has both an emulator baseline and a first physical-device baseline (`SM-G991B`, Android `15`).
-- On that physical-device pass, `Radar` and `Circuit` both looked healthy enough that the current runtime path is no longer the project’s most suspicious area; remaining work is more about breadth of confidence than emergency optimization.
+- On that physical-device pass, `Radar` and `Circuit` both looked healthy enough that the current runtime path is no longer the project’s most suspicious area; ~~ongoing multi-device “breadth” passes are not tracked as backlog~~ (see [v0.5-runtime-quality.md](v0.5-runtime-quality.md)).
 
 ### Performance and invalidation
 
@@ -102,7 +102,7 @@ Immediate lifecycle checks:
 
 ### Confidence
 
-- Optional smoke or screenshot tests for a **small** set of representative demos (infrastructure-dependent).
+- ~~Optional smoke or screenshot tests for a **small** set of representative demos (infrastructure-dependent).~~
 - Keep AGSL goldens and stdlib compiler tests as the primary **shape** regressions; add targeted tests when the compiler or stdlib surface changes.
 
 Representative confidence targets:
@@ -119,9 +119,12 @@ Representative confidence targets:
 
 Reference note: [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
 
-### Delivery note (first documentation + measurement baseline)
+### Delivery note (documentation + measurement + confidence baseline)
 
-See [v0.5-runtime-quality.md](v0.5-runtime-quality.md). Ongoing device breadth and lifecycle checks are incremental when the runtime changes.
+See [v0.5-runtime-quality.md](v0.5-runtime-quality.md). In-tree engineering for this wave includes:
+platform/runtime constraint doc, authoring checklist updates for effect identity and sample-style
+navigation, `FxController.composeRenderEffect` cache regression test, and expanded AGSL smoke
+assertions for the confidence quartet. ~~Ongoing device breadth and optional instrumented UI tests remain incremental when the runtime changes.~~
 
 ---
 
@@ -204,11 +207,7 @@ Helpers that currently look more “keep available, but not first-teaching-surfa
   - how to write a raw DSL shader
   - when to reach for stdlib helpers
   - how to inspect the generated AGSL
-- Single place for **limitations**:
-  - Android-only / `minSdk 33`
-  - effect-specific uniform handles
-  - normalized UV vs raw `fragCoord` expectations
-  - current platform-driven `RenderEffect` refresh compromise
+- ~~Single place for **limitations**:~~ **Done:** [library-limitations.md](library-limitations.md) (Android/minSdk, uniforms, sampling space, `RenderEffect` refresh, diagnostics shape — with links to deep docs).
 
 Current honest status:
 

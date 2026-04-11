@@ -41,4 +41,5 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
 
     testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
 }

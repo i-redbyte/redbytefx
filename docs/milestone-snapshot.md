@@ -63,7 +63,7 @@ What is already solid:
 
 What is still open (by design or for later milestones):
 
-- diagnostics remain **exception-shaped**, not a structured IDE-style API
+- compile/bind failures use **`FxDiagnosticException`** with structured **`FxDiagnostic`** / **`FxDiagnosticCode`**; a full IDE diagnostic pipeline remains out of scope
 - cookbook can always grow; deeper **v0.6** naming and canonical surface work still applies to stdlib
 
 ### v0.5 Runtime quality
@@ -77,7 +77,7 @@ What is already solid:
 
 What can still grow incrementally:
 
-- more device classes / resize passes when runtime code changes
+- ~~more device classes / resize passes when runtime code changes~~ *(not tracked as standing backlog)*
 
 ### v0.6 Library shaping
 
@@ -86,6 +86,7 @@ Status: **first guidance milestone closed** (see [v0.6-library-shaping.md](v0.6-
 What is already solid:
 
 - canonical vs exploratory in stdlib KDoc, README family map, sample path signals and follow-ups
+- [library-limitations.md](library-limitations.md) as the limitations / supported-patterns index
 
 What can still grow incrementally:
 

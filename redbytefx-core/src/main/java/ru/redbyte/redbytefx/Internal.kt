@@ -85,17 +85,15 @@ internal fun nonFiniteFloatLiteralMessage(value: Float): String =
     "Only finite float literals are supported in shader source, got $value. " +
         "Use uniformFloat(...) or another uniform helper for runtime-driven values."
 
-internal fun unsupportedExpressionArgumentMessage(expr: Any): String {
+internal fun unsupportedExpressionArgumentBaseMessage(expr: Any): String {
     val typeName = expr::class.qualifiedName ?: expr::class.simpleName ?: "unknown"
-    val base = "Unsupported expression argument: $typeName. " +
+    return "Unsupported expression argument: $typeName. " +
         "Shader helpers only accept DSL expressions such as FloatExpr, Float2Expr, Float3Expr, " +
         "Float4Expr, BoolExpr, or ColorExpr. Convert raw values with float(...), float2(...), " +
         "float3(...), float4(...), or color(...), or declare a uniform for runtime-driven inputs."
-    val hint = unsupportedExpressionArgumentHint(expr)
-    return if (hint != null) "$base $hint" else base
 }
 
-private fun unsupportedExpressionArgumentHint(expr: Any): String? =
+internal fun unsupportedExpressionArgumentHint(expr: Any): String? =
     when (expr) {
         is Int, is Long, is Short, is Byte ->
             "Hint: integer literals are not implicit shader values — wrap with float(...) for " +
@@ -150,7 +148,7 @@ internal fun validateFnBodyMatchesReturnType(
         ColorType -> body is ColorExpr
     }
     if (!ok) {
-        error(fnBodyReturnTypeMismatchMessage(functionName, returnType, body))
+        compileFail(fnReturnTypeMismatchDiagnostic(functionName, returnType, body))
     }
 }
 
@@ -262,7 +260,7 @@ internal class FxInstanceImpl(
     private val shader = RuntimeShader(program.agsl)
     // Platform RenderEffect instances do not reliably observe later RuntimeShader uniform updates,
     // so we recreate the effect after runtime state changes.
-    private var renderEffect = createRenderEffect()
+    private lateinit var renderEffect: RenderEffect
     private val runtimeState = FxRuntimeState(
         program = program,
         writer = object : FxRuntimeUniformWriter {
@@ -286,8 +284,14 @@ internal class FxInstanceImpl(
     )
 
     init {
-        runtimeState.applyDefaults()
-        runtimeState.setResolution(1f, 1f)
+        runtimeState.withBatch {
+            runtimeState.applyDefaults()
+            runtimeState.setResolution(1f, 1f)
+        }
+    }
+
+    override fun runBatch(block: () -> Unit) {
+        runtimeState.withBatch(block)
     }
 
     override fun renderEffect(): RenderEffect = renderEffect

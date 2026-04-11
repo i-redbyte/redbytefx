@@ -134,12 +134,13 @@ Make the runtime and sample behavior boring in the best possible way: predictabl
 
 - perf pass on runtime invalidation and sample rendering
 - leak/lifecycle audit around controllers and demo navigation
-- stronger smoke/screenshot coverage for key demos
+- ~~stronger smoke/screenshot coverage for key demos~~
 - more confidence around generated AGSL stability and regression detection
 - cleanup of runtime edge cases that feel acceptable in demos but not in a serious library
-- reproducible runtime measurement flow that can be run against `Radar` / `Circuit` on emulator first and physical devices next
+- reproducible runtime measurement flow for `Radar` / `Circuit` (emulator + documented physical snapshot in the audit)
+- ~~additional device-class passes and tablet/resize-only measurement as ongoing backlog~~
 
-**Snapshot:** first closure is documented in [v0.5-runtime-quality.md](v0.5-runtime-quality.md) with links to audit and measurement scenarios. Further work is breadth and follow-up when code changes.
+**Snapshot:** first closure is documented in [v0.5-runtime-quality.md](v0.5-runtime-quality.md) with links to audit and measurement scenarios. Follow-up is **platform-driven** when the runtime changes, not a standing mandate for more devices or screenshot tests.
 
 ## v0.6 Library shaping
 
@@ -162,14 +163,14 @@ First **guidance + curation** milestone documented in [v0.6-library-shaping.md](
 
 - tighten the actual public surface so the same canonical vs exploratory split is obvious in naming, defaults, and helper selection
 - keep aligning cookbook/examples with the same family map
-- document limitations and supported patterns in one place without turning that into a publication contract
+- ~~document limitations and supported patterns in one place without turning that into a publication contract~~ — see [library-limitations.md](library-limitations.md)
 
 ### Main deliverables
 
 - final pass on public surface clarity
 - stronger separation between canonical APIs and experimental helpers
 - mature cookbook/examples layer
-- clearer statement of supported patterns and current limitations
+- ~~clearer statement of supported patterns and current limitations~~ — indexed in [library-limitations.md](library-limitations.md)
 - confidence that the project has a stable mental model, not just a growing set of capabilities
 - explicit criteria for what becomes part of the canonical teaching surface versus what remains exploratory
 

@@ -10,6 +10,7 @@ class RepresentativeDemoSmokeTest {
     fun waveRuntimeBaselineKeepsRawCoordinateShape() {
         val source = waveRuntimeBaselineEffect().agslSource()
 
+        assertTrue(source.contains("half4 main"))
         assertTrue(source.contains("uniform float u_wave_amplitude;"))
         assertTrue(source.contains("uniform float u_wave_frequency;"))
         assertTrue(source.contains("wave_offset"))
@@ -35,6 +36,7 @@ class RepresentativeDemoSmokeTest {
     fun radarRuntimeBaselineKeepsPolarTimeDrivenShape() {
         val source = radarRuntimeBaselineEffect().agslSource()
 
+        assertTrue(source.contains("half4 main"))
         assertTrue(source.contains("uniform float u_time;"))
         assertTrue(source.contains("uniform float u_speed;"))
         assertTrue(source.contains("uniform float u_radius;"))
@@ -49,6 +51,7 @@ class RepresentativeDemoSmokeTest {
     fun circuitRuntimeBaselineKeepsRoutingSelectionShape() {
         val source = circuitRuntimeBaselineEffect().agslSource()
 
+        assertTrue(source.contains("half4 main"))
         assertTrue(source.contains("uniform float u_time;"))
         assertTrue(source.contains("uniform float u_route;"))
         assertTrue(source.contains("uniform float u_amount;"))

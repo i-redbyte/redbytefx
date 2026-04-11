@@ -9,7 +9,8 @@
  * - apply the effect with [redbyteFx]
  * - reserve [FxController.setFloat], [FxController.setFloat2], [FxController.setFloat3],
  *   [FxController.setFloat4], and [FxController.setResolution] for imperative hosts, tests, or
- *   tooling flows that sit outside ordinary Compose recomposition
+ *   tooling flows that sit outside ordinary Compose recomposition; use [FxController.runBatch] when
+ *   several imperative setters run together
  *
  * Important runtime rules:
  *
