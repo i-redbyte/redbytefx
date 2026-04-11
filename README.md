@@ -4,7 +4,7 @@
 
 ## Status
 
-- current level: `v0.2 closed / early v0.3`, with **`v0.4 Authoring UX` first pass** documented in-repo ([docs/v0.4-authoring-ux.md](docs/v0.4-authoring-ux.md))
+- current level: `v0.2 closed`, **`v0.3 Tooling` closed** ([docs/v0.3-tooling.md](docs/v0.3-tooling.md)), **`v0.4 Authoring UX` first pass** ([docs/v0.4-authoring-ux.md](docs/v0.4-authoring-ux.md))
 - current platform target: Android `minSdk 33+`
 - current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX` -> `v0.5 Runtime quality` -> `v0.6 Library shaping`
 - publication is intentionally out of scope for now; the library is still raw
@@ -41,6 +41,7 @@
 - `docs/milestone-snapshot.md` gives a short cross-version status snapshot of what is solid, what is still raw, and what should happen next.
 - `docs/v0.2-status.md` explains how the shader-stdlib milestone was closed and what kind of surface work still remains after that closure.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
+- **`docs/v0.3-tooling.md`** summarizes the **v0.3** sample app tooling milestone (preview, controls, DSL/AGSL, copy/share, layouts).
 - **`docs/v0.4-authoring-ux.md`** is the hub for the **v0.4 Authoring UX** doc set (AGSL comparison, cookbook, runtime checklist, backlog cross-links).
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
 - `docs/cookbook-patterns.md` captures translation patterns from raw AGSL/Shadertoy-style code into the DSL, including end-to-end rewrite examples and a compact porting checklist.

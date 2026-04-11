@@ -6,12 +6,12 @@ The library is still raw. The near-term goal is to make the authoring model, too
 
 ## Current snapshot
 
-Current level: `v0.2 closed / early v0.3`
+Current level: `v0.2 closed / v0.3 Tooling closed / v0.4 Authoring UX first pass delivered`
 
 That split is important:
 
 - the library surface has now reached a curated-enough `v0.2 Shader stdlib` close-out point
-- the sample app already implements a meaningful part of the `v0.3 Tooling` vision and should now become the main active focus
+- the sample app has completed the first **v0.3 Tooling** milestone ([v0.3-tooling.md](v0.3-tooling.md)): shared demo layout, catalog, copy/share on code panels, wide layouts
 
 At the same time, some later-roadmap groundwork is already visible:
 
@@ -20,7 +20,7 @@ At the same time, some later-roadmap groundwork is already visible:
 - `v0.5` has a real runtime audit note and reproducible emulator/physical-device measurement flow
 - `v0.6` is no longer just backlog text; package docs, sample family maps, demo path guidance, and follow-up routing now start to shape a canonical teaching surface
 
-That does **not** mean those later milestones are complete. It means the project already contains some realistic preparation work for them while the main active level shifts from `v0.2` close-out into `v0.3`.
+That does **not** mean those later milestones are complete. It means the project already contains some realistic preparation work for them while the main active level shifts toward **runtime quality (`v0.5`)** and **library shaping (`v0.6`)**, with incremental sample polish as needed.
 
 ## Application audit
 
@@ -50,11 +50,11 @@ The sample app is no longer a throwaway sandbox.
 
 ### What that means
 
-The sample already demonstrates the core `v0.3` thesis:
+The sample demonstrates the core `v0.3` thesis:
 
 `controls -> DSL snippet -> generated AGSL -> visual result`
 
-So `v0.3` should not be planned as "start tooling from zero". It should be planned as "finish and sharpen the tooling that already exists".
+The first **v0.3** closure rounds that out with consistent **DemoLayout**, **COPY/SHARE** on code panels, and deliberate wide layouts ([v0.3-tooling.md](v0.3-tooling.md)). Further work here is incremental polish, not a blank-slate tooling project.
 
 ## Version roadmap
 
@@ -93,15 +93,13 @@ Turn the sample into a strong adoption tool, where every important demo clearly 
 
 ### Current level
 
-Early `v0.3` already exists.
+**Closed for the first complete tooling pass:** shared `DemoLayout`, catalog + inspection UX, wide breakpoint (≥ ~840dp) two-column preview/controls, **COPY + SHARE** on DSL/AGSL panels, compact **COMPARE CODE** dialog, and per-demo debug checklist. See [v0.3-tooling.md](v0.3-tooling.md).
 
-### What still needs to happen
+### What can still evolve (without reopening the milestone)
 
-- make the tooling presentation more consistent across all demos
-- keep improving large-screen layouts so preview/code/control inspection feels deliberate on tablets/desktops
-- keep strengthening catalog metadata, tags, and discoverability
-- consider share/export actions on top of the current copy flow
-- make debugging and comparison flows feel even more intentional, not just "expanded code blocks"
+- further polish of presentation on new form factors
+- small catalog/discoverability tweaks as the demo list grows
+- optional extras (e.g. export formats) only if they stay lightweight
 
 ## v0.4 Authoring UX
 

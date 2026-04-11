@@ -12,6 +12,7 @@
 - Milestone snapshot doc covering the current `v0.2-v0.6` state in one place.
 - Package-level core guidance plus a clearer canonical family map across docs and sample.
 - Demo-path guidance inside inspection flow and follow-up routing that points exploratory demos back toward the canonical surface.
+- **`:sample` v0.3 tooling closure:** **SHARE** on DSL and generated AGSL panels (system share sheet) next to **COPY**; two-column demo layout from **840dp** (was 980dp); hub doc [docs/v0.3-tooling.md](docs/v0.3-tooling.md).
 
 ### Changed
 
