@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.animation.core.LinearEasing
@@ -12,8 +14,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
@@ -31,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.sample.ui.theme.GridLine
 import ru.redbyte.redbytefx.sample.ui.theme.MatrixGreen
@@ -40,6 +44,13 @@ import ru.redbyte.redbytefx.sample.ui.theme.SurfaceThree
 import ru.redbyte.redbytefx.sample.ui.theme.SurfaceTwo
 import ru.redbyte.redbytefx.sample.ui.theme.TerminalGlow
 import ru.redbyte.redbytefx.sample.ui.theme.VoidBlack
+
+data class CyberCodeAction(
+    val label: String,
+    val onClick: () -> Unit
+)
+
+val LocalCompactChrome = staticCompositionLocalOf { false }
 
 @Composable
 fun CyberBackdrop(modifier: Modifier = Modifier) {
@@ -201,7 +212,8 @@ fun CyberBadge(
     fill: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
     textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val compact = LocalCompactChrome.current
+    val shape = RoundedCornerShape(if (compact) 12.dp else 14.dp)
     Box(
         modifier = modifier
             .clip(shape)
@@ -211,12 +223,22 @@ fun CyberBadge(
                 color = accent.copy(alpha = 0.28f),
                 shape = shape
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(
+                horizontal = if (compact) 10.dp else 12.dp,
+                vertical = if (compact) 4.dp else 6.dp
+            )
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelLarge,
-            color = textColor
+            style = if (compact) {
+                MaterialTheme.typography.labelSmall
+            } else {
+                MaterialTheme.typography.labelLarge
+            },
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            softWrap = false
         )
     }
 }
@@ -228,10 +250,10 @@ fun CyberCodeBlock(
     modifier: Modifier = Modifier,
     maxLines: Int,
     meta: String? = null,
-    actionLabel: String? = null,
-    onAction: (() -> Unit)? = null
+    actions: List<CyberCodeAction> = emptyList()
 ) {
     val shape = RoundedCornerShape(18.dp)
+    val compact = LocalCompactChrome.current
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -249,10 +271,13 @@ fun CyberCodeBlock(
                 color = MatrixGreen.copy(alpha = 0.18f),
                 shape = shape
             )
-            .padding(14.dp)
+            .padding(if (compact) 12.dp else 14.dp)
     ) {
         Column {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 CyberBadge(
                     text = title.uppercase(),
                     accent = NeonMint,
@@ -267,10 +292,10 @@ fun CyberCodeBlock(
                         textColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                if (actionLabel != null && onAction != null) {
+                actions.forEach { action ->
                     CyberBadge(
-                        text = actionLabel,
-                        modifier = Modifier.clickable(onClick = onAction),
+                        text = action.label,
+                        modifier = Modifier.clickable(onClick = action.onClick),
                         accent = MaterialTheme.colorScheme.tertiary,
                         fill = SurfaceOne.copy(alpha = 0.94f),
                         textColor = MaterialTheme.colorScheme.onSurface

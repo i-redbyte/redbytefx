@@ -393,7 +393,7 @@ internal fun formatFunctionCall(
 ) { emitAny(it, ctx) }
 
 internal fun formatFloat(value: Float): String {
-    require(value.isFinite()) { "Only finite float literals are supported, got $value" }
+    require(value.isFinite()) { nonFiniteFloatLiteralMessage(value) }
     val text = value.toString()
     return if ('.' in text || 'e' in text || 'E' in text) text else "$text.0"
 }

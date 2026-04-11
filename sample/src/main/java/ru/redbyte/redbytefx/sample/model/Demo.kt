@@ -68,6 +68,63 @@ data class DemoInfo(
     val snippet: String
 )
 
+data class DemoFollowUp(
+    val demo: DemoInfo,
+    val label: String,
+    val description: String
+)
+
+val DemoInfo.focusTags: List<String>
+    get() = when (id) {
+        DemoId.Flip -> listOf("transform", "uniforms", "runtime binding")
+        DemoId.Mirror -> listOf("symmetry", "branching", "direction")
+        DemoId.Rotate -> listOf("raw DSL", "trig", "pivot")
+        DemoId.Scale -> listOf("float2", "scaling", "pivot")
+        DemoId.Offset -> listOf("float2", "coordinates", "translation")
+        DemoId.Wave -> listOf("locals", "sine warp", "coordinate math")
+        DemoId.Pulse -> listOf("time", "modulation", "pixel grid")
+        DemoId.Signal -> listOf("grid", "scanlines", "mask logic")
+        DemoId.Posterize -> listOf("quantization", "remap", "tone shaping")
+        DemoId.Film -> listOf("grain", "vignette", "noise")
+        DemoId.Grade -> listOf("saturation", "blend", "tint")
+        DemoId.Warp -> listOf("fbm", "domain warp", "noise")
+        DemoId.Prism -> listOf("palette", "chromatic", "sampling")
+        DemoId.Spotlight -> listOf("masks", "radial", "lighting")
+        DemoId.Beacon -> listOf("polar", "sweep", "animation")
+        DemoId.Composite -> listOf("masked mix", "overlay", "screen")
+        DemoId.Frame -> listOf("frame mask", "edge fade", "sweep")
+        DemoId.Corner -> listOf("corner mask", "HUD", "frame")
+        DemoId.Reveal -> listOf("transitions", "progress", "masked mix")
+        DemoId.Sweep -> listOf("gradients", "directional", "feather")
+        DemoId.Glitch -> listOf("scan warp", "signal", "distortion")
+        DemoId.Radar -> listOf("arc mask", "polar", "scan")
+        DemoId.Halo -> listOf("rim light", "center glow", "lighting")
+        DemoId.Circuit -> listOf("routing", "SDF", "Compose scene")
+        DemoId.Sigil -> listOf("SDF", "soft stroke", "shape composition")
+        DemoId.Duotone -> listOf("palette fn", "luminance", "color mix")
+    }
+
+val DemoInfo.catalogSearchText: String
+    get() = buildString {
+        append(id.name)
+        append(' ')
+        append(title)
+        append(' ')
+        append(subtitle)
+        append(' ')
+        append(focus)
+        append(' ')
+        append(section.title)
+        append(' ')
+        append(section.subtitle)
+        append(' ')
+        append(layer.label)
+        append(' ')
+        append(if (isAnimated) "animated" else "static")
+        append(' ')
+        append(focusTags.joinToString(separator = " "))
+    }.lowercase()
+
 val DemoInfo.section: DemoSection
     get() = when (id) {
         DemoId.Flip,
@@ -475,3 +532,85 @@ val DemoCatalog: List<DemoInfo> = listOf(
 )
 
 fun demoInfo(id: DemoId): DemoInfo = DemoCatalog.first { it.id == id }
+
+fun recommendedFollowUps(
+    id: DemoId,
+    excludeIds: Set<DemoId> = emptySet(),
+    limit: Int = 3
+): List<DemoFollowUp> {
+    val current = demoInfo(id)
+
+    return DemoCatalog
+        .asSequence()
+        .filter { candidate -> candidate.id != id && candidate.id !in excludeIds }
+        .map { candidate ->
+            buildDemoFollowUp(current = current, candidate = candidate)
+        }
+        .filter { (_, score) -> score > 0 }
+        .sortedWith(
+            compareByDescending<Pair<DemoFollowUp, Int>> { it.second }
+                .thenBy { (followUp, _) -> DemoCatalog.indexOf(followUp.demo) }
+        )
+        .take(limit)
+        .map { (followUp, _) -> followUp }
+        .toList()
+}
+
+private fun buildDemoFollowUp(
+    current: DemoInfo,
+    candidate: DemoInfo
+): Pair<DemoFollowUp, Int> {
+    val sharedTags = current.focusTags.intersect(candidate.focusTags.toSet()).sorted()
+    val sameSection = current.section == candidate.section
+    val sameLayer = current.layer == candidate.layer
+    val sameMotion = current.isAnimated == candidate.isAnimated
+
+    var score = 0
+    if (sameSection) score += 6
+    if (sharedTags.isNotEmpty()) score += 4 + sharedTags.size
+    if (sameLayer) score += 2
+    if (sameMotion) score += 1
+
+    val (label, description) = when {
+        sameSection && !sameLayer -> {
+            "SAME TOPIC, OTHER LAYER" to
+                "Compare the same ${current.section.title.lowercase()} ideas through ${candidate.layer.label.lowercase()} authoring."
+        }
+
+        sameSection && sharedTags.isNotEmpty() -> {
+            "NEXT IN ${candidate.section.title.uppercase()}" to
+                "Stay in ${candidate.section.title.lowercase()} and follow the shared ${sharedTags.first()} thread into a nearby demo."
+        }
+
+        sharedTags.isNotEmpty() -> {
+            "SHARES ${sharedTags.first().uppercase()}" to
+                "Jump sideways into another demo that reuses the same ${sharedTags.first()} idea in a different context."
+        }
+
+        sameLayer -> {
+            "MORE ${candidate.layer.label}" to
+                "Keep reading the same authoring layer before switching mental models."
+        }
+
+        sameMotion -> {
+            if (candidate.isAnimated) {
+                "MORE ANIMATED FLOW" to
+                    "Compare another time-driven demo with a similar live-preview rhythm."
+            } else {
+                "MORE STATIC INSPECTION" to
+                    "Compare another still demo where the generated AGSL is easier to read without animation noise."
+            }
+        }
+
+        else -> {
+            "KEEP EXPLORING" to
+                "Use this as a nearby reference point while you map the catalog."
+        }
+    }
+
+    return DemoFollowUp(
+        demo = candidate,
+        label = label,
+        description = description
+    ) to score
+}

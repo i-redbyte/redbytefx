@@ -20,16 +20,22 @@ The sample app is no longer a throwaway sandbox.
 ### What is already there
 
 - `sample/model/Demo.kt` defines a real catalog: `26` demos across `5` sections with per-demo title, subtitle, focus, layer, animation flag, and snippet metadata
-- `sample/ui/HomeScreen.kt` already provides search, filtering, grouped sections, and top-level metrics
+- `sample/ui/HomeScreen.kt` already provides search, starter routes, quick filtering, grouped sections, and top-level metrics
 - `sample/ui/DemoComponents.kt` already delivers the core tooling stack:
   - visual preview
   - live controls
   - DSL snippet
   - generated AGSL panel
+  - copy actions for DSL / AGSL inspection
   - per-demo focus text
+  - per-demo focus tags
+  - explicit debug checklist / comparison flow
   - previous/next demo navigation
+  - related-demo recommendations from the current screen
+- the current phone layout now keeps preview and live controls first, pushes the heavier inspection panels lower, and uses a more compact chip/text scale on narrow devices
+- the current demo layout already scales into a more useful large-screen inspection flow instead of forcing the same narrow vertical stack everywhere
 - `sample/ui/DemoScreen.kt` routes the catalog into the concrete demo implementations cleanly
-- `sample/app/RedByteFxSampleApp.kt` gives the app a stable shell with safe-area handling, animated navigation, and per-demo header state
+- `sample/app/RedByteFxSampleApp.kt` gives the app a stable shell with safe-area handling, animated navigation, per-demo header state, and `START_DEMO` retargeting for an already running activity
 - `sample/ui/CircuitDemo.kt` proves the stack can handle a more structured, data-driven showcase scene instead of only one-screen parameter toys
 
 ### What that means
@@ -55,7 +61,7 @@ Late `v0.2`.
 ### What is already done
 
 - broad helper coverage across the main shader-authoring families
-- compiler/runtime tests and AGSL goldens
+- compiler/runtime tests and AGSL goldens, including representative stdlib snapshots
 - sample coverage that exercises the helper surface in real demos
 
 ### What still needs to happen
@@ -84,10 +90,10 @@ Early `v0.3` already exists.
 ### What still needs to happen
 
 - make the tooling presentation more consistent across all demos
-- improve large-screen layouts so preview/code/control inspection is more efficient
-- strengthen catalog metadata, tags, and discoverability
-- consider copy/share actions for snippets and generated AGSL
-- make debugging and comparison flows feel more intentional, not just "expanded code blocks"
+- keep improving large-screen layouts so preview/code/control inspection feels deliberate on tablets/desktops
+- keep strengthening catalog metadata, tags, and discoverability
+- consider share/export actions on top of the current copy flow
+- make debugging and comparison flows feel even more intentional, not just "expanded code blocks"
 
 ## v0.4 Authoring UX
 
@@ -122,6 +128,7 @@ Make the runtime and sample behavior boring in the best possible way: predictabl
 - stronger smoke/screenshot coverage for key demos
 - more confidence around generated AGSL stability and regression detection
 - cleanup of runtime edge cases that feel acceptable in demos but not in a serious library
+- reproducible runtime measurement flow that can be run against `Radar` / `Circuit` on emulator first and physical devices next
 
 ## v0.6 Library shaping
 
@@ -136,6 +143,7 @@ Reach the point where the library is still pre-publication, but clearly convergi
 - mature cookbook/examples layer
 - clearer statement of supported patterns and current limitations
 - confidence that the project has a stable mental model, not just a growing set of capabilities
+- explicit criteria for what becomes part of the canonical teaching surface versus what remains exploratory
 
 ## What is explicitly not part of this roadmap yet
 

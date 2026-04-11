@@ -1,0 +1,28 @@
+uniform shader uContent;
+uniform float2 uResolution;
+uniform float u_time;
+uniform float u_density;
+uniform float u_warp;
+uniform float u_amount;
+
+float2 rb_maxCoord(float2 res) {
+  float2 e = float2(0.001);
+  return max(res - e, float2(0.0));
+}
+half4 rb_sample(float2 coord) {
+  float2 p = coord;
+  if (uResolution.x > 2.0 && uResolution.y > 2.0) {
+    p = clamp(p, float2(0.0), rb_maxCoord(uResolution));
+  }
+  return uContent.eval(p);
+}
+
+half4 main(float2 fragCoord) {
+  half4 l_base = rb_sample(fragCoord);
+  float2 l_uv = (fragCoord / float2(max((uResolution).x, 1.0E-4), max((uResolution).y, 1.0E-4)));
+  float2 l_drift_uv = (l_uv + float2((((sin(((((l_uv).y * max(u_density, 1.0)) * 6.2831855) + (u_time * 2.2))) * 0.65) + (((mix(mix(fract((sin((((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7)))).x * 127.1) + ((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7)))).y * 311.7))) * 43758.547)), fract((sin(((((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(1.0, 0.0))).x * 127.1) + (((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(1.0, 0.0))).y * 311.7))) * 43758.547)), (((fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7)))) * (float2(3.0, 3.0) - (2.0 * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))))))).x), mix(fract((sin(((((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(0.0, 1.0))).x * 127.1) + (((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(0.0, 1.0))).y * 311.7))) * 43758.547)), fract((sin(((((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(1.0, 1.0))).x * 127.1) + (((floor(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) + float2(1.0, 1.0))).y * 311.7))) * 43758.547)), (((fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7)))) * (float2(3.0, 3.0) - (2.0 * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))))))).x), (((fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))) * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7)))) * (float2(3.0, 3.0) - (2.0 * fract(float2(((((l_uv).y * max(u_density, 1.0)) * 0.85) + ((u_time * 2.2) * 0.21)), (((u_time * 2.2) * 0.13) + 4.7))))))).y) * 2.0) - 1.0) * 0.55)) * max(u_warp, 0.0)), 0.0));
+  half4 l_drifted = rb_sample((l_drift_uv * float2(max((uResolution).x, 1.0E-4), max((uResolution).y, 1.0E-4))));
+  float l_bars = (1.0 - smoothstep((max(0.28, 1.0E-4) * 0.5), ((max(0.28, 1.0E-4) * 0.5) + max(0.1, 1.0E-4)), abs((fract((((l_uv).y * max(u_density, 1.0)) + (u_time * 0.65))) - 0.5))));
+  float l_lock = (1.0 - smoothstep((max(0.14, 1.0E-4) * 0.5), ((max(0.14, 1.0E-4) * 0.5) + max(0.08, 1.0E-4)), abs(((l_uv).y - 0.36))));
+  return mix(l_base, l_drifted, clamp((max(l_bars, l_lock) * u_amount), 0.0, 1.0));
+}

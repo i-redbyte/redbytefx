@@ -57,6 +57,7 @@ import ru.redbyte.redbytefx.stdlib.linearRamp
 import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
+import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.polarCoordinates
 import ru.redbyte.redbytefx.stdlib.posterize
@@ -80,6 +81,7 @@ import ru.redbyte.redbytefx.stdlib.sdRoundedBox
 import ru.redbyte.redbytefx.stdlib.sdSegment
 import ru.redbyte.redbytefx.stdlib.segmentMask
 import ru.redbyte.redbytefx.stdlib.segmentPulse
+import ru.redbyte.redbytefx.stdlib.sampleUv
 import ru.redbyte.redbytefx.stdlib.softFill
 import ru.redbyte.redbytefx.stdlib.softStroke
 import ru.redbyte.redbytefx.stdlib.stroke
@@ -570,10 +572,10 @@ fun DemoPulse() {
             amountParam = amountUniform
 
             val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
+            val uv = let(normalizedUv(), "uv")
             val safeGrid = let(max(gridUniform, 1f), "safe_grid")
             val pixelUv = let(floor(uv * safeGrid) / safeGrid, "pixel_uv")
-            val pixelBase = let(sample(pixelUv * resolution), "pixel_base")
+            val pixelBase = let(sampleUv(pixelUv), "pixel_base")
             val row = let(floor(uv.y * safeGrid), "row")
             val wave = let(
                 pulse(timeUniform, speedUniform, row * 0.7f),
@@ -659,7 +661,7 @@ fun DemoSignal() {
             amountParam = amountUniform
 
             val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
+            val uv = let(normalizedUv(), "uv")
             val grid = let(gridMask(uv, densityUniform, lineWidthUniform), "grid")
             val scan = let(scanlines(fragCoord.y, 14f, 3f), "scan")
             val pulse = let(
@@ -776,7 +778,7 @@ fun DemoFilm() {
             vignetteAmountParam = vignetteAmount
 
             val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
+            val uv = let(normalizedUv(), "uv")
             val noise = let(grain(uv, time, grainScale), "noise")
             val drift = let(
                 remap(
@@ -2075,7 +2077,7 @@ fun DemoGlitch() {
                 ),
                 "drift_uv"
             )
-            val drifted = let(sample(driftUv * resolution), "drifted")
+            val drifted = let(sampleUv(driftUv), "drifted")
             val bars = let(
                 signalBars(
                     position = uv.y,

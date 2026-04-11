@@ -39,6 +39,25 @@ internal fun sanitizeIdentifier(
     return if (normalized.startsWith(prefix)) normalized else prefix + normalized
 }
 
+internal fun missingUniformBindingMessage(
+    typeLabel: String,
+    debugName: String?
+): String {
+    val readableType = typeLabel.lowercase()
+    val uniformLabel = debugName
+        ?.takeIf { it.isNotBlank() }
+        ?.let { " '$it'" }
+        ?: " with a generated name"
+
+    return "This effect instance does not contain the $readableType uniform$uniformLabel. " +
+        "Bind only params declared by the same redbytefx { ... } effect when calling " +
+        "set$typeLabel(...) or the matching controller bind API."
+}
+
+internal fun nonFiniteFloatLiteralMessage(value: Float): String =
+    "Only finite float literals are supported in shader source, got $value. " +
+        "Use uniformFloat(...) or another uniform helper for runtime-driven values."
+
 internal class UniformLayout(
     additionalOccupied: Set<String> = emptySet()
 ) {
@@ -146,25 +165,29 @@ internal class FxInstanceImpl(
     override fun renderEffect(): RenderEffect = renderEffect
 
     override fun setFloat(param: FxParam.Float, value: Float) {
-        val name = program.layout.floatUniforms[param] ?: error("Unknown float param")
+        val name = program.layout.floatUniforms[param]
+            ?: error(missingUniformBindingMessage("Float", param.debugName))
         shader.setFloatUniform(name, value)
         refreshRenderEffect()
     }
 
     override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        val name = program.layout.float2Uniforms[param] ?: error("Unknown float2 param")
+        val name = program.layout.float2Uniforms[param]
+            ?: error(missingUniformBindingMessage("Float2", param.debugName))
         shader.setFloatUniform(name, x, y)
         refreshRenderEffect()
     }
 
     override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        val name = program.layout.float3Uniforms[param] ?: error("Unknown float3 param")
+        val name = program.layout.float3Uniforms[param]
+            ?: error(missingUniformBindingMessage("Float3", param.debugName))
         shader.setFloatUniform(name, x, y, z)
         refreshRenderEffect()
     }
 
     override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        val name = program.layout.float4Uniforms[param] ?: error("Unknown float4 param")
+        val name = program.layout.float4Uniforms[param]
+            ?: error(missingUniformBindingMessage("Float4", param.debugName))
         shader.setFloatUniform(name, x, y, z, w)
         refreshRenderEffect()
     }

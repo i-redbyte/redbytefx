@@ -5,11 +5,12 @@ import ru.redbyte.redbytefx.*
 /**
  * Builds a normalized sine pulse in the `[0, 1]` range.
  *
- * This is a small authoring helper for temporal animation and procedural modulation.
+ * [speed] scales how quickly the pulse advances as [time] changes, while [phase] offsets the wave.
+ * This is a canonical modulation helper for temporal animation and procedural shading.
  */
 public fun pulse(
     time: FloatExpr,
-    speed: FloatExpr,
+    speed: FloatExpr = float(1f),
     phase: FloatExpr = float(0f)
 ): FloatExpr = 0.5f + 0.5f * sin(time * speed + phase)
 
@@ -18,7 +19,7 @@ public fun pulse(
  */
 public fun pulse(
     time: FloatExpr,
-    speed: Float,
+    speed: Float = 1f,
     phase: Float = 0f
 ): FloatExpr = pulse(
     time = time,
@@ -30,7 +31,7 @@ public fun pulse(
  * Creates a grid-like mask from normalized UV coordinates.
  *
  * [density] controls how many cells appear across the UV space, while [lineWidth] controls
- * the soft line thickness at cell borders.
+ * the soft line thickness at cell borders in normalized cell space.
  */
 public fun gridMask(
     uv: Float2Expr,
@@ -64,7 +65,8 @@ public fun gridMask(
 /**
  * Creates a horizontal scanline mask from a coordinate, repeated every [spacing] units.
  *
- * [softness] controls how quickly the line fades away from its origin.
+ * This helper is typically driven by pixel-space coordinates such as `fragCoord.y`. [softness]
+ * controls how quickly the line fades away from its origin.
  */
 public fun scanlines(
     position: FloatExpr,

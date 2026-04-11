@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ru.redbyte.redbytefx.sample.app
 
 import androidx.compose.animation.AnimatedContent
@@ -12,7 +14,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -39,19 +45,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ru.redbyte.redbytefx.sample.R
 import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.ui.CyberBackdrop
 import ru.redbyte.redbytefx.sample.ui.CyberBadge
+import ru.redbyte.redbytefx.sample.ui.LocalCompactChrome
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.DemoScreen
 import ru.redbyte.redbytefx.sample.ui.HomeScreen
 
 @Composable
-fun RedByteFxSampleApp() {
-    var currentDemo: DemoId? by rememberSaveable { mutableStateOf(null) }
+fun RedByteFxSampleApp(
+    initialDemo: DemoId? = null,
+    launchDemoRequest: DemoId? = null
+) {
+    var currentDemo: DemoId? by rememberSaveable { mutableStateOf(initialDemo) }
     val appName = stringResource(id = R.string.app_name)
     val currentInfo = remember(currentDemo) {
         currentDemo?.let { id -> DemoCatalog.firstOrNull { it.id == id } }
@@ -66,151 +78,187 @@ fun RedByteFxSampleApp() {
         currentDemo = null
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        CyberBackdrop()
+    LaunchedEffect(launchDemoRequest) {
+        if (launchDemoRequest != null && launchDemoRequest != currentDemo) {
+            currentDemo = launchDemoRequest
+        }
+    }
 
-        Scaffold(
-            containerColor = Color.Transparent,
-            topBar = {
-                CyberPanel(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(
-                            WindowInsets.statusBars.only(
-                                WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-                            )
-                        )
-                        .padding(start = 12.dp, end = 12.dp, top = 12.dp)
-                        .clip(RoundedCornerShape(28.dp)),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = 18.dp,
-                        vertical = 14.dp
-                    )
-                ) {
-                    Column {
-                        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                            if (currentDemo != null) {
-                                CyberBadge(
-                                    text = "Back",
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .clickable { currentDemo = null },
-                                    accent = MaterialTheme.colorScheme.tertiary,
-                                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
-                                    textColor = MaterialTheme.colorScheme.onSurface,
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompactUi = maxWidth < 420.dp
+
+        CompositionLocalProvider(LocalCompactChrome provides isCompactUi) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                CyberBackdrop()
+
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    topBar = {
+                        BoxWithConstraints {
+                            val isCompactPhone = maxWidth < 420.dp
+                            val titleStyle = if (isCompactPhone) {
+                                MaterialTheme.typography.headlineLarge.copy(
+                                    fontSize = 22.sp,
+                                    lineHeight = 25.sp
                                 )
                             } else {
-                                CyberBadge(
-                                    text = "Live cookbook",
-                                    accent = MaterialTheme.colorScheme.secondary,
-                                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
-                                    textColor = MaterialTheme.colorScheme.onSurface
-                                )
+                                MaterialTheme.typography.headlineLarge
                             }
-                            if (positionLabel != null) {
-                                CyberBadge(
-                                    text = positionLabel,
-                                    accent = MaterialTheme.colorScheme.primary,
-                                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
-                                    textColor = MaterialTheme.colorScheme.onSurface
+
+                            CyberPanel(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .windowInsetsPadding(
+                                        WindowInsets.statusBars.only(
+                                            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                                        )
+                                    )
+                                    .padding(
+                                        start = if (isCompactPhone) 8.dp else 12.dp,
+                                        end = if (isCompactPhone) 8.dp else 12.dp,
+                                        top = if (isCompactPhone) 8.dp else 12.dp
+                                    )
+                                    .clip(RoundedCornerShape(28.dp)),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = if (isCompactPhone) 12.dp else 18.dp,
+                                    vertical = if (isCompactPhone) 10.dp else 14.dp
+                                )
+                            ) {
+                                Column {
+                                    FlowRow(
+                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        if (currentDemo != null) {
+                                            CyberBadge(
+                                                text = "Back",
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(14.dp))
+                                                    .clickable { currentDemo = null },
+                                                accent = MaterialTheme.colorScheme.tertiary,
+                                                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
+                                                textColor = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        } else {
+                                            CyberBadge(
+                                                text = "Live cookbook",
+                                                accent = MaterialTheme.colorScheme.secondary,
+                                                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
+                                                textColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        if (positionLabel != null) {
+                                            CyberBadge(
+                                                text = positionLabel,
+                                                accent = MaterialTheme.colorScheme.primary,
+                                                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
+                                                textColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = title,
+                                        style = titleStyle,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(top = if (isCompactPhone) 6.dp else 10.dp)
+                                    )
+                                    Text(
+                                        text = if (currentDemo == null) {
+                                            "matrix://shader-lab / redbytefx.sample"
+                                        } else {
+                                            "demo://${currentDemo!!.name.lowercase()} / runtime: live"
+                                        },
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier
+                                            .padding(top = if (isCompactPhone) 4.dp else 6.dp)
+                                            .background(
+                                                brush = Brush.horizontalGradient(
+                                                    colors = listOf(
+                                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
+                                                        Color.Transparent
+                                                    )
+                                                ),
+                                                shape = RoundedCornerShape(10.dp)
+                                            )
+                                            .padding(
+                                                horizontal = if (isCompactPhone) 7.dp else 8.dp,
+                                                vertical = if (isCompactPhone) 3.dp else 4.dp
+                                            )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                ) { padding ->
+                    Box(
+                        modifier = Modifier
+                            .padding(padding)
+                            .windowInsetsPadding(
+                                WindowInsets.navigationBars.only(
+                                    WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
+                                )
+                            )
+                            .imePadding()
+                    ) {
+                        AnimatedContent(
+                            targetState = currentDemo,
+                            transitionSpec = {
+                                val forward = targetState != null
+                                if (forward) {
+                                    slideInHorizontally(
+                                        animationSpec = androidx.compose.animation.core.tween(
+                                            durationMillis = 420,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        initialOffsetX = { it / 6 }
+                                    ) + fadeIn(
+                                        animationSpec = androidx.compose.animation.core.tween(420)
+                                    ) togetherWith slideOutHorizontally(
+                                        animationSpec = androidx.compose.animation.core.tween(
+                                            durationMillis = 320,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        targetOffsetX = { -it / 10 }
+                                    ) + fadeOut(
+                                        animationSpec = androidx.compose.animation.core.tween(250)
+                                    )
+                                } else {
+                                    slideInHorizontally(
+                                        animationSpec = androidx.compose.animation.core.tween(
+                                            durationMillis = 360,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        initialOffsetX = { -it / 10 }
+                                    ) + fadeIn(
+                                        animationSpec = androidx.compose.animation.core.tween(320)
+                                    ) togetherWith slideOutHorizontally(
+                                        animationSpec = androidx.compose.animation.core.tween(
+                                            durationMillis = 280,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        targetOffsetX = { it / 12 }
+                                    ) + fadeOut(
+                                        animationSpec = androidx.compose.animation.core.tween(220)
+                                    )
+                                }.using(SizeTransform(clip = false))
+                            },
+                            label = "sample_navigation"
+                        ) { id ->
+                            if (id == null) {
+                                HomeScreen(
+                                    demos = DemoCatalog,
+                                    onOpen = { demoId -> currentDemo = demoId }
+                                )
+                            } else {
+                                DemoScreen(
+                                    id = id,
+                                    onOpenDemo = { demoId -> currentDemo = demoId }
                                 )
                             }
                         }
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 10.dp)
-                        )
-                        Text(
-                            text = if (currentDemo == null) {
-                                "matrix://shader-lab / redbytefx.sample"
-                            } else {
-                                "demo://${currentDemo!!.name.lowercase()} / runtime: live"
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .padding(top = 6.dp)
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
-                                            Color.Transparent
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .windowInsetsPadding(
-                        WindowInsets.navigationBars.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-                        )
-                    )
-                    .imePadding()
-            ) {
-                AnimatedContent(
-                    targetState = currentDemo,
-                    transitionSpec = {
-                        val forward = targetState != null
-                        if (forward) {
-                            slideInHorizontally(
-                                animationSpec = androidx.compose.animation.core.tween(
-                                    durationMillis = 420,
-                                    easing = FastOutSlowInEasing
-                                ),
-                                initialOffsetX = { it / 6 }
-                            ) + fadeIn(
-                                animationSpec = androidx.compose.animation.core.tween(420)
-                            ) togetherWith slideOutHorizontally(
-                                animationSpec = androidx.compose.animation.core.tween(
-                                    durationMillis = 320,
-                                    easing = FastOutSlowInEasing
-                                ),
-                                targetOffsetX = { -it / 10 }
-                            ) + fadeOut(
-                                animationSpec = androidx.compose.animation.core.tween(250)
-                            )
-                        } else {
-                            slideInHorizontally(
-                                animationSpec = androidx.compose.animation.core.tween(
-                                    durationMillis = 360,
-                                    easing = FastOutSlowInEasing
-                                ),
-                                initialOffsetX = { -it / 10 }
-                            ) + fadeIn(
-                                animationSpec = androidx.compose.animation.core.tween(320)
-                            ) togetherWith slideOutHorizontally(
-                                animationSpec = androidx.compose.animation.core.tween(
-                                    durationMillis = 280,
-                                    easing = FastOutSlowInEasing
-                                ),
-                                targetOffsetX = { it / 12 }
-                            ) + fadeOut(
-                                animationSpec = androidx.compose.animation.core.tween(220)
-                            )
-                        }.using(SizeTransform(clip = false))
-                    },
-                    label = "sample_navigation"
-                ) { id ->
-                    if (id == null) {
-                        HomeScreen(
-                            demos = DemoCatalog,
-                            onOpen = { demoId -> currentDemo = demoId }
-                        )
-                    } else {
-                        DemoScreen(
-                            id = id,
-                            onOpenDemo = { demoId -> currentDemo = demoId }
-                        )
                     }
                 }
             }

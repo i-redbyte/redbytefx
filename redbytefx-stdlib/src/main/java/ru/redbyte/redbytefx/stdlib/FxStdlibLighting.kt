@@ -3,6 +3,36 @@ package ru.redbyte.redbytefx.stdlib
 import ru.redbyte.redbytefx.*
 
 /**
+ * Converts sample-space coordinates into normalized UV space.
+ *
+ * This is a tiny canonical convenience helper around `fragCoord / resolution` for shaders that
+ * want to stay in normalized coordinates for masks, gradients, and procedural math. Reach for it
+ * when the shader really wants `[0,1]` UV space; otherwise staying in raw sample space with
+ * `fragCoord` often keeps AGSL ports easier to read.
+ */
+public fun FxDsl.normalizedUv(
+    coord: Float2Expr = fragCoord
+): Float2Expr = coord / float2(
+    max(resolution.x, 0.0001f),
+    max(resolution.y, 0.0001f)
+)
+
+/**
+ * Samples the input content from normalized UV coordinates.
+ *
+ * This is the inverse convenience of [normalizedUv] and expands to `sample(uv * resolution)`.
+ * Prefer plain `sample(...)` when the shader is already operating in pixel/sample coordinates.
+ */
+public fun FxDsl.sampleUv(
+    uv: Float2Expr
+): ColorExpr = sample(
+    uv * float2(
+        max(resolution.x, 0.0001f),
+        max(resolution.y, 0.0001f)
+    )
+)
+
+/**
  * Recenters normalized UV coordinates around [center].
  *
  * This is a tiny readability helper for lighting-style shaders that want to work in a coordinate

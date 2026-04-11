@@ -34,21 +34,29 @@ public interface FxInstance {
 
     /**
      * Updates a scalar float uniform.
+     *
+     * The [param] handle must come from the same compiled [FxEffect] that created this instance.
      */
     public fun setFloat(param: FxParam.Float, value: Float)
 
     /**
      * Updates a `float2` uniform.
+     *
+     * The [param] handle must come from the same compiled [FxEffect] that created this instance.
      */
     public fun setFloat2(param: FxParam.Float2, x: Float, y: Float)
 
     /**
      * Updates a `float3` uniform.
+     *
+     * The [param] handle must come from the same compiled [FxEffect] that created this instance.
      */
     public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float)
 
     /**
      * Updates a `float4` uniform.
+     *
+     * The [param] handle must come from the same compiled [FxEffect] that created this instance.
      */
     public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float)
 
@@ -62,7 +70,8 @@ public interface FxInstance {
  * Typed handle for a shader uniform declared from the DSL.
  *
  * A uniform handle is also an expression of the matching DSL type, so it can be referenced
- * directly inside the shader body after declaration.
+ * directly inside the shader body after declaration. Handles are effect-specific: a [FxParam]
+ * from one `redbytefx { ... }` block must not be reused with another compiled effect instance.
  */
 public sealed class FxParam {
     /**

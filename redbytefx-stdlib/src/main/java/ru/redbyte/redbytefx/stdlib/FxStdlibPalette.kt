@@ -7,7 +7,8 @@ private const val TAU: Float = 6.2831855f
 /**
  * Builds a cosine palette from a scalar [tone].
  *
- * This is a compact palette generator often used in procedural art and shader sketches.
+ * [bias], [amplitude], [frequency], and [phase] follow the familiar procedural-art cosine palette
+ * convention. The returned RGB values are not clamped automatically.
  */
 public fun cosinePalette(
     tone: FloatExpr,
@@ -43,6 +44,9 @@ public fun cosinePalette(
 /**
  * Samples the input content with per-channel offsets and mixes the shifted result back into the
  * original content by [amount].
+ *
+ * [offset] is interpreted in sample-space units. [direction] is normalized internally so that
+ * diagonal offsets stay consistent with horizontal/vertical ones.
  */
 public fun FxDsl.chromaticOffset(
     offset: FloatExpr,
@@ -50,7 +54,8 @@ public fun FxDsl.chromaticOffset(
     amount: FloatExpr = float(1f),
     coord: Float2Expr = fragCoord
 ): ColorExpr {
-    val delta = direction * offset
+    val safeDirectionLength = max(length(direction), 0.0001f)
+    val delta = direction / safeDirectionLength * offset
     val base = sample(coord)
     val shifted = ru.redbyte.redbytefx.color(
         sample(coord - delta).r,

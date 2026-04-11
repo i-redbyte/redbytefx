@@ -22,7 +22,7 @@
 - low-level shader authoring through typed expressions, uniforms, functions, local variables, and AGSL-like math/color primitives
 - Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
 - a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
-- a strong sample catalog with search, per-demo focus metadata, live controls, DSL snippet, generated AGSL, and visual preview
+- a strong sample catalog with search, starter routes, quick filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
 
 ## Current Limitations
 
@@ -37,6 +37,10 @@
 - `CHANGELOG.md` tracks milestone-level changes.
 - `docs/v0.2-status.md` explains where the shader-stdlib milestone really stands and what is still missing.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
+- `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
+- `docs/cookbook-patterns.md` captures the first translation patterns from raw AGSL/Shadertoy-style code into the DSL, including a few end-to-end rewrite examples.
+- `docs/runtime-audit-v0.5.md` records the current runtime audit baseline, representative demo flows, and the reproducible `Radar` / `Circuit` runtime measurement path.
+- `docs/backlog-v0.4-v0.6.md` turns the later roadmap stages into a concrete pre-publication backlog.
 
 ## Quickstart
 
@@ -155,6 +159,8 @@ half4 main(float2 fragCoord) {
 
 `redbytefx` is meant to stay close enough to AGSL that the generated shader is still predictable.
 
+If you're learning or comparing approaches, start with [docs/agsl-vs-redbytefx.md](docs/agsl-vs-redbytefx.md) and [docs/cookbook-patterns.md](docs/cookbook-patterns.md), then use the sample app to inspect the DSL and generated AGSL side by side.
+
 ## v0.1 Core Stdlib
 
 For `v0.1`, `redbytefx-core` is intentionally limited to the minimum shader-authoring surface we expect most effects to need:
@@ -197,6 +203,15 @@ The main remaining work for `v0.2` is no longer raw helper volume. It is curatio
 - normalize naming, defaults, and parameter ordering
 - improve KotlinDoc and module-level guidance around `core` vs `stdlib`
 - tighten compiler/golden coverage for representative helpers in each family
+
+The current first-pass “teach this first” shortlist looks like:
+
+- coordinates: `normalizedUv(...)`, `sampleUv(...)`, `centeredUv(...)`, `aspectCenteredUv(...)`
+- masking/reveal: `circleMask(...)`, `rectMask(...)`, `ringMask(...)`, `horizontalReveal(...)`, `verticalReveal(...)`, `radialReveal(...)`
+- compositing/shaping: `maskedMix(...)`, `alphaMask(...)`, `maskedScreen(...)`, `sdCircle(...)`, `sdRoundedBox(...)`, `softFill(...)`, `softStroke(...)`
+- timing/signal/routing: `pulse(...)`, `bandMask(...)`, `linearRamp(...)`, `radialRamp(...)`, `angularSweep(...)`, `segmentMask(...)`, `segmentProgress(...)`, `segmentPulse(...)`
+
+Broader helpers like `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`, `frameMask(...)`, and `cornerMask(...)` remain useful, but they should not define the first mental model for the library.
 
 ## Procedural Example
 
@@ -262,7 +277,8 @@ Text(
 
 - Call `effect.agslSource()` whenever you want to inspect the generated shader source.
 - Keep one `FxController` per render target so resolution and runtime state stay unambiguous.
-- Use `:sample` as a cookbook: each demo now shows what part of the DSL it is exercising, plus a preview of the generated AGSL.
+- Use `:sample` as a cookbook: each demo now keeps preview and live controls near the top on phones, collapses the heavier DSL/AGSL inspection below, and still shows a few sensible follow-up demos.
+- Use `ru.redbyte.redbytefx.sample.extra.START_DEMO` when launching `:sample` from `adb`; the app now retargets the running activity instead of only honoring the extra on cold start.
 - Reach for `:redbytefx-stdlib` when a helper reads like a reusable recipe instead of a fundamental shader primitive.
 
 ## Current Focus

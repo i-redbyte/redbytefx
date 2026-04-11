@@ -5,6 +5,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.demoInfo
+import ru.redbyte.redbytefx.sample.model.recommendedFollowUps
 
 @Composable
 fun DemoScreen(
@@ -14,12 +15,20 @@ fun DemoScreen(
     val index = DemoCatalog.indexOfFirst { it.id == id }
     val previous = DemoCatalog.getOrNull(index - 1)
     val next = DemoCatalog.getOrNull(index + 1)
+    val related = recommendedFollowUps(
+        id = id,
+        excludeIds = buildSet {
+            previous?.id?.let(::add)
+            next?.id?.let(::add)
+        }
+    )
 
     CompositionLocalProvider(
         LocalDemoInfo provides demoInfo(id),
         LocalDemoNavigation provides DemoNavigation(
             previous = previous,
             next = next,
+            related = related,
             onOpen = onOpenDemo
         )
     ) {

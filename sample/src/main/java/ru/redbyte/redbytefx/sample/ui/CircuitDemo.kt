@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.foundation.background
@@ -7,7 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -41,6 +45,7 @@ import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
+import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.sdBox
 import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.sdRoundedBox
@@ -735,63 +740,71 @@ private fun CircuitPreviewStage(
 ) {
     val shape = RoundedCornerShape(24.dp)
 
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(244.dp)
-            .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f)
-                    )
-                )
-            )
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.26f),
-                shape = shape
-            )
-    ) {
-        val previewAspect = remember(maxWidth, maxHeight) {
-            (maxWidth.value / maxHeight.value).coerceAtLeast(1f)
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val stageHeight = when {
+            maxWidth < 380.dp -> 178.dp
+            maxWidth < 420.dp -> 192.dp
+            else -> 244.dp
         }
 
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
-                .matchParentSize()
-                .then(modifier)
+                .fillMaxWidth()
+                .height(stageHeight)
+                .clip(shape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f)
+                        )
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.26f),
+                    shape = shape
+                )
         ) {
+            val previewAspect = remember(maxWidth, maxHeight) {
+                (maxWidth.value / maxHeight.value).coerceAtLeast(1f)
+            }
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 1f),
-                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f)
+                    .then(modifier)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 1f),
+                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f)
+                                )
                             )
                         )
                 )
-            )
-        }
+            }
 
-        board.nodes.forEach { node ->
-            val targetWidth = node.uiWidth(maxWidth, previewAspect)
-            val targetHeight = node.uiHeight(maxHeight)
-            CircuitTapTarget(
-                text = node.shortLabel,
-                selected = selected == node.id,
-                width = targetWidth,
-                height = targetHeight,
-                modifier = Modifier.offset(
-                    x = maxWidth * node.uiXFraction(previewAspect) - targetWidth / 2f,
-                    y = maxHeight * node.uiYFraction() - targetHeight / 2f
-                ),
-                onClick = { onSelect(node.id) }
-            )
+            board.nodes.forEach { node ->
+                val targetWidth = node.uiWidth(maxWidth, previewAspect)
+                val targetHeight = node.uiHeight(maxHeight)
+                CircuitTapTarget(
+                    text = node.shortLabel,
+                    selected = selected == node.id,
+                    width = targetWidth,
+                    height = targetHeight,
+                    modifier = Modifier.offset(
+                        x = maxWidth * node.uiXFraction(previewAspect) - targetWidth / 2f,
+                        y = maxHeight * node.uiYFraction() - targetHeight / 2f
+                    ),
+                    onClick = { onSelect(node.id) }
+                )
+            }
         }
     }
 }
@@ -817,7 +830,7 @@ fun DemoCircuit() {
             amountParam = amount
 
             val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
+            val uv = let(normalizedUv(), "uv")
             val board = let(aspectCenteredUv(uv, resolution), "board")
 
             val boardMask = let(
@@ -1001,19 +1014,51 @@ fun DemoCircuit() {
             )
         },
         controls = {
+            val compact = LocalCompactChrome.current
             SwitchRow("Play", playing) {
                 playing = it
             }
-            Text(text = "Active Node", style = MaterialTheme.typography.titleMedium)
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                boardSpec.nodes.chunked(3).forEach { chunk ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Text(
+                text = if (compact) "Node" else "Active Node",
+                style = if (compact) {
+                    MaterialTheme.typography.labelLarge
+                } else {
+                    MaterialTheme.typography.titleMedium
+                }
+            )
+            BoxWithConstraints {
+                if (maxWidth < 420.dp) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        chunk.forEach { node ->
-                            RadioRow(node.title, selected = selected == node.id) {
-                                selected = node.id
+                        boardSpec.nodes.forEach { node ->
+                            RadioRow(
+                                title = node.title,
+                                selected = selected == node.id,
+                                onClick = { selected = node.id }
+                            )
+                        }
+                    }
+                } else {
+                    val nodesPerRow = if (maxWidth < 700.dp) 2 else 3
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        boardSpec.nodes.chunked(nodesPerRow).forEach { chunk ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                chunk.forEach { node ->
+                                    RadioRow(
+                                        title = node.title,
+                                        selected = selected == node.id,
+                                        onClick = { selected = node.id },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                repeat(nodesPerRow - chunk.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }

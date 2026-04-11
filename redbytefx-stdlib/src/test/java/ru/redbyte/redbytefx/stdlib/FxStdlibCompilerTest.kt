@@ -146,8 +146,46 @@ class FxStdlibCompilerTest {
 
         assertTrue(source.contains("uniform float u_amount;"))
         assertTrue(source.contains("cos"))
+        assertTrue(source.contains("length"))
         assertTrue(source.contains("rb_sample"))
         assertTrue(source.contains("half4"))
+    }
+
+    @Test
+    fun coordinateConvenienceHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.42f)
+            val center = uniformFloat2(0.38f, 0.58f, "center")
+            val uv = let(normalizedUv(), "uv")
+            val local = let(centeredUv(uv, center), "local")
+            val projected = let(inverseLerp(-0.25f, 0.25f, local.x), "projected")
+            val radius = let(radialDistance(uv, center), "radius")
+            val edge = let(edgeDistance(uv), "edge")
+            val fade = let(edgeFade(uv, 0.12f), "fade")
+            val reread = let(sampleUv(uv), "reread")
+            val ramp = let(
+                linearRamp(
+                    uv = uv,
+                    direction = float2(1f, -0.2f),
+                    start = 0.15f,
+                    end = 0.85f
+                ),
+                "ramp"
+            )
+
+            color(projected, radius, fade * amount + edge * 0.2f + ramp * 0.2f + reread.b * 0.1f, amount)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uniform float2 u_center;"))
+        assertTrue(source.contains("uResolution"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("min"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("mix"))
+        assertTrue(source.contains("rb_sample"))
     }
 
     @Test

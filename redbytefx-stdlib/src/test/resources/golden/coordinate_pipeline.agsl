@@ -1,0 +1,25 @@
+uniform shader uContent;
+uniform float2 uResolution;
+uniform float u_amount;
+uniform float2 u_center;
+
+float2 rb_maxCoord(float2 res) {
+  float2 e = float2(0.001);
+  return max(res - e, float2(0.0));
+}
+half4 rb_sample(float2 coord) {
+  float2 p = coord;
+  if (uResolution.x > 2.0 && uResolution.y > 2.0) {
+    p = clamp(p, float2(0.0), rb_maxCoord(uResolution));
+  }
+  return uContent.eval(p);
+}
+
+half4 main(float2 fragCoord) {
+  float2 l_uv = (fragCoord / float2(max((uResolution).x, 1.0E-4), max((uResolution).y, 1.0E-4)));
+  float2 l_local = (l_uv - u_center);
+  half4 l_reread = rb_sample((l_uv * float2(max((uResolution).x, 1.0E-4), max((uResolution).y, 1.0E-4))));
+  float l_ramp = clamp(mix(0.0, 1.0, (((((((l_uv - float2(0.5, 0.5))).x * ((float2(1.0, -0.2) / max(length(float2(1.0, -0.2)), 1.0E-4))).x) + (((l_uv - float2(0.5, 0.5))).y * ((float2(1.0, -0.2) / max(length(float2(1.0, -0.2)), 1.0E-4))).y)) + 0.5) - 0.15) / (((abs((0.85 - 0.15)) < 1.0E-4) ? (0.15 + 1.0E-4) : 0.85) - 0.15))), 0.0, 1.0);
+  float l_fade = smoothstep(0.0, max(0.12, 1.0E-4), min(min((l_uv).x, (1.0 - (l_uv).x)), min((l_uv).y, (1.0 - (l_uv).y))));
+  return half4(((l_local).x + 0.5), ((l_local).y + 0.5), (mix((l_reread).b, l_ramp, u_amount) * l_fade), u_amount);
+}

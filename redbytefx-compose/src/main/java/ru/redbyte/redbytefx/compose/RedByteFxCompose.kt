@@ -113,6 +113,8 @@ public class FxController internal constructor(
     }
 
     internal fun syncResolution(widthPx: Float, heightPx: Float) {
+        // Size changes already re-enter the draw path, so this keeps the shader resolution current
+        // without triggering an extra invalidation loop from inside drawing.
         updateResolution(widthPx, heightPx)
     }
 
@@ -135,6 +137,7 @@ public class FxController internal constructor(
  *
  * The remembered controller owns one runtime instance and is intended to back one render target.
  * If [effect] changes identity, a fresh runtime instance is created for the new compiled shader.
+ * Uniform params bound through this controller must come from the same compiled [effect].
  */
 @Composable
 public fun rememberFxController(effect: FxEffect): FxController {
@@ -150,6 +153,7 @@ public fun rememberFxController(effect: FxEffect): FxController {
  * Drives the provided float [param] with elapsed time in seconds.
  *
  * This is intended for uniforms created with `uniformTime(...)`.
+ * The [param] handle must belong to the same compiled effect that created this controller.
  *
  * When [isPlaying] becomes `false`, the current time value is preserved. Resuming continues from
  * the paused value instead of restarting from zero.
@@ -186,7 +190,8 @@ public fun FxController.bindTime(
  * Binds a scalar float uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed.
+ * the value has actually changed. The [param] handle must belong to the effect that created this
+ * controller.
  */
 @Composable
 public fun FxController.bindFloat(
@@ -202,7 +207,8 @@ public fun FxController.bindFloat(
  * Binds a `float2` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed.
+ * the value has actually changed. The [param] handle must belong to the effect that created this
+ * controller.
  */
 @Composable
 public fun FxController.bindFloat2(
@@ -219,7 +225,8 @@ public fun FxController.bindFloat2(
  * Binds a `float3` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed.
+ * the value has actually changed. The [param] handle must belong to the effect that created this
+ * controller.
  */
 @Composable
 public fun FxController.bindFloat3(
@@ -237,7 +244,8 @@ public fun FxController.bindFloat3(
  * Binds a `float4` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed.
+ * the value has actually changed. The [param] handle must belong to the effect that created this
+ * controller.
  */
 @Composable
 public fun FxController.bindFloat4(

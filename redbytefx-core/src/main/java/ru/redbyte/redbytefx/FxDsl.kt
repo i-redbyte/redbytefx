@@ -308,12 +308,19 @@ public class FxDsl internal constructor(
 
     /**
      * Samples the input content at [coord], clamping the coordinate to valid bounds when needed.
+     *
+     * [coord] is interpreted in sample/pixel space. When the shader is authored in normalized UV
+     * coordinates, prefer `sampleUv(...)` from `:redbytefx-stdlib` so the conversion back to
+     * sample space stays explicit and readable.
      */
     public fun sample(coord: Float2Expr = fragCoord): ColorExpr =
         colorExpr { ctx -> "rb_sample(${emit(coord, ctx)})" }
 
     /**
      * Samples the input content at [coord] without any coordinate clamping.
+     *
+     * This is mainly for deliberate out-of-bounds sampling or edge-behavior experiments. Most
+     * shaders should use [sample] or stdlib `sampleUv(...)` instead.
      */
     public fun sampleUnclamped(coord: Float2Expr = fragCoord): ColorExpr =
         colorExpr { ctx -> "$RB_INPUT_UNIFORM.eval(${emit(coord, ctx)})" }
