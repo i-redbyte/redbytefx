@@ -4,7 +4,7 @@
 
 ## Status
 
-- current level: `late v0.2 / early v0.3`
+- current level: `v0.2 closed / early v0.3`
 - current platform target: Android `minSdk 33+`
 - current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX` -> `v0.5 Runtime quality` -> `v0.6 Library shaping`
 - publication is intentionally out of scope for now; the library is still raw
@@ -38,7 +38,7 @@
 
 - `CHANGELOG.md` tracks milestone-level changes.
 - `docs/milestone-snapshot.md` gives a short cross-version status snapshot of what is solid, what is still raw, and what should happen next.
-- `docs/v0.2-status.md` explains where the shader-stdlib milestone really stands and what is still missing.
+- `docs/v0.2-status.md` explains how the shader-stdlib milestone was closed and what kind of surface work still remains after that closure.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
 - `docs/cookbook-patterns.md` captures the first translation patterns from raw AGSL/Shadertoy-style code into the DSL, including a few end-to-end rewrite examples.

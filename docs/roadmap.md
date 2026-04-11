@@ -6,12 +6,12 @@ The library is still raw. The near-term goal is to make the authoring model, too
 
 ## Current snapshot
 
-Current level: `late v0.2 / early v0.3`
+Current level: `v0.2 closed / early v0.3`
 
 That split is important:
 
-- the library surface is still finishing the `v0.2 Shader stdlib` milestone
-- the sample app already implements a meaningful part of the `v0.3 Tooling` vision
+- the library surface has now reached a curated-enough `v0.2 Shader stdlib` close-out point
+- the sample app already implements a meaningful part of the `v0.3 Tooling` vision and should now become the main active focus
 
 At the same time, some later-roadmap groundwork is already visible:
 
@@ -19,7 +19,7 @@ At the same time, some later-roadmap groundwork is already visible:
 - `v0.5` has a real runtime audit note and reproducible emulator/physical-device measurement flow
 - `v0.6` is no longer just backlog text; package docs, sample family maps, demo path guidance, and follow-up routing now start to shape a canonical teaching surface
 
-That does **not** mean those later milestones are complete. It means the project already contains some realistic preparation work for them while the main active level remains `late v0.2 / early v0.3`.
+That does **not** mean those later milestones are complete. It means the project already contains some realistic preparation work for them while the main active level shifts from `v0.2` close-out into `v0.3`.
 
 ## Application audit
 
@@ -65,7 +65,7 @@ Build a small but very strong standard library of primitives plus the first wave
 
 ### Current level
 
-Late `v0.2`.
+Closed enough to stop treating stdlib curation as the main front.
 
 ### What is already done
 
@@ -73,13 +73,11 @@ Late `v0.2`.
 - compiler/runtime tests and AGSL goldens, including representative stdlib snapshots
 - sample coverage that exercises the helper surface in real demos
 
-### What still needs to happen
+### What still happens after closure
 
-- curate the stdlib surface
-- normalize naming and parameter conventions
-- document canonical helper families better
-- prune overlap and noisy helpers
-- finish the "what belongs in core vs stdlib" story
+- small selective surface cleanup can continue when it materially improves predictability
+- broader shaping now belongs under `v0.6`, not under "keep v0.2 open"
+- helper-surface expansion should no longer be the default answer to missing patterns
 
 ## v0.3 Tooling
 

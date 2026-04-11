@@ -6,19 +6,19 @@ This is a short honest snapshot of where RedByteFX stands right now. It is not a
 
 ## Current level
 
-Primary active level: `late v0.2 / early v0.3`
+Primary active level: `v0.2 closed / early v0.3`
 
 That is still the most important framing:
 
-- the library surface is still finishing the `v0.2 Shader stdlib` milestone
-- the sample/app/tooling work is already meaningfully inside `v0.3`
+- the library surface has now closed the `v0.2 Shader stdlib` milestone well enough to stop front-loading stdlib curation work
+- the sample/app/tooling work is already meaningfully inside `v0.3` and should become the main active focus
 - `v0.4-v0.6` now have real groundwork in docs, sample guidance, and runtime audit material, but they are still backlog/progression work, not “done later milestones”
 
 ## Version snapshot
 
 ### v0.2 Shader stdlib
 
-Status: late, strong, but not fully closed
+Status: effectively closed as a curated first stdlib milestone
 
 What is already solid:
 
@@ -28,11 +28,10 @@ What is already solid:
 - representative compiler/golden/smoke coverage is in place
 - blend/compositing-style intensity semantics are more consistent and predictable
 
-What is still not fully closed:
+What is still open after closure:
 
-- there is still some helper-surface width/noise that needs continued curation judgment
-- naming/default/order polish can still improve in a few smaller corners
-- the stdlib feels much more curated now, but not yet “final-shaped”
+- some helper-surface width/noise can still improve, but that is now better treated as ongoing shaping than as unfinished `v0.2`
+- future surface work should favor consistency and teaching quality over adding more helpers
 
 ### v0.3 Tooling
 
@@ -109,6 +108,6 @@ What is still open:
 
 Keep the main focus where it already belongs:
 
-1. continue closing `v0.2` through narrow stdlib curation passes, not through helper-surface expansion
-2. keep polishing `v0.3` only where it strengthens adoption/demo clarity
-3. treat `v0.4-v0.6` as real groundwork and shaping work, but stay honest that the library is still raw
+1. shift the main focus to `v0.3` and keep strengthening the sample as an adoption tool
+2. treat further stdlib work as selective shaping, not renewed helper-surface expansion
+3. keep `v0.4-v0.6` honest as real groundwork and shaping work while the library remains raw
