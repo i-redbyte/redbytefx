@@ -59,6 +59,8 @@ import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.sample.model.DemoFollowUp
@@ -93,6 +95,15 @@ fun DemoLayout(
         val usesWideInspectionLayout = maxWidth >= 980.dp
         val outerPadding = if (isCompactPhone) 8.dp else 16.dp
         val blockSpacing = if (isCompactPhone) 8.dp else 16.dp
+        var showInspectionDialog by rememberSaveable(demo?.id?.name) { mutableStateOf(false) }
+
+        if (isCompactPhone && showInspectionDialog && demo != null) {
+            DemoInspectionDialog(
+                demo = demo,
+                generatedAgsl = generatedAgsl,
+                onDismiss = { showInspectionDialog = false }
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -138,7 +149,12 @@ fun DemoLayout(
                     ) {
                         DemoControlsPanel(
                             controls = controls,
-                            compact = isCompactPhone
+                            compact = isCompactPhone,
+                            onOpenInspectionDialog = if (isCompactPhone && demo != null) {
+                                { showInspectionDialog = true }
+                            } else {
+                                null
+                            }
                         )
                     }
                 }
@@ -149,14 +165,20 @@ fun DemoLayout(
                 )
                 DemoControlsPanel(
                     controls = controls,
-                    compact = isCompactPhone
+                    compact = isCompactPhone,
+                    onOpenInspectionDialog = if (isCompactPhone && demo != null) {
+                        { showInspectionDialog = true }
+                    } else {
+                        null
+                    }
                 )
 
                 if (demo != null && isCompactPhone) {
                     DemoInfoCard(
                         demo = demo,
                         generatedAgsl = generatedAgsl,
-                        compact = isCompactPhone
+                        compact = isCompactPhone,
+                        onOpenInspectionDialog = { showInspectionDialog = true }
                     )
                 }
 
@@ -195,7 +217,8 @@ private fun DemoPreviewPanel(
 @Composable
 private fun DemoControlsPanel(
     controls: @Composable () -> Unit,
-    compact: Boolean
+    compact: Boolean,
+    onOpenInspectionDialog: (() -> Unit)? = null
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
@@ -214,10 +237,20 @@ private fun DemoControlsPanel(
                     text = "RUNTIME BINDINGS",
                     accent = MaterialTheme.colorScheme.secondary
                 )
+                if (compact && onOpenInspectionDialog != null) {
+                    CyberBadge(
+                        text = "COMPARE CODE",
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onOpenInspectionDialog() },
+                        accent = MaterialTheme.colorScheme.primary,
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                    )
+                }
             }
             Text(
                 text = if (compact) {
-                    "Tune here. DSL and AGSL stay lower."
+                    "Tune here. Open DSL and AGSL in a quick compare view."
                 } else {
                     "Tune uniforms first, then compare the DSL and AGSL panels above against the live preview."
                 },
@@ -237,11 +270,9 @@ private fun DemoControlsPanel(
 private fun DemoInfoCard(
     demo: DemoInfo,
     generatedAgsl: String?,
-    compact: Boolean
+    compact: Boolean,
+    onOpenInspectionDialog: (() -> Unit)? = null
 ) {
-    var expanded by rememberSaveable("${demo.id.name}-inspection-expanded") {
-        mutableStateOf(!compact)
-    }
     val subtitleStyle = if (compact) {
         MaterialTheme.typography.titleLarge.copy(
             fontSize = 17.sp,
@@ -254,37 +285,16 @@ private fun DemoInfoCard(
         accent = MaterialTheme.colorScheme.primary,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 12.dp else 18.dp)
     ) {
-        Column(modifier = Modifier.animateContentSize()) {
-            if (!compact) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CyberBadge(
-                        text = demo.title.uppercase(),
-                        accent = MaterialTheme.colorScheme.primary
-                    )
-                    CyberBadge(
-                        text = "sample://${demo.id.name.lowercase()}",
-                        accent = MaterialTheme.colorScheme.secondary
-                    )
-                    CyberBadge(
-                        text = demo.section.title.uppercase(),
-                        accent = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-            }
-            if (compact) {
-                Text(
-                    text = "sample://${demo.id.name.lowercase()} / ${demo.section.title.lowercase()}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+        if (compact) {
+            Text(
+                text = "sample://${demo.id.name.lowercase()} / ${demo.section.title.lowercase()}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             FlowRow(
-                modifier = Modifier.padding(top = if (compact) 8.dp else 10.dp),
+                modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -300,64 +310,116 @@ private fun DemoInfoCard(
                         MaterialTheme.colorScheme.outline
                     }
                 )
-                if (compact) {
-                    CyberBadge(
-                        text = demo.section.title.uppercase(),
-                        accent = MaterialTheme.colorScheme.primary
-                    )
-                }
+                CyberBadge(
+                    text = demo.section.title.uppercase(),
+                    accent = MaterialTheme.colorScheme.primary
+                )
             }
             Text(
                 text = demo.subtitle,
                 style = subtitleStyle,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = if (compact) 3 else Int.MAX_VALUE,
-                overflow = if (compact) TextOverflow.Ellipsis else TextOverflow.Clip,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 10.dp)
             )
             Text(
                 text = demo.focus,
-                style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (compact) 4 else Int.MAX_VALUE,
-                overflow = if (compact) TextOverflow.Ellipsis else TextOverflow.Clip,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 8.dp)
             )
             DemoFocusTags(
                 tags = demo.focusTags,
                 modifier = Modifier.padding(top = 10.dp),
                 accent = MaterialTheme.colorScheme.secondary,
-                maxVisible = if (compact) 2 else 4
+                maxVisible = 2
             )
-            if (compact) {
+            if (onOpenInspectionDialog != null) {
                 FlowRow(
                     modifier = Modifier.padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = if (expanded) "HIDE INSPECTION" else "OPEN INSPECTION",
+                        text = "COMPARE CODE",
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { expanded = !expanded },
+                            .clickable { onOpenInspectionDialog() },
                         accent = MaterialTheme.colorScheme.primary,
                         fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
                     )
                     CyberBadge(
-                        text = "DSL + AGSL + DEBUG",
+                        text = if (generatedAgsl != null) "DSL + AGSL" else "DSL",
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
-            if (!expanded) {
-                return@CyberPanel
+            return@CyberPanel
+        }
+
+        Column(modifier = Modifier.animateContentSize()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CyberBadge(
+                    text = demo.title.uppercase(),
+                    accent = MaterialTheme.colorScheme.primary
+                )
+                CyberBadge(
+                    text = "sample://${demo.id.name.lowercase()}",
+                    accent = MaterialTheme.colorScheme.secondary
+                )
+                CyberBadge(
+                    text = demo.section.title.uppercase(),
+                    accent = MaterialTheme.colorScheme.tertiary
+                )
             }
         }
+        FlowRow(
+            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = demo.layer.label,
+                accent = MaterialTheme.colorScheme.secondary
+            )
+            CyberBadge(
+                text = if (demo.isAnimated) "ANIMATED" else "STATIC",
+                accent = if (demo.isAnimated) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.outline
+                }
+            )
+        }
+        Text(
+            text = demo.subtitle,
+            style = subtitleStyle,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        Text(
+            text = demo.focus,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        DemoFocusTags(
+            tags = demo.focusTags,
+            modifier = Modifier.padding(top = 10.dp),
+            accent = MaterialTheme.colorScheme.secondary,
+            maxVisible = 4
+        )
         Text(
             text = "Inspection flow",
-            style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = if (compact) 14.dp else 16.dp)
+            modifier = Modifier.padding(top = 16.dp)
         )
         FlowRow(
             modifier = Modifier.padding(top = 8.dp),
@@ -385,19 +447,19 @@ private fun DemoInfoCard(
         }
         Text(
             text = "Use the copy action to compare the authored DSL with the generated shader while iterating on live uniforms.",
-            style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
         )
         DebugChecklist(
             demo = demo,
             modifier = Modifier.padding(top = 14.dp),
-            compact = compact
+            compact = false
         )
         ExpandableCodeBlock(
             title = "DSL snippet",
             text = demo.snippet,
-            collapsedLines = if (compact) 4 else 10,
+            collapsedLines = 10,
             stateKey = "${demo.id.name}-dsl",
             modifier = Modifier.padding(top = 14.dp)
         )
@@ -405,10 +467,104 @@ private fun DemoInfoCard(
             ExpandableCodeBlock(
                 title = "Generated AGSL",
                 text = generatedAgsl,
-                collapsedLines = if (compact) 8 else 18,
+                collapsedLines = 18,
                 stateKey = "${demo.id.name}-agsl",
                 modifier = Modifier.padding(top = 12.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun DemoInspectionDialog(
+    demo: DemoInfo,
+    generatedAgsl: String?,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp, vertical = 14.dp)
+        ) {
+            CyberPanel(
+                modifier = Modifier.fillMaxSize(),
+                accent = MaterialTheme.colorScheme.primary,
+                contentPadding = PaddingValues(12.dp)
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CyberBadge(
+                        text = "CODE COMPARE",
+                        accent = MaterialTheme.colorScheme.primary
+                    )
+                    CyberBadge(
+                        text = demo.title.uppercase(),
+                        accent = MaterialTheme.colorScheme.secondary
+                    )
+                    CyberBadge(
+                        text = "CLOSE",
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onDismiss() },
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                    )
+                }
+                Text(
+                    text = "Compare the authored DSL with the generated AGSL without losing the live controls flow.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+                FlowRow(
+                    modifier = Modifier.padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CyberBadge(
+                        text = "DSL",
+                        accent = MaterialTheme.colorScheme.secondary
+                    )
+                    if (generatedAgsl != null) {
+                        CyberBadge(
+                            text = "AGSL",
+                            accent = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    CyberBadge(
+                        text = "COPY READY",
+                        accent = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ExpandableCodeBlock(
+                        title = "DSL snippet",
+                        text = demo.snippet,
+                        collapsedLines = 10,
+                        stateKey = "${demo.id.name}-dialog-dsl"
+                    )
+                    if (generatedAgsl != null) {
+                        ExpandableCodeBlock(
+                            title = "Generated AGSL",
+                            text = generatedAgsl,
+                            collapsedLines = 18,
+                            stateKey = "${demo.id.name}-dialog-agsl"
+                        )
+                    }
+                }
+            }
         }
     }
 }
