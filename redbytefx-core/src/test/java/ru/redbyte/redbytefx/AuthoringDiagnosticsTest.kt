@@ -45,4 +45,21 @@ class AuthoringDiagnosticsTest {
         assertTrue(message.contains("NaN"))
         assertTrue(message.contains("uniformFloat(...)"))
     }
+
+    @Test
+    fun unsupportedExpressionArgumentMessagePointsToDslConversions() {
+        val error = runCatching {
+            emitAny("not a shader expr", EmitContext(UniformLayout()))
+        }.exceptionOrNull()
+
+        check(error is IllegalStateException) {
+            "Expected IllegalStateException for unsupported expression argument, got ${error?.javaClass?.name}"
+        }
+
+        val message = checkNotNull(error.message)
+        assertTrue(message.contains("kotlin.String"))
+        assertTrue(message.contains("Shader helpers only accept DSL expressions"))
+        assertTrue(message.contains("float(...)"))
+        assertTrue(message.contains("uniform"))
+    }
 }

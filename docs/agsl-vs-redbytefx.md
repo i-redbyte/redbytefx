@@ -24,6 +24,13 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 - **`resolution`** is the logical content size in pixels (see core docs). Normalized UV is typically `fragCoord / resolution` when you want `[0,1]`-style space.
 - When you want that normalized path frequently, `:redbytefx-stdlib` now provides `normalizedUv()` and `sampleUv(uv)` as small coordinate conveniences instead of rewriting the conversion each time.
 
+## Sampling quick rule
+
+- Stay on **`sample(...)`** when the authored coordinate is still in pixel/sample space: `fragCoord`, `fragCoord + offsetPx`, mirrored pixel coordinates, or anything else already measured against `resolution` in pixels.
+- Switch to **`normalizedUv()` + `sampleUv(...)`** when the authored logic has clearly moved into `[0,1]` UV space and your resampling point is expressed as `uv`, `uv + drift`, centered UV, polar UV-derived coordinates, or other normalized-space math.
+- Do not mix them accidentally: `sample(uv)` is wrong because `sample(...)` expects sample-space pixels, while `sampleUv(fragCoord)` is wrong because `sampleUv(...)` expects normalized UV.
+- When porting AGSL or Shadertoy-style code, keep the first translation in one space only, inspect `agslSource()`, then introduce `sampleUv(...)` only if the normalized-space intent becomes clearer.
+
 ## When to use stdlib
 
 - **`redbytefx-core`:** language primitives and essential math/color helpers.

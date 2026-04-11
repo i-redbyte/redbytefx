@@ -58,6 +58,14 @@ internal fun nonFiniteFloatLiteralMessage(value: Float): String =
     "Only finite float literals are supported in shader source, got $value. " +
         "Use uniformFloat(...) or another uniform helper for runtime-driven values."
 
+internal fun unsupportedExpressionArgumentMessage(expr: Any): String {
+    val typeName = expr::class.qualifiedName ?: expr::class.simpleName ?: "unknown"
+    return "Unsupported expression argument: $typeName. " +
+        "Shader helpers only accept DSL expressions such as FloatExpr, Float2Expr, Float3Expr, " +
+        "Float4Expr, BoolExpr, or ColorExpr. Convert raw values with float(...), float2(...), " +
+        "float3(...), float4(...), or color(...), or declare a uniform for runtime-driven inputs."
+}
+
 internal class UniformLayout(
     additionalOccupied: Set<String> = emptySet()
 ) {

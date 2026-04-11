@@ -380,7 +380,7 @@ internal fun emitAny(expr: Any, ctx: EmitContext): String =
         is Float3Expr -> emit(expr, ctx)
         is Float4Expr -> emit(expr, ctx)
         is ColorExpr -> emit(expr, ctx)
-        else -> error("Unsupported expression argument: ${expr::class.qualifiedName}")
+        else -> error(unsupportedExpressionArgumentMessage(expr))
     }
 
 internal fun formatFunctionCall(
