@@ -12,6 +12,7 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 - Math and logic you write (`sin`, `mix`, `smoothstep`, `ifElse`, …) appear in generated shaders in essentially the same shape you would hand-write.
 - Uniforms become `uniform float …` / `uniform float2 …` with stable names when you pass explicit labels, or generated names when you use anonymous/auto uniforms.
 - Input sampling goes through the runtime bridge (`rb_sample` / content shader); that wrapper is generated, not something you hand-edit per effect.
+- Common whole-number math also stays readable when porting line by line: expressions such as `1 - amount` and `2 * uv` are accepted directly instead of forcing `1f` on the left-hand side before the first translation is working.
 
 ## One important invariant
 

@@ -216,4 +216,29 @@ class FxDslCompilerTest {
         assertTrue(source.contains("dot"))
         assertTrue(source.contains("float l_projection"))
     }
+
+    @Test
+    fun intLiteralReceiversCompileIntoCanonicalCoreMath() {
+        val effect = redbytefx {
+            val amount by autoUniformFloat(0.35f)
+            val time by autoUniformTime()
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val wave = let(1 - amount + 2 * sin(time * 3f), "wave")
+            val scaledUv = let(2 * uv, "scaled_uv")
+            val accent = let(2 * color(float3(0.08f, 0.95f, 1f), base.a), "accent")
+
+            mix(base, accent, saturate(wave * scaledUv.x * 0.2f))
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("float l_wave = ((1.0 - u_amount) + (2.0 * sin((u_time * 3.0))));"))
+        assertTrue(source.contains("float2 l_scaled_uv = (2.0 * l_uv);"))
+        assertTrue(source.contains("half4 l_accent"))
+        assertTrue(source.contains("2.0"))
+        assertTrue(source.contains("(l_base).a"))
+    }
 }

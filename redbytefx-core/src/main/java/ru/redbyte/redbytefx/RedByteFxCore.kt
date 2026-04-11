@@ -19,5 +19,9 @@
  * explicit, store obvious locals with `let(...)`, sample content with [FxDsl.sample], then inspect
  * [FxEffect.agslSource]. Once the generated shader reads clearly, move repeated masks,
  * compositing, SDF, polar, or routing recipes into `:redbytefx-stdlib`.
+ *
+ * Small authoring convenience: common whole-number math such as `1 - amount` and `2 * uv` is
+ * accepted directly, so early ports do not need to turn every left-hand integer literal into `1f`
+ * before the shader intent is clear.
  */
 package ru.redbyte.redbytefx

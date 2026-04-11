@@ -115,6 +115,12 @@ public operator fun Float.plus(other: FloatExpr): FloatExpr =
     floatLiteral(this) + other
 
 /**
+ * Adds a scalar expression to an integer literal.
+ */
+public operator fun Int.plus(other: FloatExpr): FloatExpr =
+    floatLiteral(this.toFloat()) + other
+
+/**
  * Subtracts one scalar expression from another.
  */
 public operator fun FloatExpr.minus(other: FloatExpr): FloatExpr =
@@ -131,6 +137,12 @@ public operator fun FloatExpr.minus(other: Float): FloatExpr =
  */
 public operator fun Float.minus(other: FloatExpr): FloatExpr =
     floatLiteral(this) - other
+
+/**
+ * Subtracts a scalar expression from an integer literal.
+ */
+public operator fun Int.minus(other: FloatExpr): FloatExpr =
+    floatLiteral(this.toFloat()) - other
 
 /**
  * Multiplies two scalar expressions.
@@ -151,6 +163,12 @@ public operator fun Float.times(other: FloatExpr): FloatExpr =
     floatLiteral(this) * other
 
 /**
+ * Multiplies an integer literal by a scalar expression.
+ */
+public operator fun Int.times(other: FloatExpr): FloatExpr =
+    floatLiteral(this.toFloat()) * other
+
+/**
  * Divides one scalar expression by another.
  */
 public operator fun FloatExpr.div(other: FloatExpr): FloatExpr =
@@ -167,6 +185,12 @@ public operator fun FloatExpr.div(other: Float): FloatExpr =
  */
 public operator fun Float.div(other: FloatExpr): FloatExpr =
     floatLiteral(this) / other
+
+/**
+ * Divides an integer literal by a scalar expression.
+ */
+public operator fun Int.div(other: FloatExpr): FloatExpr =
+    floatLiteral(this.toFloat()) / other
 
 /**
  * Negates a `float2` expression.
@@ -221,6 +245,12 @@ public operator fun FloatExpr.times(other: Float2Expr): Float2Expr =
  */
 public operator fun Float.times(other: Float2Expr): Float2Expr =
     floatLiteral(this) * other
+
+/**
+ * Multiplies an integer literal by a `float2` expression.
+ */
+public operator fun Int.times(other: Float2Expr): Float2Expr =
+    floatLiteral(this.toFloat()) * other
 
 /**
  * Divides a `float2` expression by a scalar expression.
@@ -289,6 +319,12 @@ public operator fun Float.times(other: Float3Expr): Float3Expr =
     floatLiteral(this) * other
 
 /**
+ * Multiplies an integer literal by a `float3` expression.
+ */
+public operator fun Int.times(other: Float3Expr): Float3Expr =
+    floatLiteral(this.toFloat()) * other
+
+/**
  * Divides a `float3` expression by a scalar expression.
  */
 public operator fun Float3Expr.div(other: FloatExpr): Float3Expr =
@@ -355,6 +391,12 @@ public operator fun Float.times(other: Float4Expr): Float4Expr =
     floatLiteral(this) * other
 
 /**
+ * Multiplies an integer literal by a `float4` expression.
+ */
+public operator fun Int.times(other: Float4Expr): Float4Expr =
+    floatLiteral(this.toFloat()) * other
+
+/**
  * Divides a `float4` expression by a scalar expression.
  */
 public operator fun Float4Expr.div(other: FloatExpr): Float4Expr =
@@ -407,6 +449,12 @@ public operator fun FloatExpr.times(other: ColorExpr): ColorExpr =
  */
 public operator fun Float.times(other: ColorExpr): ColorExpr =
     floatLiteral(this) * other
+
+/**
+ * Multiplies an integer literal by a color expression.
+ */
+public operator fun Int.times(other: ColorExpr): ColorExpr =
+    floatLiteral(this.toFloat()) * other
 
 /**
  * Divides a color expression by a scalar expression.

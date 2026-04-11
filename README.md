@@ -20,6 +20,7 @@
 ## Current Capabilities
 
 - low-level shader authoring through typed expressions, uniforms, functions, local variables, and AGSL-like math/color primitives
+- low-level shader authoring stays close to AGSL, including direct left-hand whole-number math such as `1 - amount` and `2 * uv`
 - Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
 - a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
 - a strong sample catalog with search, section jumps, starter routes, a canonical family map, canonical/start-here filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout

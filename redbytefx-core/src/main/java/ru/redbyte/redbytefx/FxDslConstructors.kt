@@ -8,6 +8,14 @@ package ru.redbyte.redbytefx
 public fun float(value: Float): FloatExpr = floatLiteral(value)
 
 /**
+ * Creates a scalar float literal expression from an integer literal.
+ *
+ * This keeps direct AGSL-style ports readable when the authored math still starts from whole
+ * numbers such as `1 - amount` or `2 * uv`.
+ */
+public fun float(value: Int): FloatExpr = floatLiteral(value.toFloat())
+
+/**
  * Creates a `float2` expression from two scalar expressions.
  */
 public fun float2(x: FloatExpr, y: FloatExpr): Float2Expr =
