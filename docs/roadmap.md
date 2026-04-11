@@ -13,6 +13,14 @@ That split is important:
 - the library surface is still finishing the `v0.2 Shader stdlib` milestone
 - the sample app already implements a meaningful part of the `v0.3 Tooling` vision
 
+At the same time, some later-roadmap groundwork is already visible:
+
+- `v0.4` is no longer only an idea; diagnostics, AGSL-vs-DSL docs, and cookbook rewrites now exist in first-pass form
+- `v0.5` has a real runtime audit note and reproducible emulator/physical-device measurement flow
+- `v0.6` is no longer just backlog text; package docs, sample family maps, demo path guidance, and follow-up routing now start to shape a canonical teaching surface
+
+That does **not** mean those later milestones are complete. It means the project already contains some realistic preparation work for them while the main active level remains `late v0.2 / early v0.3`.
+
 ## Application audit
 
 The sample app is no longer a throwaway sandbox.
@@ -136,6 +144,23 @@ Make the runtime and sample behavior boring in the best possible way: predictabl
 ### Goal
 
 Reach the point where the library is still pre-publication, but clearly converging toward a stable identity.
+
+### Current level
+
+Early `v0.6` shaping has started, but only as guidance and curation work.
+
+### What is already visible
+
+- package-level guidance now points authors to the canonical `core` and `stdlib` starter path first
+- the sample home screen exposes a canonical family map instead of only listing demos
+- demo inspection flow now shows `START HERE` / `CANONICAL` / `EXPLORATORY` path guidance directly inside the detail view
+- follow-up recommendations now try to route exploratory demos back toward the curated path instead of only showing nearby neighbors
+
+### What still needs to happen
+
+- tighten the actual public surface so the same canonical vs exploratory split is obvious in naming, defaults, and helper selection
+- keep aligning cookbook/examples with the same family map
+- document limitations and supported patterns in one place without turning that into a publication contract
 
 ### Main deliverables
 

@@ -6,7 +6,7 @@
 
 - current level: `late v0.2 / early v0.3`
 - current platform target: Android `minSdk 33+`
-- current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX`
+- current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX` -> `v0.5 Runtime quality` -> `v0.6 Library shaping`
 - publication is intentionally out of scope for now; the library is still raw
 - current design rule: keep runtime integration tiny, keep generated AGSL predictable, grow reusable helpers in `stdlib` instead of bloating `core`
 
@@ -23,6 +23,7 @@
 - Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
 - a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
 - a strong sample catalog with search, starter routes, a canonical family map, canonical/start-here filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
+- an early but real canonical teaching surface across package docs, sample family maps, demo path guidance, and follow-up routing
 
 ## Current Limitations
 
@@ -31,6 +32,7 @@
 - the library surface is still raw and not API-frozen
 - `stdlib` is already broad, but it still needs a naming and curation pass before it feels deliberately shaped
 - authoring UX is still early: diagnostics, migration docs, and cookbook material are not at the right level yet
+- `v0.6` shaping has started in docs/sample guidance, but the canonical surface is still being formalized rather than treated as stable
 
 ## Project Docs
 

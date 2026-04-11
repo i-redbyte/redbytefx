@@ -135,6 +135,7 @@ Reference note: [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
 - keep one-off or style-specific helpers out of the “start here” narrative even if they remain in the source tree
 - make module/package-level docs point to the canonical path first, then to broader exploratory helpers
 - Started: `redbytefx-core` and `redbytefx-stdlib` package docs now point to the starter path first, and the sample home screen mirrors the same family map instead of only showing per-demo canonical badges
+- Started: demo inspection flow now shows `START HERE` / `CANONICAL` / `EXPLORATORY` guidance directly, and follow-up recommendations try to route exploratory demos back toward the curated path
 
 First-pass canonical shortlist to validate against docs/sample/cookbook:
 
@@ -190,6 +191,11 @@ Helpers that currently look more “keep available, but not first-teaching-surfa
   - effect-specific uniform handles
   - normalized UV vs raw `fragCoord` expectations
   - current platform-driven `RenderEffect` refresh compromise
+
+Current honest status:
+
+- the shaping work is now visible in package guidance, sample taxonomy, demo path wording, and follow-up routing
+- the actual helper surface is still only partially shaped; this is not yet a stable or final classification system
 
 ### Explicitly out of scope for v0.6 here
 
