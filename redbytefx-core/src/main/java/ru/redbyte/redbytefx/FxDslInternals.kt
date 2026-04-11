@@ -343,7 +343,7 @@ private fun functionCallEmitter(
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun <T> emitterExprForType(
+internal fun <T> emitterExprForType(
     type: FxValueType<T>,
     emitter: (EmitContext) -> String
 ): T = when (type) {
@@ -354,6 +354,23 @@ private fun <T> emitterExprForType(
     Float4Type -> float4Expr(emitter)
     ColorType -> colorExpr(emitter)
 } as T
+
+internal fun <T> constructorExpr(
+    type: FxValueType<T>,
+    agslType: String,
+    vararg args: Any
+): T = emitterExprForType(type) { ctx ->
+    formatFunctionCall(agslType, args.asList(), ctx)
+}
+
+internal fun <T> conditionalExpr(
+    type: FxValueType<T>,
+    condition: BoolExpr,
+    ifTrue: Any,
+    ifFalse: Any
+): T = emitterExprForType(type) { ctx ->
+    "(${emit(condition, ctx)} ? ${emitAny(ifTrue, ctx)} : ${emitAny(ifFalse, ctx)})"
+}
 
 @Suppress("UNCHECKED_CAST")
 private fun <T> parameterExprForType(

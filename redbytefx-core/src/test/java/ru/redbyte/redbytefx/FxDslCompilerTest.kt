@@ -363,4 +363,27 @@ class FxDslCompilerTest {
         assertTrue(source.contains("float2 l_shifted = shift_uv(fragCoord);"))
         assertTrue(source.contains("half4 l_tinted = tint_color(rb_sample(l_shifted), float4(1.0, 0.5, 0.25, 1.0));"))
     }
+
+    @Test
+    fun constructorsAndIfElseCompileThroughSharedTypedBuilders() {
+        val effect = redbytefx {
+            val uv = let(float2(0.25f, 0.75f), "uv")
+            val rgb = let(float3(uv, 0.5f), "rgb")
+            val rgba = let(float4(rgb, 1f), "rgba")
+            val fallback = let(float4(uv, 0.1f, 1f), "fallback")
+            val mixed = let(ifElse(float(1f) gt 0.5f, rgba, fallback), "mixed")
+
+            color(mixed)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float2 l_uv = float2(0.25, 0.75);"))
+        assertTrue(source.contains("float3 l_rgb = float3(l_uv, 0.5);"))
+        assertTrue(source.contains("float4 l_rgba = float4(l_rgb, 1.0);"))
+        assertTrue(source.contains("float4 l_fallback = float4(l_uv, 0.1, 1.0);"))
+        assertTrue(source.contains("float4 l_mixed = "))
+        assertTrue(source.contains("? l_rgba : l_fallback"))
+        assertTrue(source.contains("return half4(l_mixed);"))
+    }
 }
