@@ -388,16 +388,38 @@ private fun <T> FilterRow(
     selected: T,
     onSelect: (T) -> Unit
 ) where T : Enum<T> {
+    val defaultOption = options.first()
+    val selectedLabel = when (selected) {
+        is LayerFilter -> selected.label
+        is MotionFilter -> selected.label
+        is PathFilter -> selected.label
+        else -> selected.name
+    }
+    val titleText = if (selected == defaultOption) {
+        title
+    } else {
+        "$title: $selectedLabel"
+    }
+
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         CyberBadge(
-            text = title,
-            accent = MaterialTheme.colorScheme.secondary,
+            text = titleText,
+            modifier = if (selected != defaultOption) {
+                Modifier.clickable { onSelect(defaultOption) }
+            } else {
+                Modifier
+            },
+            accent = if (selected == defaultOption) {
+                MaterialTheme.colorScheme.secondary
+            } else {
+                MaterialTheme.colorScheme.tertiary
+            },
             fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f)
         )
-        options.forEach { option ->
+        options.drop(1).forEach { option ->
             val label = when (option) {
                 is LayerFilter -> option.label
                 is MotionFilter -> option.label
