@@ -51,19 +51,20 @@ What is still open:
 
 ### v0.4 Authoring UX
 
-Status: started, no longer just an idea
+Status: **first comprehensive documentation + messaging pass delivered** (ongoing polish can continue as incremental work)
 
 What is already solid:
 
-- better author-facing wording around same-effect uniform binding
-- better unsupported-argument / bad-literal guidance
-- `AGSL vs redbytefx` doc exists and is materially useful
-- cookbook now includes coordinate-space, `sample(...)` vs `sampleUv(...)`, compositing, polar, and `fn(...)` extraction rewrites
+- author-facing wording for same-effect uniform binding and **Hint** lines for common raw Kotlin mistakes
+- `fn` body vs declared return type validation at compile time
+- **Hub doc** [v0.4-authoring-ux.md](v0.4-authoring-ux.md) plus expanded [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) (including `sample` vs `sampleUv` and naming collisions)
+- [cookbook-patterns.md](cookbook-patterns.md) as a maintained companion with a compact porting checklist and multiple end-to-end rewrites
+- README / backlog / checklist cross-links for the authoring path
 
-What is still open:
+What is still open (by design or for later milestones):
 
-- diagnostics are still exception-shaped, not a richer structured system
-- cookbook/examples are useful, but still small compared to the long-term authoring goal
+- diagnostics remain **exception-shaped**, not a structured IDE-style API
+- cookbook can always grow; deeper **v0.6** naming and canonical surface work still applies to stdlib
 
 ### v0.5 Runtime quality
 

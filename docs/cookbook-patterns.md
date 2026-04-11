@@ -1,7 +1,17 @@
-# Cookbook patterns (draft)
+# Cookbook patterns
 
-Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md). Expand this as **v0.4 Authoring UX** matures; it is not a complete migration guide yet.
+Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) and the [v0.4 authoring hub](v0.4-authoring-ux.md). Use it for translation patterns and end-to-end rewrites; it is not an exhaustive migration encyclopedia.
+
 For the shortest compile/runtime path after authoring, pair this with [runtime-authoring-checklist.md](runtime-authoring-checklist.md).
+
+## Porting checklist (compact)
+
+1. List inputs: `fragCoord`, `resolution`, time, uniforms, every `rb_sample` / resample point.
+2. Choose **one** sampling space for the first port (pixels **or** normalized UV); match [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) `sample` vs `sampleUv` table before splitting spaces.
+3. Port close to AGSL: `let(...)` for locals; `fn(...)` only where the hand-written shader had a real helper.
+4. Inspect `agslSource()`: uniforms → locals → `fn` → `main` sampling path.
+5. Bind runtime: **same** compiled effect for `FxParam` and `FxInstance` / `FxController` (see checklist §3).
+6. Replace repeated recipe math with stdlib only when the AGSL shape is already predictable.
 
 ## Coordinates
 
@@ -381,12 +391,7 @@ Why this is a good stdlib rewrite:
 - `polarCoordinates(...)`, `angularSweep(...)`, and `arcMask(...)` turn repetitive polar math into named authoring blocks that stay easy to reason about.
 - Keeping `polar.x` in the final expression is still useful when you want one direct radial term alongside the higher-level helpers.
 
-## Next examples to add
+## Further examples (optional)
 
-- signal/distortion rewrite using `scanWarp(...)` or `signalBars(...)`
-- one compact `fn(...)` extraction example from hand-written AGSL helper functions
-
-## Next steps
-
-- Add 2–3 end-to-end examples: “port this minimal Shadertoy shader line by line.”
-- Cross-link from README once examples are stable.
+- Signal/distortion: see stdlib `scanWarp(...)`, `signalBars(...)`, and signal-focused demos in `:sample`.
+- Additional `fn(...)` extraction patterns: [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) and the pulse-band example above.

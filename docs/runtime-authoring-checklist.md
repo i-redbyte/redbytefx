@@ -4,8 +4,10 @@ Short version of the practical RedByteFX flow:
 
 `compile -> inspect -> bind -> apply`
 
+**v0.4 hub:** [v0.4-authoring-ux.md](v0.4-authoring-ux.md) links this checklist, the AGSL comparison, and the cookbook in one place.
+
 Use this together with [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) and
-[cookbook-patterns.md](cookbook-patterns.md) when a shader is technically compiling but still does
+[cookbook-patterns.md](cookbook-patterns.md) (including its **porting checklist**) when a shader is technically compiling but still does
 not behave the way you expect.
 
 ## API map

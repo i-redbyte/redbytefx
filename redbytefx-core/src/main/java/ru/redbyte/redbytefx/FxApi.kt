@@ -11,6 +11,9 @@ import android.graphics.RenderEffect
  * Call [agslSource] when you want to inspect the generated shader shape before deciding whether a
  * problem is really runtime-related. The compiled effect itself is reusable and thread-agnostic;
  * mutable runtime state lives in the returned [FxInstance].
+ *
+ * For authoring mental model and reading generated AGSL, see **`docs/agsl-vs-redbytefx.md`** in the
+ * repository (v0.4 Authoring UX hub: **`docs/v0.4-authoring-ux.md`**).
  */
 public interface FxEffect {
     /**
@@ -111,7 +114,9 @@ public interface FxInstance {
  *
  * A uniform handle is also an expression of the matching DSL type, so it can be referenced
  * directly inside the shader body after declaration. Handles are effect-specific: a [FxParam]
- * from one `redbytefx { ... }` block must not be reused with another compiled effect instance.
+ * from one `redbytefx { ... }` block must not be reused with another compiled effect instance or
+ * [FxInstance]. Matching debug labels in two different effects do **not** make two params the same
+ * handle. See **`docs/runtime-authoring-checklist.md`** (§3) in the repository.
  */
 public sealed class FxParam {
     /**
@@ -154,5 +159,8 @@ public sealed class FxParam {
  * 2. inspect [FxEffect.agslSource] if the generated shader shape is unclear
  * 3. create multiple independent runtime instances via [FxEffect.newInstance] when separate
  *    render targets need isolated mutable state
+ *
+ * Cookbook and porting patterns: **`docs/cookbook-patterns.md`**. Runtime bind order:
+ * **`docs/runtime-authoring-checklist.md`**.
  */
 public fun redbytefx(block: FxDsl.() -> ColorExpr): FxEffect = FxBuilder.build(block)

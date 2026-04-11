@@ -74,6 +74,9 @@ internal fun missingUniformBindingMessage(
         ?: " with a generated name"
 
     return "This effect instance does not contain the $readableType uniform$uniformLabel. " +
+        "FxParam handles are registered only for the effect that created them — if this handle " +
+        "came from another `redbytefx { }` block or you are using a different compiled effect " +
+        "instance, it will not appear in this layout. " +
         "Bind only params declared by the same redbytefx { ... } effect when calling " +
         "set$typeLabel(...) or the matching controller bind API."
 }
@@ -84,11 +87,28 @@ internal fun nonFiniteFloatLiteralMessage(value: Float): String =
 
 internal fun unsupportedExpressionArgumentMessage(expr: Any): String {
     val typeName = expr::class.qualifiedName ?: expr::class.simpleName ?: "unknown"
-    return "Unsupported expression argument: $typeName. " +
+    val base = "Unsupported expression argument: $typeName. " +
         "Shader helpers only accept DSL expressions such as FloatExpr, Float2Expr, Float3Expr, " +
         "Float4Expr, BoolExpr, or ColorExpr. Convert raw values with float(...), float2(...), " +
         "float3(...), float4(...), or color(...), or declare a uniform for runtime-driven inputs."
+    val hint = unsupportedExpressionArgumentHint(expr)
+    return if (hint != null) "$base $hint" else base
 }
+
+private fun unsupportedExpressionArgumentHint(expr: Any): String? =
+    when (expr) {
+        is Int, is Long, is Short, is Byte ->
+            "Hint: integer literals are not implicit shader values — wrap with float(...) for " +
+                "scalars or use float2(...)/float3(...)/float4(...)/color(...) for vectors."
+        is Float, is Double ->
+            "Hint: wrap scalar numbers with float(...) so they become FloatExpr in shader code."
+        is Boolean ->
+            "Hint: use bool(...) to build a BoolExpr."
+        is String, is Char ->
+            "Hint: text values cannot be embedded in shader expressions; use uniforms or build " +
+                "values from float(...)/color(...) and DSL math."
+        else -> null
+    }
 
 internal fun fnBodyReturnTypeMismatchMessage(
     functionName: String,
