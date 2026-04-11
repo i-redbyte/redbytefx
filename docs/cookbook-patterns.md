@@ -37,6 +37,117 @@ Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md). Expand this as **v0.4
 
 - AGSL `float foo(float x) { ... }` maps to `fn(name = "foo", ...) { x -> ... }` in the DSL (see core tests and sample demos).
 
+## Bad -> good: authoring fixes
+
+### 1. Returning custom marker-interface objects from `let(...)` or `fn(...)`
+
+Bad:
+
+```kotlin
+class MyFloatExpr : FloatExpr
+
+val effect = redbytefx {
+    val broken = fn(name = "brokenSignal", returns = FloatType) {
+        MyFloatExpr()
+    }
+    val value = let(broken(), "value")
+    color(value, value, value)
+}
+```
+
+Good:
+
+```kotlin
+val effect = redbytefx {
+    val brokenSignal = fn(name = "brokenSignal", returns = FloatType) {
+        0.5f + 0.5f * sin(uniformTime(name = "time"))
+    }
+    val value = let(brokenSignal(), "value")
+    color(value, value, value)
+}
+```
+
+Why:
+
+- `FloatExpr`, `Float2Expr`, `ColorExpr`, and the other marker interfaces are authoring types, not user extension points to implement manually.
+- `let(...)` and `fn(...)` should carry composed DSL expressions built from constructors, uniforms, math helpers, and stdlib helpers.
+- If you hit an error around `Unsupported FloatExpr implementation`, the fix is usually to return normal DSL math instead of a custom marker-interface object.
+
+### 2. Fighting names instead of letting the compiler normalize them
+
+Bad:
+
+```kotlin
+val effect = redbytefx {
+    val amp = uniformFloat(0.2f, "waveAmplitude")
+    val waveOffset = let(float2(0f, amp), "waveOffset")
+    val pulseBand = fn(name = "PulseBand", returns = FloatType) { waveOffset.y }
+    color(pulseBand(), pulseBand(), pulseBand())
+}
+```
+
+Good:
+
+```kotlin
+val effect = redbytefx {
+    val waveAmplitude by autoUniformFloat(0.2f)
+    val waveOffset = let(float2(0f, waveAmplitude), "waveOffset")
+    val pulseBand = fn(name = "PulseBand", returns = FloatType) { waveOffset.y }
+    color(pulseBand(), pulseBand(), pulseBand())
+}
+```
+
+What to expect in generated AGSL:
+
+```glsl
+uniform float u_wave_amplitude;
+float2 l_wave_offset = float2(0.0, u_wave_amplitude);
+float pulse_band() { ... }
+```
+
+Why:
+
+- Kotlin-style names are normalized into readable shader identifiers automatically.
+- `autoUniformFloat(...)` usually gives a cleaner authoring path than repeating string names for every scalar input.
+- Re-checking `agslSource()` here is useful because it confirms the library produced the naming shape you expected before you go deeper into debugging.
+
+### 3. Reading the wrong part of generated AGSL first
+
+Bad debugging habit:
+
+- stare at the entire generated shader and try to reason about everything at once
+
+Better first pass:
+
+1. scan the `uniform ...` lines and confirm the params you expected are actually there
+2. scan `let(...)` locals and function declarations to see whether naming and ordering still match your Kotlin source
+3. scan the final sampling path: `sample(...)`, `sampleUv(...)`, `rb_sample(...)`, and the final `main(...)` return
+
+Tiny example:
+
+```kotlin
+val effect = redbytefx {
+    val amount by autoUniformFloat(0.6f)
+    val base = let(sample(), "base")
+    val mono = let(grayscale(base), "mono")
+    mix(base, mono, amount)
+}
+```
+
+Useful first AGSL checks:
+
+```glsl
+uniform float u_amount;
+half4 l_base = rb_sample(fragCoord);
+half4 l_mono = half4(...);
+return mix(l_base, l_mono, u_amount);
+```
+
+Why:
+
+- most early bugs show up as “wrong uniform”, “wrong local”, or “wrong sampling space”, not as mysterious compiler output everywhere
+- reading AGSL top-down in these small chunks keeps RedByteFX predictable instead of feeling like a black box
+
 ## End-to-end example: extracted AGSL helper function
 
 Typical AGSL shape:

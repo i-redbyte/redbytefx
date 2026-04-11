@@ -57,5 +57,5 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 
 ## Cookbook (next)
 
-- Draft translation table plus explicit pixel-space vs UV-space sampling rewrites, `fn(...)` extraction, compositing, and radar examples: [cookbook-patterns.md](cookbook-patterns.md).
+- Draft translation table plus explicit pixel-space vs UV-space sampling rewrites, `fn(...)` extraction, compositing, radar examples, and short `bad -> good` authoring fixes: [cookbook-patterns.md](cookbook-patterns.md).
 - Larger narrative and more examples: [backlog-v0.4-v0.6.md](backlog-v0.4-v0.6.md) under **v0.4 Authoring UX**.
