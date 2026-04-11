@@ -265,7 +265,9 @@ public class FxDsl internal constructor(
      *
      * This is the DSL equivalent of extracting a named helper from inline shader code when the
      * generated AGSL should still show a readable function boundary. Suggested names are
-     * normalized into readable AGSL identifiers and suffixed on collision.
+     * normalized into readable AGSL identifiers and suffixed on collision. Built-in AGSL names
+     * such as `mix`, `sin`, and `main` are treated as reserved and are never emitted directly for
+     * user helpers.
      */
     public fun <R> fn(
         name: String? = null,
@@ -288,6 +290,8 @@ public class FxDsl internal constructor(
      *
      * This maps naturally from hand-written AGSL helpers such as `float foo(float x) { ... }`.
      * Suggested names are normalized into readable AGSL identifiers and suffixed on collision.
+     * Built-in AGSL names such as `mix`, `sin`, and `main` are treated as reserved and are never
+     * emitted directly for user helpers.
      */
     public fun <A1, R> fn(
         name: String? = null,
@@ -313,7 +317,9 @@ public class FxDsl internal constructor(
      *
      * Prefer this when the original shader already has a small named helper and keeping that
      * function visible is clearer than inlining the math into one large expression tree. Suggested
-     * names are normalized into readable AGSL identifiers and suffixed on collision.
+     * names are normalized into readable AGSL identifiers and suffixed on collision. Built-in
+     * AGSL names such as `mix`, `sin`, and `main` are treated as reserved and are never emitted
+     * directly for user helpers.
      */
     public fun <A1, A2, R> fn(
         name: String? = null,

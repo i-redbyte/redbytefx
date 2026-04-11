@@ -258,6 +258,38 @@ class FxDslCompilerTest {
     }
 
     @Test
+    fun userFunctionNamesAvoidAgslBuiltInsBySuffixing() {
+        val effect = redbytefx {
+            val sinHelper = fn(
+                name = "sin",
+                arg1 = FloatType,
+                returns = FloatType
+            ) { phase ->
+                phase * 0.5f
+            }
+            val mixHelper = fn(
+                name = "mix",
+                arg1 = FloatType,
+                arg2 = FloatType,
+                returns = FloatType
+            ) { left, right ->
+                (left + right) * 0.5f
+            }
+
+            val firstValue = let(sinHelper(1f), "firstValue")
+            val mixedValue = let(mixHelper(firstValue, 0.25f), "mixedValue")
+            color(mixedValue, mixedValue, mixedValue)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float sin_1(float p0)"))
+        assertTrue(source.contains("float mix_1(float p0, float p1)"))
+        assertTrue(source.contains("float l_first_value = sin_1(1.0);"))
+        assertTrue(source.contains("float l_mixed_value = mix_1(l_first_value, 0.25);"))
+    }
+
+    @Test
     fun intLiteralReceiversCompileIntoCanonicalCoreMath() {
         val effect = redbytefx {
             val amount by autoUniformFloat(0.35f)
