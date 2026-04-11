@@ -292,6 +292,8 @@ Text(
 ## Debugging
 
 - Call `effect.agslSource()` whenever you want to inspect the generated shader source.
+- For Compose/runtime issues, debug in this order: `agslSource()` -> param ownership -> sampling space -> controller-per-target -> runtime/platform behavior.
+- Use `docs/runtime-authoring-checklist.md` when you want the shortest `core + compose` path without jumping through the larger docs set.
 - Keep one `FxController` per render target so resolution and runtime state stay unambiguous.
 - Use `:sample` as a cookbook: each demo now keeps preview and live controls near the top on phones, collapses the heavier DSL/AGSL inspection below, and still shows a few sensible follow-up demos.
 - Use `ru.redbyte.redbytefx.sample.extra.START_DEMO` when launching `:sample` from `adb`; the app now retargets the running activity instead of only honoring the extra on cold start.

@@ -5,9 +5,12 @@ import android.graphics.RenderEffect
 /**
  * Immutable compiled RedByteFX effect.
  *
+ * This is the "compile once, inspect once, instantiate as needed" part of the library surface.
+ *
  * Create a new runtime instance with [newInstance] when you want to apply the effect to content.
- * The compiled effect itself is reusable and thread-agnostic; mutable runtime state lives in the
- * returned [FxInstance].
+ * Call [agslSource] when you want to inspect the generated shader shape before deciding whether a
+ * problem is really runtime-related. The compiled effect itself is reusable and thread-agnostic;
+ * mutable runtime state lives in the returned [FxInstance].
  */
 public interface FxEffect {
     /**
@@ -17,6 +20,13 @@ public interface FxEffect {
 
     /**
      * Returns the generated AGSL source for debugging, inspection, screenshot tests, or docs.
+     *
+     * Good first scan order:
+     *
+     * 1. `uniform ...` declarations
+     * 2. locals introduced through `let(...)`
+     * 3. user helpers introduced through `fn(...)`
+     * 4. the final sampling/compositing path in `main(...)`
      */
     public fun agslSource(): String
 }
@@ -25,6 +35,10 @@ public interface FxEffect {
  * Mutable runtime handle for a compiled [FxEffect].
  *
  * Use it to update uniforms and obtain the platform [RenderEffect].
+ *
+ * This is the low-level imperative runtime surface. Higher-level UI layers can wrap it with their
+ * own controller/binding model, but the same ownership rules still apply here: params come from
+ * one compiled effect, mutable runtime state belongs to one runtime instance.
  */
 public interface FxInstance {
     /**
@@ -62,6 +76,10 @@ public interface FxInstance {
 
     /**
      * Updates the logical resolution used by the shader in pixels.
+     *
+     * Call this when the host runtime owns the draw size explicitly. If a higher-level UI layer is
+     * already synchronizing the shader size from the render target, prefer letting that layer own
+     * resolution updates instead of duplicating them manually.
      */
     public fun setResolution(widthPx: Float, heightPx: Float)
 }
@@ -108,8 +126,11 @@ public sealed class FxParam {
  *
  * The [block] is written against [FxDsl] and must return the final output color.
  *
- * The returned effect can be reused to create multiple independent runtime instances via
- * [FxEffect.newInstance], which is how higher layers such as `rememberFxController(...)` keep
- * render-target state isolated.
+ * Typical flow:
+ *
+ * 1. compile one effect with `redbytefx { ... }`
+ * 2. inspect [FxEffect.agslSource] if the generated shader shape is unclear
+ * 3. create multiple independent runtime instances via [FxEffect.newInstance] when separate
+ *    render targets need isolated mutable state
  */
 public fun redbytefx(block: FxDsl.() -> ColorExpr): FxEffect = FxBuilder.build(block)

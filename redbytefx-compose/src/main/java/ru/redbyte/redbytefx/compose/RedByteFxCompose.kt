@@ -34,6 +34,11 @@ import ru.redbyte.redbytefx.FxParam
  * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform params are
  * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
  * created this controller.
+ *
+ * In composable code, prefer [bindFloat], [bindFloat2], [bindFloat3], [bindFloat4], and
+ * [bindTime] so updates happen after successful recomposition. The lower-level [setFloat],
+ * [setFloat2], [setFloat3], [setFloat4], and [setResolution] calls remain useful for previews,
+ * tests, or imperative runtime hosts.
  */
 @Stable
 public class FxController internal constructor(
@@ -64,6 +69,9 @@ public class FxController internal constructor(
      * Updates a scalar float uniform and invalidates the host view.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
+     *
+     * Compose callers should usually prefer [bindFloat] so the write happens from a side effect
+     * after recomposition instead of inline during composition.
      */
     public fun setFloat(param: FxParam.Float, value: Float) {
         val previous = floatValues[param]
@@ -77,6 +85,8 @@ public class FxController internal constructor(
      * Updates a `float2` uniform and invalidates the host view.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
+     *
+     * Compose callers should usually prefer [bindFloat2].
      */
     public fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
         if (sameFloat2(float2Values[param], x, y)) return
@@ -89,6 +99,8 @@ public class FxController internal constructor(
      * Updates a `float3` uniform and invalidates the host view.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
+     *
+     * Compose callers should usually prefer [bindFloat3].
      */
     public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
         if (sameFloat3(float3Values[param], x, y, z)) return
@@ -101,6 +113,8 @@ public class FxController internal constructor(
      * Updates a `float4` uniform and invalidates the host view.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
+     *
+     * Compose callers should usually prefer [bindFloat4].
      */
     public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
         if (sameFloat4(float4Values[param], x, y, z, w)) return
@@ -113,7 +127,8 @@ public class FxController internal constructor(
      * Updates the shader resolution in pixels and invalidates the host view when it changes.
      *
      * Most Compose callers should not call this manually because [redbyteFx] keeps the runtime
-     * resolution synchronized with the current draw target automatically.
+     * resolution synchronized with the current draw target automatically. Treat this as an escape
+     * hatch for imperative hosts or deliberate runtime tooling outside the normal Compose path.
      */
     public fun setResolution(widthPx: Float, heightPx: Float) {
         if (!updateResolution(widthPx, heightPx)) return
@@ -155,6 +170,10 @@ public class FxController internal constructor(
  * Keep the compiled [effect] stable and remember one controller per place that renders it. If the
  * same effect is shown in two different composables or at two different sizes, each render target
  * should usually have its own controller.
+ *
+ * When output looks wrong, inspect `effect.agslSource()` first, then verify param ownership,
+ * sampling space, and controller-per-target usage before treating the issue as a Compose/runtime
+ * problem.
  */
 @Composable
 public fun rememberFxController(effect: FxEffect): FxController {
@@ -175,6 +194,8 @@ public fun rememberFxController(effect: FxEffect): FxController {
  * When [isPlaying] becomes `false`, the current time value is preserved. Resuming continues from
  * the paused value instead of restarting from zero. [offsetSeconds] shifts the reported time
  * without resetting the internally accumulated phase.
+ *
+ * Prefer this over manually ticking [setFloat] from composable code.
  */
 @Composable
 public fun FxController.bindTime(
@@ -209,7 +230,7 @@ public fun FxController.bindTime(
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
  * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller.
+ * controller. Outside composition, use [setFloat] directly instead.
  */
 @Composable
 public fun FxController.bindFloat(
@@ -226,7 +247,7 @@ public fun FxController.bindFloat(
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
  * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller.
+ * controller. Outside composition, use [setFloat2] directly instead.
  */
 @Composable
 public fun FxController.bindFloat2(
@@ -244,7 +265,7 @@ public fun FxController.bindFloat2(
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
  * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller.
+ * controller. Outside composition, use [setFloat3] directly instead.
  */
 @Composable
 public fun FxController.bindFloat3(
@@ -263,7 +284,7 @@ public fun FxController.bindFloat3(
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
  * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller.
+ * controller. Outside composition, use [setFloat4] directly instead.
  */
 @Composable
 public fun FxController.bindFloat4(
@@ -288,6 +309,13 @@ public fun FxController.bindFloat4(
  *
  * Internally this records the content into an offscreen graphics layer and applies the platform
  * render effect produced by the controller's runtime shader instance.
+ *
+ * If the rendered result looks wrong, debug in this order before suspecting this modifier:
+ *
+ * 1. inspect the compiled effect's `agslSource()`
+ * 2. verify controller/param ownership
+ * 3. verify sampling space (`sample(...)` vs `sampleUv(...)`)
+ * 4. only then inspect render-target sizing or platform/runtime behavior
  */
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
     composed {

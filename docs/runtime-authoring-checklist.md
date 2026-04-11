@@ -8,6 +8,19 @@ Use this together with [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) and
 [cookbook-patterns.md](cookbook-patterns.md) when a shader is technically compiling but still does
 not behave the way you expect.
 
+## API map
+
+Same flow, mapped to the actual public surface:
+
+- compile and inspect: `redbytefx { ... }`, `FxEffect.agslSource()`
+- imperative runtime: `FxEffect.newInstance()`, `FxInstance.setFloat*()`, `FxInstance.setResolution()`
+- Compose runtime: `rememberFxController(effect)`, `bindFloat*()`, `bindTime()`, `Modifier.redbyteFx(fx)`
+
+Rule of thumb:
+
+- prefer `bind*()` from composable code
+- prefer `set*()` / `setResolution()` in tests, tooling, or non-Compose hosts
+
 ## 1. Compile once
 
 Start from one compiled effect:
@@ -109,6 +122,7 @@ That means most Compose code should:
 
 - bind author-controlled uniforms only
 - use `bindTime(...)`, `bindFloat(...)`, `bindFloat2(...)`, `bindFloat3(...)`, `bindFloat4(...)`
+- treat `setResolution(...)` as a manual-host escape hatch, not the default Compose path
 - avoid manually calling `setResolution(...)` unless you are deliberately driving the runtime
   outside the normal Compose render path
 

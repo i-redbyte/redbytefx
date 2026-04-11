@@ -20,6 +20,10 @@
  * [FxEffect.agslSource]. Once the generated shader reads clearly, move repeated masks,
  * compositing, SDF, polar, or routing recipes into `:redbytefx-stdlib`.
  *
+ * When that authored shader moves into runtime wiring, keep the same order of operations: compile,
+ * inspect [FxEffect.agslSource], bind effect-specific params to one runtime instance/controller,
+ * then apply it to one render target.
+ *
  * Small authoring convenience: common whole-number math such as `1 - amount` and `2 * uv` is
  * accepted directly, so early ports do not need to turn every left-hand integer literal into `1f`
  * before the shader intent is clear.
