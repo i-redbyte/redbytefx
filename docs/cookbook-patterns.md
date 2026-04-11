@@ -37,6 +37,55 @@ Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md). Expand this as **v0.4
 
 - AGSL `float foo(float x) { ... }` maps to `fn(name = "foo", ...) { x -> ... }` in the DSL (see core tests and sample demos).
 
+## End-to-end example: extracted AGSL helper function
+
+Typical AGSL shape:
+
+```glsl
+float pulse_band(float phase, float threshold) {
+  return step(threshold, smoothstep(0.08, 0.92, fract(phase)));
+}
+
+half4 main(float2 fragCoord) {
+  float2 uv = fragCoord / rb_resolution;
+  float mask = pulse_band(uv.y * density + time, 0.55);
+  half4 base = rb_sample(fragCoord);
+  half4 accent = half4(0.05, 0.95, 0.82, base.a);
+  return mix(base, accent, mask * amount);
+}
+```
+
+Equivalent RedByteFX port:
+
+```kotlin
+val effect = redbytefx {
+    val time by autoUniformTime()
+    val density by autoUniformFloat(8f)
+    val amount by autoUniformFloat(0.7f)
+    val pulseBand = fn(
+        name = "pulse_band",
+        arg1 = FloatType,
+        arg2 = FloatType,
+        returns = FloatType
+    ) { phase, threshold ->
+        step(threshold, smoothstep(0.08f, 0.92f, fract(phase)))
+    }
+
+    val base = let(sample(), "base")
+    val uv = let(normalizedUv(), "uv")
+    val mask = let(pulseBand(uv.y * density + time, 0.55f), "mask")
+    val accent = let(color(float3(0.05f, 0.95f, 0.82f), base.a), "accent")
+
+    mix(base, accent, mask * amount)
+}
+```
+
+Why this is a good rewrite:
+
+- `fn(...)` is the direct DSL analogue of a hand-written AGSL helper function; it keeps the reusable math named and visible in generated source.
+- The extracted helper still operates on typed expressions, so the port stays close to the original shader shape instead of becoming a separate abstraction layer.
+- This is a good fit for repeated recipe math. It is less useful for one-off expressions that read fine inline.
+
 ## End-to-end example: wave warp
 
 Minimal AGSL-style source:
