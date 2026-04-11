@@ -200,52 +200,53 @@ internal class FxInstanceImpl(
     // Platform RenderEffect instances do not reliably observe later RuntimeShader uniform updates,
     // so we recreate the effect after runtime state changes.
     private var renderEffect = createRenderEffect()
+    private val runtimeState = FxRuntimeState(
+        program = program,
+        writer = object : FxRuntimeUniformWriter {
+            override fun setFloat(name: String, value: Float) {
+                shader.setFloatUniform(name, value)
+            }
+
+            override fun setFloat2(name: String, x: Float, y: Float) {
+                shader.setFloatUniform(name, x, y)
+            }
+
+            override fun setFloat3(name: String, x: Float, y: Float, z: Float) {
+                shader.setFloatUniform(name, x, y, z)
+            }
+
+            override fun setFloat4(name: String, x: Float, y: Float, z: Float, w: Float) {
+                shader.setFloatUniform(name, x, y, z, w)
+            }
+        },
+        onRuntimeChanged = ::refreshRenderEffect
+    )
 
     init {
-        applyDefaults()
-        updateResolution(1f, 1f)
-        refreshRenderEffect()
+        runtimeState.applyDefaults()
+        runtimeState.setResolution(1f, 1f)
     }
 
     override fun renderEffect(): RenderEffect = renderEffect
 
     override fun setFloat(param: FxParam.Float, value: Float) {
-        val name = program.layout.floatUniforms[param]
-            ?: error(missingUniformBindingMessage("Float", param.debugName))
-        shader.setFloatUniform(name, value)
-        refreshRenderEffect()
+        runtimeState.setFloat(param, value)
     }
 
     override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        val name = program.layout.float2Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float2", param.debugName))
-        shader.setFloatUniform(name, x, y)
-        refreshRenderEffect()
+        runtimeState.setFloat2(param, x, y)
     }
 
     override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        val name = program.layout.float3Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float3", param.debugName))
-        shader.setFloatUniform(name, x, y, z)
-        refreshRenderEffect()
+        runtimeState.setFloat3(param, x, y, z)
     }
 
     override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        val name = program.layout.float4Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float4", param.debugName))
-        shader.setFloatUniform(name, x, y, z, w)
-        refreshRenderEffect()
+        runtimeState.setFloat4(param, x, y, z, w)
     }
 
     override fun setResolution(widthPx: Float, heightPx: Float) {
-        updateResolution(widthPx, heightPx)
-        refreshRenderEffect()
-    }
-
-    private fun updateResolution(widthPx: Float, heightPx: Float) {
-        val w = if (widthPx > 0f) widthPx else 1f
-        val h = if (heightPx > 0f) heightPx else 1f
-        shader.setFloatUniform(RB_RESOLUTION_UNIFORM, w, h)
+        runtimeState.setResolution(widthPx, heightPx)
     }
 
     private fun refreshRenderEffect() {
@@ -254,31 +255,4 @@ internal class FxInstanceImpl(
 
     private fun createRenderEffect(): RenderEffect =
         RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
-
-    private fun applyDefaults() {
-        for ((param, dv) in program.defaults) {
-            when (param) {
-                is FxParam.Float -> {
-                    val name = program.layout.floatUniforms[param] ?: continue
-                    val v = (dv as? DefaultValue.F)?.v ?: continue
-                    shader.setFloatUniform(name, v)
-                }
-                is FxParam.Float2 -> {
-                    val name = program.layout.float2Uniforms[param] ?: continue
-                    val v = dv as? DefaultValue.F2 ?: continue
-                    shader.setFloatUniform(name, v.x, v.y)
-                }
-                is FxParam.Float3 -> {
-                    val name = program.layout.float3Uniforms[param] ?: continue
-                    val v = dv as? DefaultValue.F3 ?: continue
-                    shader.setFloatUniform(name, v.x, v.y, v.z)
-                }
-                is FxParam.Float4 -> {
-                    val name = program.layout.float4Uniforms[param] ?: continue
-                    val v = dv as? DefaultValue.F4 ?: continue
-                    shader.setFloatUniform(name, v.x, v.y, v.z, v.w)
-                }
-            }
-        }
-    }
 }
