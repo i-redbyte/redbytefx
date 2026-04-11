@@ -29,9 +29,11 @@ import ru.redbyte.redbytefx.FxParam
  * Compose-friendly controller for a runtime [FxInstance].
  *
  * A controller owns a single runtime shader instance. Use a separate controller when the same
- * compiled [FxEffect] needs to render independently in multiple places.
+ * compiled [FxEffect] needs to render independently in multiple places or at different sizes.
  *
- * Use it to update uniforms from Compose state and pass it to [redbyteFx].
+ * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform params are
+ * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
+ * created this controller.
  */
 @Stable
 public class FxController internal constructor(
@@ -60,6 +62,8 @@ public class FxController internal constructor(
 
     /**
      * Updates a scalar float uniform and invalidates the host view.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
      */
     public fun setFloat(param: FxParam.Float, value: Float) {
         val previous = floatValues[param]
@@ -71,6 +75,8 @@ public class FxController internal constructor(
 
     /**
      * Updates a `float2` uniform and invalidates the host view.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
      */
     public fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
         if (sameFloat2(float2Values[param], x, y)) return
@@ -81,6 +87,8 @@ public class FxController internal constructor(
 
     /**
      * Updates a `float3` uniform and invalidates the host view.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
      */
     public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
         if (sameFloat3(float3Values[param], x, y, z)) return
@@ -91,6 +99,8 @@ public class FxController internal constructor(
 
     /**
      * Updates a `float4` uniform and invalidates the host view.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
      */
     public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
         if (sameFloat4(float4Values[param], x, y, z, w)) return
@@ -101,6 +111,9 @@ public class FxController internal constructor(
 
     /**
      * Updates the shader resolution in pixels and invalidates the host view when it changes.
+     *
+     * Most Compose callers should not call this manually because [redbyteFx] keeps the runtime
+     * resolution synchronized with the current draw target automatically.
      */
     public fun setResolution(widthPx: Float, heightPx: Float) {
         if (!updateResolution(widthPx, heightPx)) return
@@ -138,6 +151,10 @@ public class FxController internal constructor(
  * The remembered controller owns one runtime instance and is intended to back one render target.
  * If [effect] changes identity, a fresh runtime instance is created for the new compiled shader.
  * Uniform params bound through this controller must come from the same compiled [effect].
+ *
+ * Keep the compiled [effect] stable and remember one controller per place that renders it. If the
+ * same effect is shown in two different composables or at two different sizes, each render target
+ * should usually have its own controller.
  */
 @Composable
 public fun rememberFxController(effect: FxEffect): FxController {
@@ -156,7 +173,8 @@ public fun rememberFxController(effect: FxEffect): FxController {
  * The [param] handle must belong to the same compiled effect that created this controller.
  *
  * When [isPlaying] becomes `false`, the current time value is preserved. Resuming continues from
- * the paused value instead of restarting from zero.
+ * the paused value instead of restarting from zero. [offsetSeconds] shifts the reported time
+ * without resetting the internally accumulated phase.
  */
 @Composable
 public fun FxController.bindTime(
@@ -264,7 +282,9 @@ public fun FxController.bindFloat4(
  * Applies a compiled RedByteFX effect to the content drawn by this [Modifier].
  *
  * The supplied [controller] is expected to belong to this render target so its resolution stays
- * in sync with the content size.
+ * in sync with the content size. Reusing the same controller across unrelated render targets can
+ * cause the runtime resolution to flap between sizes, so independent surfaces should normally own
+ * independent controllers even if they share the same compiled [FxEffect].
  *
  * Internally this records the content into an offscreen graphics layer and applies the platform
  * render effect produced by the controller's runtime shader instance.
