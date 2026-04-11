@@ -37,6 +37,7 @@
 ## Project Docs
 
 - `CHANGELOG.md` tracks milestone-level changes.
+- `docs/milestone-snapshot.md` gives a short cross-version status snapshot of what is solid, what is still raw, and what should happen next.
 - `docs/v0.2-status.md` explains where the shader-stdlib milestone really stands and what is still missing.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.

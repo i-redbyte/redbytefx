@@ -2,7 +2,17 @@
 
 ## [Unreleased]
 
-- No tracked changes yet.
+### Added
+
+- Milestone snapshot doc covering the current `v0.2-v0.6` state in one place.
+- Package-level core guidance plus a clearer canonical family map across docs and sample.
+- Demo-path guidance inside inspection flow and follow-up routing that points exploratory demos back toward the canonical surface.
+
+### Changed
+
+- Sample wording now frames exploratory demos as extensions of the canonical path rather than parallel alternatives.
+- Authoring docs now explain sampling-space choices and AGSL helper extraction more concretely.
+- Several stdlib helpers now use more predictable blend/distortion intensity semantics.
 
 ## [v0.2-demo] - 2026-04-11
 
