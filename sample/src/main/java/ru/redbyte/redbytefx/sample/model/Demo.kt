@@ -711,14 +711,42 @@ private fun buildDemoFollowUp(
     val sameSection = current.section == candidate.section
     val sameLayer = current.layer == candidate.layer
     val sameMotion = current.isAnimated == candidate.isAnimated
+    val currentPath = current.pathSignal
+    val candidatePath = candidate.pathSignal
+    val candidateIsCurated = candidatePath.kind == DemoPathKind.StartHere || candidatePath.kind == DemoPathKind.Canonical
+    val currentIsCurated = currentPath.kind == DemoPathKind.StartHere || currentPath.kind == DemoPathKind.Canonical
 
     var score = 0
     if (sameSection) score += 6
     if (sharedTags.isNotEmpty()) score += 4 + sharedTags.size
     if (sameLayer) score += 2
     if (sameMotion) score += 1
+    if (!currentIsCurated && candidateIsCurated) score += 5
+    if (currentPath.kind == DemoPathKind.Exploratory && candidatePath.kind == DemoPathKind.StartHere) score += 3
+    if (currentIsCurated && candidatePath.kind == DemoPathKind.Exploratory) score += 4
+    if (currentPath.family != null && currentPath.family == candidatePath.family) score += 4
 
     val (label, description) = when {
+        !currentIsCurated && candidatePath.kind == DemoPathKind.StartHere -> {
+            "BACK TO START HERE" to
+                "Jump back to a recommended first-stop demo so the broader helper surface maps onto the curated mental model."
+        }
+
+        !currentIsCurated && candidatePath.kind == DemoPathKind.Canonical -> {
+            "BACK TO CANONICAL" to
+                "Use this curated demo to reconnect the current effect with the recommended helper family before returning to richer variants."
+        }
+
+        currentIsCurated && candidatePath.kind == DemoPathKind.Exploratory -> {
+            "RICHER VARIANT" to
+                "See how the same mental model expands into a more stylized or helper-heavier demo once the canonical path is clear."
+        }
+
+        currentPath.family != null && currentPath.family == candidatePath.family -> {
+            "SAME PATH FAMILY" to
+                "Stay inside the same curated family and compare another demo that reinforces the same teaching surface."
+        }
+
         sameSection && !sameLayer -> {
             "SAME TOPIC, OTHER LAYER" to
                 "Compare the same ${current.section.title.lowercase()} ideas through ${candidate.layer.label.lowercase()} authoring."
