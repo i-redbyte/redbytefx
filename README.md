@@ -22,7 +22,7 @@
 - low-level shader authoring through typed expressions, uniforms, functions, local variables, and AGSL-like math/color primitives
 - Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
 - a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
-- a strong sample catalog with search, starter routes, canonical/start-here filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
+- a strong sample catalog with search, starter routes, a canonical family map, canonical/start-here filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
 
 ## Current Limitations
 
@@ -209,7 +209,8 @@ The current first-pass “teach this first” shortlist looks like:
 - coordinates: `normalizedUv(...)`, `sampleUv(...)`, `centeredUv(...)`, `aspectCenteredUv(...)`
 - masking/reveal: `circleMask(...)`, `rectMask(...)`, `ringMask(...)`, `horizontalReveal(...)`, `verticalReveal(...)`, `radialReveal(...)`
 - compositing/shaping: `maskedMix(...)`, `alphaMask(...)`, `maskedScreen(...)`, `sdCircle(...)`, `sdRoundedBox(...)`, `softFill(...)`, `softStroke(...)`
-- timing/signal/routing: `pulse(...)`, `bandMask(...)`, `linearRamp(...)`, `radialRamp(...)`, `angularSweep(...)`, `segmentMask(...)`, `segmentProgress(...)`, `segmentPulse(...)`
+- timing/signal/gradients: `pulse(...)`, `bandMask(...)`, `linearRamp(...)`, `radialRamp(...)`, `angularSweep(...)`
+- routing/scene structure: `segmentMask(...)`, `segmentProgress(...)`, `segmentPulse(...)`
 
 Broader helpers like `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`, `frameMask(...)`, and `cornerMask(...)` remain useful, but they should not define the first mental model for the library.
 
@@ -218,6 +219,8 @@ They currently make the most sense as a secondary exploratory layer:
 - `fbm(...)` and `domainWarp(...)` for heavier procedural space-warp recipes
 - `chromaticOffset(...)` for stylized sampling/distortion passes
 - `frameMask(...)` and `cornerMask(...)` for decorative panel chrome after the simpler mask vocabulary is already in place
+
+The sample home screen now mirrors the same family map so the recommended teaching surface stays aligned between README, package docs, and live demos.
 
 ## Procedural Example
 

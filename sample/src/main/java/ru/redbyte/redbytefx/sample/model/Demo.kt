@@ -74,6 +74,59 @@ data class DemoFollowUp(
     val description: String
 )
 
+data class CanonicalGuide(
+    val label: String,
+    val title: String,
+    val summary: String,
+    val helperPreview: String,
+    val demoIds: List<DemoId>
+)
+
+val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
+    CanonicalGuide(
+        label = "COORDINATES",
+        title = "Coordinate space and sampling",
+        summary = "Normalize coordinates once, keep sampling-space decisions explicit, then build local UV/light space from there.",
+        helperPreview = "normalizedUv(...), sampleUv(...), centeredUv(...), aspectCenteredUv(...)",
+        demoIds = listOf(DemoId.Halo)
+    ),
+    CanonicalGuide(
+        label = "MASKS / REVEAL",
+        title = "Readable masks before style chrome",
+        summary = "Start from named masks and reveal helpers instead of re-writing edge and falloff math inside every shader.",
+        helperPreview = "circleMask(...), rectMask(...), ringMask(...), horizontalReveal(...), verticalReveal(...), radialReveal(...)",
+        demoIds = listOf(DemoId.Spotlight, DemoId.Reveal)
+    ),
+    CanonicalGuide(
+        label = "COMPOSITING",
+        title = "Layered color work with explicit intent",
+        summary = "Keep base, blend, mask, and amount readable so the generated AGSL still matches the authored compositing story.",
+        helperPreview = "maskedMix(...), alphaMask(...), maskedScreen(...)",
+        demoIds = listOf(DemoId.Composite)
+    ),
+    CanonicalGuide(
+        label = "SHAPING / SDF",
+        title = "Signed distance to fill/stroke",
+        summary = "Turn distance fields into fills and strokes first, then build larger authored scenes from those stable shape pieces.",
+        helperPreview = "sdCircle(...), sdRoundedBox(...), softFill(...), softStroke(...)",
+        demoIds = listOf(DemoId.Sigil)
+    ),
+    CanonicalGuide(
+        label = "SIGNAL / GRADIENTS / POLAR",
+        title = "Time-driven ramps and scan logic",
+        summary = "Treat time, sweeps, ramps, and polar scans as named authored signals instead of one-off procedural fragments.",
+        helperPreview = "pulse(...), bandMask(...), linearRamp(...), radialRamp(...), angularSweep(...)",
+        demoIds = listOf(DemoId.Signal, DemoId.Sweep, DemoId.Radar)
+    ),
+    CanonicalGuide(
+        label = "ROUTING",
+        title = "Scene structure from reusable segments",
+        summary = "Build authored route logic from segment helpers before reaching for heavier scene-specific math.",
+        helperPreview = "segmentMask(...), segmentProgress(...), segmentPulse(...)",
+        demoIds = listOf(DemoId.Circuit)
+    )
+)
+
 val DemoInfo.isStartHere: Boolean
     get() = when (id) {
         DemoId.Wave,

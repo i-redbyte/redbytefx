@@ -26,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ru.redbyte.redbytefx.sample.model.CanonicalGuide
+import ru.redbyte.redbytefx.sample.model.CanonicalGuideCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.DemoLayer
@@ -124,6 +126,12 @@ fun HomeScreen(
             demos.firstOrNull { it.id == route.demoId }?.let { demo -> route to demo }
         }
     }
+    val canonicalGuides = remember(demos) {
+        CanonicalGuideCatalog.mapNotNull { guide ->
+            val guideDemos = guide.demoIds.mapNotNull { id -> demos.firstOrNull { it.id == id } }
+            guide.takeIf { guideDemos.isNotEmpty() }?.let { it to guideDemos }
+        }
+    }
     val coreCount = remember(visibleDemos) { visibleDemos.count { it.layer == DemoLayer.Core } }
     val canonicalCount = remember(visibleDemos) { visibleDemos.count { it.isCanonicalDemo } }
 
@@ -212,6 +220,12 @@ fun HomeScreen(
             item(key = "starter-routes") {
                 StarterRoutesPanel(
                     routes = starterRoutes,
+                    onOpen = onOpen
+                )
+            }
+            item(key = "canonical-map") {
+                CanonicalMapPanel(
+                    guides = canonicalGuides,
                     onOpen = onOpen
                 )
             }
@@ -511,6 +525,99 @@ private fun StarterRoutesPanel(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CanonicalMapPanel(
+    guides: List<Pair<CanonicalGuide, List<DemoInfo>>>,
+    onOpen: (DemoId) -> Unit
+) {
+    CyberPanel(
+        accent = MaterialTheme.colorScheme.tertiary,
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+    ) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = "CANONICAL MAP",
+                accent = MaterialTheme.colorScheme.tertiary
+            )
+            CyberBadge(
+                text = "${guides.size} FAMILIES",
+                accent = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Text(
+            text = "These families mirror the curated helper surface in :redbytefx-stdlib, so the sample teaches the same path as the package docs instead of treating every helper equally.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        Column(
+            modifier = Modifier.padding(top = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            guides.forEach { (guide, demos) ->
+                CanonicalGuideCard(
+                    guide = guide,
+                    demos = demos,
+                    onOpen = onOpen
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CanonicalGuideCard(
+    guide: CanonicalGuide,
+    demos: List<DemoInfo>,
+    onOpen: (DemoId) -> Unit
+) {
+    CyberPanel(
+        accent = MaterialTheme.colorScheme.secondary,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+    ) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CyberBadge(
+                text = guide.label,
+                accent = MaterialTheme.colorScheme.primary
+            )
+            demos.forEach { demo ->
+                CyberBadge(
+                    text = demo.title.uppercase(),
+                    modifier = Modifier.clickable { onOpen(demo.id) },
+                    accent = MaterialTheme.colorScheme.tertiary,
+                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                )
+            }
+        }
+        Text(
+            text = guide.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        Text(
+            text = guide.summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Text(
+            text = guide.helperPreview,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 10.dp)
+        )
     }
 }
 

@@ -21,14 +21,17 @@
  *   [verticalReveal], [radialReveal]
  * - compositing: [maskedMix], [alphaMask], [maskedScreen]
  * - shaping / SDF: [sdCircle], [sdRoundedBox], [softFill], [softStroke]
- * - timing / signal / routing: [pulse], [bandMask], [linearRamp], [radialRamp],
- *   [angularSweep], [segmentMask], [segmentProgress], [segmentPulse]
+ * - timing / signal / gradients / polar: [pulse], [bandMask], [linearRamp], [radialRamp],
+ *   [angularSweep]
+ * - routing / scene structure: [segmentMask], [segmentProgress], [segmentPulse]
  *
  * Broader helpers such as `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`,
  * `frameMask(...)`, and `cornerMask(...)` remain useful, but they are better treated as
  * exploratory helpers than the first teaching surface.
  *
  * Helpers are grouped by topic across source files (mapping, patterns, masks, compositing, …).
- * Prefer composing a few clear helpers over growing the surface with one-off variants.
+ * Prefer composing a few clear helpers over growing the surface with one-off variants. The sample
+ * home screen mirrors this same canonical family map so the teaching path stays consistent between
+ * docs, package guidance, and live demos.
  */
 package ru.redbyte.redbytefx.stdlib

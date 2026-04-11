@@ -134,6 +134,7 @@ Reference note: [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
   - signal/polar/routing building blocks
 - keep one-off or style-specific helpers out of the “start here” narrative even if they remain in the source tree
 - make module/package-level docs point to the canonical path first, then to broader exploratory helpers
+- Started: `redbytefx-core` and `redbytefx-stdlib` package docs now point to the starter path first, and the sample home screen mirrors the same family map instead of only showing per-demo canonical badges
 
 First-pass canonical shortlist to validate against docs/sample/cookbook:
 
