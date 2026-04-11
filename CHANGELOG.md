@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Documentation:** hub docs [docs/v0.5-runtime-quality.md](docs/v0.5-runtime-quality.md) and [docs/v0.6-library-shaping.md](docs/v0.6-library-shaping.md); backlog/roadmap/milestone snapshot updated for first-pass **v0.5** / **v0.6** closure.
+- **Detekt** static analysis: `config/detekt/detekt.yml`, plugin on all Kotlin modules, main sources only; **`.editorconfig`**; `./gradlew qualityCheck` now includes `detekt`.
 - **`fn` diagnostics:** compile-time validation that the function body expression matches the declared return type (`FxValueType`), with an error message that names expected AGSL type and actual expression kind.
 - **`:sample` → Aurora** hero demo: iridescent rim + rotating `angularSweep`, `cosinePalette`, and `chromaticOffset`, with **PATH 00** on the home screen for quick access.
 - **`:sample` → Liquid Glass** demo: stylized glass via `domainWarp` + `sampleUv`, Fresnel-style shell + `rimLight`, manual RGB channel offsets on warped UV for edge chroma, and `blendScreen` ice tint (documented as single-pass; not a multi-tap frosted blur).

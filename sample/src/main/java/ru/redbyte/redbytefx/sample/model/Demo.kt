@@ -707,7 +707,10 @@ val DemoCatalog: List<DemoInfo> = listOf(
         id = DemoId.LiquidGlass,
         title = "Liquid Glass",
         subtitle = "Stylized glass: flowing refraction, Fresnel edge, cool tint.",
-        focus = "Single-pass AGSL cannot do true multi-tap frosted blur; this demo fakes liquid glass with domainWarp(...) + sampleUv(...), rim/shell masks, manual per-channel sampling for edge chroma, and blendScreen(...). The sample UI shows a translucent pill button on a gradient so the effect reads as glass over a control. Pair with platform blur under the content if you need real frosting.",
+        focus = "Single-pass AGSL cannot do true multi-tap frosted blur; this demo fakes liquid glass with " +
+            "domainWarp(...) + sampleUv(...), rim/shell masks, manual per-channel sampling for edge chroma, " +
+            "and blendScreen(...). The sample UI shows a translucent pill button on a gradient so the effect " +
+            "reads as glass over a control. Pair with platform blur under the content if you need real frosting.",
         snippet = """
             val warpedUv = saturate(domainWarp(uv * 3.2f, time * speed, refraction))
             val glass = sampleUv(warpedUv)

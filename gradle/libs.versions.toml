@@ -1,6 +1,7 @@
 [versions]
 agp = "9.0.1"
 kotlin = "2.3.10"
+detekt = "1.23.7"
 compose-bom = "2026.02.01"
 activity-compose = "1.12.4"
 junit4 = "4.13.2"
@@ -9,6 +10,7 @@ junit4 = "4.13.2"
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 
 [libraries]
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -43,10 +42,7 @@ import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
 import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.maskedMix
-import ru.redbyte.redbytefx.stdlib.maskedOverlay
-import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.normalizedUv
-import ru.redbyte.redbytefx.stdlib.sdBox
 import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.sdRoundedBox
 import ru.redbyte.redbytefx.stdlib.segmentMask
