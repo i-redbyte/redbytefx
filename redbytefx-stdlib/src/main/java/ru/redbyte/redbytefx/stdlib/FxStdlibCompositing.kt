@@ -8,7 +8,8 @@ private fun maskedAmount(mask: FloatExpr, amount: FloatExpr): FloatExpr =
 /**
  * Mixes [revealed] into [base] through a normalized [mask].
  *
- * [amount] scales the mask intensity before the final mix.
+ * [amount] scales the mask intensity before the final mix. This is the main canonical compositing
+ * helper in `stdlib`: author a readable mask first, then reveal the next layer through it.
  */
 public fun maskedMix(
     base: ColorExpr,
@@ -35,7 +36,9 @@ public fun maskedMix(
 /**
  * Preserves RGB while multiplying alpha by the normalized [mask].
  *
- * This is useful for building matte layers before compositing them back into the scene.
+ * This is useful for building matte layers before compositing them back into the scene. Prefer it
+ * when the shader wants to prepare a tinted or lit overlay before feeding that layer into
+ * [maskedScreen], [maskedOverlay], or plain [maskedMix].
  */
 public fun alphaMask(
     color: ColorExpr,
@@ -64,7 +67,8 @@ public fun alphaMask(
 /**
  * Applies screen blending through a normalized [mask].
  *
- * [amount] scales the effective mask intensity before blending.
+ * [amount] scales the effective mask intensity before blending. This works best when [blend] is
+ * already a deliberate layer, not a replacement for first authoring the mask itself.
  */
 public fun maskedScreen(
     base: ColorExpr,
@@ -91,7 +95,8 @@ public fun maskedScreen(
 /**
  * Applies overlay blending through a normalized [mask].
  *
- * [amount] scales the effective mask intensity before blending.
+ * [amount] scales the effective mask intensity before blending. Treat this as a more stylized
+ * companion to [maskedMix] rather than the first compositing helper to teach.
  */
 public fun maskedOverlay(
     base: ColorExpr,

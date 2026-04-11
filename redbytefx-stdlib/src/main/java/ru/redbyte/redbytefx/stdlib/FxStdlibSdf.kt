@@ -6,6 +6,8 @@ import ru.redbyte.redbytefx.*
  * Returns the signed distance from [point] to a circle centered at the local origin.
  *
  * Negative values are inside the shape, positive values are outside, and zero lies on the edge.
+ * In practice [point] is usually a centered local coordinate such as [centeredUv] or
+ * [aspectCenteredUv], not raw `[0,1]` UV space.
  */
 public fun sdCircle(
     point: Float2Expr,
@@ -26,7 +28,8 @@ public fun sdCircle(
 /**
  * Returns the signed distance from [point] to an axis-aligned box centered at the local origin.
  *
- * [halfSize] follows standard SDF terminology and represents half extents on each axis.
+ * [halfSize] follows standard SDF terminology and represents half extents on each axis. Use this
+ * family when the shader is already thinking in local shape space, not in screen-space masks.
  */
 public fun sdBox(
     point: Float2Expr,
@@ -94,6 +97,8 @@ public fun fill(distance: FloatExpr): FloatExpr =
 
 /**
  * Fills an SDF shape with a soft edge controlled by [feather].
+ *
+ * This is one of the main canonical bridges from signed-distance authoring into a normalized mask.
  */
 public fun softFill(
     distance: FloatExpr,
@@ -126,6 +131,9 @@ public fun stroke(
 
 /**
  * Builds a soft stroke around an SDF contour.
+ *
+ * This is the stroke-oriented companion to [softFill] and is a canonical way to turn SDF distance
+ * fields into readable outline masks.
  */
 public fun softStroke(
     distance: FloatExpr,

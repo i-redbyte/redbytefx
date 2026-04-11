@@ -47,7 +47,8 @@ public fun centeredUv(
  * Recenters normalized UV coordinates and applies aspect correction using [resolution].
  *
  * The returned vector keeps radial math visually round on non-square surfaces by scaling the X
- * component according to the current render target aspect ratio.
+ * component according to the current render target aspect ratio. This is the main canonical bridge
+ * from normalized UV space into local shape/light space.
  */
 public fun aspectCenteredUv(
     uv: Float2Expr,

@@ -5,7 +5,10 @@ import ru.redbyte.redbytefx.*
 /**
  * Builds a soft circular mask from normalized UV coordinates.
  *
- * The returned value stays near `1` inside the circle and fades toward `0` outside it.
+ * The returned value stays near `1` inside the circle and fades toward `0` outside it. This is a
+ * canonical starter helper for focus masks, reveals, and compositing gates in normalized UV space.
+ * If the mask needs to stay visually round on non-square targets, compute an aspect-corrected
+ * local point first via [aspectCenteredUv] and then use an SDF-based fill instead.
  */
 public fun circleMask(
     uv: Float2Expr,
@@ -53,7 +56,8 @@ public fun circleMask(
  * Builds a soft ring mask from normalized UV coordinates.
  *
  * [radius] controls the ring center, [width] controls its thickness, and [feather] softens the
- * outer falloff around the band.
+ * outer falloff around the band. Like [circleMask], this helper assumes normalized UV space rather
+ * than local SDF coordinates.
  */
 public fun ringMask(
     uv: Float2Expr,
@@ -124,7 +128,9 @@ public fun ringMask(
 /**
  * Builds a soft axis-aligned rectangle mask from normalized UV coordinates.
  *
- * [size] is interpreted as the full rectangle size in UV space, not as half extents.
+ * [size] is interpreted as the full rectangle size in UV space, not as half extents. Reach for
+ * this when a shader wants panel-like masking in normalized space; use [sdRoundedBox] plus
+ * [softFill] when the authoring flow is already in local SDF coordinates.
  */
 public fun rectMask(
     uv: Float2Expr,

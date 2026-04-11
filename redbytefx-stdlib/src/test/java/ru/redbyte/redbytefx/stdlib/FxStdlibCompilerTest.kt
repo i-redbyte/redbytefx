@@ -718,4 +718,98 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("smoothstep"))
         assertTrue(source.contains("length"))
     }
+
+    @Test
+    fun canonicalStarterPipelineCompilesIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.86f)
+            val base = let(sample(), "base")
+            val uv = let(normalizedUv(), "uv")
+            val board = let(aspectCenteredUv(uv, resolution), "board")
+            val panelMask = let(
+                rectMask(
+                    uv = uv,
+                    center = float2(0.5f, 0.5f),
+                    size = float2(0.82f, 0.58f),
+                    feather = 0.04f
+                ),
+                "panel_mask"
+            )
+            val chipMask = let(
+                softFill(
+                    distance = sdRoundedBox(
+                        point = board - float2(0.08f, -0.02f),
+                        halfSize = float2(0.18f, 0.1f),
+                        radius = 0.04f
+                    ),
+                    feather = 0.016f
+                ),
+                "chip_mask"
+            )
+            val traceMask = let(
+                segmentMask(
+                    point = board,
+                    start = float2(-0.34f, 0.02f),
+                    end = float2(0.08f, -0.02f),
+                    thickness = 0.042f,
+                    feather = 0.016f
+                ),
+                "trace_mask"
+            )
+            val signal = let(
+                segmentPulse(
+                    point = board,
+                    start = float2(-0.34f, 0.02f),
+                    end = float2(0.08f, -0.02f),
+                    phase = fract(time * 0.42f),
+                    bandWidth = 0.22f,
+                    thickness = 0.042f,
+                    bandFeather = 0.08f,
+                    feather = 0.016f
+                ),
+                "signal"
+            )
+            val scaffold = let(
+                maskedMix(
+                    base = base,
+                    revealed = color(float3(0.02f, 0.12f, 0.08f), base.a),
+                    mask = panelMask,
+                    amount = amount
+                ),
+                "scaffold"
+            )
+            val energized = let(
+                maskedScreen(
+                    base = scaffold,
+                    blend = alphaMask(
+                        color(float3(0.24f, 0.94f, 1f), 1f),
+                        max(chipMask, signal),
+                        amount
+                    ),
+                    mask = max(traceMask, chipMask),
+                    amount = amount
+                ),
+                "energized"
+            )
+
+            maskedMix(
+                base = energized,
+                revealed = color(float3(1f, 0.92f, 0.62f), base.a),
+                mask = signal,
+                amount = amount * 0.45f
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uResolution"))
+        assertTrue(source.contains("rb_sample"))
+        assertTrue(source.contains("dot"))
+        assertTrue(source.contains("length"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("mix"))
+    }
 }
