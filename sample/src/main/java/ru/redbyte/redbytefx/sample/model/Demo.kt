@@ -464,8 +464,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Posterize,
         title = "Posterize",
-        subtitle = "Recipe-level stdlib helper layered on top of the core DSL.",
-        focus = "Shows the new v0.2 direction: keep core low-level, then build readable authoring helpers like posterize(...) in a separate stdlib module.",
+        subtitle = "A secondary color recipe layered on top of the core DSL path.",
+        focus = "Extends the canonical core sampling/color path with posterize(...) and remap-style quantization once the base DSL mental model already feels comfortable.",
         snippet = """
             val levels by autoUniformFloat(5f)
             val amount by autoUniformFloat(0.85f)
@@ -476,8 +476,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Film,
         title = "Film",
-        subtitle = "Procedural grain, noise drift, and vignette from the stdlib layer.",
-        focus = "Shows the second v0.2 stdlib wave: reusable procedural helpers that stay readable in Kotlin while still compiling into ordinary AGSL math.",
+        subtitle = "A secondary signal/style pass built on the canonical procedural path.",
+        focus = "Extends the canonical signal and ramp vocabulary with grain(...), valueNoise(...), and vignette(...) once the simpler procedural helpers already read clearly.",
         snippet = """
             val noise = let(grain(uv, time, grainScale), "grain")
             val drift = let(remap(valueNoise(uv * 6f + float2(time * 0.08f, 0f)), 0f, 1f, 0.92f, 1.05f), "drift")
@@ -487,8 +487,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Grade,
         title = "Grade",
-        subtitle = "Color grading helpers and blend modes from the stdlib layer.",
-        focus = "Shows the new color-oriented v0.2 stdlib surface: adjustSaturation(...), blendMultiply(...), blendScreen(...), and blendOverlay(...) layered on top of plain DSL math.",
+        subtitle = "A secondary color pass extending canonical compositing and tinting.",
+        focus = "Extends the canonical compositing/color path with adjustSaturation(...), blendMultiply(...), blendScreen(...), and blendOverlay(...) after mask and mix logic are already familiar.",
         snippet = """
             val saturated = let(adjustSaturation(base, 1.35f), "saturated")
             val tinted = let(blendMultiply(saturated, tint, 0.25f), "tinted")
@@ -499,8 +499,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Warp,
         title = "Warp",
-        subtitle = "fBm and domain warp helpers for fluid coordinate distortion.",
-        focus = "Shows the v0.2 procedural stack growing beyond one-off noise helpers into reusable space-warp building blocks.",
+        subtitle = "A secondary procedural pass extending canonical coordinate work.",
+        focus = "Extends the canonical coordinate and signal path into heavier space-warp helpers like fbm(...) and domainWarp(...), which are best read after the simpler UV and mask model is settled.",
         snippet = """
             val warpedUv = let(domainWarp(uv * scale, time * 0.25f, warpAmount), "warped_uv")
             val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount, "drift")
@@ -510,8 +510,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Prism,
         title = "Prism",
-        subtitle = "Cosine palette plus chromatic offset in the stdlib layer.",
-        focus = "Shows palette authoring and multi-sample color separation without dropping down to hand-written AGSL strings.",
+        subtitle = "A secondary color/sampling pass built on the canonical sampling path.",
+        focus = "Extends the canonical sampling and compositing path with cosinePalette(...) and chromaticOffset(...) for stylized color separation once the base sample(...) vs sampleUv(...) model is already clear.",
         snippet = """
             val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
             val refracted = let(chromaticOffset(offset = shift, direction = float2(1f, 0.3f), amount = amount), "refracted")
@@ -533,8 +533,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Beacon,
         title = "Beacon",
-        subtitle = "Timing and easing helpers layered on top of masks.",
-        focus = "Shows pingPong(...), easeInOutSine(...), and easeInOutCubic(...) driving animated focus motion without dropping into noisy hand-written timeline math.",
+        subtitle = "A secondary motion pass extending the canonical mask path with easing.",
+        focus = "Extends the canonical masks and lighting route with pingPong(...), easeInOutSine(...), and easeInOutCubic(...) so animated focus motion stays readable after the base mask vocabulary is familiar.",
         snippet = """
             val phase = pingPong(time * speed, 1f)
             val travel = easeInOutSine(phase)
@@ -557,8 +557,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Frame,
         title = "Frame",
-        subtitle = "Viewport frame masks and inner edge fades for UI shells.",
-        focus = "Shows edgeDistance(...), edgeFade(...), and frameMask(...) working together with directionalSweep(...) to build animated panel borders and inner shell lighting.",
+        subtitle = "A decorative extension of the canonical mask/reveal path.",
+        focus = "Extends the canonical mask and reveal surface with edgeDistance(...), edgeFade(...), and frameMask(...) to build panel chrome after the simpler focus and reveal helpers are already understood.",
         snippet = """
             val frame = frameMask(uv, thickness, feather = 0.03f)
             val interior = edgeFade(uv, thickness + 0.08f)
@@ -569,8 +569,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Corner,
         title = "Corner",
-        subtitle = "Bracket-style corner accents for terminal and HUD panels.",
-        focus = "Shows cornerMask(...) layered with directionalSweep(...) to build animated cyber corners without hand-written per-corner mask math in every shader.",
+        subtitle = "A decorative extension of the canonical frame/mask path.",
+        focus = "Extends the canonical frame and mask path with cornerMask(...) and directionalSweep(...) so bracket-style HUD chrome stays readable without devolving into per-corner AGSL math.",
         snippet = """
             val corners = cornerMask(uv, size = size, thickness = thickness, feather = 0.03f)
             val sweep = directionalSweep(uv, direction = float2(1f, -0.20f), center = center, width = 0.16f, feather = 0.08f)
@@ -604,8 +604,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.Glitch,
         title = "Glitch",
-        subtitle = "Signal bars, lock bands, and scan warp from the stdlib layer.",
-        focus = "Shows the next v0.2 recipe slice: reusable signal helpers that make tearing bands, rolling locks, and scan distortion readable without hiding the AGSL underneath.",
+        subtitle = "A stylized extension of the canonical signal/gradient path.",
+        focus = "Extends the canonical signal and gradient route with signalBars(...), bandMask(...), and scanWarp(...) for tearing and distortion after the base scan/ramp model is already clear.",
         snippet = """
             val bars = signalBars(uv.y, density = density, width = 0.28f, phase = time * 0.65f, feather = 0.10f)
             val lock = bandMask(uv.y, center = 0.22f + pingPong(time * 0.12f, 1f) * 0.56f, width = 0.14f, feather = 0.08f)
