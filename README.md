@@ -49,7 +49,7 @@
 ## Quickstart
 
 1. Define an effect with `redbytefx { ... }` and keep typed uniform handles when you need runtime updates.
-   Names are optional: use `uniformFloat(0f)` for anonymous generated uniforms, or `val amount by autoUniformFloat(0f)` when you want the Kotlin property name to become the shader name automatically.
+   Names are optional: use `uniformFloat(0f)` for anonymous generated uniforms, or `val waveAmplitude by autoUniformFloat(0f)` when you want the Kotlin property name to become a readable snake_case shader name automatically.
 2. In Compose, create one controller per render target with `rememberFxController(effect)`.
 3. Bind ordinary Compose state with `bindFloat(...)` / `bindFloat2(...)` or drive time with `bindTime(...)`.
 4. Apply the effect with `Modifier.redbyteFx(fx)`.

@@ -134,6 +134,8 @@ public class FxDsl internal constructor(
      * Declares a scalar float uniform and derives its debug name from the delegated Kotlin
      * property name.
      *
+     * The generated shader identifier is normalized into readable snake_case AGSL style.
+     *
      * Example:
      *
      * ```kotlin
@@ -147,6 +149,8 @@ public class FxDsl internal constructor(
 
     /**
      * Declares a time uniform and derives its debug name from the delegated Kotlin property name.
+     *
+     * The generated shader identifier is normalized into readable snake_case AGSL style.
      */
     public fun autoUniformTime(
         default: Float = 0f
@@ -156,6 +160,8 @@ public class FxDsl internal constructor(
     /**
      * Declares a `float2` uniform and derives its debug name from the delegated Kotlin property
      * name.
+     *
+     * The generated shader identifier is normalized into readable snake_case AGSL style.
      */
     public fun autoUniformFloat2(
         x: Float = 0f,
@@ -166,6 +172,8 @@ public class FxDsl internal constructor(
     /**
      * Declares a `float3` uniform and derives its debug name from the delegated Kotlin property
      * name.
+     *
+     * The generated shader identifier is normalized into readable snake_case AGSL style.
      */
     public fun autoUniformFloat3(
         x: Float = 0f,
@@ -177,6 +185,8 @@ public class FxDsl internal constructor(
     /**
      * Declares a `float4` uniform and derives its debug name from the delegated Kotlin property
      * name.
+     *
+     * The generated shader identifier is normalized into readable snake_case AGSL style.
      */
     public fun autoUniformFloat4(
         x: Float = 0f,
@@ -198,36 +208,54 @@ public class FxDsl internal constructor(
 
     /**
      * Stores a scalar expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: FloatExpr, name: String? = null): FloatExpr =
         localFloatExpr(name, value)
 
     /**
      * Stores a boolean expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: BoolExpr, name: String? = null): BoolExpr =
         localBoolExpr(name, value)
 
     /**
      * Stores a `float2` expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: Float2Expr, name: String? = null): Float2Expr =
         localFloat2Expr(name, value)
 
     /**
      * Stores a `float3` expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: Float3Expr, name: String? = null): Float3Expr =
         localFloat3Expr(name, value)
 
     /**
      * Stores a `float4` expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: Float4Expr, name: String? = null): Float4Expr =
         localFloat4Expr(name, value)
 
     /**
      * Stores a color expression in a generated AGSL local variable.
+     *
+     * When [name] is provided, it is normalized into a readable AGSL identifier and suffixed if a
+     * previous local already used the same generated name.
      */
     public fun let(value: ColorExpr, name: String? = null): ColorExpr =
         localColorExpr(name, value)
@@ -236,7 +264,8 @@ public class FxDsl internal constructor(
      * Declares a reusable zero-argument AGSL helper function.
      *
      * This is the DSL equivalent of extracting a named helper from inline shader code when the
-     * generated AGSL should still show a readable function boundary.
+     * generated AGSL should still show a readable function boundary. Suggested names are
+     * normalized into readable AGSL identifiers and suffixed on collision.
      */
     public fun <R> fn(
         name: String? = null,
@@ -258,6 +287,7 @@ public class FxDsl internal constructor(
      * Declares a reusable one-argument AGSL helper function.
      *
      * This maps naturally from hand-written AGSL helpers such as `float foo(float x) { ... }`.
+     * Suggested names are normalized into readable AGSL identifiers and suffixed on collision.
      */
     public fun <A1, R> fn(
         name: String? = null,
@@ -282,7 +312,8 @@ public class FxDsl internal constructor(
      * Declares a reusable two-argument AGSL helper function.
      *
      * Prefer this when the original shader already has a small named helper and keeping that
-     * function visible is clearer than inlining the math into one large expression tree.
+     * function visible is clearer than inlining the math into one large expression tree. Suggested
+     * names are normalized into readable AGSL identifiers and suffixed on collision.
      */
     public fun <A1, A2, R> fn(
         name: String? = null,
@@ -523,19 +554,7 @@ public class FxDsl internal constructor(
     private fun nextFunctionName(suggestedName: String?): String {
         val base = suggestedName
             ?.takeIf { it.isNotBlank() }
-            ?.let { raw ->
-                val cleaned = buildString {
-                    raw.forEach { ch ->
-                        when {
-                            ch.isLetterOrDigit() -> append(ch.lowercaseChar())
-                            ch == '_' -> append(ch)
-                            else -> append('_')
-                        }
-                    }
-                }.trim('_').ifBlank { "fn_${functions.size}" }
-
-                if (cleaned.firstOrNull()?.isDigit() == true) "fn_$cleaned" else cleaned
-            }
+            ?.let { sanitizeSuggestedIdentifier(it, leadingDigitPrefix = "fn_") }
             ?: "fn_${functions.size}"
 
         var candidate = base

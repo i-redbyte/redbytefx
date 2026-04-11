@@ -183,6 +183,20 @@ class FxDslCompilerTest {
     }
 
     @Test
+    fun autoNamedUniformsNormalizeCamelCaseIntoReadableShaderNames() {
+        val effect = redbytefx {
+            val waveAmplitude by autoUniformFloat(0.5f)
+            val edgeSoftness by autoUniformFloat(0.12f)
+            mix(sample(), grayscale(sample()), waveAmplitude * edgeSoftness)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_wave_amplitude;"))
+        assertTrue(source.contains("uniform float u_edge_softness;"))
+    }
+
+    @Test
     fun emitsAtanMathForPolarHelpers() {
         val effect = redbytefx {
             val center = uniformFloat2(0.5f, 0.5f, "center")
@@ -215,6 +229,32 @@ class FxDslCompilerTest {
         assertTrue(source.contains("uniform float2 u_direction;"))
         assertTrue(source.contains("dot"))
         assertTrue(source.contains("float l_projection"))
+    }
+
+    @Test
+    fun functionAndLocalNamesNormalizeCamelCaseAndSuffixCollisions() {
+        val effect = redbytefx {
+            val pulseBand = fn(
+                name = "PulseBand",
+                arg1 = FloatType,
+                returns = FloatType
+            ) { phase ->
+                sin(phase)
+            }
+
+            val firstOffset = let(float2(0.1f, 0.2f), "waveOffset")
+            val secondOffset = let(float2(0.3f, 0.4f), "waveOffset")
+            val drive = let(pulseBand(firstOffset.x + secondOffset.y), "signalMask")
+
+            color(drive, drive, drive)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float pulse_band(float p0)"))
+        assertTrue(source.contains("float2 l_wave_offset = float2(0.1, 0.2);"))
+        assertTrue(source.contains("float2 l_wave_offset_1 = float2(0.3, 0.4);"))
+        assertTrue(source.contains("float l_signal_mask = pulse_band(((l_wave_offset).x + (l_wave_offset_1).y));"))
     }
 
     @Test
