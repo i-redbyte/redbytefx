@@ -4,7 +4,7 @@
 
 ## Status
 
-- current level: `v0.2 closed / early v0.3`
+- current level: `v0.2 closed / early v0.3`, with **`v0.4 Authoring UX` first pass** documented in-repo ([docs/v0.4-authoring-ux.md](docs/v0.4-authoring-ux.md))
 - current platform target: Android `minSdk 33+`
 - current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX` -> `v0.5 Runtime quality` -> `v0.6 Library shaping`
 - publication is intentionally out of scope for now; the library is still raw
@@ -32,7 +32,7 @@
 - `minSdk 33` is currently required
 - the library surface is still raw and not API-frozen
 - `stdlib` is already broad, but it still needs a naming and curation pass before it feels deliberately shaped
-- authoring UX is still early: diagnostics, migration docs, and cookbook material are not at the right level yet
+- compiler diagnostics are still **exception-based** (no structured IDE-style diagnostic list yet)
 - `v0.6` shaping has started in docs/sample guidance, but the canonical surface is still being formalized rather than treated as stable
 
 ## Project Docs
@@ -41,11 +41,21 @@
 - `docs/milestone-snapshot.md` gives a short cross-version status snapshot of what is solid, what is still raw, and what should happen next.
 - `docs/v0.2-status.md` explains how the shader-stdlib milestone was closed and what kind of surface work still remains after that closure.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
+- **`docs/v0.4-authoring-ux.md`** is the hub for the **v0.4 Authoring UX** doc set (AGSL comparison, cookbook, runtime checklist, backlog cross-links).
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
-- `docs/cookbook-patterns.md` captures the first translation patterns from raw AGSL/Shadertoy-style code into the DSL, including a few end-to-end rewrite examples.
+- `docs/cookbook-patterns.md` captures translation patterns from raw AGSL/Shadertoy-style code into the DSL, including end-to-end rewrite examples and a compact porting checklist.
 - `docs/runtime-authoring-checklist.md` is the short practical path for `compile -> inspect -> bind -> apply` when moving from shader authoring into Compose/runtime wiring.
 - `docs/runtime-audit-v0.5.md` records the current runtime audit baseline, representative demo flows, and the reproducible `Radar` / `Circuit` runtime measurement path.
+- `docs/runtime-measurement-scenario.md` is a repeatable gfxinfo/meminfo measurement checklist (pairs with the runtime audit).
 - `docs/backlog-v0.4-v0.6.md` turns the later roadmap stages into a concrete pre-publication backlog.
+
+### Authoring & debugging (v0.4)
+
+When something compiles but looks wrong, use this order (details in the linked docs):
+
+1. [agsl-vs-redbytefx.md](docs/agsl-vs-redbytefx.md) — coordinates, **`sample(...)` vs `sampleUv(...)`**, uniform handle rules.
+2. [cookbook-patterns.md](docs/cookbook-patterns.md) — porting checklist and rewrite patterns.
+3. [runtime-authoring-checklist.md](docs/runtime-authoring-checklist.md) — same-effect `FxParam`, controller-per-target, resolution.
 
 ## Quickstart
 

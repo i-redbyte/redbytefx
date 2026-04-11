@@ -2,6 +2,8 @@
 
 This note is for **authors** moving between hand-written AGSL and the Kotlin DSL. It is not a compatibility contract: the library is still pre-publication.
 
+Hub for the **v0.4 Authoring UX** doc set: [v0.4-authoring-ux.md](v0.4-authoring-ux.md).
+
 ## Mental model
 
 - **AGSL** is what `RuntimeShader` executes on device. You can always inspect the exact string with `FxEffect.agslSource()` (or the **Generated AGSL** panel in `:sample`).
@@ -28,12 +30,30 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 - **`resolution`** is the logical content size in pixels (see core docs). Normalized UV is typically `fragCoord / resolution` when you want `[0,1]`-style space.
 - When you want that normalized path frequently, `:redbytefx-stdlib` now provides `normalizedUv()` and `sampleUv(uv)` as small coordinate conveniences instead of rewriting the conversion each time.
 
+## `sample(...)` vs `sampleUv(...)` (core vs stdlib)
+
+| | **Core `FxDsl.sample(coord)`** | **Stdlib `FxDsl.sampleUv(uv)`** (`:redbytefx-stdlib`) |
+|---|-------------------------------|-----------------------------------------------------|
+| **Coordinate space** | **Pixel / sample space** (same units as `fragCoord`, `resolution`). | **Normalized UV** `[0,1]`×`[0,1]`; expands to `sample(uv * resolution)` internally. |
+| **Typical `coord` / `uv`** | `fragCoord`, `fragCoord + offsetPx`, mirrored pixel coords. | `normalizedUv()`, `uv + drift`, polar-derived UV, any expr already in normalized space. |
+| **Common mistake** | Passing a normalized UV into `sample(...)` without multiplying by `resolution` first. | Passing `fragCoord` or pixel coords into `sampleUv(...)` — use core `sample(...)` instead. |
+
+**Rule:** if the *last* resampling point is still thought of in **pixels**, stay on **`sample(...)`**. If you are thinking in **UV** and re-read the content at a warped UV, use **`normalizedUv()` + `sampleUv(...)`** (see `FxStdlibLighting.kt` in stdlib).
+
+Masks and gradients often live in UV space while the base layer still reads at `fragCoord`: that is **`sample()` for the base** + UV-only math for masks, not necessarily `sampleUv(...)`.
+
 ## Sampling quick rule
 
 - Stay on **`sample(...)`** when the authored coordinate is still in pixel/sample space: `fragCoord`, `fragCoord + offsetPx`, mirrored pixel coordinates, or anything else already measured against `resolution` in pixels.
 - Switch to **`normalizedUv()` + `sampleUv(...)`** when the authored logic has clearly moved into `[0,1]` UV space and your resampling point is expressed as `uv`, `uv + drift`, centered UV, polar UV-derived coordinates, or other normalized-space math.
 - Do not mix them accidentally: `sample(uv)` is wrong because `sample(...)` expects sample-space pixels, while `sampleUv(fragCoord)` is wrong because `sampleUv(...)` expects normalized UV.
 - When porting AGSL or Shadertoy-style code, keep the first translation in one space only, inspect `agslSource()`, then introduce `sampleUv(...)` only if the normalized-space intent becomes clearer.
+
+## Naming collisions and silent suffixes
+
+User-facing names are normalized to readable AGSL identifiers. When two generated names would collide (**uniforms**, **`let(...)` locals**, **`fn(...)` helpers**), the compiler **silently reserves** `name`, `name_1`, `name_2`, … via an internal allocator. The same applies when a suggested `fn` name matches a **reserved** AGSL builtin (`mix`, `sin`, `main`, …): the emitted helper is **suffixed**, never emitted raw, so built-ins are not shadowed.
+
+If generated names look “numbered” in `agslSource()`, that is usually collision resolution, not a bug. Prefer stable debug labels on uniforms and readable `let(..., "hint")` names so the output stays easy to grep.
 
 ## When to use stdlib
 

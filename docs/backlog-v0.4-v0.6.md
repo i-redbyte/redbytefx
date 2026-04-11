@@ -6,6 +6,16 @@ This document extends [roadmap.md](roadmap.md) with concrete backlog items. It i
 
 **Goal:** Writing RedByteFX feels teachable and debuggable for authors coming from raw AGSL or Shadertoy-style shaders.
 
+### Delivery note (first complete pass)
+
+The following are **in tree** for the current v0.4 authoring pass (see [v0.4-authoring-ux.md](v0.4-authoring-ux.md)):
+
+- **Diagnostics / messages:** same-effect uniform binding copy (`FxParam` scope, wrong effect instance); raw Kotlin values in shader positions get **Hint** lines toward `float(...)` / `bool(...)` / uniforms; `fn` body vs return type validation.
+- **Documentation:** [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md) expanded (`sample` vs `sampleUv` table, naming collisions); [cookbook-patterns.md](cookbook-patterns.md) promoted from draft with a **porting checklist**; README + snapshot + backlog cross-links; runtime checklist unchanged in spirit but linked from the hub.
+- **Explicit non-goals for this pass:** structured diagnostics API, source maps, IDE-style sample tooling (unchanged from backlog “larger items”).
+
+Remaining **incremental** work (not a blocker to calling v0.4 “documented”): even richer compiler messages where the expression model allows it; more cookbook entries as new patterns appear; continued KDoc vocabulary alignment under **v0.6**.
+
 ### Diagnostics
 
 - Improve compiler error messages (unknown symbols, arity, type mismatches) with stable wording and, where feasible, source context.

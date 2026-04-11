@@ -143,6 +143,7 @@ class FxRuntimeStateTest {
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("same redbytefx { ... } effect"))
+        assertTrue(message.contains("FxParam handles"))
         assertTrue(message.contains("setFloat(...)"))
         assertTrue(writer.floatWrites.isEmpty())
     }

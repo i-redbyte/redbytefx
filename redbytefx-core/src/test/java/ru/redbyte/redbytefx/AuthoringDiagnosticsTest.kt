@@ -18,6 +18,8 @@ class AuthoringDiagnosticsTest {
 
         assertTrue(message.contains("float uniform 'amount'"))
         assertTrue(message.contains("same redbytefx { ... } effect"))
+        assertTrue(message.contains("FxParam handles"))
+        assertTrue(message.contains("another `redbytefx { }`"))
         assertTrue(message.contains("setFloat(...)"))
     }
 
@@ -65,6 +67,24 @@ class AuthoringDiagnosticsTest {
         assertTrue(message.contains("Shader helpers only accept DSL expressions"))
         assertTrue(message.contains("float(...)"))
         assertTrue(message.contains("uniform"))
+        assertTrue(message.contains("Hint:"))
+    }
+
+    @Test
+    fun unsupportedExpressionArgumentHintExplainsRawInteger() {
+        val error = runCatching {
+            emitAny(42, EmitContext(UniformLayout()))
+        }.exceptionOrNull()
+
+        check(error is IllegalStateException) {
+            "Expected IllegalStateException for raw Int, got ${error?.javaClass?.name}"
+        }
+
+        val message = checkNotNull(error.message)
+        assertTrue(message.contains("kotlin.Int"))
+        assertTrue(message.contains("Hint:"))
+        assertTrue(message.contains("integer literals"))
+        assertTrue(message.contains("float(...)"))
     }
 
     @Test

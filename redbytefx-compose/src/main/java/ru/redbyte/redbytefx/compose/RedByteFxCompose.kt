@@ -32,7 +32,9 @@ import ru.redbyte.redbytefx.FxParam
  *
  * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform params are
  * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
- * created this controller.
+ * created this controller. If runtime updates throw about a missing uniform, the usual cause is an
+ * [FxParam] from a **different** `redbytefx { }` block or effect instance — see
+ * **`docs/runtime-authoring-checklist.md`** (repository root).
  *
  * Uniform deduplication is delegated to [FxInstance]; the controller only invalidates the host
  * when the instance reports an actual change.
@@ -219,7 +221,8 @@ public fun FxController.bindTime(
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
  * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller. Outside composition, use [setFloat] directly instead.
+ * controller (same compiled [FxEffect] as [rememberFxController]); matching names from another
+ * effect are not interchangeable. Outside composition, use [setFloat] directly instead.
  */
 @Composable
 public fun FxController.bindFloat(

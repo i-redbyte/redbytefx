@@ -9,6 +9,9 @@ import ru.redbyte.redbytefx.*
  * want to stay in normalized coordinates for masks, gradients, and procedural math. Reach for it
  * when the shader really wants `[0,1]` UV space; otherwise staying in raw sample space with
  * `fragCoord` often keeps AGSL ports easier to read.
+ *
+ * Pairs with [sampleUv]: normalized coordinates → resample. Core `FxDsl.sample` stays in pixel
+ * space.
  */
 public fun FxDsl.normalizedUv(
     coord: Float2Expr = fragCoord
@@ -24,6 +27,9 @@ public fun FxDsl.normalizedUv(
  * Prefer plain `sample(...)` when the shader is already operating in pixel/sample coordinates, or
  * when normalized UV is only used for masks/gradients while the actual content read still happens
  * at `fragCoord`.
+ *
+ * Do not pass pixel coordinates or `fragCoord` here — use core `sample(...)` instead. See
+ * **`docs/agsl-vs-redbytefx.md`** in the repo.
  */
 public fun FxDsl.sampleUv(
     uv: Float2Expr

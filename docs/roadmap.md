@@ -124,6 +124,8 @@ Make writing RedByteFX feel teachable, debuggable, and approachable to someone c
   - animation/time
   - compositing
 
+**Snapshot:** the first **end-to-end v0.4 authoring pass** (hub doc, expanded guides, cookbook porting checklist, cross-links, key KDoc) is in [v0.4-authoring-ux.md](v0.4-authoring-ux.md). Further work is incremental (more examples, deeper messages), not a reopening of the milestone from zero.
+
 ## v0.5 Runtime quality
 
 ### Goal

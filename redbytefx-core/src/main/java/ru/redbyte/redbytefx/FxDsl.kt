@@ -354,11 +354,13 @@ public class FxDsl internal constructor(
     /**
      * Samples the input content at [coord], clamping the coordinate to valid bounds when needed.
      *
-     * [coord] is interpreted in sample/pixel space. When the shader is authored in normalized UV
-     * coordinates, prefer `sampleUv(...)` from `:redbytefx-stdlib` so the conversion back to
-     * sample space stays explicit and readable. If normalized UV is only driving masks or
-     * gradients while the base content read still happens at `fragCoord`, keep [sample] as the
-     * content read and use the UV values only for the authored mask math.
+     * [coord] is interpreted in **pixel / sample space** (same units as [fragCoord] and
+     * [resolution]). For re-sampling from **normalized UV** `[0,1]²`, use **`sampleUv(uv)`** from
+     * `:redbytefx-stdlib`, which expands to a sample-space coordinate internally.
+     *
+     * If UV is only used for masks or gradients while the base pixel read stays at [fragCoord],
+     * keep this [sample] for the base layer and use UV expressions only for mask math — you do not
+     * always need `sampleUv`. See **`docs/agsl-vs-redbytefx.md`** (`sample` vs `sampleUv` table).
      */
     public fun sample(coord: Float2Expr = fragCoord): ColorExpr =
         colorExpr { ctx -> "rb_sample(${emit(coord, ctx)})" }

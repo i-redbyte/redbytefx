@@ -15,6 +15,7 @@
 
 ### Changed
 
+- **Authoring diagnostics:** clearer messages when a uniform **`FxParam`** does not belong to the bound effect, and when **`emitAny`** sees raw Kotlin values (integers, strings, booleans) instead of DSL expressions — each case includes a short **Hint** toward `float(...)` / `bool(...)` / uniforms.
 - **`FxInstance` setters** (`setFloat`, `setFloat2`, `setFloat3`, `setFloat4`, **`setResolution`**) now return **`Boolean`**: `true` when a new value was written and the backing implementation may refresh **`RenderEffect`**; `false` when the value was unchanged. Custom `FxInstance` implementations must be updated.
 - **`FxController`** no longer mirrors uniform caches; it relies on **`FxInstance`** return values to decide when to invalidate the host view.
 - **`FxDslComponents`**: shared internal **`floatSwizzle`** helpers for vector/color channel accessors.
@@ -25,6 +26,8 @@
 
 ### Documentation
 
+- **v0.4 Authoring UX (full pass):** hub doc **`docs/v0.4-authoring-ux.md`**; expanded **`docs/agsl-vs-redbytefx.md`** (`sample` vs `sampleUv` table, naming collisions / silent suffixes); **`docs/cookbook-patterns.md`** promoted with a compact **porting checklist**; README **Authoring & debugging** section; **`docs/backlog-v0.4-v0.6.md`**, **`docs/milestone-snapshot.md`**, **`docs/roadmap.md`** updated with delivery notes.
+- **KDoc:** **`FxEffect`**, **`FxParam`**, **`redbytefx()`**, **`FxDsl.sample`**, stdlib **`normalizedUv` / `sampleUv`**, **`FxController`** / **`bindFloat`** — effect-specific uniforms, doc pointers, `sample` vs `sampleUv` clarity.
 - **`RedByteFxStdlib`**: explicit **Canonical** vs **Exploratory** KDoc sections for stdlib discovery.
 - **`docs/runtime-measurement-scenario.md`**: repeatable gfxinfo/meminfo measurement checklist and notes on **`FxInstance`** invalidation vs redundant writes; pairs with **`docs/runtime-audit-v0.5.md`** for baselines.
 - **`FxInstance`**: threading guidance (UI thread / **`RuntimeShader`**), performance note on **`RenderEffect`** refresh vs redundant writes.

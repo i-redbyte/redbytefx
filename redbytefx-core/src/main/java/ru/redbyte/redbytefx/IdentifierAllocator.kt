@@ -1,5 +1,11 @@
 package ru.redbyte.redbytefx
 
+/**
+ * Allocates unique AGSL identifiers by reserving `base`, then `base_1`, `base_2`, … on collision.
+ *
+ * Used for uniforms, `let(...)` locals, and `fn(...)` names. Collisions are resolved silently; see
+ * **`docs/agsl-vs-redbytefx.md`** (“Naming collisions and silent suffixes”).
+ */
 internal class IdentifierAllocator(
     initialOccupied: Set<String> = emptySet()
 ) {
