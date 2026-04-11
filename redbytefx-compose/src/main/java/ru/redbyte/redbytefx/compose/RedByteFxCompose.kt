@@ -147,10 +147,12 @@ public class FxController internal constructor(
     }
 
     private fun updateResolution(widthPx: Float, heightPx: Float): Boolean {
-        if (widthPx == lastW && heightPx == lastH) return false
-        lastW = widthPx
-        lastH = heightPx
-        instance.setResolution(widthPx, heightPx)
+        val safeWidth = sanitizeControllerResolution(widthPx)
+        val safeHeight = sanitizeControllerResolution(heightPx)
+        if (sameFloat(lastW, safeWidth) && sameFloat(lastH, safeHeight)) return false
+        lastW = safeWidth
+        lastH = safeHeight
+        instance.setResolution(safeWidth, safeHeight)
         return true
     }
 
@@ -359,6 +361,9 @@ internal data class Float4Value(
 )
 
 internal fun sameFloat(left: Float, right: Float): Boolean = left.toBits() == right.toBits()
+
+internal fun sanitizeControllerResolution(value: Float): Float =
+    if (value > 0f) value else 1f
 
 internal fun sameFloat2(
     value: Float2Value?,

@@ -110,14 +110,16 @@ internal class UniformLayout(
     private var float2Index = 0
     private var float3Index = 0
     private var float4Index = 0
-    private val occupiedNames = linkedSetOf(
-        RB_INPUT_UNIFORM,
-        RB_RESOLUTION_UNIFORM,
-        "fragCoord",
-        "main",
-        "rb_maxCoord",
-        "rb_sample"
-    ).apply { addAll(additionalOccupied) }
+    private val identifierAllocator = IdentifierAllocator(
+        linkedSetOf(
+            RB_INPUT_UNIFORM,
+            RB_RESOLUTION_UNIFORM,
+            "fragCoord",
+            "main",
+            "rb_maxCoord",
+            "rb_sample"
+        ).apply { addAll(additionalOccupied) }
+    )
 
     val floatUniforms = LinkedHashMap<FxParam.Float, String>()
     val float2Uniforms = LinkedHashMap<FxParam.Float2, String>()
@@ -151,15 +153,10 @@ internal class UniformLayout(
             ?.let { sanitizeIdentifier(it, "u_") }
             ?: fallback
 
-        var candidate = base
-        var suffix = 1
-        while (!occupiedNames.add(candidate)) {
-            candidate = "${base}_${suffix++}"
-        }
-        return candidate
+        return identifierAllocator.reserve(base)
     }
 
-    fun occupiedIdentifiers(): Set<String> = occupiedNames.toSet()
+    fun occupiedIdentifiers(): Set<String> = identifierAllocator.snapshot()
 }
 
 internal object FxBuilder {

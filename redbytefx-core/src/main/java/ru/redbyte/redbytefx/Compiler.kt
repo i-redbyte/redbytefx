@@ -117,7 +117,7 @@ internal class EmitContext(
     private var float4LocalIndex = 0
     private var colorLocalIndex = 0
 
-    private val occupiedNames = layout.occupiedIdentifiers().toMutableSet()
+    private val identifierAllocator = IdentifierAllocator(layout.occupiedIdentifiers())
     private val statements = mutableListOf<String>()
     private val boolLocals = LinkedHashMap<LocalBoolExprImpl, String>()
     private val floatLocals = LinkedHashMap<LocalFloatExprImpl, String>()
@@ -190,11 +190,6 @@ internal class EmitContext(
             ?.let { sanitizeIdentifier(it, "l_") }
             ?: fallback
 
-        var candidate = base
-        var suffix = 1
-        while (!occupiedNames.add(candidate)) {
-            candidate = "${base}_${suffix++}"
-        }
-        return candidate
+        return identifierAllocator.reserve(base)
     }
 }

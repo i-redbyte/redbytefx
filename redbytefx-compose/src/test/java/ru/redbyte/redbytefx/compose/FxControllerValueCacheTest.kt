@@ -133,6 +133,33 @@ class FxControllerValueCacheTest {
     }
 
     @Test
+    fun setResolutionClampsNonPositiveValuesBeforeForwarding() {
+        val instance = TrackingFxInstance()
+        val controller = FxController(instance)
+
+        controller.setResolution(0f, -5f)
+
+        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, instance.resolutionCalls)
+        assertEquals(1f, instance.lastResolutionWidth)
+        assertEquals(1f, instance.lastResolutionHeight)
+    }
+
+    @Test
+    fun setResolutionSkipsDifferentNonPositiveInputsThatClampSame() {
+        val instance = TrackingFxInstance()
+        val controller = FxController(instance)
+
+        controller.setResolution(0f, -5f)
+        controller.setResolution(-10f, 0f)
+
+        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, instance.resolutionCalls)
+        assertEquals(1f, instance.lastResolutionWidth)
+        assertEquals(1f, instance.lastResolutionHeight)
+    }
+
+    @Test
     fun syncResolutionDoesNotInvalidateRuntime() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
@@ -155,6 +182,20 @@ class FxControllerValueCacheTest {
 
         assertEquals(0, controller.runtimeInvalidationTick)
         assertEquals(1, instance.resolutionCalls)
+    }
+
+    @Test
+    fun syncResolutionSkipsDifferentNonPositiveInputsThatClampSame() {
+        val instance = TrackingFxInstance()
+        val controller = FxController(instance)
+
+        controller.syncResolution(0f, -5f)
+        controller.syncResolution(-10f, 0f)
+
+        assertEquals(0, controller.runtimeInvalidationTick)
+        assertEquals(1, instance.resolutionCalls)
+        assertEquals(1f, instance.lastResolutionWidth)
+        assertEquals(1f, instance.lastResolutionHeight)
     }
 }
 
