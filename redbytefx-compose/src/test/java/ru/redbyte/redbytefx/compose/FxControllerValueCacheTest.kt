@@ -1,47 +1,14 @@
 package ru.redbyte.redbytefx.compose
 
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.FxInstance
 import ru.redbyte.redbytefx.FxParam
+import ru.redbyte.redbytefx.sameFloatUniformValue
 import ru.redbyte.redbytefx.redbytefx
 import android.graphics.RenderEffect
 
 class FxControllerValueCacheTest {
-
-    @Test
-    fun sameFloatTreatsNaNAsStable() {
-        assertTrue(sameFloat(Float.NaN, Float.NaN))
-    }
-
-    @Test
-    fun sameFloatPreservesSignedZeroDifference() {
-        assertFalse(sameFloat(0f, -0f))
-    }
-
-    @Test
-    fun sameFloat4UsesBitwiseComparisonForAllComponents() {
-        assertTrue(
-            sameFloat4(
-                value = Float4Value(1f, Float.NaN, -0f, 4f),
-                x = 1f,
-                y = Float.NaN,
-                z = -0f,
-                w = 4f
-            )
-        )
-        assertFalse(
-            sameFloat4(
-                value = Float4Value(1f, Float.NaN, -0f, 4f),
-                x = 1f,
-                y = Float.NaN,
-                z = 0f,
-                w = 4f
-            )
-        )
-    }
 
     @Test
     fun setFloatInvalidatesRuntimeWhenValueChanges() {
@@ -208,23 +175,84 @@ private class TrackingFxInstance : FxInstance {
     var lastResolutionWidth: Float? = null
     var lastResolutionHeight: Float? = null
 
+    private var lastFloat: Float? = null
+    private var lastFloat2: Pair<Float, Float>? = null
+    private var lastFloat3: Triple<Float, Float, Float>? = null
+    private var lastFloat4: FloatArray? = null
+
     override fun renderEffect(): RenderEffect = error("Not needed for this test")
-    override fun setFloat(param: FxParam.Float, value: Float) {
+
+    override fun setFloat(param: FxParam.Float, value: Float): Boolean {
+        val previous = lastFloat
+        if (previous != null && sameFloatUniformValue(previous, value)) return false
+        lastFloat = value
         floatCalls += 1
+        return true
     }
-    override fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
+
+    override fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean {
+        val previous = lastFloat2
+        if (previous != null &&
+            sameFloatUniformValue(previous.first, x) &&
+            sameFloatUniformValue(previous.second, y)
+        ) {
+            return false
+        }
+        lastFloat2 = x to y
         float2Calls += 1
+        return true
     }
-    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
+
+    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean {
+        val previous = lastFloat3
+        if (previous != null &&
+            sameFloatUniformValue(previous.first, x) &&
+            sameFloatUniformValue(previous.second, y) &&
+            sameFloatUniformValue(previous.third, z)
+        ) {
+            return false
+        }
+        lastFloat3 = Triple(x, y, z)
         float3Calls += 1
+        return true
     }
-    override fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
+
+    override fun setFloat4(
+        param: FxParam.Float4,
+        x: Float,
+        y: Float,
+        z: Float,
+        w: Float
+    ): Boolean {
+        val previous = lastFloat4
+        if (previous != null &&
+            sameFloatUniformValue(previous[0], x) &&
+            sameFloatUniformValue(previous[1], y) &&
+            sameFloatUniformValue(previous[2], z) &&
+            sameFloatUniformValue(previous[3], w)
+        ) {
+            return false
+        }
+        lastFloat4 = floatArrayOf(x, y, z, w)
         float4Calls += 1
+        return true
     }
-    override fun setResolution(widthPx: Float, heightPx: Float) {
+
+    override fun setResolution(widthPx: Float, heightPx: Float): Boolean {
+        val w = if (widthPx > 0f) widthPx else 1f
+        val h = if (heightPx > 0f) heightPx else 1f
+        val lw = lastResolutionWidth
+        val lh = lastResolutionHeight
+        if (lw != null && lh != null &&
+            sameFloatUniformValue(lw, w) &&
+            sameFloatUniformValue(lh, h)
+        ) {
+            return false
+        }
+        lastResolutionWidth = w
+        lastResolutionHeight = h
         resolutionCalls += 1
-        lastResolutionWidth = widthPx
-        lastResolutionHeight = heightPx
+        return true
     }
 }
 

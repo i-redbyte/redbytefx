@@ -7,6 +7,8 @@ class AuthoringDiagnosticsTest {
 
     private class CustomFloatExpr : FloatExpr
 
+    private class CustomColorExpr : ColorExpr
+
     @Test
     fun missingUniformBindingMessageExplainsEffectScope() {
         val message = missingUniformBindingMessage(
@@ -84,6 +86,28 @@ class AuthoringDiagnosticsTest {
         assertTrue(message.contains("Do not implement FloatExpr directly"))
         assertTrue(message.contains("let(...)"))
         assertTrue(message.contains("custom marker-interface implementation"))
+    }
+
+    @Test
+    fun fnReturnTypeMismatchExplainsExpectedVsActual() {
+        // Kotlin's typed DSL forbids color(...) where FloatExpr is required; validate at the same
+        // layer the compiler uses (see compileFunction → validateFnBodyMatchesReturnType).
+        val error = runCatching {
+            validateFnBodyMatchesReturnType(
+                functionName = "wrongReturn",
+                returnType = FloatType,
+                body = CustomColorExpr()
+            )
+        }.exceptionOrNull()
+
+        check(error is IllegalStateException) {
+            "Expected IllegalStateException for fn return type mismatch, got ${error?.javaClass?.name}"
+        }
+
+        val message = checkNotNull(error.message)
+        assertTrue(message.contains("wrongReturn"))
+        assertTrue(message.contains("float"))
+        assertTrue(message.contains("color expression") || message.contains("half4"))
     }
 
     @Test

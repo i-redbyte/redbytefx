@@ -103,6 +103,12 @@ fun HomeScreen(
     val starterRoutes = remember(demos) {
         listOf(
             StarterRoute(
+                label = "PATH 00",
+                title = "Hero: Aurora Iridescence",
+                summary = "Open the marketing-style showcase: rim light, rotating sweep, cosine palette, and chromatic polish in one shader.",
+                demoId = DemoId.Aurora
+            ),
+            StarterRoute(
                 label = "PATH 01",
                 title = "Start With Raw DSL",
                 summary = "See direct coordinate math and compare it against generated AGSL without stdlib abstraction first.",

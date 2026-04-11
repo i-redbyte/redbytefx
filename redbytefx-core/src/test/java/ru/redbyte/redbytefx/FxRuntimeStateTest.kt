@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -53,6 +54,21 @@ class FxRuntimeStateTest {
             writer.floatWrites
         )
         assertEquals(2, refreshCalls)
+    }
+
+    @Test
+    fun setFloatReturnsFalseWhenValueUnchanged() {
+        val amount = FxParam.Float("amount")
+        val layout = UniformLayout().apply { register(amount) }
+        val writer = TrackingRuntimeUniformWriter()
+        val state = FxRuntimeState(
+            program = FxProgram("", layout, emptyMap()),
+            writer = writer,
+            onRuntimeChanged = {}
+        )
+
+        assertTrue(state.setFloat(amount, 0.5f))
+        assertFalse(state.setFloat(amount, 0.5f))
     }
 
     @Test

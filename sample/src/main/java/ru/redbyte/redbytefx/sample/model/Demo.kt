@@ -26,7 +26,9 @@ enum class DemoId {
     Halo,
     Circuit,
     Sigil,
-    Duotone
+    Duotone,
+    Aurora,
+    LiquidGlass
 }
 
 enum class DemoSection(
@@ -166,6 +168,8 @@ val DemoInfo.canonicalFamily: String?
         DemoId.Halo -> "UV + LIGHT"
         DemoId.Sigil -> "SDF"
         DemoId.Circuit -> "ROUTING"
+        DemoId.Aurora -> "SHOWCASE"
+        DemoId.LiquidGlass -> "SHOWCASE"
         else -> null
     }
 
@@ -241,6 +245,8 @@ val DemoInfo.focusTags: List<String>
         DemoId.Circuit -> listOf("routing", "SDF", "Compose scene")
         DemoId.Sigil -> listOf("SDF", "soft stroke", "shape composition")
         DemoId.Duotone -> listOf("palette fn", "luminance", "color mix")
+        DemoId.Aurora -> listOf("hero", "iridescent", "chromatic", "rim", "polar sweep")
+        DemoId.LiquidGlass -> listOf("glass", "refraction", "fresnel", "domain warp", "liquid")
     }
 
 val DemoInfo.catalogSearchText: String
@@ -303,7 +309,9 @@ val DemoInfo.section: DemoSection
         DemoId.Corner,
         DemoId.Halo,
         DemoId.Sigil,
-        DemoId.Reveal -> DemoSection.Compositing
+        DemoId.Reveal,
+        DemoId.Aurora,
+        DemoId.LiquidGlass -> DemoSection.Compositing
     }
 
 val DemoInfo.layer: DemoLayer
@@ -334,7 +342,9 @@ val DemoInfo.layer: DemoLayer
         DemoId.Radar,
         DemoId.Halo,
         DemoId.Circuit,
-        DemoId.Sigil -> DemoLayer.Stdlib
+        DemoId.Sigil,
+        DemoId.Aurora,
+        DemoId.LiquidGlass -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -351,7 +361,9 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Radar,
         DemoId.Halo,
         DemoId.Circuit,
-        DemoId.Sigil -> true
+        DemoId.Sigil,
+        DemoId.Aurora,
+        DemoId.LiquidGlass -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -674,6 +686,35 @@ val DemoCatalog: List<DemoInfo> = listOf(
             }
             val luma = let(luminance(base), "luma")
             mix(base, mix(mono, lifted, 0.85f), amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Aurora,
+        title = "Aurora",
+        subtitle = "Hero showcase: iridescent rim, rotating sweep, and chromatic polish.",
+        focus = "Combines rimLight(...), angularSweep(...), cosinePalette(...), and chromaticOffset(...) into one readable compositing stack for marketing-grade visuals.",
+        snippet = """
+            val phase = fract(time * speed)
+            val sweep = angularSweep(uv, angle = phase, width = 0.26f, feather = 0.09f)
+            val rim = rimLight(uv, resolution, radius = 0.4f, width = 0.085f, feather = 0.03f)
+            val mask = saturate(max(rim, sweep * 0.72f))
+            val pal = cosinePalette(luma + uv.x * spectral + phase * 0.55f)
+            val split = chromaticOffset(offset = chromaPx, direction = float2(1f, -0.25f), amount = amount)
+            maskedMix(split, blendScreen(base, color(pal, base.a), mask * amount), mask, amount)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.LiquidGlass,
+        title = "Liquid Glass",
+        subtitle = "Stylized glass: flowing refraction, Fresnel edge, cool tint.",
+        focus = "Single-pass AGSL cannot do true multi-tap frosted blur; this demo fakes liquid glass with domainWarp(...) + sampleUv(...), rim/shell masks, manual per-channel sampling for edge chroma, and blendScreen(...). The sample UI shows a translucent pill button on a gradient so the effect reads as glass over a control. Pair with platform blur under the content if you need real frosting.",
+        snippet = """
+            val warpedUv = saturate(domainWarp(uv * 3.2f, time * speed, refraction))
+            val glass = sampleUv(warpedUv)
+            val px = chromaPx / max(resolution.x, 0.0001f)
+            val chromaGlass = color(sampleUv(warpedUv - float2(px, 0f)).r, glass.g, sampleUv(warpedUv + float2(px, 0f)).b, glass.a)
+            val edge = max(rim, shell)
+            mix(glass, chromaGlass, edge * chromaMix)
         """.trimIndent()
     )
 )

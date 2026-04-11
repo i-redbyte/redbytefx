@@ -59,6 +59,8 @@ fun DemoScreen(
             DemoId.Circuit -> DemoCircuit()
             DemoId.Sigil -> DemoSigil()
             DemoId.Duotone -> DemoDuotone()
+            DemoId.Aurora -> DemoAurora()
+            DemoId.LiquidGlass -> DemoLiquidGlass()
         }
     }
 }

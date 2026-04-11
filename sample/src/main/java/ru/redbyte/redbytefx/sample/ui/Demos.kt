@@ -137,6 +137,25 @@ private data class HaloSetup(
     val amount: FxParam.Float
 )
 
+private data class AuroraSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val amount: FxParam.Float,
+    val chromaPx: FxParam.Float,
+    val spectral: FxParam.Float,
+    val speed: FxParam.Float
+)
+
+private data class LiquidGlassSetup(
+    val effect: ru.redbyte.redbytefx.FxEffect,
+    val time: FxParam.Float,
+    val refraction: FxParam.Float,
+    val speed: FxParam.Float,
+    val chromaPx: FxParam.Float,
+    val chromaMix: FxParam.Float,
+    val edgeMix: FxParam.Float
+)
+
 private data class SigilSetup(
     val effect: ru.redbyte.redbytefx.FxEffect,
     val time: FxParam.Float,
@@ -1914,6 +1933,227 @@ fun DemoHalo() {
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoAurora() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var amountUi by rememberSaveable { mutableFloatStateOf(78f) }
+    var chromaUi by rememberSaveable { mutableFloatStateOf(11f) }
+    var spectralUi by rememberSaveable { mutableFloatStateOf(44f) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(42f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var amountParam: FxParam.Float? = null
+        var chromaParam: FxParam.Float? = null
+        var spectralParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.78f)
+            val chromaPx by autoUniformFloat(11f)
+            val spectral by autoUniformFloat(0.44f)
+            val speed by autoUniformFloat(0.42f)
+            timeParam = time
+            amountParam = amount
+            chromaParam = chromaPx
+            spectralParam = spectral
+            speedParam = speed
+
+            val base = let(sample(), "base")
+            val uv = let(fragCoord / resolution, "uv")
+            val phase = let(fract(time * speed), "phase")
+            val sweep = let(
+                angularSweep(
+                    uv = uv,
+                    center = float2(0.5f, 0.5f),
+                    angle = phase,
+                    width = 0.26f,
+                    feather = 0.09f
+                ),
+                "sweep"
+            )
+            val rim = let(
+                rimLight(
+                    uv = uv,
+                    resolution = resolution,
+                    radius = 0.42f,
+                    width = 0.085f,
+                    feather = 0.03f
+                ),
+                "rim"
+            )
+            val mask = let(saturate(max(rim, sweep * 0.72f)), "mask")
+            val luma = let(luminance(base), "luma")
+            val pal = let(
+                cosinePalette(luma + uv.x * spectral + phase * 0.55f - rim * 0.12f),
+                "pal"
+            )
+            val tint = let(color(pal, base.a), "tint")
+            val split = let(
+                chromaticOffset(
+                    offset = chromaPx,
+                    direction = float2(1f, -0.25f),
+                    amount = amount
+                ),
+                "split"
+            )
+            val irid = let(blendScreen(base, tint, mask * amount), "irid")
+
+            maskedMix(split, irid, mask, amount)
+        }
+        AuroraSetup(
+            effect = effect,
+            time = timeParam!!,
+            amount = amountParam!!,
+            chromaPx = chromaParam!!,
+            spectral = spectralParam!!,
+            speed = speedParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.amount, amountUi / 100f)
+    fx.bindFloat(setup.chromaPx, chromaUi)
+    fx.bindFloat(setup.spectral, spectralUi / 100f)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoPreviewStage(
+                modifier = Modifier.redbyteFx(fx),
+                label = "Aurora//Showcase"
+            )
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Mix", amountUi, 0f..100f) {
+                amountUi = it
+            }
+            SliderRow("Chroma px", chromaUi, 0f..24f) {
+                chromaUi = it
+            }
+            SliderRow("Spectral", spectralUi, 12f..85f) {
+                spectralUi = it
+            }
+            SliderRow("Flow", speedUi, 18f..95f) {
+                speedUi = it
+            }
+        }
+    )
+}
+
+@Composable
+fun DemoLiquidGlass() {
+    var playing by rememberSaveable { mutableStateOf(true) }
+    var refractionUi by rememberSaveable { mutableFloatStateOf(7.2f) }
+    var speedUi by rememberSaveable { mutableFloatStateOf(48f) }
+    var chromaPxUi by rememberSaveable { mutableFloatStateOf(5.5f) }
+    var chromaMixUi by rememberSaveable { mutableFloatStateOf(52f) }
+    var edgeMixUi by rememberSaveable { mutableFloatStateOf(72f) }
+
+    val setup = remember {
+        var timeParam: FxParam.Float? = null
+        var refractionParam: FxParam.Float? = null
+        var speedParam: FxParam.Float? = null
+        var chromaPxParam: FxParam.Float? = null
+        var chromaMixParam: FxParam.Float? = null
+        var edgeMixParam: FxParam.Float? = null
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val refraction by autoUniformFloat(0.072f)
+            val speed by autoUniformFloat(0.48f)
+            val chromaPx by autoUniformFloat(5.5f)
+            val chromaMix by autoUniformFloat(0.52f)
+            val edgeMix by autoUniformFloat(0.72f)
+            timeParam = time
+            refractionParam = refraction
+            speedParam = speed
+            chromaPxParam = chromaPx
+            chromaMixParam = chromaMix
+            edgeMixParam = edgeMix
+
+            val uv = let(normalizedUv(), "uv")
+            val warp = let(domainWarp(uv * 3.2f, time * speed, refraction), "warp")
+            val warpedUv = let(
+                float2(saturate(warp.x), saturate(warp.y)),
+                "warped_uv"
+            )
+            val glass = let(sampleUv(warpedUv), "glass")
+            val px = chromaPx / max(resolution.x, 0.0001f)
+            val r = sampleUv(warpedUv - float2(px, 0f)).r
+            val g = glass.g
+            val b = sampleUv(warpedUv + float2(px, 0f)).b
+            val chromaGlass = let(color(r, g, b, glass.a), "chroma_glass")
+            val dist = length(aspectCenteredUv(uv, resolution))
+            val shell = let(1f - smoothstep(0.38f, 0.52f, dist), "shell")
+            val rim = let(
+                rimLight(
+                    uv = uv,
+                    resolution = resolution,
+                    radius = 0.4f,
+                    width = 0.068f,
+                    feather = 0.032f
+                ),
+                "rim"
+            )
+            val edge = let(saturate(max(shell, rim)), "edge")
+            val spec = let(pow(edge, 1.75f), "spec")
+            val glassBody = let(mix(glass, chromaGlass, edge * chromaMix), "glass_body")
+            val ice = color(float3(0.82f, 0.92f, 1f), 0.14f)
+
+            blendScreen(glassBody, ice, spec * edgeMix)
+        }
+        LiquidGlassSetup(
+            effect = effect,
+            time = timeParam!!,
+            refraction = refractionParam!!,
+            speed = speedParam!!,
+            chromaPx = chromaPxParam!!,
+            chromaMix = chromaMixParam!!,
+            edgeMix = edgeMixParam!!
+        )
+    }
+
+    val fx = rememberFxController(setup.effect)
+    fx.bindTime(setup.time, isPlaying = playing)
+    fx.bindFloat(setup.refraction, refractionUi / 100f)
+    fx.bindFloat(setup.speed, speedUi / 100f)
+    fx.bindFloat(setup.chromaPx, chromaPxUi)
+    fx.bindFloat(setup.chromaMix, chromaMixUi / 100f)
+    fx.bindFloat(setup.edgeMix, edgeMixUi / 100f)
+
+    DemoLayout(
+        generatedAgsl = rememberGeneratedAgsl(setup.effect),
+        preview = {
+            DemoLiquidGlassPreviewStage(fx = fx)
+        },
+        controls = {
+            SwitchRow("Play", playing) {
+                playing = it
+            }
+            SliderRow("Refraction", refractionUi, 1.5f..14f) {
+                refractionUi = it
+            }
+            SliderRow("Flow", speedUi, 15f..95f) {
+                speedUi = it
+            }
+            SliderRow("Chroma px", chromaPxUi, 0f..14f) {
+                chromaPxUi = it
+            }
+            SliderRow("Edge RGB", chromaMixUi, 0f..100f) {
+                chromaMixUi = it
+            }
+            SliderRow("Ice edge", edgeMixUi, 0f..100f) {
+                edgeMixUi = it
             }
         }
     )

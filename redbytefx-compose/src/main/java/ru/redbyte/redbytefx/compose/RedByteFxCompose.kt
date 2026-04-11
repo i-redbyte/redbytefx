@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
-import java.util.IdentityHashMap
 import ru.redbyte.redbytefx.FxEffect
 import ru.redbyte.redbytefx.FxInstance
 import ru.redbyte.redbytefx.FxParam
@@ -35,6 +34,9 @@ import ru.redbyte.redbytefx.FxParam
  * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
  * created this controller.
  *
+ * Uniform deduplication is delegated to [FxInstance]; the controller only invalidates the host
+ * when the instance reports an actual change.
+ *
  * In composable code, prefer [bindFloat], [bindFloat2], [bindFloat3], [bindFloat4], and
  * [bindTime] so updates happen after successful recomposition. The lower-level [setFloat],
  * [setFloat2], [setFloat3], [setFloat4], and [setResolution] calls remain useful for previews,
@@ -44,13 +46,7 @@ import ru.redbyte.redbytefx.FxParam
 public class FxController internal constructor(
     internal val instance: FxInstance
 ) {
-    private var lastW = -1f
-    private var lastH = -1f
     private var hostViewRef: WeakReference<View>? = null
-    private val floatValues = IdentityHashMap<FxParam.Float, Float>()
-    private val float2Values = IdentityHashMap<FxParam.Float2, Float2Value>()
-    private val float3Values = IdentityHashMap<FxParam.Float3, Float3Value>()
-    private val float4Values = IdentityHashMap<FxParam.Float4, Float4Value>()
     internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
         private set
     private var cachedPlatformRenderEffect: AndroidRenderEffect? = null
@@ -66,7 +62,8 @@ public class FxController internal constructor(
         }
 
     /**
-     * Updates a scalar float uniform and invalidates the host view.
+     * Updates a scalar float uniform and invalidates the host view when [FxInstance.setFloat]
+     * reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
      *
@@ -74,53 +71,48 @@ public class FxController internal constructor(
      * after recomposition instead of inline during composition.
      */
     public fun setFloat(param: FxParam.Float, value: Float) {
-        val previous = floatValues[param]
-        if (previous != null && sameFloat(previous, value)) return
-        floatValues[param] = value
-        instance.setFloat(param, value)
-        invalidateRuntime()
+        if (instance.setFloat(param, value)) {
+            invalidateRuntime()
+        }
     }
 
     /**
-     * Updates a `float2` uniform and invalidates the host view.
+     * Updates a `float2` uniform and invalidates the host view when the instance reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
      *
      * Compose callers should usually prefer [bindFloat2].
      */
     public fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        if (sameFloat2(float2Values[param], x, y)) return
-        float2Values[param] = Float2Value(x, y)
-        instance.setFloat2(param, x, y)
-        invalidateRuntime()
+        if (instance.setFloat2(param, x, y)) {
+            invalidateRuntime()
+        }
     }
 
     /**
-     * Updates a `float3` uniform and invalidates the host view.
+     * Updates a `float3` uniform and invalidates the host view when the instance reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
      *
      * Compose callers should usually prefer [bindFloat3].
      */
     public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        if (sameFloat3(float3Values[param], x, y, z)) return
-        float3Values[param] = Float3Value(x, y, z)
-        instance.setFloat3(param, x, y, z)
-        invalidateRuntime()
+        if (instance.setFloat3(param, x, y, z)) {
+            invalidateRuntime()
+        }
     }
 
     /**
-     * Updates a `float4` uniform and invalidates the host view.
+     * Updates a `float4` uniform and invalidates the host view when the instance reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
      *
      * Compose callers should usually prefer [bindFloat4].
      */
     public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        if (sameFloat4(float4Values[param], x, y, z, w)) return
-        float4Values[param] = Float4Value(x, y, z, w)
-        instance.setFloat4(param, x, y, z, w)
-        invalidateRuntime()
+        if (instance.setFloat4(param, x, y, z, w)) {
+            invalidateRuntime()
+        }
     }
 
     /**
@@ -131,8 +123,11 @@ public class FxController internal constructor(
      * hatch for imperative hosts or deliberate runtime tooling outside the normal Compose path.
      */
     public fun setResolution(widthPx: Float, heightPx: Float) {
-        if (!updateResolution(widthPx, heightPx)) return
-        invalidateRuntime()
+        val safeWidth = sanitizeControllerResolution(widthPx)
+        val safeHeight = sanitizeControllerResolution(heightPx)
+        if (instance.setResolution(safeWidth, safeHeight)) {
+            invalidateRuntime()
+        }
     }
 
     internal fun attachHost(view: View) {
@@ -143,17 +138,9 @@ public class FxController internal constructor(
     internal fun syncResolution(widthPx: Float, heightPx: Float) {
         // Size changes already re-enter the draw path, so this keeps the shader resolution current
         // without triggering an extra invalidation loop from inside drawing.
-        updateResolution(widthPx, heightPx)
-    }
-
-    private fun updateResolution(widthPx: Float, heightPx: Float): Boolean {
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
-        if (sameFloat(lastW, safeWidth) && sameFloat(lastH, safeHeight)) return false
-        lastW = safeWidth
-        lastH = safeHeight
         instance.setResolution(safeWidth, safeHeight)
-        return true
     }
 
     private fun invalidateRuntime() {
@@ -342,53 +329,5 @@ internal class TimeBindingState {
     var lastFrameNanos: Long? = null
 }
 
-internal data class Float2Value(
-    val x: Float,
-    val y: Float
-)
-
-internal data class Float3Value(
-    val x: Float,
-    val y: Float,
-    val z: Float
-)
-
-internal data class Float4Value(
-    val x: Float,
-    val y: Float,
-    val z: Float,
-    val w: Float
-)
-
-internal fun sameFloat(left: Float, right: Float): Boolean = left.toBits() == right.toBits()
-
 internal fun sanitizeControllerResolution(value: Float): Float =
     if (value > 0f) value else 1f
-
-internal fun sameFloat2(
-    value: Float2Value?,
-    x: Float,
-    y: Float
-): Boolean = value != null && sameFloat(value.x, x) && sameFloat(value.y, y)
-
-internal fun sameFloat3(
-    value: Float3Value?,
-    x: Float,
-    y: Float,
-    z: Float
-): Boolean = value != null &&
-    sameFloat(value.x, x) &&
-    sameFloat(value.y, y) &&
-    sameFloat(value.z, z)
-
-internal fun sameFloat4(
-    value: Float4Value?,
-    x: Float,
-    y: Float,
-    z: Float,
-    w: Float
-): Boolean = value != null &&
-    sameFloat(value.x, x) &&
-    sameFloat(value.y, y) &&
-    sameFloat(value.z, z) &&
-    sameFloat(value.w, w)
