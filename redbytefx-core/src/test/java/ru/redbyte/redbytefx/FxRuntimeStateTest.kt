@@ -122,6 +122,51 @@ class FxRuntimeStateTest {
     }
 
     @Test
+    fun withBatchCoalescesMultipleUniformWritesIntoSingleRefresh() {
+        val a = FxParam.Float("a")
+        val b = FxParam.Float("b")
+        val layout = UniformLayout().apply {
+            register(a)
+            register(b)
+        }
+        val writer = TrackingRuntimeUniformWriter()
+        var refreshCalls = 0
+        val state = FxRuntimeState(
+            program = FxProgram("", layout, emptyMap()),
+            writer = writer,
+            onRuntimeChanged = { refreshCalls += 1 }
+        )
+
+        state.withBatch {
+            state.setFloat(a, 0.1f)
+            state.setFloat(b, 0.2f)
+        }
+
+        assertEquals(1, refreshCalls)
+    }
+
+    @Test
+    fun nestedWithBatchCoalescesToSingleRefresh() {
+        val a = FxParam.Float("a")
+        val layout = UniformLayout().apply { register(a) }
+        val writer = TrackingRuntimeUniformWriter()
+        var refreshCalls = 0
+        val state = FxRuntimeState(
+            program = FxProgram("", layout, emptyMap()),
+            writer = writer,
+            onRuntimeChanged = { refreshCalls += 1 }
+        )
+
+        state.withBatch {
+            state.withBatch {
+                state.setFloat(a, 0.5f)
+            }
+        }
+
+        assertEquals(1, refreshCalls)
+    }
+
+    @Test
     fun setFloatWithForeignParamUsesHelpfulBindingMessage() {
         val registered = FxParam.Float("amount")
         val foreign = FxParam.Float("amount")

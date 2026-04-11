@@ -49,7 +49,8 @@ public interface FxEffect {
  *
  * **Performance:** when a setter returns `true`, the implementation may rebuild the backing
  * [RenderEffect] so the GPU picks up new uniform values. Redundant writes that return `false`
- * avoid that work.
+ * avoid that work. Use [runBatch] to coalesce multiple imperative updates into a single rebuild
+ * where applicable.
  */
 public interface FxInstance {
     /**
@@ -107,6 +108,19 @@ public interface FxInstance {
      * update.
      */
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean
+
+    /**
+     * Runs [block] while coalescing backing [RenderEffect] rebuild notifications so that multiple
+     * uniform updates performed inside the block can produce **one** platform refresh instead of
+     * one per setter. The default implementation simply runs [block] (no coalescing); the library
+     * implementation batches notifications.
+     *
+     * [FxController] provides the same entry point and also coalesces host invalidation when
+     * multiple imperative setters run in one block.
+     */
+    public fun runBatch(block: () -> Unit) {
+        block()
+    }
 }
 
 /**
@@ -162,5 +176,9 @@ public sealed class FxParam {
  *
  * Cookbook and porting patterns: **`docs/cookbook-patterns.md`**. Runtime bind order:
  * **`docs/runtime-authoring-checklist.md`**.
+ *
+ * @throws FxDiagnosticException when compilation fails; use [FxDiagnosticException.diagnostics] for
+ * structured [FxDiagnostic] entries (stable [FxDiagnosticCode], message, optional hint). The
+ * exception is a subtype of [IllegalStateException].
  */
 public fun redbytefx(block: FxDsl.() -> ColorExpr): FxEffect = FxBuilder.build(block)

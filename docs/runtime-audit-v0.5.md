@@ -66,6 +66,16 @@ Conclusion: good representative animated demo for checking redraw cadence and ru
 Conclusion: currently the strongest sample for “heavier scene, still stable controller/effect
 ownership”. No obvious duplicate-controller or effect recreation bug was found in this flow.
 
+## Sample navigation (`AnimatedContent`)
+
+The sample uses `AnimatedContent` for home ↔ demo transitions. During the enter/exit animation,
+**both** the outgoing and incoming children can be composed at once. That means switching from one
+demo to another can briefly run **two** `DemoScreen` branches, each with its own
+`rememberFxController(...)` chain. This overlap is bounded by the transition duration and ends when
+the outgoing content leaves the composition; it is not a leak by itself. If you need to avoid
+overlapping GPU-heavy demos during transitions, simplify navigation (for example shorter
+transitions or a non-animated switch) in your own app.
+
 ## What the audit says today
 
 - The controller layer already looks intentionally conservative.
@@ -198,16 +208,15 @@ Interpretation:
 
 ## What still needs real measurement
 
-- At least one more physical-device class if runtime behavior changes significantly:
-  - a lower/mid-tier phone, or
-  - a larger-screen/tablet configuration
-- Resize and large-screen behavior through `drawWithCache -> syncResolution(size)`.
-- Screenshot/smoke confidence for a small fixed set of demos instead of relying only on visual
-  spot-checking.
+The following are **not** tracked as ongoing backlog (explicitly out of scope for standing v0.5 follow-up):
+
+- ~~At least one more physical-device class (e.g. lower/mid-tier phone or larger-screen/tablet) when runtime behavior changes significantly.~~
+- ~~Resize and large-screen behavior through `drawWithCache -> syncResolution(size)`.~~
+- ~~Screenshot/smoke confidence for a small fixed set of demos instead of relying only on visual spot-checking.~~
 
 ## Recommended next pass
 
-- Keep the current runtime architecture unless a new device pass shows a concrete problem.
+- Keep the current runtime architecture unless new profiling or platform evidence shows a concrete problem.
 - Use `Wave`, `Composite`, `Radar`, and `Circuit` as the fixed runtime confidence quartet.
 - If a runtime issue appears, first determine whether it comes from:
   - controller invalidation behavior

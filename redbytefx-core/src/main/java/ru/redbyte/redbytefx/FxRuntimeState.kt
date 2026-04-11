@@ -14,6 +14,8 @@ internal class FxRuntimeState(
     private val writer: FxRuntimeUniformWriter,
     private val onRuntimeChanged: () -> Unit
 ) {
+    private var batchDepth: Int = 0
+    private var pendingRefreshNotification: Boolean = false
     private var lastResolutionWidth: Float? = null
     private var lastResolutionHeight: Float? = null
     private val floatValues = IdentityHashMap<FxParam.Float, Float>()
@@ -51,12 +53,37 @@ internal class FxRuntimeState(
         }
     }
 
+    /**
+     * Coalesces [notifyRuntimeChanged] so multiple uniform updates in [block] can produce a single
+     * [onRuntimeChanged] callback (one [RenderEffect] rebuild in [FxInstanceImpl]).
+     */
+    internal fun withBatch(block: () -> Unit) {
+        batchDepth++
+        try {
+            block()
+        } finally {
+            batchDepth--
+            if (batchDepth == 0 && pendingRefreshNotification) {
+                pendingRefreshNotification = false
+                onRuntimeChanged()
+            }
+        }
+    }
+
+    private fun notifyRuntimeChanged() {
+        if (batchDepth > 0) {
+            pendingRefreshNotification = true
+        } else {
+            onRuntimeChanged()
+        }
+    }
+
     fun setFloat(param: FxParam.Float, value: Float): Boolean {
         val previous = floatValues[param]
         if (previous != null && sameFloatUniformValue(previous, value)) return false
         floatValues[param] = value
         writer.setFloat(requireFloatUniformName(param), value)
-        onRuntimeChanged()
+        notifyRuntimeChanged()
         return true
     }
 
@@ -64,7 +91,7 @@ internal class FxRuntimeState(
         if (sameRuntimeFloat2(float2Values[param], x, y)) return false
         float2Values[param] = RuntimeFloat2(x, y)
         writer.setFloat2(requireFloat2UniformName(param), x, y)
-        onRuntimeChanged()
+        notifyRuntimeChanged()
         return true
     }
 
@@ -72,7 +99,7 @@ internal class FxRuntimeState(
         if (sameRuntimeFloat3(float3Values[param], x, y, z)) return false
         float3Values[param] = RuntimeFloat3(x, y, z)
         writer.setFloat3(requireFloat3UniformName(param), x, y, z)
-        onRuntimeChanged()
+        notifyRuntimeChanged()
         return true
     }
 
@@ -80,7 +107,7 @@ internal class FxRuntimeState(
         if (sameRuntimeFloat4(float4Values[param], x, y, z, w)) return false
         float4Values[param] = RuntimeFloat4(x, y, z, w)
         writer.setFloat4(requireFloat4UniformName(param), x, y, z, w)
-        onRuntimeChanged()
+        notifyRuntimeChanged()
         return true
     }
 
@@ -91,25 +118,25 @@ internal class FxRuntimeState(
         lastResolutionWidth = width
         lastResolutionHeight = height
         writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)
-        onRuntimeChanged()
+        notifyRuntimeChanged()
         return true
     }
 
     private fun requireFloatUniformName(param: FxParam.Float): String =
         program.layout.floatUniforms[param]
-            ?: error(missingUniformBindingMessage("Float", param.debugName))
+            ?: compileFail(missingUniformBindingDiagnostic("Float", param.debugName))
 
     private fun requireFloat2UniformName(param: FxParam.Float2): String =
         program.layout.float2Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float2", param.debugName))
+            ?: compileFail(missingUniformBindingDiagnostic("Float2", param.debugName))
 
     private fun requireFloat3UniformName(param: FxParam.Float3): String =
         program.layout.float3Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float3", param.debugName))
+            ?: compileFail(missingUniformBindingDiagnostic("Float3", param.debugName))
 
     private fun requireFloat4UniformName(param: FxParam.Float4): String =
         program.layout.float4Uniforms[param]
-            ?: error(missingUniformBindingMessage("Float4", param.debugName))
+            ?: compileFail(missingUniformBindingDiagnostic("Float4", param.debugName))
 
     private fun sanitizeResolution(value: Float): Float = if (value > 0f) value else 1f
 

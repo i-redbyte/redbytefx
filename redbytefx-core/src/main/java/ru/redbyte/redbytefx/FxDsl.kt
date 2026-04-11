@@ -347,6 +347,116 @@ public class FxDsl internal constructor(
     }
 
     /**
+     * Declares a reusable three-argument AGSL helper function.
+     *
+     * Suggested names are normalized into readable AGSL identifiers and suffixed on collision.
+     * Built-in AGSL names such as `mix`, `sin`, and `main` are treated as reserved and are never
+     * emitted directly for user helpers.
+     */
+    public fun <A1, A2, A3, R> fn(
+        name: String? = null,
+        arg1: FxValueType<A1>,
+        arg2: FxValueType<A2>,
+        arg3: FxValueType<A3>,
+        returns: FxValueType<R>,
+        block: FxDsl.(A1, A2, A3) -> R
+    ): FxFunction3<A1, A2, A3, R> {
+        val functionName = nextFunctionName(name)
+        val p0Name = parameterName(0)
+        val p1Name = parameterName(1)
+        val p2Name = parameterName(2)
+        val p0 = parameterExpr(arg1, p0Name)
+        val p1 = parameterExpr(arg2, p1Name)
+        val p2 = parameterExpr(arg3, p2Name)
+        val body = block(p0, p1, p2)
+        registerFunction(
+            name = functionName,
+            returnType = returns,
+            parameters = listOf(
+                UserFunctionParameter(p0Name, arg1),
+                UserFunctionParameter(p1Name, arg2),
+                UserFunctionParameter(p2Name, arg3)
+            ),
+            body = body as Any
+        )
+        return FxFunction3(functionName, returns)
+    }
+
+    /**
+     * Declares a reusable four-argument AGSL helper function.
+     *
+     * Suggested names are normalized into readable AGSL identifiers and suffixed on collision.
+     * Built-in AGSL names such as `mix`, `sin`, and `main` are treated as reserved and are never
+     * emitted directly for user helpers.
+     */
+    public fun <A1, A2, A3, A4, R> fn(
+        name: String? = null,
+        arg1: FxValueType<A1>,
+        arg2: FxValueType<A2>,
+        arg3: FxValueType<A3>,
+        arg4: FxValueType<A4>,
+        returns: FxValueType<R>,
+        block: FxDsl.(A1, A2, A3, A4) -> R
+    ): FxFunction4<A1, A2, A3, A4, R> {
+        val functionName = nextFunctionName(name)
+        val p0Name = parameterName(0)
+        val p1Name = parameterName(1)
+        val p2Name = parameterName(2)
+        val p3Name = parameterName(3)
+        val p0 = parameterExpr(arg1, p0Name)
+        val p1 = parameterExpr(arg2, p1Name)
+        val p2 = parameterExpr(arg3, p2Name)
+        val p3 = parameterExpr(arg4, p3Name)
+        val body = block(p0, p1, p2, p3)
+        registerFunction(
+            name = functionName,
+            returnType = returns,
+            parameters = listOf(
+                UserFunctionParameter(p0Name, arg1),
+                UserFunctionParameter(p1Name, arg2),
+                UserFunctionParameter(p2Name, arg3),
+                UserFunctionParameter(p3Name, arg4)
+            ),
+            body = body as Any
+        )
+        return FxFunction4(functionName, returns)
+    }
+
+    /**
+     * Declares a reusable AGSL helper with **five or more** formal parameters.
+     *
+     * Prefer the typed [fn] overloads for arity 0–4 when you can; use [fnN] when you need a longer
+     * parameter list without adding another fixed-arity overload. The body receives a
+     * [FxParameterPack]: call [FxParameterPack.at] with the zero-based index to read each
+     * parameter expression (`p0`, `p1`, … in generated AGSL).
+     */
+    public fun <R> fnN(
+        name: String? = null,
+        returns: FxValueType<R>,
+        vararg parameters: FxValueType<*>,
+        block: FxDsl.(FxParameterPack) -> R
+    ): FxFunctionN<R> {
+        require(parameters.isNotEmpty()) {
+            "fnN requires at least one parameter; use fn { } for zero-arg helpers."
+        }
+        val functionName = nextFunctionName(name)
+        val exprs = parameters.mapIndexed { index, type ->
+            parameterExpr(type, parameterName(index)) as Any
+        }
+        val pack = FxParameterPack(exprs)
+        val body = block(pack)
+        registerFunction(
+            name = functionName,
+            returnType = returns,
+            parameters = parameters.mapIndexed { index, type ->
+                UserFunctionParameter(parameterName(index), type)
+            },
+            body = body as Any
+        )
+        return FxFunctionN(functionName, returns, parameters.size)
+    }
+
+    /**
      * Returns the center of the current resolution in pixels.
      */
     public fun center(): Float2Expr = resolution * 0.5f
@@ -606,137 +716,3 @@ public enum class MirrorYFrom(public val shaderValue: Float) {
     Top(0f),
     Bottom(1f)
 }
-
-/**
- * Public description of a value type used by [FxDsl.fn].
- */
-public sealed interface FxValueType<T> {
-    /**
-     * AGSL type name emitted by the compiler.
-     */
-    public val agslType: String
-}
-
-/**
- * Public value-type token for [BoolExpr].
- */
-public data object BoolType : FxValueType<BoolExpr> {
-    /** AGSL type emitted for [BoolExpr]. */
-    public override val agslType: String = "bool"
-}
-
-/**
- * Public value-type token for [FloatExpr].
- */
-public data object FloatType : FxValueType<FloatExpr> {
-    /** AGSL type emitted for [FloatExpr]. */
-    public override val agslType: String = "float"
-}
-
-/**
- * Public value-type token for [Float2Expr].
- */
-public data object Float2Type : FxValueType<Float2Expr> {
-    /** AGSL type emitted for [Float2Expr]. */
-    public override val agslType: String = "float2"
-}
-
-/**
- * Public value-type token for [Float3Expr].
- */
-public data object Float3Type : FxValueType<Float3Expr> {
-    /** AGSL type emitted for [Float3Expr]. */
-    public override val agslType: String = "float3"
-}
-
-/**
- * Public value-type token for [Float4Expr].
- */
-public data object Float4Type : FxValueType<Float4Expr> {
-    /** AGSL type emitted for [Float4Expr]. */
-    public override val agslType: String = "float4"
-}
-
-/**
- * Public value-type token for [ColorExpr].
- */
-public data object ColorType : FxValueType<ColorExpr> {
-    /** AGSL type emitted for [ColorExpr]. */
-    public override val agslType: String = "half4"
-}
-
-/**
- * Handle for a generated zero-argument AGSL helper function.
- */
-public class FxFunction0<R> internal constructor(
-    private val name: String,
-    private val returns: FxValueType<R>
-) {
-    /**
-     * Creates a call expression for the underlying AGSL helper.
-     */
-    public operator fun invoke(): R = callFunction(returns, name, emptyList())
-}
-
-/**
- * Handle for a generated one-argument AGSL helper function.
- */
-public class FxFunction1<A1, R> internal constructor(
-    private val name: String,
-    private val returns: FxValueType<R>
-) {
-    /**
-     * Creates a call expression for the underlying AGSL helper.
-     */
-    public operator fun invoke(arg1: A1): R = callFunction(returns, name, listOf(arg1 as Any))
-}
-
-/**
- * Handle for a generated two-argument AGSL helper function.
- */
-public class FxFunction2<A1, A2, R> internal constructor(
-    private val name: String,
-    private val returns: FxValueType<R>
-) {
-    /**
-     * Creates a call expression for the underlying AGSL helper.
-     */
-    public operator fun invoke(arg1: A1, arg2: A2): R =
-        callFunction(returns, name, listOf(arg1 as Any, arg2 as Any))
-}
-
-/**
- * Calls a one-argument helper with a scalar literal.
- */
-public operator fun <R> FxFunction1<FloatExpr, R>.invoke(arg1: Float): R =
-    this(floatLiteral(arg1))
-
-/**
- * Calls a two-argument helper using a scalar literal for the first argument.
- */
-public operator fun <A2, R> FxFunction2<FloatExpr, A2, R>.invoke(arg1: Float, arg2: A2): R =
-    this(floatLiteral(arg1), arg2)
-
-/**
- * Calls a two-argument helper using a scalar literal for the second argument.
- */
-public operator fun <A1, R> FxFunction2<A1, FloatExpr, R>.invoke(arg1: A1, arg2: Float): R =
-    this(arg1, floatLiteral(arg2))
-
-/**
- * Calls a two-argument helper using scalar literals for both arguments.
- */
-public operator fun <R> FxFunction2<FloatExpr, FloatExpr, R>.invoke(arg1: Float, arg2: Float): R =
-    this(floatLiteral(arg1), floatLiteral(arg2))
-
-internal data class UserFunctionParameter(
-    val name: String,
-    val type: FxValueType<*>
-)
-
-internal data class UserFunctionDefinition(
-    val name: String,
-    val returnType: FxValueType<*>,
-    val parameters: List<UserFunctionParameter>,
-    val body: Any
-)

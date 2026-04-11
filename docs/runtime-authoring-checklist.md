@@ -116,6 +116,30 @@ Rule of thumb:
 Avoid sharing one controller across unrelated surfaces, because resolution and runtime state then
 stop matching one specific draw target.
 
+### Effect identity and `rememberFxController`
+
+`rememberFxController(effect)` uses the compiled [FxEffect] as the `remember` key. If you replace
+`effect` with a **new** compiled instance (for example rebuilding the DSL), Compose creates a new
+[FxController] and a new [FxInstance]. Param handles from the old effect must not be used with the
+new controller.
+
+### Batching imperative uniform writes
+
+If you call `setFloat` / `setFloat*` / `setResolution` on **`FxController`** several times in one
+imperative block (for example inside a `LaunchedEffect`), wrap the sequence in
+`controller.runBatch { ... }` so the runtime can rebuild the backing **`RenderEffect`** and invalidate
+the host **once** instead of once per setter. Prefer **`bindFloat`** / **`bindTime`** from Composable code
+when that fits your flow.
+
+### Sample-style navigation
+
+If you animate between screens with `AnimatedContent` (as the RedByteFX sample does), two demos may
+be composed briefly during the transition, so two controllers can be active at once for that
+window. See [runtime-audit-v0.5.md](runtime-audit-v0.5.md) (Sample navigation).
+
+Platform limits (minSdk, `RenderEffect` refresh, shader limits) are summarized in
+[runtime-platform-constraints.md](runtime-platform-constraints.md).
+
 ## 5. Let Compose own resolution sync
 
 When you use `Modifier.redbyteFx(fx)`, the draw path already keeps the shader resolution current.

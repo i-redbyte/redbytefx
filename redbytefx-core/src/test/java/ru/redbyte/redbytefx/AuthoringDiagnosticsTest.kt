@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,9 +43,10 @@ class AuthoringDiagnosticsTest {
             }.agslSource()
         }.exceptionOrNull()
 
-        check(error is IllegalArgumentException) {
-            "Expected IllegalArgumentException for NaN literal, got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for NaN literal, got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.NON_FINITE_FLOAT_LITERAL, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("Only finite float literals"))
@@ -58,9 +60,10 @@ class AuthoringDiagnosticsTest {
             emitAny("not a shader expr", EmitContext(UniformLayout()))
         }.exceptionOrNull()
 
-        check(error is IllegalStateException) {
-            "Expected IllegalStateException for unsupported expression argument, got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for unsupported expression argument, got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.UNSUPPORTED_EMIT_ANY, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("kotlin.String"))
@@ -76,9 +79,10 @@ class AuthoringDiagnosticsTest {
             emitAny(42, EmitContext(UniformLayout()))
         }.exceptionOrNull()
 
-        check(error is IllegalStateException) {
-            "Expected IllegalStateException for raw Int, got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for raw Int, got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.UNSUPPORTED_EMIT_ANY, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("kotlin.Int"))
@@ -97,9 +101,10 @@ class AuthoringDiagnosticsTest {
             }.agslSource()
         }.exceptionOrNull()
 
-        check(error is IllegalStateException) {
-            "Expected IllegalStateException for custom FloatExpr in let(...), got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for custom FloatExpr in let(...), got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.UNSUPPORTED_DSL_IMPLEMENTATION, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("Unsupported FloatExpr implementation"))
@@ -120,9 +125,10 @@ class AuthoringDiagnosticsTest {
             )
         }.exceptionOrNull()
 
-        check(error is IllegalStateException) {
-            "Expected IllegalStateException for fn return type mismatch, got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for fn return type mismatch, got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.FN_RETURN_TYPE_MISMATCH, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("wrongReturn"))
@@ -145,9 +151,10 @@ class AuthoringDiagnosticsTest {
             }.agslSource()
         }.exceptionOrNull()
 
-        check(error is IllegalStateException) {
-            "Expected IllegalStateException for custom FloatExpr returned from fn(...), got ${error?.javaClass?.name}"
+        check(error is FxDiagnosticException) {
+            "Expected FxDiagnosticException for custom FloatExpr returned from fn(...), got ${error?.javaClass?.name}"
         }
+        assertEquals(FxDiagnosticCode.UNSUPPORTED_DSL_IMPLEMENTATION, error.primary.code)
 
         val message = checkNotNull(error.message)
         assertTrue(message.contains("Unsupported FloatExpr implementation"))

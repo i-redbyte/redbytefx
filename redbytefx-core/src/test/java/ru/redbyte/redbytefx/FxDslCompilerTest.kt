@@ -287,6 +287,89 @@ class FxDslCompilerTest {
     }
 
     @Test
+    fun threeArgumentUserHelpersCompileWithOrderedParameters() {
+        val effect = redbytefx {
+            val tri = fn(
+                name = "TriMix",
+                arg1 = FloatType,
+                arg2 = FloatType,
+                arg3 = FloatType,
+                returns = FloatType
+            ) { a, b, c ->
+                (a + b) * c
+            }
+            val v = let(tri(float(0.25f), float(0.5f), float(2f)), "v")
+            color(v, v, v)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float tri_mix(float p0, float p1, float p2)"))
+        assertTrue(source.contains("float l_v = tri_mix(0.25, 0.5, 2.0);"))
+    }
+
+    @Test
+    fun fourArgumentUserHelpersCompileWithOrderedParameters() {
+        val effect = redbytefx {
+            val quad = fn(
+                name = "QuadSum",
+                arg1 = FloatType,
+                arg2 = FloatType,
+                arg3 = FloatType,
+                arg4 = FloatType,
+                returns = FloatType
+            ) { a, b, c, d ->
+                a + b + c + d
+            }
+            val v = let(quad(float(1f), float(2f), float(3f), float(4f)), "v")
+            color(v, v, v)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float quad_sum(float p0, float p1, float p2, float p3)"))
+        assertTrue(source.contains("float l_v = quad_sum(1.0, 2.0, 3.0, 4.0);"))
+    }
+
+    @Test
+    fun fnNUserHelperWithFiveParametersCompiles() {
+        val effect = redbytefx {
+            val penta = fnN(
+                name = "PentaSum",
+                returns = FloatType,
+                FloatType,
+                FloatType,
+                FloatType,
+                FloatType,
+                FloatType
+            ) { p ->
+                val a = p.at<FloatExpr>(0)
+                val b = p.at<FloatExpr>(1)
+                val c = p.at<FloatExpr>(2)
+                val d = p.at<FloatExpr>(3)
+                val e = p.at<FloatExpr>(4)
+                a + b + c + d + e
+            }
+            val v = let(
+                penta(
+                    float(1f),
+                    float(2f),
+                    float(3f),
+                    float(4f),
+                    float(5f)
+                ),
+                "v"
+            )
+            color(v, v, v)
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("float penta_sum(float p0, float p1, float p2, float p3, float p4)"))
+        assertTrue(source.contains("float l_v = penta_sum(1.0, 2.0, 3.0, 4.0, 5.0);"))
+    }
+
+    @Test
     fun userFunctionNamesAvoidAgslBuiltInsBySuffixing() {
         val effect = redbytefx {
             val sinHelper = fn(

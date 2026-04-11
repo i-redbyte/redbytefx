@@ -49,6 +49,8 @@ public class FxController internal constructor(
     internal val instance: FxInstance
 ) {
     private var hostViewRef: WeakReference<View>? = null
+    private var controllerBatchDepth: Int = 0
+    private var pendingHostInvalidate: Boolean = false
     internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
         private set
     private var cachedPlatformRenderEffect: AndroidRenderEffect? = null
@@ -73,9 +75,7 @@ public class FxController internal constructor(
      * after recomposition instead of inline during composition.
      */
     public fun setFloat(param: FxParam.Float, value: Float) {
-        if (instance.setFloat(param, value)) {
-            invalidateRuntime()
-        }
+        maybeInvalidateAfterUniformChange(instance.setFloat(param, value))
     }
 
     /**
@@ -86,9 +86,7 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat2].
      */
     public fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        if (instance.setFloat2(param, x, y)) {
-            invalidateRuntime()
-        }
+        maybeInvalidateAfterUniformChange(instance.setFloat2(param, x, y))
     }
 
     /**
@@ -99,9 +97,7 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat3].
      */
     public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        if (instance.setFloat3(param, x, y, z)) {
-            invalidateRuntime()
-        }
+        maybeInvalidateAfterUniformChange(instance.setFloat3(param, x, y, z))
     }
 
     /**
@@ -112,9 +108,7 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat4].
      */
     public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        if (instance.setFloat4(param, x, y, z, w)) {
-            invalidateRuntime()
-        }
+        maybeInvalidateAfterUniformChange(instance.setFloat4(param, x, y, z, w))
     }
 
     /**
@@ -127,8 +121,26 @@ public class FxController internal constructor(
     public fun setResolution(widthPx: Float, heightPx: Float) {
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
-        if (instance.setResolution(safeWidth, safeHeight)) {
-            invalidateRuntime()
+        maybeInvalidateAfterUniformChange(instance.setResolution(safeWidth, safeHeight))
+    }
+
+    /**
+     * Runs [block] while coalescing backing [RenderEffect] rebuilds and host invalidation so that
+     * multiple imperative uniform updates can produce a single refresh instead of one per setter.
+     *
+     * Prefer [bindFloat] / [bindTime] from Composable code; this is for imperative multi-write
+     * sequences (for example from a `LaunchedEffect` that updates several uniforms together).
+     */
+    public fun runBatch(block: () -> Unit) {
+        controllerBatchDepth++
+        try {
+            instance.runBatch(block)
+        } finally {
+            controllerBatchDepth--
+            if (controllerBatchDepth == 0 && pendingHostInvalidate) {
+                pendingHostInvalidate = false
+                invalidateRuntime()
+            }
         }
     }
 
@@ -143,6 +155,15 @@ public class FxController internal constructor(
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
         instance.setResolution(safeWidth, safeHeight)
+    }
+
+    private fun maybeInvalidateAfterUniformChange(changed: Boolean) {
+        if (!changed) return
+        if (controllerBatchDepth > 0) {
+            pendingHostInvalidate = true
+        } else {
+            invalidateRuntime()
+        }
     }
 
     private fun invalidateRuntime() {

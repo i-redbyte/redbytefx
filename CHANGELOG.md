@@ -4,6 +4,10 @@
 
 ### Added
 
+- **`fnN` / `FxParameterPack` / `FxFunctionN`:** variadic-arity user helpers (five or more parameters) with `FxParameterPack.at(...)` in the body; **`FxDslUserFunctions.kt`** holds **`FxValueType`**, **`FxFunction0`–`FxFunctionN`**, and compiler **`UserFunctionDefinition`** wiring.
+- **`StdlibSemanticShapesTest`:** extra AGSL-shape checks for **`maskedScreen`** and **`alphaMask`**; compositing KDoc clarifies **`saturate` → `clamp`** in generated AGSL.
+- **`:sample` demo layout:** each **`Demo*`** composable lives in **`sample/.../ui/demos/`** with shared **`DemoShared.kt`** (`rememberGeneratedAgsl`); **`tools/split_demos.py`** documents the extraction recipe.
+- **Structured authoring diagnostics:** public **`FxDiagnostic`**, **`FxDiagnosticCode`**, **`FxDiagnosticSeverity`**, and **`FxDiagnosticException`** (extends **`IllegalStateException`**, carries **`diagnostics`** list); compile-time **`emit`/`emitAny`** failures, **`fn`** return-type validation, non-finite float literals, and missing uniform bindings use stable codes instead of raw strings only.
 - **Documentation:** hub docs [docs/v0.5-runtime-quality.md](docs/v0.5-runtime-quality.md) and [docs/v0.6-library-shaping.md](docs/v0.6-library-shaping.md); backlog/roadmap/milestone snapshot updated for first-pass **v0.5** / **v0.6** closure.
 - **Detekt** static analysis: `config/detekt/detekt.yml`, plugin on all Kotlin modules, main sources only; **`.editorconfig`**; `./gradlew qualityCheck` now includes `detekt`.
 - **`fn` diagnostics:** compile-time validation that the function body expression matches the declared return type (`FxValueType`), with an error message that names expected AGSL type and actual expression kind.
@@ -18,6 +22,8 @@
 
 ### Changed
 
+- **`FxDsl.let` for `ColorExpr`:** restores the intended **`let(...)`** name (the previous **`Dlet`** identifier was a typo).
+- **`FxInstance` / `FxController`:** **`runBatch { }`** coalesces **`RenderEffect`** rebuild notifications and (for **`FxController`**) host invalidation when multiple imperative setters run in one block; **`FxInstanceImpl`** initialization uses a single batched path so the first runtime effect is built **once** after defaults + resolution (see **`docs/runtime-platform-constraints.md`**).
 - **Authoring diagnostics:** clearer messages when a uniform **`FxParam`** does not belong to the bound effect, and when **`emitAny`** sees raw Kotlin values (integers, strings, booleans) instead of DSL expressions — each case includes a short **Hint** toward `float(...)` / `bool(...)` / uniforms.
 - **`FxInstance` setters** (`setFloat`, `setFloat2`, `setFloat3`, `setFloat4`, **`setResolution`**) now return **`Boolean`**: `true` when a new value was written and the backing implementation may refresh **`RenderEffect`**; `false` when the value was unchanged. Custom `FxInstance` implementations must be updated.
 - **`FxController`** no longer mirrors uniform caches; it relies on **`FxInstance`** return values to decide when to invalidate the host view.
@@ -34,6 +40,8 @@
 - **`RedByteFxStdlib`**: explicit **Canonical** vs **Exploratory** KDoc sections for stdlib discovery.
 - **`docs/runtime-measurement-scenario.md`**: repeatable gfxinfo/meminfo measurement checklist and notes on **`FxInstance`** invalidation vs redundant writes; pairs with **`docs/runtime-audit-v0.5.md`** for baselines.
 - **`FxInstance`**: threading guidance (UI thread / **`RuntimeShader`**), performance note on **`RenderEffect`** refresh vs redundant writes.
+- **v0.6 library shaping:** **[library-limitations.md](docs/library-limitations.md)** — single index for platform/runtime limits, sampling expectations, and tooling caveats; [v0.6-library-shaping.md](docs/v0.6-library-shaping.md), [roadmap.md](docs/roadmap.md), and [backlog-v0.4-v0.6.md](docs/backlog-v0.4-v0.6.md) updated.
+- **v0.5 runtime quality (engineering pass):** **`docs/runtime-platform-constraints.md`** (minSdk, **`RenderEffect`** refresh rationale, shader limits); **`docs/runtime-audit-v0.5.md`** sample **`AnimatedContent`** overlap note; **`docs/runtime-authoring-checklist.md`** effect identity / navigation cross-links; **`docs/v0.5-runtime-quality.md`** and backlog delivery note updated; **`FxControllerComposeRenderEffectCacheTest`**; confidence-quartet AGSL smoke asserts **`half4 main`** in **`RepresentativeDemoSmokeTest`**.
 
 ## [v0.2-demo] - 2026-04-11
 
