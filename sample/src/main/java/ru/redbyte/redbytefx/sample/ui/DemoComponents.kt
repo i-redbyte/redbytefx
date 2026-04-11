@@ -67,8 +67,10 @@ import ru.redbyte.redbytefx.sample.model.DemoFollowUp
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoInfo
+import ru.redbyte.redbytefx.sample.model.canonicalFamily
 import ru.redbyte.redbytefx.sample.model.focusTags
 import ru.redbyte.redbytefx.sample.model.isAnimated
+import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.section
 
@@ -314,6 +316,18 @@ private fun DemoInfoCard(
                     text = demo.section.title.uppercase(),
                     accent = MaterialTheme.colorScheme.primary
                 )
+                if (demo.isStartHere) {
+                    CyberBadge(
+                        text = "START HERE",
+                        accent = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                demo.canonicalFamily?.let { family ->
+                    CyberBadge(
+                        text = family,
+                        accent = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
             Text(
                 text = demo.subtitle,
@@ -396,6 +410,18 @@ private fun DemoInfoCard(
                     MaterialTheme.colorScheme.outline
                 }
             )
+            if (demo.isStartHere) {
+                CyberBadge(
+                    text = "START HERE",
+                    accent = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            demo.canonicalFamily?.let { family ->
+                CyberBadge(
+                    text = family,
+                    accent = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         Text(
             text = demo.subtitle,

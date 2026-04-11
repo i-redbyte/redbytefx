@@ -1,8 +1,11 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ru.redbyte.redbytefx.sample.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,8 +31,11 @@ import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoSection
 import ru.redbyte.redbytefx.sample.model.catalogSearchText
+import ru.redbyte.redbytefx.sample.model.canonicalFamily
 import ru.redbyte.redbytefx.sample.model.focusTags
+import ru.redbyte.redbytefx.sample.model.isCanonicalDemo
 import ru.redbyte.redbytefx.sample.model.isAnimated
+import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.section
 
@@ -51,6 +57,15 @@ private enum class MotionFilter(
     Static("STATIC", { !it.isAnimated })
 }
 
+private enum class PathFilter(
+    val label: String,
+    val matches: (DemoInfo) -> Boolean
+) {
+    All("ALL", { true }),
+    StartHere("START HERE", { it.isStartHere }),
+    Canonical("CANONICAL", { it.isCanonicalDemo })
+}
+
 private data class StarterRoute(
     val label: String,
     val title: String,
@@ -66,12 +81,14 @@ fun HomeScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var layerFilter by rememberSaveable { mutableStateOf(LayerFilter.All) }
     var motionFilter by rememberSaveable { mutableStateOf(MotionFilter.All) }
+    var pathFilter by rememberSaveable { mutableStateOf(PathFilter.All) }
     val normalizedQuery = remember(searchQuery) { searchQuery.trim().lowercase() }
-    val visibleDemos = remember(demos, normalizedQuery, layerFilter, motionFilter) {
+    val visibleDemos = remember(demos, normalizedQuery, layerFilter, motionFilter, pathFilter) {
         demos.filter { demo ->
             (normalizedQuery.isEmpty() || demo.catalogSearchText.contains(normalizedQuery)) &&
                 layerFilter.matches(demo) &&
-                motionFilter.matches(demo)
+                motionFilter.matches(demo) &&
+                pathFilter.matches(demo)
         }
     }
     val demoIndexById = remember(demos) {
@@ -93,9 +110,9 @@ fun HomeScreen(
             ),
             StarterRoute(
                 label = "PATH 03",
-                title = "Read Functions And Color",
-                summary = "Use a compact color-first demo to inspect locals, helper functions, and the authored-vs-generated comparison flow.",
-                demoId = DemoId.Duotone
+                title = "Read Masks And Compositing",
+                summary = "See the canonical mask/compositing path with helpers like maskedMix(...), alphaMask(...), and maskedScreen(...).",
+                demoId = DemoId.Composite
             ),
             StarterRoute(
                 label = "PATH 04",
@@ -108,7 +125,7 @@ fun HomeScreen(
         }
     }
     val coreCount = remember(visibleDemos) { visibleDemos.count { it.layer == DemoLayer.Core } }
-    val animatedCount = remember(visibleDemos) { visibleDemos.count { it.isAnimated } }
+    val canonicalCount = remember(visibleDemos) { visibleDemos.count { it.isCanonicalDemo } }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
@@ -121,13 +138,16 @@ fun HomeScreen(
                 totalCount = demos.size,
                 layerFilter = layerFilter,
                 motionFilter = motionFilter,
+                pathFilter = pathFilter,
                 onQueryChange = { searchQuery = it },
                 onLayerFilterChange = { layerFilter = it },
                 onMotionFilterChange = { motionFilter = it },
+                onPathFilterChange = { pathFilter = it },
                 onClearAll = {
                     searchQuery = ""
                     layerFilter = LayerFilter.All
                     motionFilter = MotionFilter.All
+                    pathFilter = PathFilter.All
                 }
             )
         }
@@ -137,7 +157,10 @@ fun HomeScreen(
                 accent = MaterialTheme.colorScheme.secondary,
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     CyberBadge(
                         text = "AGSL // Kotlin DSL",
                         accent = MaterialTheme.colorScheme.primary
@@ -176,8 +199,8 @@ fun HomeScreen(
                         accent = MaterialTheme.colorScheme.secondary
                     )
                     ShowcaseMetric(
-                        value = animatedCount.toString(),
-                        label = "animated",
+                        value = canonicalCount.toString(),
+                        label = "canonical",
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
@@ -252,16 +275,21 @@ private fun ShowcaseSearchPanel(
     totalCount: Int,
     layerFilter: LayerFilter,
     motionFilter: MotionFilter,
+    pathFilter: PathFilter,
     onQueryChange: (String) -> Unit,
     onLayerFilterChange: (LayerFilter) -> Unit,
     onMotionFilterChange: (MotionFilter) -> Unit,
+    onPathFilterChange: (PathFilter) -> Unit,
     onClearAll: () -> Unit
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             CyberBadge(
                 text = "SEARCH",
                 accent = MaterialTheme.colorScheme.tertiary
@@ -270,7 +298,12 @@ private fun ShowcaseSearchPanel(
                 text = "$resultCount / $totalCount",
                 accent = MaterialTheme.colorScheme.secondary
             )
-            if (query.isNotBlank() || layerFilter != LayerFilter.All || motionFilter != MotionFilter.All) {
+            if (
+                query.isNotBlank() ||
+                layerFilter != LayerFilter.All ||
+                motionFilter != MotionFilter.All ||
+                pathFilter != PathFilter.All
+            ) {
                 CyberBadge(
                     text = "CLEAR",
                     modifier = Modifier.clickable { onClearAll() },
@@ -306,6 +339,8 @@ private fun ShowcaseSearchPanel(
             motionFilter = motionFilter,
             onLayerFilterChange = onLayerFilterChange,
             onMotionFilterChange = onMotionFilterChange,
+            pathFilter = pathFilter,
+            onPathFilterChange = onPathFilterChange,
             modifier = Modifier.padding(top = 14.dp)
         )
     }
@@ -315,8 +350,10 @@ private fun ShowcaseSearchPanel(
 private fun ShowcaseQuickFilters(
     layerFilter: LayerFilter,
     motionFilter: MotionFilter,
+    pathFilter: PathFilter,
     onLayerFilterChange: (LayerFilter) -> Unit,
     onMotionFilterChange: (MotionFilter) -> Unit,
+    onPathFilterChange: (PathFilter) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -335,6 +372,12 @@ private fun ShowcaseQuickFilters(
             selected = motionFilter,
             onSelect = onMotionFilterChange
         )
+        FilterRow(
+            title = "PATH",
+            options = PathFilter.entries,
+            selected = pathFilter,
+            onSelect = onPathFilterChange
+        )
     }
 }
 
@@ -345,7 +388,10 @@ private fun <T> FilterRow(
     selected: T,
     onSelect: (T) -> Unit
 ) where T : Enum<T> {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         CyberBadge(
             text = title,
             accent = MaterialTheme.colorScheme.secondary,
@@ -355,6 +401,7 @@ private fun <T> FilterRow(
             val label = when (option) {
                 is LayerFilter -> option.label
                 is MotionFilter -> option.label
+                is PathFilter -> option.label
                 else -> option.name
             }
             val isSelected = option == selected
@@ -411,7 +458,10 @@ private fun StarterRoutesPanel(
         accent = MaterialTheme.colorScheme.primary,
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             CyberBadge(
                 text = "START HERE",
                 accent = MaterialTheme.colorScheme.primary
@@ -455,7 +505,10 @@ private fun StarterRouteCard(
         accent = MaterialTheme.colorScheme.secondary,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             CyberBadge(
                 text = route.label,
                 accent = MaterialTheme.colorScheme.tertiary
@@ -468,6 +521,12 @@ private fun StarterRouteCard(
                 text = demo.layer.label,
                 accent = MaterialTheme.colorScheme.secondary
             )
+            demo.canonicalFamily?.let { family ->
+                CyberBadge(
+                    text = family,
+                    accent = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         Text(
             text = route.title,
@@ -507,7 +566,10 @@ private fun ShowcaseSectionHeader(
         accent = MaterialTheme.colorScheme.primary,
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             CyberBadge(
                 text = section.title.uppercase(),
                 accent = MaterialTheme.colorScheme.secondary
@@ -543,7 +605,10 @@ private fun DemoCatalogCard(
         },
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             CyberBadge(
                 text = "#${(index + 1).toString().padStart(2, '0')}",
                 accent = MaterialTheme.colorScheme.tertiary
@@ -565,6 +630,18 @@ private fun DemoCatalogCard(
                 },
                 modifier = Modifier.widthIn(max = 132.dp)
             )
+            if (demo.isStartHere) {
+                CyberBadge(
+                    text = "START HERE",
+                    accent = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            demo.canonicalFamily?.let { family ->
+                CyberBadge(
+                    text = family,
+                    accent = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         Text(
             text = demo.subtitle,

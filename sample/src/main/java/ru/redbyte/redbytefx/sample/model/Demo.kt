@@ -74,6 +74,36 @@ data class DemoFollowUp(
     val description: String
 )
 
+val DemoInfo.isStartHere: Boolean
+    get() = when (id) {
+        DemoId.Wave,
+        DemoId.Signal,
+        DemoId.Composite,
+        DemoId.Circuit -> true
+
+        else -> false
+    }
+
+val DemoInfo.canonicalFamily: String?
+    get() = when (id) {
+        DemoId.Wave -> "FOUNDATIONS"
+        DemoId.Offset -> "COORDINATES"
+        DemoId.Pulse -> "TIMING"
+        DemoId.Signal -> "PATTERNS"
+        DemoId.Spotlight -> "MASKS"
+        DemoId.Composite -> "COMPOSITING"
+        DemoId.Reveal -> "REVEALS"
+        DemoId.Sweep -> "GRADIENTS"
+        DemoId.Radar -> "POLAR"
+        DemoId.Halo -> "UV + LIGHT"
+        DemoId.Sigil -> "SDF"
+        DemoId.Circuit -> "ROUTING"
+        else -> null
+    }
+
+val DemoInfo.isCanonicalDemo: Boolean
+    get() = canonicalFamily != null
+
 val DemoInfo.focusTags: List<String>
     get() = when (id) {
         DemoId.Flip -> listOf("transform", "uniforms", "runtime binding")
@@ -122,6 +152,14 @@ val DemoInfo.catalogSearchText: String
         append(' ')
         append(if (isAnimated) "animated" else "static")
         append(' ')
+        if (isStartHere) {
+            append("start here ")
+        }
+        if (isCanonicalDemo) {
+            append("canonical ")
+            append(canonicalFamily)
+            append(' ')
+        }
         append(focusTags.joinToString(separator = " "))
     }.lowercase()
 

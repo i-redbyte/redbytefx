@@ -22,7 +22,7 @@
 - low-level shader authoring through typed expressions, uniforms, functions, local variables, and AGSL-like math/color primitives
 - Compose runtime integration through `rememberFxController(...)`, `Modifier.redbyteFx(...)`, and direct state/time binding helpers
 - a broad `stdlib` surface covering procedural, color, masks, timing, compositing, transitions, gradients, signal, polar, lighting, SDF, and routing helpers
-- a strong sample catalog with search, starter routes, quick filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
+- a strong sample catalog with search, starter routes, canonical/start-here filters, per-demo focus metadata/tags, related-demo recommendations, live controls, copyable DSL snippet, generated AGSL inspection, and a phone-friendly preview-first layout
 
 ## Current Limitations
 

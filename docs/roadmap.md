@@ -21,6 +21,7 @@ The sample app is no longer a throwaway sandbox.
 
 - `sample/model/Demo.kt` defines a real catalog: `26` demos across `5` sections with per-demo title, subtitle, focus, layer, animation flag, and snippet metadata
 - `sample/ui/HomeScreen.kt` already provides search, starter routes, quick filtering, grouped sections, and top-level metrics
+- the catalog now also has an explicit canonical/start-here signal, so the sample can teach the recommended path instead of only listing everything equally
 - `sample/ui/DemoComponents.kt` already delivers the core tooling stack:
   - visual preview
   - live controls
