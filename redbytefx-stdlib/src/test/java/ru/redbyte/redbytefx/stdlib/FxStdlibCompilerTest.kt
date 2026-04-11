@@ -101,6 +101,7 @@ class FxStdlibCompilerTest {
 
         assertTrue(source.contains("uniform float u_amount;"))
         assertTrue(source.contains("uniform float u_warmth;"))
+        assertTrue(source.contains("clamp"))
         assertTrue(source.contains("mix"))
         assertTrue(source.contains("?"))
         assertTrue(source.contains("half4"))
@@ -146,6 +147,7 @@ class FxStdlibCompilerTest {
 
         assertTrue(source.contains("uniform float u_amount;"))
         assertTrue(source.contains("cos"))
+        assertTrue(source.contains("clamp"))
         assertTrue(source.contains("length"))
         assertTrue(source.contains("rb_sample"))
         assertTrue(source.contains("half4"))

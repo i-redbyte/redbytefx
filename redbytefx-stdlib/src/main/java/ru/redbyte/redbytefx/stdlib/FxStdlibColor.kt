@@ -2,6 +2,8 @@ package ru.redbyte.redbytefx.stdlib
 
 import ru.redbyte.redbytefx.*
 
+private fun blendAmount(amount: FloatExpr): FloatExpr = saturate(amount)
+
 /**
  * Adjusts RGB saturation while preserving alpha.
  *
@@ -31,6 +33,9 @@ public fun adjustSaturation(
 
 /**
  * Multiplies two colors together, then mixes the result back into [base] by [amount].
+ *
+ * [amount] is saturated to the `[0, 1]` range so the helper behaves like a predictable blend
+ * intensity rather than an extrapolated overshoot.
  */
 public fun blendMultiply(
     base: ColorExpr,
@@ -43,7 +48,7 @@ public fun blendMultiply(
         base.b * blend.b,
         base.a
     )
-    return mix(base, multiplied, amount)
+    return mix(base, multiplied, blendAmount(amount))
 }
 
 /**
@@ -57,6 +62,8 @@ public fun blendMultiply(
 
 /**
  * Applies screen blending and mixes the result back into [base] by [amount].
+ *
+ * [amount] is saturated to the `[0, 1]` range so screen intensity stays predictable.
  */
 public fun blendScreen(
     base: ColorExpr,
@@ -69,7 +76,7 @@ public fun blendScreen(
         1f - (1f - base.b) * (1f - blend.b),
         base.a
     )
-    return mix(base, screened, amount)
+    return mix(base, screened, blendAmount(amount))
 }
 
 /**
@@ -83,6 +90,9 @@ public fun blendScreen(
 
 /**
  * Applies overlay blending and mixes the result back into [base] by [amount].
+ *
+ * [amount] is saturated to the `[0, 1]` range so the helper stays aligned with the rest of the
+ * stdlib's blend-intensity convention.
  */
 public fun blendOverlay(
     base: ColorExpr,
@@ -102,7 +112,7 @@ public fun blendOverlay(
         overlayChannel(base.b, blend.b),
         base.a
     )
-    return mix(base, overlaid, amount)
+    return mix(base, overlaid, blendAmount(amount))
 }
 
 /**

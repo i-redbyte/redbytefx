@@ -49,7 +49,8 @@ public fun cosinePalette(
  * [offset] is interpreted in sample-space units. [direction] is normalized internally so that
  * diagonal offsets stay consistent with horizontal/vertical ones. This helper is intentionally
  * secondary/exploratory: it is useful for stylized distortion once the author already has a clear
- * base sampling path.
+ * base sampling path. [amount] is saturated to the `[0, 1]` range so the result behaves like a
+ * readable distortion intensity instead of a `mix(...)` overshoot.
  */
 public fun FxDsl.chromaticOffset(
     offset: FloatExpr,
@@ -66,7 +67,7 @@ public fun FxDsl.chromaticOffset(
         sample(coord + delta).b,
         base.a
     )
-    return mix(base, shifted, amount)
+    return mix(base, shifted, saturate(amount))
 }
 
 /**
