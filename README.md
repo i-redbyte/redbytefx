@@ -213,6 +213,12 @@ The current first-pass “teach this first” shortlist looks like:
 
 Broader helpers like `fbm(...)`, `domainWarp(...)`, `chromaticOffset(...)`, `frameMask(...)`, and `cornerMask(...)` remain useful, but they should not define the first mental model for the library.
 
+They currently make the most sense as a secondary exploratory layer:
+
+- `fbm(...)` and `domainWarp(...)` for heavier procedural space-warp recipes
+- `chromaticOffset(...)` for stylized sampling/distortion passes
+- `frameMask(...)` and `cornerMask(...)` for decorative panel chrome after the simpler mask vocabulary is already in place
+
 ## Procedural Example
 
 ```kotlin

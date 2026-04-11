@@ -8,7 +8,8 @@ private const val TAU: Float = 6.2831855f
  * Builds a cosine palette from a scalar [tone].
  *
  * [bias], [amplitude], [frequency], and [phase] follow the familiar procedural-art cosine palette
- * convention. The returned RGB values are not clamped automatically.
+ * convention. The returned RGB values are not clamped automatically. This is a style-oriented
+ * palette helper, not part of the first canonical authoring path.
  */
 public fun cosinePalette(
     tone: FloatExpr,
@@ -46,7 +47,9 @@ public fun cosinePalette(
  * original content by [amount].
  *
  * [offset] is interpreted in sample-space units. [direction] is normalized internally so that
- * diagonal offsets stay consistent with horizontal/vertical ones.
+ * diagonal offsets stay consistent with horizontal/vertical ones. This helper is intentionally
+ * secondary/exploratory: it is useful for stylized distortion once the author already has a clear
+ * base sampling path.
  */
 public fun FxDsl.chromaticOffset(
     offset: FloatExpr,

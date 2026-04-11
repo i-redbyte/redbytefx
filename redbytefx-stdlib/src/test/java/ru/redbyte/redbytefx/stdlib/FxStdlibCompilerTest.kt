@@ -812,4 +812,57 @@ class FxStdlibCompilerTest {
         assertTrue(source.contains("smoothstep"))
         assertTrue(source.contains("mix"))
     }
+
+    @Test
+    fun exploratorySurfaceHelpersCompileIntoGeneratedShader() {
+        val effect = redbytefx {
+            val time by autoUniformTime()
+            val amount by autoUniformFloat(0.72f)
+            val thickness by autoUniformFloat(0.09f)
+            val uv = let(normalizedUv(), "uv")
+            val warpedUv = let(domainWarp(uv * 3.2f, time * 0.25f, 0.18f), "warped_uv")
+            val refracted = let(
+                chromaticOffset(
+                    offset = 7f,
+                    direction = float2(1f, -0.24f),
+                    amount = amount,
+                    coord = warpedUv * resolution
+                ),
+                "refracted"
+            )
+            val frame = let(frameMask(uv, thickness = thickness, feather = 0.03f), "frame")
+            val corners = let(
+                cornerMask(
+                    uv = uv,
+                    size = float(0.18f),
+                    thickness = thickness,
+                    feather = 0.03f
+                ),
+                "corners"
+            )
+            val tint = let(
+                color(cosinePalette(uv.x + uv.y * 0.35f + time * 0.04f), refracted.a),
+                "tint"
+            )
+
+            maskedScreen(
+                base = refracted,
+                blend = tint,
+                mask = max(frame, corners),
+                amount = amount
+            )
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("uniform float u_amount;"))
+        assertTrue(source.contains("uniform float u_thickness;"))
+        assertTrue(source.contains("cos"))
+        assertTrue(source.contains("fract"))
+        assertTrue(source.contains("rb_sample"))
+        assertTrue(source.contains("min"))
+        assertTrue(source.contains("smoothstep"))
+        assertTrue(source.contains("mix"))
+    }
 }

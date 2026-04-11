@@ -6,6 +6,8 @@ import ru.redbyte.redbytefx.*
  * Builds fractal Brownian motion from [valueNoise].
  *
  * [octaves] is clamped to the `1..6` range to keep generated shader code small and predictable.
+ * This helper is intentionally broader and more exploratory than the first canonical starter path:
+ * it is useful once the author already understands the simpler coordinate/mask/compositing flow.
  */
 public fun fbm(
     point: Float2Expr,
@@ -45,7 +47,9 @@ public fun fbm(
 /**
  * Applies a lightweight domain warp to [point] using two fBm fields.
  *
- * [amount] controls how strongly the input space is bent.
+ * [amount] controls how strongly the input space is bent. Treat this as a style-building helper
+ * rather than a first-teaching-surface primitive; it is most useful after the shader already reads
+ * clearly in ordinary UV or local coordinate space.
  */
 public fun domainWarp(
     point: Float2Expr,

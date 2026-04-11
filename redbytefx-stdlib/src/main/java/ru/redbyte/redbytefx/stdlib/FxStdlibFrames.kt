@@ -7,6 +7,7 @@ import ru.redbyte.redbytefx.*
  *
  * `0` means the point lies directly on an edge, while larger values move toward the center.
  * This is useful for custom panel, frame, and border math built on top of normalized UV space.
+ * It is a lower-level decorative building block, not a first starter helper.
  */
 public fun edgeDistance(uv: Float2Expr): FloatExpr = min(
     min(uv.x, 1f - uv.x),
@@ -17,6 +18,8 @@ public fun edgeDistance(uv: Float2Expr): FloatExpr = min(
  * Creates a normalized inner fade from the viewport edges toward the center.
  *
  * The result stays near `0` at the very edge and rises toward `1` as the point moves inward.
+ * Reach for it when authoring custom panel chrome, not as a replacement for the simpler canonical
+ * masking helpers.
  */
 public fun edgeFade(
     uv: Float2Expr,
@@ -38,7 +41,8 @@ public fun edgeFade(
  * Builds a normalized rectangular frame mask around the viewport edges.
  *
  * [thickness] controls how far the frame extends inward from the edges, while [feather]
- * softens the transition into the interior.
+ * softens the transition into the interior. This helper is intentionally more decorative than the
+ * canonical starter masks such as [rectMask].
  */
 public fun frameMask(
     uv: Float2Expr,
@@ -82,7 +86,8 @@ public fun frameMask(
  *
  * [size] controls how far each corner accent extends inward along the edges, while [thickness]
  * controls the visible frame body. The helper is useful for bracket-like panel treatments and
- * terminal HUD corners.
+ * terminal HUD corners. Treat it as a secondary style helper after the simpler frame and mask
+ * vocabulary is already understood.
  */
 public fun cornerMask(
     uv: Float2Expr,
