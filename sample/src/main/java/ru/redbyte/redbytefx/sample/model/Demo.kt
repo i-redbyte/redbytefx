@@ -74,6 +74,21 @@ data class DemoFollowUp(
     val description: String
 )
 
+enum class DemoPathKind {
+    StartHere,
+    Canonical,
+    Exploratory,
+    Foundation
+}
+
+data class DemoPathSignal(
+    val kind: DemoPathKind,
+    val badge: String,
+    val title: String,
+    val body: String,
+    val family: String? = null
+)
+
 data class CanonicalGuide(
     val label: String,
     val title: String,
@@ -156,6 +171,47 @@ val DemoInfo.canonicalFamily: String?
 
 val DemoInfo.isCanonicalDemo: Boolean
     get() = canonicalFamily != null
+
+val DemoInfo.pathSignal: DemoPathSignal
+    get() = when {
+        isStartHere && layer == DemoLayer.Core -> DemoPathSignal(
+            kind = DemoPathKind.StartHere,
+            badge = "START HERE",
+            title = "Recommended first raw DSL route",
+            body = "Use this demo as a first mental model for coordinates, locals, uniforms, and AGSL-shaped sampling before layering on stdlib recipes.",
+            family = canonicalFamily
+        )
+
+        isStartHere -> DemoPathSignal(
+            kind = DemoPathKind.StartHere,
+            badge = "START HERE",
+            title = "Recommended first stdlib route",
+            body = "This demo is part of the curated starter path. Read it as a preferred entry into named helpers before exploring more stylized variants.",
+            family = canonicalFamily
+        )
+
+        isCanonicalDemo -> DemoPathSignal(
+            kind = DemoPathKind.Canonical,
+            badge = "CANONICAL",
+            title = "Curated helper family",
+            body = "This sits on the recommended first teaching surface. Learn this helper family before jumping into broader stylistic or recipe-heavy demos.",
+            family = canonicalFamily
+        )
+
+        layer == DemoLayer.Stdlib -> DemoPathSignal(
+            kind = DemoPathKind.Exploratory,
+            badge = "EXPLORATORY",
+            title = "Secondary stdlib territory",
+            body = "Useful helpers live here, but this is intentionally beyond the first teaching surface. Map it back to the canonical families first, then use it for richer style work."
+        )
+
+        else -> DemoPathSignal(
+            kind = DemoPathKind.Foundation,
+            badge = "FOUNDATION",
+            title = "Supportive raw DSL building block",
+            body = "This demo stays close to AGSL shape and helps reinforce the core language model, even though it is not one of the primary starter stops."
+        )
+    }
 
 val DemoInfo.focusTags: List<String>
     get() = when (id) {

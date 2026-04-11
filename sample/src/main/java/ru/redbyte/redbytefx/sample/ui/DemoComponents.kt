@@ -65,6 +65,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.sample.model.DemoFollowUp
 import ru.redbyte.redbytefx.sample.model.DemoId
+import ru.redbyte.redbytefx.sample.model.DemoPathKind
+import ru.redbyte.redbytefx.sample.model.DemoPathSignal
 import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.canonicalFamily
@@ -72,6 +74,7 @@ import ru.redbyte.redbytefx.sample.model.focusTags
 import ru.redbyte.redbytefx.sample.model.isAnimated
 import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
+import ru.redbyte.redbytefx.sample.model.pathSignal
 import ru.redbyte.redbytefx.sample.model.section
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
@@ -345,6 +348,11 @@ private fun DemoInfoCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 8.dp)
             )
+            DemoPathSignalBlock(
+                signal = demo.pathSignal,
+                modifier = Modifier.padding(top = 10.dp),
+                compact = true
+            )
             DemoFocusTags(
                 tags = demo.focusTags,
                 modifier = Modifier.padding(top = 10.dp),
@@ -434,6 +442,11 @@ private fun DemoInfoCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
+        )
+        DemoPathSignalBlock(
+            signal = demo.pathSignal,
+            modifier = Modifier.padding(top = 12.dp),
+            compact = false
         )
         DemoFocusTags(
             tags = demo.focusTags,
@@ -548,6 +561,11 @@ private fun DemoInspectionDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 10.dp)
                 )
+                DemoPathSignalBlock(
+                    signal = demo.pathSignal,
+                    modifier = Modifier.padding(top = 10.dp),
+                    compact = true
+                )
                 FlowRow(
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -591,6 +609,67 @@ private fun DemoInspectionDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DemoPathSignalBlock(
+    signal: DemoPathSignal,
+    modifier: Modifier = Modifier,
+    compact: Boolean
+) {
+    val shape = RoundedCornerShape(if (compact) 14.dp else 16.dp)
+    val accent = when (signal.kind) {
+        DemoPathKind.StartHere -> MaterialTheme.colorScheme.tertiary
+        DemoPathKind.Canonical -> MaterialTheme.colorScheme.primary
+        DemoPathKind.Exploratory -> MaterialTheme.colorScheme.secondary
+        DemoPathKind.Foundation -> MaterialTheme.colorScheme.outline
+    }
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (compact) 0.78f else 0.84f))
+            .border(
+                width = 1.dp,
+                color = accent.copy(alpha = 0.36f),
+                shape = shape
+            )
+            .padding(horizontal = if (compact) 10.dp else 12.dp, vertical = if (compact) 10.dp else 12.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CyberBadge(
+                    text = "PATH SIGNAL",
+                    accent = accent
+                )
+                CyberBadge(
+                    text = signal.badge,
+                    accent = MaterialTheme.colorScheme.secondary
+                )
+                signal.family?.let { family ->
+                    CyberBadge(
+                        text = family,
+                        accent = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Text(
+                text = signal.title,
+                style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = signal.body,
+                style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (compact) 4 else Int.MAX_VALUE,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -685,6 +764,7 @@ private fun DebugChecklist(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
+    val signal = demo.pathSignal
     CyberPanel(
         modifier = modifier,
         accent = MaterialTheme.colorScheme.secondary,
@@ -702,6 +782,15 @@ private fun DebugChecklist(
                 text = if (demo.layer == DemoLayer.Stdlib) "HELPER-FIRST" else "DSL-FIRST",
                 accent = MaterialTheme.colorScheme.tertiary
             )
+            CyberBadge(
+                text = signal.badge,
+                accent = when (signal.kind) {
+                    DemoPathKind.StartHere -> MaterialTheme.colorScheme.tertiary
+                    DemoPathKind.Canonical -> MaterialTheme.colorScheme.primary
+                    DemoPathKind.Exploratory -> MaterialTheme.colorScheme.secondary
+                    DemoPathKind.Foundation -> MaterialTheme.colorScheme.outline
+                }
+            )
         }
         DebugStep(
             label = "1",
@@ -717,10 +806,26 @@ private fun DebugChecklist(
         DebugStep(
             label = "2",
             title = "Read the authoring intent in DSL",
-            body = if (demo.layer == DemoLayer.Stdlib) {
-                "Look for the named stdlib helpers and local variables first; that usually tells you the effect recipe faster than raw AGSL."
-            } else {
-                "Look for direct coordinate math, locals, and uniforms first; core demos should map almost line-for-line into AGSL."
+            body = when (signal.kind) {
+                DemoPathKind.StartHere -> {
+                    if (demo.layer == DemoLayer.Stdlib) {
+                        "Treat the named helpers here as the recommended starter path; this demo is meant to teach the canonical recipe before stylistic variants."
+                    } else {
+                        "Treat the locals, uniforms, and sample path here as the preferred first raw DSL mental model before adding higher-level helpers."
+                    }
+                }
+
+                DemoPathKind.Canonical -> {
+                    "Read the named helper family first; this demo is part of the curated surface and should stay legible before you compare the generated AGSL."
+                }
+
+                DemoPathKind.Exploratory -> {
+                    "Read the named helpers, but keep mapping them back to the canonical basics they build on; this demo is intentionally past the first teaching surface."
+                }
+
+                DemoPathKind.Foundation -> {
+                    "Look for direct coordinate math, locals, and uniforms first; this is close to AGSL shape even if it is not one of the primary starter demos."
+                }
             },
             modifier = Modifier.padding(top = 12.dp),
             compact = compact
