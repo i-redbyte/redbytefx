@@ -163,7 +163,8 @@ internal object FxBuilder {
     fun build(block: FxDsl.() -> ColorExpr): FxEffect {
         val defaults = LinkedHashMap<FxParam, DefaultValue>()
         val functions = mutableListOf<UserFunctionDefinition>()
-        val usedFunctionNames = mutableSetOf<String>().apply {
+        val functionNameAllocator = IdentifierAllocator(
+            mutableSetOf<String>().apply {
             addAll(RESERVED_USER_FUNCTION_NAMES)
             add(sanitizeSuggestedIdentifier(RB_INPUT_UNIFORM, "fn_"))
             add(sanitizeSuggestedIdentifier(RB_RESOLUTION_UNIFORM, "fn_"))
@@ -171,7 +172,8 @@ internal object FxBuilder {
             add(sanitizeSuggestedIdentifier("rb_maxCoord", "fn_"))
             add(sanitizeSuggestedIdentifier("rb_sample", "fn_"))
         }
-        val dsl = FxDsl(defaults, functions, usedFunctionNames)
+        )
+        val dsl = FxDsl(defaults, functions, functionNameAllocator)
         val output = dsl.block()
         val program = FxCompiler.compile(
             output = output,

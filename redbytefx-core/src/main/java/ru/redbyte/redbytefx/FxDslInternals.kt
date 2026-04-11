@@ -313,40 +313,50 @@ internal fun scalarColor(
 internal fun callFloat(
     function: String,
     vararg args: Any
-): FloatExpr = floatExpr { ctx ->
-    formatFunctionCall(function, args.asList(), ctx)
-}
+): FloatExpr = floatExpr(functionCallEmitter(function, args.asList()))
 
 internal fun callFloat2(
     function: String,
     vararg args: Any
-): Float2Expr = float2Expr { ctx ->
-    formatFunctionCall(function, args.asList(), ctx)
-}
+): Float2Expr = float2Expr(functionCallEmitter(function, args.asList()))
 
 internal fun callFloat3(
     function: String,
     vararg args: Any
-): Float3Expr = float3Expr { ctx ->
-    formatFunctionCall(function, args.asList(), ctx)
-}
+): Float3Expr = float3Expr(functionCallEmitter(function, args.asList()))
 
 internal fun callFloat4(
     function: String,
     vararg args: Any
-): Float4Expr = float4Expr { ctx ->
-    formatFunctionCall(function, args.asList(), ctx)
-}
+): Float4Expr = float4Expr(functionCallEmitter(function, args.asList()))
 
 internal fun callColor(
     function: String,
     vararg args: Any
-): ColorExpr = colorExpr { ctx ->
-    formatFunctionCall(function, args.asList(), ctx)
+): ColorExpr = colorExpr(functionCallEmitter(function, args.asList()))
+
+private fun functionCallEmitter(
+    functionName: String,
+    args: List<Any>
+): (EmitContext) -> String = { ctx ->
+    formatFunctionCall(functionName, args, ctx)
 }
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T> parameterExpr(
+private fun <T> emitterExprForType(
+    type: FxValueType<T>,
+    emitter: (EmitContext) -> String
+): T = when (type) {
+    BoolType -> boolExpr(emitter)
+    FloatType -> floatExpr(emitter)
+    Float2Type -> float2Expr(emitter)
+    Float3Type -> float3Expr(emitter)
+    Float4Type -> float4Expr(emitter)
+    ColorType -> colorExpr(emitter)
+} as T
+
+@Suppress("UNCHECKED_CAST")
+private fun <T> parameterExprForType(
     type: FxValueType<T>,
     name: String
 ): T = when (type) {
@@ -358,19 +368,16 @@ internal fun <T> parameterExpr(
     ColorType -> ParamColorExprImpl(name)
 } as T
 
-@Suppress("UNCHECKED_CAST")
+internal fun <T> parameterExpr(
+    type: FxValueType<T>,
+    name: String
+): T = parameterExprForType(type, name)
+
 internal fun <T> callFunction(
     returnType: FxValueType<T>,
     functionName: String,
     args: List<Any>
-): T = when (returnType) {
-    BoolType -> boolExpr { ctx -> formatFunctionCall(functionName, args, ctx) }
-    FloatType -> floatExpr { ctx -> formatFunctionCall(functionName, args, ctx) }
-    Float2Type -> float2Expr { ctx -> formatFunctionCall(functionName, args, ctx) }
-    Float3Type -> float3Expr { ctx -> formatFunctionCall(functionName, args, ctx) }
-    Float4Type -> float4Expr { ctx -> formatFunctionCall(functionName, args, ctx) }
-    ColorType -> colorExpr { ctx -> formatFunctionCall(functionName, args, ctx) }
-} as T
+): T = emitterExprForType(returnType, functionCallEmitter(functionName, args))
 
 internal fun emitAny(expr: Any, ctx: EmitContext): String =
     when (expr) {

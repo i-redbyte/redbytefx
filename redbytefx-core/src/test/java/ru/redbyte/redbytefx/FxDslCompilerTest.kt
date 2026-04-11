@@ -313,4 +313,54 @@ class FxDslCompilerTest {
         assertTrue(source.contains("2.0"))
         assertTrue(source.contains("(l_base).a"))
     }
+
+    @Test
+    fun typedHelperFunctionsCompileAcrossRemainingValueTypes() {
+        val effect = redbytefx {
+            val isEnabled = fn(
+                name = "IsEnabled",
+                returns = BoolType
+            ) {
+                float(1f) gt 0.5f
+            }
+            val shiftUv = fn(
+                name = "ShiftUv",
+                arg1 = Float2Type,
+                returns = Float2Type
+            ) { coord ->
+                coord + float2(2f, -1f)
+            }
+            val tintColor = fn(
+                name = "TintColor",
+                arg1 = ColorType,
+                arg2 = Float4Type,
+                returns = ColorType
+            ) { base, tint ->
+                color(
+                    base.r * tint.x,
+                    base.g * tint.y,
+                    base.b * tint.z,
+                    base.a * tint.w
+                )
+            }
+
+            val enabled = let(isEnabled(), "enabled")
+            val shifted = let(shiftUv(fragCoord), "shifted")
+            val tinted = let(
+                tintColor(sample(shifted), float4(1f, 0.5f, 0.25f, 1f)),
+                "tinted"
+            )
+
+            ifElse(enabled, tinted, sample())
+        }
+
+        val source = effect.agslSource()
+
+        assertTrue(source.contains("bool is_enabled()"))
+        assertTrue(source.contains("float2 shift_uv(float2 p0)"))
+        assertTrue(source.contains("half4 tint_color(half4 p0, float4 p1)"))
+        assertTrue(source.contains("bool l_enabled = is_enabled();"))
+        assertTrue(source.contains("float2 l_shifted = shift_uv(fragCoord);"))
+        assertTrue(source.contains("half4 l_tinted = tint_color(rb_sample(l_shifted), float4(1.0, 0.5, 0.25, 1.0));"))
+    }
 }

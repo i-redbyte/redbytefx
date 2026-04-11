@@ -43,7 +43,7 @@ public interface ColorExpr
 public class FxDsl internal constructor(
     private val defaults: LinkedHashMap<FxParam, DefaultValue>,
     private val functions: MutableList<UserFunctionDefinition>,
-    private val usedFunctionNames: MutableSet<String>
+    private val functionNameAllocator: IdentifierAllocator
 ) {
     /**
      * Current fragment coordinate in pixels.
@@ -276,7 +276,7 @@ public class FxDsl internal constructor(
     ): FxFunction0<R> {
         val functionName = nextFunctionName(name)
         val body = block()
-        functions += UserFunctionDefinition(
+        registerFunction(
             name = functionName,
             returnType = returns,
             parameters = emptyList(),
@@ -300,10 +300,10 @@ public class FxDsl internal constructor(
         block: FxDsl.(A1) -> R
     ): FxFunction1<A1, R> {
         val functionName = nextFunctionName(name)
-        val p0Name = "p0"
+        val p0Name = parameterName(0)
         val p0 = parameterExpr(arg1, p0Name)
         val body = block(p0)
-        functions += UserFunctionDefinition(
+        registerFunction(
             name = functionName,
             returnType = returns,
             parameters = listOf(UserFunctionParameter(p0Name, arg1)),
@@ -329,12 +329,12 @@ public class FxDsl internal constructor(
         block: FxDsl.(A1, A2) -> R
     ): FxFunction2<A1, A2, R> {
         val functionName = nextFunctionName(name)
-        val p0Name = "p0"
-        val p1Name = "p1"
+        val p0Name = parameterName(0)
+        val p1Name = parameterName(1)
         val p0 = parameterExpr(arg1, p0Name)
         val p1 = parameterExpr(arg2, p1Name)
         val body = block(p0, p1)
-        functions += UserFunctionDefinition(
+        registerFunction(
             name = functionName,
             returnType = returns,
             parameters = listOf(
@@ -563,12 +563,23 @@ public class FxDsl internal constructor(
             ?.let { sanitizeSuggestedIdentifier(it, leadingDigitPrefix = "fn_") }
             ?: "fn_${functions.size}"
 
-        var candidate = base
-        var suffix = 1
-        while (!usedFunctionNames.add(candidate)) {
-            candidate = "${base}_${suffix++}"
-        }
-        return candidate
+        return functionNameAllocator.reserve(base)
+    }
+
+    private fun parameterName(index: Int): String = "p$index"
+
+    private fun registerFunction(
+        name: String,
+        returnType: FxValueType<*>,
+        parameters: List<UserFunctionParameter>,
+        body: Any
+    ) {
+        functions += UserFunctionDefinition(
+            name = name,
+            returnType = returnType,
+            parameters = parameters,
+            body = body
+        )
     }
 }
 
