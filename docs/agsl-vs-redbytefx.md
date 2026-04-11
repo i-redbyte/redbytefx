@@ -48,6 +48,8 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 4. If runtime binding looks wrong, confirm the uniform handle comes from the same compiled effect/controller.
 5. If something still looks wrong, bisect: simplify the DSL body, or compare with a minimal AGSL snippet in the same coordinate system.
 
+For the shortest compile-to-Compose path, see [runtime-authoring-checklist.md](runtime-authoring-checklist.md).
+
 ## Translation checklist
 
 1. Mark the original shader inputs: `fragCoord`, `resolution`, time, user uniforms, and resampling points.
@@ -58,4 +60,5 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 ## Cookbook (next)
 
 - Draft translation table plus explicit pixel-space vs UV-space sampling rewrites, `fn(...)` extraction, compositing, radar examples, and short `bad -> good` authoring fixes: [cookbook-patterns.md](cookbook-patterns.md).
+- Short compile/runtime path for `core + compose`: [runtime-authoring-checklist.md](runtime-authoring-checklist.md).
 - Larger narrative and more examples: [backlog-v0.4-v0.6.md](backlog-v0.4-v0.6.md) under **v0.4 Authoring UX**.

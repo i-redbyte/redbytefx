@@ -43,6 +43,7 @@
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
 - `docs/cookbook-patterns.md` captures the first translation patterns from raw AGSL/Shadertoy-style code into the DSL, including a few end-to-end rewrite examples.
+- `docs/runtime-authoring-checklist.md` is the short practical path for `compile -> inspect -> bind -> apply` when moving from shader authoring into Compose/runtime wiring.
 - `docs/runtime-audit-v0.5.md` records the current runtime audit baseline, representative demo flows, and the reproducible `Radar` / `Circuit` runtime measurement path.
 - `docs/backlog-v0.4-v0.6.md` turns the later roadmap stages into a concrete pre-publication backlog.
 
@@ -52,7 +53,8 @@
    Names are optional: use `uniformFloat(0f)` for anonymous generated uniforms, or `val waveAmplitude by autoUniformFloat(0f)` when you want the Kotlin property name to become a readable snake_case shader name automatically.
 2. In Compose, create one controller per render target with `rememberFxController(effect)` instead of sharing one controller across unrelated surfaces.
 3. Bind ordinary Compose state with `bindFloat(...)` / `bindFloat2(...)` or drive time with `bindTime(...)`.
-4. Apply the effect with `Modifier.redbyteFx(fx)`.
+4. Inspect `effect.agslSource()` when the shader shape is unclear.
+5. Apply the effect with `Modifier.redbyteFx(fx)`.
 
 ```kotlin
 val grayscaleSetup = run {
@@ -164,6 +166,7 @@ half4 main(float2 fragCoord) {
 `redbytefx` is meant to stay close enough to AGSL that the generated shader is still predictable.
 
 If you're learning or comparing approaches, start with [docs/agsl-vs-redbytefx.md](docs/agsl-vs-redbytefx.md) and [docs/cookbook-patterns.md](docs/cookbook-patterns.md), then use the sample app to inspect the DSL and generated AGSL side by side.
+For the shortest end-to-end runtime flow, use [docs/runtime-authoring-checklist.md](docs/runtime-authoring-checklist.md).
 
 ## v0.1 Core Stdlib
 

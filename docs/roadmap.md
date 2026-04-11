@@ -16,6 +16,7 @@ That split is important:
 At the same time, some later-roadmap groundwork is already visible:
 
 - `v0.4` is no longer only an idea; diagnostics, AGSL-vs-DSL docs, and cookbook rewrites now exist in first-pass form
+- `v0.4` guidance now also includes a short runtime-authoring checklist that connects `core` authoring with `compose` binding/application
 - `v0.5` has a real runtime audit note and reproducible emulator/physical-device measurement flow
 - `v0.6` is no longer just backlog text; package docs, sample family maps, demo path guidance, and follow-up routing now start to shape a canonical teaching surface
 
@@ -113,6 +114,7 @@ Make writing RedByteFX feel teachable, debuggable, and approachable to someone c
 - better compiler/runtime error messages
 - cleaner naming and wording across the public surface
 - documentation: `AGSL vs redbytefx`
+- concise runtime authoring checklist for `compile -> inspect -> bind -> apply`
 - cookbook: "how to rewrite a shader from Shadertoy/AGSL into the DSL"
 - guidance for common translation patterns:
   - coordinates

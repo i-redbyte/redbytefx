@@ -1,6 +1,7 @@
 # Cookbook patterns (draft)
 
 Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md). Expand this as **v0.4 Authoring UX** matures; it is not a complete migration guide yet.
+For the shortest compile/runtime path after authoring, pair this with [runtime-authoring-checklist.md](runtime-authoring-checklist.md).
 
 ## Coordinates
 
