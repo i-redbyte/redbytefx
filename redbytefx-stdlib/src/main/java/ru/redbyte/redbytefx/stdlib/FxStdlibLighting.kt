@@ -21,7 +21,9 @@ public fun FxDsl.normalizedUv(
  * Samples the input content from normalized UV coordinates.
  *
  * This is the inverse convenience of [normalizedUv] and expands to `sample(uv * resolution)`.
- * Prefer plain `sample(...)` when the shader is already operating in pixel/sample coordinates.
+ * Prefer plain `sample(...)` when the shader is already operating in pixel/sample coordinates, or
+ * when normalized UV is only used for masks/gradients while the actual content read still happens
+ * at `fragCoord`.
  */
 public fun FxDsl.sampleUv(
     uv: Float2Expr

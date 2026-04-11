@@ -9,6 +9,14 @@ Companion to [agsl-vs-redbytefx.md](agsl-vs-redbytefx.md). Expand this as **v0.4
 | Shadertoy `fragCoord` / `iResolution.xy` | `fragCoord`, `resolution`; normalized UV often `normalizedUv()` or `fragCoord / resolution` |
 | Centered UV | `let(fragCoord / resolution - float2(0.5f, 0.5f), "uv")` or stdlib `centeredUv` |
 | Sample again from normalized UV | `sampleUv(uv)` or `sample(uv * resolution)` |
+| Use UV only for masks/gradients | keep `sample()` for the base content read; `normalizedUv()` only drives the mask math |
+
+## Sampling-space rule of thumb
+
+- If the content re-read coordinate is still expressed in pixels, stay on `sample(...)`.
+- If the content re-read coordinate has moved into normalized `[0,1]` UV space, switch to `sampleUv(...)`.
+- Using `normalizedUv()` for masks, gradients, or polar math does **not** automatically mean the shader should use `sampleUv(...)`.
+- A good first port keeps one sampling space all the way through, then introduces stdlib helpers once the generated AGSL still reads predictably.
 
 ## Time
 
@@ -61,6 +69,7 @@ What changed:
 - `fragCoord` and `resolution` still mean the same thing.
 - Uniforms become typed handles instead of string lookups.
 - `let(...)` gives you readable locals that survive into generated AGSL.
+- This stays on `sample(...)` because the offset is still measured in pixel/sample space.
 - Add `normalizedUv()` only when the source shader actually moves into normalized space; otherwise stay closer to the AGSL source.
 
 ## End-to-end example: Shadertoy-style UV resample
@@ -94,6 +103,47 @@ Why this is a good rewrite:
 - This is the canonical place for `sampleUv(...)`: the shader is authored in normalized UV space and only converts back to sample space at the final resample.
 - `normalizedUv()` plus `sampleUv(...)` keeps the Kotlin version close to common Shadertoy mental models without forcing every author to rewrite `uv * resolution`.
 - If the shader never re-samples from UV space, prefer plain `sample(...)` and keep the port closer to pixel coordinates.
+
+## End-to-end example: UV-authored mask, pixel-space base sample
+
+Typical AGSL shape:
+
+```glsl
+float2 uv = fragCoord / rb_resolution;
+float focus = 1.0 - smoothstep(radius, radius + feather, length(uv - center));
+half4 base = rb_sample(fragCoord);
+half4 tint = half4(0.10, 0.95, 0.86, base.a);
+return mix(base, tint, focus * amount);
+```
+
+Equivalent RedByteFX port:
+
+```kotlin
+val effect = redbytefx {
+    val radius by autoUniformFloat(0.22f)
+    val amount by autoUniformFloat(0.8f)
+    val base = let(sample(), "base")
+    val uv = let(normalizedUv(), "uv")
+    val focus = let(
+        circleMask(
+            uv = uv,
+            center = float2(0.36f, 0.52f),
+            radius = radius,
+            feather = 0.12f
+        ),
+        "focus"
+    )
+    val tint = let(color(float3(0.10f, 0.95f, 0.86f), base.a), "tint")
+
+    maskedMix(base, tint, focus, amount)
+}
+```
+
+Why this is a useful contrast:
+
+- The shader clearly uses normalized UV for the authored mask, but it never warps the content lookup itself.
+- `sample()` stays correct here because the base content is still read at `fragCoord`.
+- Replacing `sample()` with `sampleUv(uv)` would not help readability; it would only obscure the fact that no UV-space resampling is happening.
 
 ## End-to-end example: masked compositing
 

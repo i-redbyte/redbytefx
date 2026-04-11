@@ -311,7 +311,9 @@ public class FxDsl internal constructor(
      *
      * [coord] is interpreted in sample/pixel space. When the shader is authored in normalized UV
      * coordinates, prefer `sampleUv(...)` from `:redbytefx-stdlib` so the conversion back to
-     * sample space stays explicit and readable.
+     * sample space stays explicit and readable. If normalized UV is only driving masks or
+     * gradients while the base content read still happens at `fragCoord`, keep [sample] as the
+     * content read and use the UV values only for the authored mask math.
      */
     public fun sample(coord: Float2Expr = fragCoord): ColorExpr =
         colorExpr { ctx -> "rb_sample(${emit(coord, ctx)})" }

@@ -53,5 +53,5 @@ This note is for **authors** moving between hand-written AGSL and the Kotlin DSL
 
 ## Cookbook (next)
 
-- Draft translation table plus wave/UV-resample/compositing/radar rewrites: [cookbook-patterns.md](cookbook-patterns.md).
+- Draft translation table plus explicit pixel-space vs UV-space sampling rewrites, compositing, and radar examples: [cookbook-patterns.md](cookbook-patterns.md).
 - Larger narrative and more examples: [backlog-v0.4-v0.6.md](backlog-v0.4-v0.6.md) under **v0.4 Authoring UX**.
