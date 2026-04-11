@@ -1,0 +1,82 @@
+# Detekt for RedByteFX — Kotlin static analysis.
+# Shader DSL and stdlib use many numeric literals by design; rules are tuned for signal, not noise.
+# Run: ./gradlew detekt  |  Main sources only (tests excluded via Gradle).
+
+config:
+  validation: true
+
+build:
+  maxIssues: 0
+
+processors:
+  active: true
+
+complexity:
+  ComplexCondition:
+    active: false
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 35
+  LongMethod:
+    active: true
+    threshold: 400
+  LongParameterList:
+    active: true
+    functionThreshold: 16
+    constructorThreshold: 16
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 200
+    thresholdInClasses: 120
+
+empty-blocks:
+  EmptyFunctionBlock:
+    active: true
+    ignoreOverridden: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+naming:
+  MatchingDeclarationName:
+    # Sample modules may group multiple public types in one file (e.g. cyber UI kit).
+    active: false
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+
+performance:
+  SpreadOperator:
+    active: false
+
+potential-bugs:
+  Deprecation:
+    active: true
+
+style:
+  ForbiddenComment:
+    active: false
+  LoopWithTooManyJumpStatements:
+    active: false
+  MagicNumber:
+    # Shader code is inherently literal-heavy; rely on review and tests instead.
+    active: false
+  MaxLineLength:
+    active: true
+    maxLineLength: 320
+    excludeCommentStatements: true
+  ReturnCount:
+    active: true
+    max: 10
+  ThrowsCount:
+    active: true
+    max: 6
+  WildcardImport:
+    active: false
+  UnusedImports:
+    active: true

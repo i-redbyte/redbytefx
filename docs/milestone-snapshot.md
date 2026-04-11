@@ -6,13 +6,13 @@ This is a short honest snapshot of where RedByteFX stands right now. It is not a
 
 ## Current level
 
-Primary active level: `v0.2 closed / v0.3 tooling closed (sample) / v0.4+ ongoing`
+Primary active level: `v0.2–v0.6 first-pass documentation milestones closed; ongoing work is incremental`
 
-That is still the most important framing:
+Framing:
 
-- the library surface has now closed the `v0.2 Shader stdlib` milestone well enough to stop front-loading stdlib curation work
-- the sample/app/tooling work is already meaningfully inside `v0.3` and should become the main active focus
-- `v0.4-v0.6` now have real groundwork in docs, sample guidance, and runtime audit material, but they are still backlog/progression work, not “done later milestones”
+- `v0.2 Shader stdlib` is closed as a first milestone; further stdlib work is selective shaping
+- `v0.3` sample tooling, `v0.4` authoring docs, `v0.5` runtime baseline, and `v0.6` canonical guidance each have a **first-pass closure** documented in-repo
+- the library remains pre-publication; incremental work continues without reopening those milestones from zero
 
 ## Version snapshot
 
@@ -68,35 +68,28 @@ What is still open (by design or for later milestones):
 
 ### v0.5 Runtime quality
 
-Status: grounded backlog with first real evidence
+Status: **first baseline + docs milestone closed** (see [v0.5-runtime-quality.md](v0.5-runtime-quality.md))
 
 What is already solid:
 
-- controller/runtime audit exists
-- representative AGSL smoke coverage exists
-- `Radar` / `Circuit` measurement flow is reproducible
-- physical-device measurements show the current runtime path looks healthy enough on real hardware
+- audit + measurement docs, reproducible `Radar` / `Circuit` path, physical-device snapshot in [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
+- runtime API semantics (`FxInstance` boolean setters, controller invalidation)
 
-What is still open:
+What can still grow incrementally:
 
-- runtime confidence still needs more breadth than one physical-device baseline
-- lifecycle/resize/screenshot confidence is not yet “boring enough” everywhere
+- more device classes / resize passes when runtime code changes
 
 ### v0.6 Library shaping
 
-Status: started in guidance, not finished in surface design
+Status: **first guidance milestone closed** (see [v0.6-library-shaping.md](v0.6-library-shaping.md))
 
 What is already solid:
 
-- package docs point to canonical starter paths first
-- sample home screen exposes canonical families instead of only listing demos
-- demo inspection flow explicitly labels `START HERE`, `CANONICAL`, `FOUNDATION`, and `EXPLORATORY`
-- follow-up demo routing and demo wording now reinforce the canonical path instead of treating every helper equally
+- canonical vs exploratory in stdlib KDoc, README family map, sample path signals and follow-ups
 
-What is still open:
+What can still grow incrementally:
 
-- the actual public helper surface still needs more shaping, not just better labels
-- canonical vs exploratory is a documented/guided split today, not a final mature taxonomy
+- per-helper naming and defaults as usage grows; publication remains out of scope
 
 ## What is intentionally still out of scope
 
@@ -107,8 +100,4 @@ What is still open:
 
 ## Recommended next step
 
-Keep the main focus where it already belongs:
-
-1. shift the main focus to `v0.3` and keep strengthening the sample as an adoption tool
-2. treat further stdlib work as selective shaping, not renewed helper-surface expansion
-3. keep `v0.4-v0.6` honest as real groundwork and shaping work while the library remains raw
+With `v0.3`–`v0.6` first passes documented, prefer **incremental** work: selective stdlib shaping, runtime follow-ups when code changes, and keeping CI (`qualityCheck`: tests + sample compile + Detekt) green.

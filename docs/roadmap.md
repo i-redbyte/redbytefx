@@ -139,6 +139,8 @@ Make the runtime and sample behavior boring in the best possible way: predictabl
 - cleanup of runtime edge cases that feel acceptable in demos but not in a serious library
 - reproducible runtime measurement flow that can be run against `Radar` / `Circuit` on emulator first and physical devices next
 
+**Snapshot:** first closure is documented in [v0.5-runtime-quality.md](v0.5-runtime-quality.md) with links to audit and measurement scenarios. Further work is breadth and follow-up when code changes.
+
 ## v0.6 Library shaping
 
 ### Goal
@@ -147,7 +149,7 @@ Reach the point where the library is still pre-publication, but clearly convergi
 
 ### Current level
 
-Early `v0.6` shaping has started, but only as guidance and curation work.
+First **guidance + curation** milestone documented in [v0.6-library-shaping.md](v0.6-library-shaping.md). The public surface can still evolve; the mental model is no longer “only backlog text.”
 
 ### What is already visible
 

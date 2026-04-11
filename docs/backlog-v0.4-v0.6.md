@@ -119,6 +119,10 @@ Representative confidence targets:
 
 Reference note: [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
 
+### Delivery note (first documentation + measurement baseline)
+
+See [v0.5-runtime-quality.md](v0.5-runtime-quality.md). Ongoing device breadth and lifecycle checks are incremental when the runtime changes.
+
 ---
 
 ## v0.6 Library shaping
@@ -146,6 +150,10 @@ Reference note: [runtime-audit-v0.5.md](runtime-audit-v0.5.md)
 - make module/package-level docs point to the canonical path first, then to broader exploratory helpers
 - Started: `redbytefx-core` and `redbytefx-stdlib` package docs now point to the starter path first, and the sample home screen mirrors the same family map instead of only showing per-demo canonical badges
 - Started: demo inspection flow now shows `START HERE` / `CANONICAL` / `EXPLORATORY` guidance directly, and follow-up recommendations try to route exploratory demos back toward the curated path
+
+### Delivery note (first guidance + curation pass)
+
+See [v0.6-library-shaping.md](v0.6-library-shaping.md). Further work is incremental naming and helper curation, not a blank-slate redesign.
 
 First-pass canonical shortlist to validate against docs/sample/cookbook:
 

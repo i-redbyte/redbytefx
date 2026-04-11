@@ -4,7 +4,7 @@
 
 ## Status
 
-- current level: `v0.2 closed`, **`v0.3 Tooling` closed** ([docs/v0.3-tooling.md](docs/v0.3-tooling.md)), **`v0.4 Authoring UX` first pass** ([docs/v0.4-authoring-ux.md](docs/v0.4-authoring-ux.md))
+- current level: `v0.2`–`v0.6` **first-pass milestones** documented ([v0.3](docs/v0.3-tooling.md), [v0.4](docs/v0.4-authoring-ux.md), [v0.5](docs/v0.5-runtime-quality.md), [v0.6](docs/v0.6-library-shaping.md)); ongoing work is incremental
 - current platform target: Android `minSdk 33+`
 - current roadmap: `v0.2 Shader stdlib` -> `v0.3 Tooling` -> `v0.4 Authoring UX` -> `v0.5 Runtime quality` -> `v0.6 Library shaping`
 - publication is intentionally out of scope for now; the library is still raw
@@ -35,14 +35,21 @@
 - compiler diagnostics are still **exception-based** (no structured IDE-style diagnostic list yet)
 - `v0.6` shaping has started in docs/sample guidance, but the canonical surface is still being formalized rather than treated as stable
 
+## Static analysis
+
+- **Detekt** (`config/detekt/detekt.yml`): `./gradlew detekt` — analyzes **main** sources in all modules (tests excluded). Included in `./gradlew qualityCheck` with unit tests and sample compilation.
+- **`.editorconfig`** — basic Kotlin/MD formatting hints for editors.
+
 ## Project Docs
 
 - `CHANGELOG.md` tracks milestone-level changes.
 - `docs/milestone-snapshot.md` gives a short cross-version status snapshot of what is solid, what is still raw, and what should happen next.
 - `docs/v0.2-status.md` explains how the shader-stdlib milestone was closed and what kind of surface work still remains after that closure.
 - `docs/roadmap.md` describes the current application/tooling state and the roadmap from `v0.3` to `v0.6`.
-- **`docs/v0.3-tooling.md`** summarizes the **v0.3** sample app tooling milestone (preview, controls, DSL/AGSL, copy/share, layouts).
-- **`docs/v0.4-authoring-ux.md`** is the hub for the **v0.4 Authoring UX** doc set (AGSL comparison, cookbook, runtime checklist, backlog cross-links).
+- **`docs/v0.3-tooling.md`** — **v0.3** sample tooling (preview, controls, DSL/AGSL, copy/share, layouts).
+- **`docs/v0.4-authoring-ux.md`** — **v0.4** authoring hub (AGSL comparison, cookbook, runtime checklist).
+- **`docs/v0.5-runtime-quality.md`** — **v0.5** runtime baseline and measurement pointers.
+- **`docs/v0.6-library-shaping.md`** — **v0.6** canonical vs exploratory library identity.
 - `docs/agsl-vs-redbytefx.md` explains the authoring mental model and how to read generated AGSL.
 - `docs/cookbook-patterns.md` captures translation patterns from raw AGSL/Shadertoy-style code into the DSL, including end-to-end rewrite examples and a compact porting checklist.
 - `docs/runtime-authoring-checklist.md` is the short practical path for `compile -> inspect -> bind -> apply` when moving from shader authoring into Compose/runtime wiring.
