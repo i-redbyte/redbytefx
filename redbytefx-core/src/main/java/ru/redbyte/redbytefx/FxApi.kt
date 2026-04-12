@@ -12,8 +12,7 @@ import android.graphics.RenderEffect
  * problem is really runtime-related. The compiled effect itself is reusable and thread-agnostic;
  * mutable runtime state lives in the returned [FxInstance].
  *
- * For authoring mental model and reading generated AGSL, see **`docs/agsl-vs-redbytefx.md`** in the
- * repository (v0.4 Authoring UX hub: **`docs/v0.4-authoring-ux.md`**).
+ * For a high-level overview and usage, see **`README.md`** in the repository.
  */
 public interface FxEffect {
     /**
@@ -130,7 +129,7 @@ public interface FxInstance {
  * directly inside the shader body after declaration. Handles are effect-specific: a [FxParam]
  * from one `redbytefx { ... }` block must not be reused with another compiled effect instance or
  * [FxInstance]. Matching debug labels in two different effects do **not** make two params the same
- * handle. See **`docs/runtime-authoring-checklist.md`** (§3) in the repository.
+ * handle. See **`README.md`** in the repository (uniform handles are effect-specific).
  */
 public sealed class FxParam {
     /**
@@ -174,8 +173,8 @@ public sealed class FxParam {
  * 3. create multiple independent runtime instances via [FxEffect.newInstance] when separate
  *    render targets need isolated mutable state
  *
- * Cookbook and porting patterns: **`docs/cookbook-patterns.md`**. Runtime bind order:
- * **`docs/runtime-authoring-checklist.md`**.
+ * Porting raw AGSL or Shadertoy-style shaders is easiest when you keep `fragCoord` / `resolution`
+ * explicit, inspect [FxEffect.agslSource], then bind uniforms from the same compiled effect only.
  *
  * @throws FxDiagnosticException when compilation fails; use [FxDiagnosticException.diagnostics] for
  * structured [FxDiagnostic] entries (stable [FxDiagnosticCode], message, optional hint). The

@@ -470,7 +470,8 @@ public class FxDsl internal constructor(
      *
      * If UV is only used for masks or gradients while the base pixel read stays at [fragCoord],
      * keep this [sample] for the base layer and use UV expressions only for mask math — you do not
-     * always need `sampleUv`. See **`docs/agsl-vs-redbytefx.md`** (`sample` vs `sampleUv` table).
+     * always need `sampleUv`. Use [sample] for pixel-space reads; use stdlib `sampleUv(...)` when your
+ * coordinates are normalized UV in `[0,1]²`.
      */
     public fun sample(coord: Float2Expr = fragCoord): ColorExpr =
         colorExpr { ctx -> "rb_sample(${emit(coord, ctx)})" }
