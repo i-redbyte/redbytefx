@@ -2,59 +2,13 @@
 
 # RedByteFX
 
-Пишите **шейдеры под Android** на **Kotlin**, компилируйте в **AGSL** и подключайте их к **Jetpack Compose** — с типизированными uniform-ами, понятными локальными именами и `effect.agslSource()`, когда нужно увидеть, что именно уходит на GPU.
+**AGSL мощный, но неудобен вручную** — строки шейдеров, легко ошибиться с uniform-ами, много рутины. **RedByteFX** даёт тот же путь (**Kotlin → AGSL → `RuntimeShader` / `RenderEffect`**) через **компактный типизированный DSL**: выражения, `let`/`fn`, проверки на этапе компиляции и привязки к **Jetpack Compose**, чтобы состояние UI стало uniform-ами без лишнего клея. Меньше шаблонного кода — больше **понятной шейдерной логики**, при этом сгенерированный AGSL по-прежнему можно посмотреть через `agslSource()`.
 
 ---
 
-## Почему это приятно использовать
+## Подключение
 
-- **Код шейдера остаётся похожим на математику** — `sin`, `mix`, `float2`, `sample()`, `let(...)`, `fn(...)` без ручной склейки строк.
-- **Предсказуемый AGSL** — DSL остаётся близким к генерируемому AGSL, проще отлаживать.
-- **Дружба с Compose** — `rememberFxController`, `bindFloat` / `bindTime`, `Modifier.redbyteFx(...)` для живого UI.
-- **Глубина на выбор** — только **core** для полного контроля или **stdlib** (маски, градиенты, шум, SDF и др.), когда нужна скорость.
-
----
-
-## Требования
-
-- **Android API 33+** (используемый путь AGSL / `RuntimeShader` рассчитан на современные API).
-- **Kotlin** и актуальный **Android Gradle Plugin** (версии см. в `gradle/libs.versions.toml` репозитория).
-- **Jetpack Compose**, если подключаете `:redbytefx-compose` (Compose BOM передаётся через этот артефакт).
-
----
-
-## Подключение RedByteFX **1.0.0**
-
-### 1. Maven-репозиторий GitHub Packages
-
-[Создайте токен](https://github.com/settings/tokens) с правом **`read:packages`**. Не коммитьте его — храните в `~/.gradle/gradle.properties` или в секретах CI.
-
-В **`settings.gradle.kts`** (внутри `dependencyResolutionManagement { repositories { ... } }`):
-
-```kotlin
-maven {
-    url = uri("https://maven.pkg.github.com/i-redbyte/redbytefx")
-    credentials {
-        username = providers.gradleProperty("gpr.user").orNull
-            ?: System.getenv("GITHUB_ACTOR")
-            ?: ""
-        password = providers.gradleProperty("gpr.token").orNull
-            ?: System.getenv("GITHUB_TOKEN")
-            ?: ""
-    }
-}
-```
-
-В **`gradle.properties`** (только у вас локально):
-
-```properties
-gpr.user=ВАШ_ЛОГИН_GITHUB
-gpr.token=ВАШ_ТОКЕН
-```
-
-*(В GitHub Actions для этого репозитория `GITHUB_TOKEN` подставляется автоматически.)*
-
-### 2. Зависимости
+**Версия `1.0.0`**
 
 ```kotlin
 dependencies {
@@ -64,19 +18,79 @@ dependencies {
 }
 ```
 
-| Артефакт | Что даёт |
-|----------|----------|
-| `redbytefx-core` | DSL, компилятор, uniform-ы, `redbytefx { }`, вывод AGSL |
-| `redbytefx-compose` | `FxController`, `Modifier.redbyteFx`, привязки |
-| `redbytefx-stdlib` | Готовые шейдерные «рецепты» (по желанию, но очень удобно) |
+В `settings.gradle.kts` как обычно: `google()` и `mavenCentral()`. Если Gradle пока не находит эти координаты, артефакты могут быть в **GitHub Packages** у этого репозитория — см. [документацию Gradle Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry) и раздел **Packages** на GitHub (однократная настройка репозитория и доступа).
 
-Можно подключить только **`redbytefx-compose`** и **`redbytefx-stdlib`** — **`redbytefx-core`** придёт транзитивно. Три строки выше — явный и удобный для копирования вариант.
+| Артефакт | Назначение |
+|----------|------------|
+| `redbytefx-core` | DSL, компилятор, uniform-ы, `redbytefx { }` |
+| `redbytefx-compose` | `FxController`, `Modifier.redbyteFx`, привязки |
+| `redbytefx-stdlib` | Доп. хелперы (маски, градиенты, шум, SDF, …) |
+
+**Требования:** Android **API 33+**, Kotlin; Jetpack Compose — если используете `redbytefx-compose`.
 
 ---
 
-## Мини-пример
+## Сырой AGSL и RedByteFX (та же идея — меньше шума)
 
-Добавьте стандартные импорты Compose и `ru.redbyte.redbytefx.*` (включая `grayscale`, `sample`, `mix`).
+**AGSL** — строки, имена, повторяющийся шаблон:
+
+```glsl
+uniform shader rb_input;
+uniform float2 rb_resolution;
+uniform float u_amount;
+
+half4 main(float2 fragCoord) {
+  half4 base = rb_sample(fragCoord);
+  float l = dot(base.rgb, float3(0.299, 0.587, 0.114));
+  half3 g = half3(l, l, l);
+  return half4(mix(g, base.rgb, u_amount), base.a);
+}
+```
+
+**RedByteFX** — та же структура, типизированно, uniform привязывается из Kotlin:
+
+```kotlin
+val effect = redbytefx {
+    val amount by autoUniformFloat(1f)
+    val base = let(sample(), "base")
+    val gray = grayscale(base)
+    mix(gray, base, amount)
+}
+```
+
+Стандартный ввод и объявления вокруг `rb_sample` DSL берёт на себя — вы описываете математику.
+
+---
+
+## Пример: волна + Compose
+
+```kotlin
+val waveEffect = run {
+    var amp: FxParam.Float? = null
+    var freq: FxParam.Float? = null
+    val effect = redbytefx {
+        val a = uniformFloat(0f, "wave_amp")
+        val f = uniformFloat(0.08f, "wave_freq")
+        amp = a
+        freq = f
+        val offset = float2(0f, sin(fragCoord.x * f) * a)
+        sample(fragCoord + offset)
+    }
+    Triple(effect, amp!!, freq!!)
+}
+
+@Composable
+fun WaveLabel(amp: Float, freq: Float) {
+    val fx = rememberFxController(waveEffect.first)
+    fx.bindFloat(waveEffect.second, amp)
+    fx.bindFloat(waveEffect.third, freq)
+    Text("RedByteFX", modifier = Modifier.redbyteFx(fx))
+}
+```
+
+---
+
+## Пример: градации серого
 
 ```kotlin
 val grayscaleDemo = run {
@@ -89,62 +103,27 @@ val grayscaleDemo = run {
     }
     effect to amount!!
 }
-
-@Composable
-fun HelloFx(amount: Float) {
-    val fx = rememberFxController(grayscaleDemo.first)
-    fx.bindFloat(grayscaleDemo.second, amount)
-    Text(
-        text = "RedByteFX",
-        modifier = Modifier.redbyteFx(fx)
-    )
-}
 ```
-
-Держите **один контроллер на цель рендеринга**, привязывайте только uniform-ы **этого** скомпилированного эффекта; при странностях смотрите `agslSource()`.
 
 ---
 
-## Модули в этом репозитории
+## Модули в репозитории
 
-| Gradle-модуль | Назначение |
-|---------------|------------|
+| Модуль | Роль |
+|--------|------|
 | `:redbytefx-core` | Язык, компилятор, мост к рантайму |
 | `:redbytefx-compose` | Интеграция с Compose |
-| `:redbytefx-stdlib` | Высокоуровневые помощники |
-| `:sample` | Демо-приложение (исходники только в репозитории, не как библиотека) |
+| `:redbytefx-stdlib` | Высокоуровневые хелперы |
+| `:sample` | Демо-приложение (не артефакт Maven) |
 
 ---
 
-## Сборка и проверка у себя
+## Участие
 
-```bash
-./gradlew qualityCheck
-```
-
-Опубликовать три библиотеки в **локальный Maven** (без токена GitHub):
-
-```bash
-./gradlew :redbytefx-core:publishAllPublicationsToMavenLocalRepository \
-  :redbytefx-compose:publishAllPublicationsToMavenLocalRepository \
-  :redbytefx-stdlib:publishAllPublicationsToMavenLocalRepository
-```
-
----
-
-## Участие в проекте — вам рады
-
-Исправление опечатки, уточнение текста ошибки, новый тест или небольшой хелпер в stdlib — **спасибо**, что вы здесь.
-
-- **Сначала обсудим** крупные изменения — откройте issue, чтобы согласовать направление до огромного PR.
-- **Держите PR узкими** — так их быстрее ревьюят.
-- Перед пушем запустите **`./gradlew qualityCheck`**.
-- Изменения **публичного API** сопровождайте обновлением **KotlinDoc** в том же коммите.
-
-Нам важны ясность, уважение к ревьюерам и код, который понятен следующему читателю. Если это про вас — будем рады совместной работе.
+Issues и pull request’ы приветствуются. Небольшие, сфокусированные изменения проще принять; если задумали крупное — короткий issue заранее всем облегчит жизнь. Спасибо, что улучшаете RedByteFX.
 
 ---
 
 ## Лицензия
 
-Распространяется под **MIT** — текст в [LICENSE](LICENSE).
+[MIT](LICENSE)
