@@ -1,4 +1,4 @@
-name: Publish
+name: Release Validation
 
 on:
   release:
@@ -6,11 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  release-check:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,10 +31,8 @@ jobs:
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Publish libraries to GitHub Packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate Maven publications for JitPack
         run: |
-          ./gradlew :redbytefx-core:publishAllPublicationsToGitHubPackagesRepository \
-            :redbytefx-compose:publishAllPublicationsToGitHubPackagesRepository \
-            :redbytefx-stdlib:publishAllPublicationsToGitHubPackagesRepository
+          ./gradlew :redbytefx-core:publishReleasePublicationToMavenLocal \
+            :redbytefx-compose:publishReleasePublicationToMavenLocal \
+            :redbytefx-stdlib:publishReleasePublicationToMavenLocal

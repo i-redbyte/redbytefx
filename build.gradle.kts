@@ -8,7 +8,7 @@ plugins {
 }
 
 version = providers.gradleProperty("redbytefx.version").orElse("1.0.0").get()
-group = "com.github.i-redbyte"
+group = "com.github.i-redbyte.redbytefx"
 
 subprojects {
     afterEvaluate {
@@ -37,4 +37,3 @@ tasks.register("qualityCheck") {
         ":sample:detekt"
     )
 }
-

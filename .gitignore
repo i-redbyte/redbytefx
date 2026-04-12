@@ -218,6 +218,11 @@ fabric.properties
 .Trash-*
 .nfs*
 \#*\#
+
+# Local-only markdown drafts and notes
+/CHANGELOG.md
+/CONTRIBUTING.md
+/docs/**/*.md
 /.emacs.desktop
 /.emacs.desktop.lock
 *.elc
