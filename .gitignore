@@ -219,6 +219,9 @@ fabric.properties
 .nfs*
 \#*\#
 
+# Local maintainer notes
+/LOCAL_RELEASE.md
+
 # Local-only markdown drafts and notes
 /CHANGELOG.md
 /CONTRIBUTING.md
