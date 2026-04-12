@@ -2,81 +2,151 @@
 
 # RedByteFX
 
-**AGSL мощный, но неудобен вручную** — строки шейдеров, легко ошибиться с uniform-ами, много рутины. **RedByteFX** даёт тот же путь (**Kotlin → AGSL → `RuntimeShader` / `RenderEffect`**) через **компактный типизированный DSL**: выражения, `let`/`fn`, проверки на этапе компиляции и привязки к **Jetpack Compose**, чтобы состояние UI стало uniform-ами без лишнего клея. Меньше шаблонного кода — больше **понятной шейдерной логики**, при этом сгенерированный AGSL по-прежнему можно посмотреть через `agslSource()`.
+[![JitPack](https://jitpack.io/v/i-redbyte/redbytefx.svg)](https://jitpack.io/#i-redbyte/redbytefx)
 
----
+**RedByteFX** — это Kotlin-first DSL для Android AGSL, который избавляет от необходимости писать большие строковые шейдеры вручную.
 
-## Подключение
+AGSL сам по себе мощный, но в обычной Kotlin-разработке он ощущается довольно чужеродно:
 
-**Версия `1.0.0`**
+- логика шейдера живёт внутри строк, а не в коде
+- `uniform`-ы объявляются руками и в них легко ошибиться
+- даже простые эффекты быстро обрастают boilerplate
+- для Compose обычно нужен дополнительный glue code
+- отладка часто начинается с вопроса: "в какой строке я сейчас всё сломал?"
 
-```kotlin
-dependencies {
-    implementation("com.github.i-redbyte:redbytefx-core:1.0.0")
-    implementation("com.github.i-redbyte:redbytefx-compose:1.0.0")
-    implementation("com.github.i-redbyte:redbytefx-stdlib:1.0.0")
-}
-```
+RedByteFX сохраняет тот же реальный Android-пайплайн:
 
-В `settings.gradle.kts` как обычно: `google()` и `mavenCentral()`. Если Gradle пока не находит эти координаты, артефакты могут быть в **GitHub Packages** у этого репозитория — см. [документацию Gradle Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry) и раздел **Packages** на GitHub (однократная настройка репозитория и доступа).
+`Kotlin DSL -> сгенерированный AGSL -> RuntimeShader / RenderEffect`
 
-| Артефакт | Назначение |
-|----------|------------|
-| `redbytefx-core` | DSL, компилятор, uniform-ы, `redbytefx { }` |
-| `redbytefx-compose` | `FxController`, `Modifier.redbyteFx`, привязки |
-| `redbytefx-stdlib` | Доп. хелперы (маски, градиенты, шум, SDF, …) |
+То есть рантайм остаётся нативным и предсказуемым, но сам процесс написания шейдера становится гораздо приятнее: типизированные выражения, читаемые локальные переменные через `let(...)`, переиспользуемые функции через `fn(...)`, удобные привязки к Compose и возможность в любой момент посмотреть итоговый AGSL через `agslSource()`.
 
-**Требования:** Android **API 33+**, Kotlin; Jetpack Compose — если используете `redbytefx-compose`.
+Коротко: **меньше боли от строкового AGSL, меньше клея, никакого второго рантайма и никакой потери производительности или гибкости ради удобства.**
 
----
+## Чистый AGSL vs RedByteFX
 
-## Сырой AGSL и RedByteFX (та же идея — меньше шума)
+Одна и та же идея, одна и та же математика, но очень разный опыт разработки.
 
-**AGSL** — строки, имена, повторяющийся шаблон:
+### Написано на AGSL вручную
 
 ```glsl
-uniform shader rb_input;
-uniform float2 rb_resolution;
-uniform float u_amount;
+uniform shader content;
+uniform float wave_amplitude;
+uniform float wave_frequency;
 
 half4 main(float2 fragCoord) {
-  half4 base = rb_sample(fragCoord);
-  float l = dot(base.rgb, float3(0.299, 0.587, 0.114));
-  half3 g = half3(l, l, l);
-  return half4(mix(g, base.rgb, u_amount), base.a);
+  float2 offset = float2(0.0, sin(fragCoord.x * wave_frequency) * wave_amplitude);
+  return content.eval(fragCoord + offset);
 }
 ```
 
-**RedByteFX** — та же структура, типизированно, uniform привязывается из Kotlin:
+### То же самое на RedByteFX
+
+```kotlin
+val wave = redbytefx {
+    val amplitude = uniformFloat(0f, "wave_amplitude")
+    val frequency = uniformFloat(0.08f, "wave_frequency")
+    val offset = float2(0f, sin(fragCoord.x * frequency) * amplitude)
+    sample(fragCoord + offset)
+}
+```
+
+Математика та же, но теперь это обычный Kotlin-код: типы, автодополнение IDE, нормальные имена, рефакторинг без боли и параметры, которые можно привязать из рантайма без плясок с сырой AGSL-строкой.
+
+## Пример уровня sample
+
+Ниже реальный кусок из demo-приложения. На чистом AGSL такие эффекты довольно быстро разрастаются в длинный блок со служебными `uniform`, временными переменными и повторяющимся композитингом. В RedByteFX он остаётся читаемым:
 
 ```kotlin
 val effect = redbytefx {
-    val amount by autoUniformFloat(1f)
+    val amount by autoUniformFloat(0.82f)
+    val warmth by autoUniformFloat(0.58f)
+    val glow by autoUniformFloat(0.38f)
+
     val base = let(sample(), "base")
-    val gray = grayscale(base)
-    mix(gray, base, amount)
+    val saturated = let(
+        adjustSaturation(base, mix(0.9f, 1.55f, amount)),
+        "saturated"
+    )
+    val tint = let(
+        color(
+            mix(0.26f, 0.94f, warmth),
+            mix(0.48f, 0.72f, warmth),
+            mix(0.92f, 0.38f, warmth),
+            base.a
+        ),
+        "tint"
+    )
+    val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
+    val screened = let(blendScreen(multiplied, tint, glow), "screened")
+
+    blendOverlay(base, screened, amount)
 }
 ```
 
-Стандартный ввод и объявления вокруг `rb_sample` DSL берёт на себя — вы описываете математику.
+То есть контроль над шейдером никуда не девается, но код наконец выглядит так, будто его писал Kotlin-разработчик, а не человек, которого заперли внутри строкового литерала.
 
----
+## Подключение
 
-## Пример: волна + Compose
+Публичные релизы доступны через JitPack.
+
+Добавьте репозиторий в `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven(url = "https://jitpack.io") {
+            content {
+                includeGroup("com.github.i-redbyte.redbytefx")
+            }
+        }
+    }
+}
+```
+
+После этого подключите нужные модули:
+
+```kotlin
+dependencies {
+    implementation("com.github.i-redbyte.redbytefx:redbytefx-core:1.0.0")
+    implementation("com.github.i-redbyte.redbytefx:redbytefx-compose:1.0.0")
+    implementation("com.github.i-redbyte.redbytefx:redbytefx-stdlib:1.0.0")
+}
+```
+
+| Артефакт | Что даёт |
+|----------|----------|
+| `redbytefx-core` | DSL, компилятор, uniform-ы, runtime bridge, `redbytefx { }` |
+| `redbytefx-compose` | `FxController`, `rememberFxController`, `Modifier.redbyteFx`, привязки к Compose |
+| `redbytefx-stdlib` | Готовые шейдерные хелперы: маски, градиенты, blends, noise, SDF, routing, lighting и другое |
+
+**Требования:** Android **API 33+**. Модуль `redbytefx-compose` нужен только если хотите Compose-обвязку.
+
+## Как с этим обычно работают
+
+1. Пишете эффект через `redbytefx { ... }`.
+2. Если нужно увидеть реальную форму шейдера, смотрите `effect.agslSource()`.
+3. Создаёте или `remember`-ите runtime instance/controller.
+4. Привязываете `uniform`-ы к состоянию, времени или анимациям.
+5. Применяете эффект через `Modifier.redbyteFx(...)` или через низкоуровневый runtime API.
+
+Пример с Compose:
 
 ```kotlin
 val waveEffect = run {
-    var amp: FxParam.Float? = null
-    var freq: FxParam.Float? = null
+    var amplitude: FxParam.Float? = null
+    var frequency: FxParam.Float? = null
     val effect = redbytefx {
-        val a = uniformFloat(0f, "wave_amp")
-        val f = uniformFloat(0.08f, "wave_freq")
-        amp = a
-        freq = f
-        val offset = float2(0f, sin(fragCoord.x * f) * a)
+        val amp = uniformFloat(0f, "wave_amplitude")
+        val freq = uniformFloat(0.08f, "wave_frequency")
+        amplitude = amp
+        frequency = freq
+        val offset = float2(0f, sin(fragCoord.x * freq) * amp)
         sample(fragCoord + offset)
     }
-    Triple(effect, amp!!, freq!!)
+    Triple(effect, amplitude!!, frequency!!)
 }
 
 @Composable
@@ -88,42 +158,29 @@ fun WaveLabel(amp: Float, freq: Float) {
 }
 ```
 
----
+## Ключевые принципы библиотеки
 
-## Пример: градации серого
+- **Сначала Kotlin.** Шейдерный код должен ощущаться нативно для Kotlin, а не как шаблонизация строк.
+- **Типизированные выражения и uniform-ы.** Ошибок меньше, рефакторинг спокойнее.
+- **Читаемый результат.** `let(...)`, `fn(...)` и `agslSource()` помогают не терять связь с финальным AGSL.
+- **Никакого своего рендера.** На выходе всё равно используется стандартный Android `RuntimeShader` / `RenderEffect`.
+- **Слои по ролям.** `core` даёт язык, `compose` даёт runtime bindings, `stdlib` даёт переиспользуемые высокоуровневые рецепты.
 
-```kotlin
-val grayscaleDemo = run {
-    var amount: FxParam.Float? = null
-    val effect = redbytefx {
-        val amountUniform by autoUniformFloat(0f)
-        amount = amountUniform
-        val base = let(sample(), "base")
-        mix(base, grayscale(base), amountUniform)
-    }
-    effect to amount!!
-}
-```
-
----
-
-## Модули в репозитории
+## Модули репозитория
 
 | Модуль | Роль |
 |--------|------|
-| `:redbytefx-core` | Язык, компилятор, мост к рантайму |
+| `:redbytefx-core` | DSL для авторинга, компилятор, мост к рантайму |
 | `:redbytefx-compose` | Интеграция с Compose |
-| `:redbytefx-stdlib` | Высокоуровневые хелперы |
-| `:sample` | Демо-приложение (не артефакт Maven) |
+| `:redbytefx-stdlib` | Переиспользуемые высокоуровневые шейдерные хелперы |
+| `:sample` | Демо-приложение с реальными эффектами и предпросмотром сгенерированного AGSL |
 
----
+## Участие в проекте
 
-## Участие
+Issues, идеи, PR'ы, эксперименты и улучшения в духе "сделал AGSL чуть менее ворчливым" очень приветствуются.
 
-Issues и pull request’ы приветствуются. Небольшие, сфокусированные изменения проще принять; если задумали крупное — короткий issue заранее всем облегчит жизнь. Спасибо, что улучшаете RedByteFX.
-
----
+Небольшие сфокусированные изменения проще ревьюить, но и большие идеи тоже welcome. Если замах планируется серьёзный, лучше сначала открыть issue и синхронизироваться по направлению, чтобы потом не героически переписывать полмира шейдеров в два часа ночи.
 
 ## Лицензия
 
-[MIT](LICENSE)
+Проект распространяется по лицензии [MIT](LICENSE).

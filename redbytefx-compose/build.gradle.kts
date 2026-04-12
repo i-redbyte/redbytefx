@@ -61,6 +61,30 @@ afterEvaluate {
                 artifactId = "redbytefx-compose"
                 version = rootProject.version.toString()
                 from(components["release"])
+                pom {
+                    name.set("RedByteFX Compose")
+                    description.set(
+                        "Jetpack Compose bindings and runtime controller layer for RedByteFX."
+                    )
+                    url.set("https://github.com/i-redbyte/redbytefx")
+                    licenses {
+                        license {
+                            name.set("MIT License")
+                            url.set("https://opensource.org/license/mit")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("i-redbyte")
+                            name.set("i-redbyte")
+                        }
+                    }
+                    scm {
+                        url.set("https://github.com/i-redbyte/redbytefx")
+                        connection.set("scm:git:git://github.com/i-redbyte/redbytefx.git")
+                        developerConnection.set("scm:git:ssh://git@github.com/i-redbyte/redbytefx.git")
+                    }
+                }
             }
         }
         repositories {
