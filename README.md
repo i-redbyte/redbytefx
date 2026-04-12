@@ -114,7 +114,7 @@ val grayscaleDemo = run {
 | `:redbytefx-core` | Language + compiler + runtime bridge |
 | `:redbytefx-compose` | Compose integration |
 | `:redbytefx-stdlib` | Higher-level helpers |
-| `:sample` | Demo app (not an published artifact) |
+| `:sample` | Demo app (not a published artifact) |
 
 ---
 
