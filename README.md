@@ -2,59 +2,13 @@
 
 # RedByteFX
 
-Write **Android shaders** in **Kotlin**, compile to **AGSL**, and drive them with **Jetpack Compose** — with typed uniforms, readable locals, and `effect.agslSource()` whenever you want to see exactly what ships to the GPU.
+**AGSL is powerful but awkward to write by hand** — string shaders, easy-to-miss uniforms, and a lot of ceremony. **RedByteFX** gives you the same pipeline (**Kotlin → AGSL → `RuntimeShader` / `RenderEffect`**) through a **small, typed DSL**: real expressions, `let`/`fn`, compile-time checks, and **Jetpack Compose** bindings so UI state becomes shader uniforms without glue code. Less plumbing, more of what you actually want: **readable shader logic that still maps to predictable AGSL** when you peek at `agslSource()`.
 
 ---
 
-## Why it’s fun
+## Add to your project
 
-- **Shader code that still feels like math** — `sin`, `mix`, `float2`, `sample()`, `let(...)`, `fn(...)`, without hand-maintaining string shaders.
-- **AGSL you can read** — the DSL stays close to generated AGSL so debugging stays grounded.
-- **Compose-friendly** — `rememberFxController`, `bindFloat` / `bindTime`, and `Modifier.redbyteFx(...)` for live UI.
-- **Pick your depth** — stay in **core** for full control, or layer **stdlib** helpers (masks, ramps, noise, SDF recipes, and more) when you want speed.
-
----
-
-## Requirements
-
-- **Android API 33+** (the runtime path used here targets modern AGSL / `RuntimeShader` usage).
-- **Kotlin** and a recent **Android Gradle Plugin** (see the repo’s `gradle/libs.versions.toml`).
-- **Jetpack Compose** if you use `:redbytefx-compose` (the Compose BOM is exposed from that artifact so versions stay aligned).
-
----
-
-## Add RedByteFX **1.0.0** to your app
-
-### 1. GitHub Packages Maven repository
-
-[Create a token](https://github.com/settings/tokens) with the **`read:packages`** scope. Never commit it — use `~/.gradle/gradle.properties` or CI secrets.
-
-In **`settings.gradle.kts`** (inside `dependencyResolutionManagement { repositories { ... } }`):
-
-```kotlin
-maven {
-    url = uri("https://maven.pkg.github.com/i-redbyte/redbytefx")
-    credentials {
-        username = providers.gradleProperty("gpr.user").orNull
-            ?: System.getenv("GITHUB_ACTOR")
-            ?: ""
-        password = providers.gradleProperty("gpr.token").orNull
-            ?: System.getenv("GITHUB_TOKEN")
-            ?: ""
-    }
-}
-```
-
-In **`gradle.properties`** (your machine only):
-
-```properties
-gpr.user=YOUR_GITHUB_LOGIN
-gpr.token=YOUR_TOKEN
-```
-
-*(On GitHub Actions, `GITHUB_TOKEN` is injected automatically for workflows in this repository.)*
-
-### 2. Dependencies
+**Version `1.0.0`**
 
 ```kotlin
 dependencies {
@@ -64,19 +18,79 @@ dependencies {
 }
 ```
 
-| Artifact | What it gives you |
-|----------|-------------------|
-| `redbytefx-core` | DSL, compiler, uniforms, `redbytefx { }`, AGSL output |
-| `redbytefx-compose` | `FxController`, `Modifier.redbyteFx`, bindings |
-| `redbytefx-stdlib` | Reusable shader recipes (optional but handy) |
+Use `google()` + `mavenCentral()` in `settings.gradle.kts` as usual. If Gradle cannot resolve these coordinates yet, the artifacts may be on **GitHub Packages** for this repo — see the [Gradle registry docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry) and the **Packages** section of the GitHub repository (one-time repository + auth setup).
 
-You can also depend only on **`redbytefx-compose`** and **`redbytefx-stdlib`** — **`redbytefx-core`** is pulled in transitively. The three-line block above is explicit and easy to copy.
+| Artifact | Role |
+|----------|------|
+| `redbytefx-core` | DSL, compiler, uniforms, `redbytefx { }` |
+| `redbytefx-compose` | `FxController`, `Modifier.redbyteFx`, bindings |
+| `redbytefx-stdlib` | Extra helpers (masks, ramps, noise, SDF, …) |
+
+**Requirements:** Android **API 33+**, Kotlin; Jetpack Compose when you use `redbytefx-compose`.
 
 ---
 
-## Tiny end-to-end snippet
+## Raw AGSL vs RedByteFX (same idea, less noise)
 
-Add the usual Compose imports plus `ru.redbyte.redbytefx.*` (and `grayscale` / `sample` / `mix` from the DSL).
+**AGSL** — you juggle strings, watch naming, and repeat boilerplate:
+
+```glsl
+uniform shader rb_input;
+uniform float2 rb_resolution;
+uniform float u_amount;
+
+half4 main(float2 fragCoord) {
+  half4 base = rb_sample(fragCoord);
+  float l = dot(base.rgb, float3(0.299, 0.587, 0.114));
+  half3 g = half3(l, l, l);
+  return half4(mix(g, base.rgb, u_amount), base.a);
+}
+```
+
+**RedByteFX** — same structure, typed, with a uniform you bind from Kotlin:
+
+```kotlin
+val effect = redbytefx {
+    val amount by autoUniformFloat(1f)
+    val base = let(sample(), "base")
+    val gray = grayscale(base)
+    mix(gray, base, amount)
+}
+```
+
+No manual `rb_sample` / uniform declarations for the standard input — the DSL and compiler handle the boring parts. You focus on the math.
+
+---
+
+## Example: wave + Compose
+
+```kotlin
+val waveEffect = run {
+    var amp: FxParam.Float? = null
+    var freq: FxParam.Float? = null
+    val effect = redbytefx {
+        val a = uniformFloat(0f, "wave_amp")
+        val f = uniformFloat(0.08f, "wave_freq")
+        amp = a
+        freq = f
+        val offset = float2(0f, sin(fragCoord.x * f) * a)
+        sample(fragCoord + offset)
+    }
+    Triple(effect, amp!!, freq!!)
+}
+
+@Composable
+fun WaveLabel(amp: Float, freq: Float) {
+    val fx = rememberFxController(waveEffect.first)
+    fx.bindFloat(waveEffect.second, amp)
+    fx.bindFloat(waveEffect.third, freq)
+    Text("RedByteFX", modifier = Modifier.redbyteFx(fx))
+}
+```
+
+---
+
+## Example: grayscale dial (stdlib + core)
 
 ```kotlin
 val grayscaleDemo = run {
@@ -89,62 +103,27 @@ val grayscaleDemo = run {
     }
     effect to amount!!
 }
-
-@Composable
-fun HelloFx(amount: Float) {
-    val fx = rememberFxController(grayscaleDemo.first)
-    fx.bindFloat(grayscaleDemo.second, amount)
-    Text(
-        text = "RedByteFX",
-        modifier = Modifier.redbyteFx(fx)
-    )
-}
 ```
-
-Use **one controller per render target**, bind only uniforms that belong to **that** compiled effect, and call `agslSource()` when something looks off.
 
 ---
 
-## Modules in this repo
+## Modules in this repository
 
-| Gradle module | Role |
-|---------------|------|
-| `:redbytefx-core` | Language, compiler, runtime bridge |
+| Module | Role |
+|--------|------|
+| `:redbytefx-core` | Language + compiler + runtime bridge |
 | `:redbytefx-compose` | Compose integration |
 | `:redbytefx-stdlib` | Higher-level helpers |
-| `:sample` | Demo app (source only — not published as a library) |
+| `:sample` | Demo app (not an published artifact) |
 
 ---
 
-## Build & verify locally
+## Contributing
 
-```bash
-./gradlew qualityCheck
-```
-
-Publish the three libraries to **Maven Local** (no GitHub token needed):
-
-```bash
-./gradlew :redbytefx-core:publishAllPublicationsToMavenLocalRepository \
-  :redbytefx-compose:publishAllPublicationsToMavenLocalRepository \
-  :redbytefx-stdlib:publishAllPublicationsToMavenLocalRepository
-```
-
----
-
-## Contributing — you’re welcome here
-
-Whether you fix a typo, tighten an error message, add a test, or propose a small stdlib helper — **thank you** for showing up.
-
-- **Talk first** for large changes — open an issue so we can align before a huge PR.
-- **Keep PRs focused** — small, reviewable steps land faster.
-- Run **`./gradlew qualityCheck`** before you push.
-- **Public API** changes should carry **KotlinDoc** updates in the same commit.
-
-Maintainers care about clarity, kindness, and code that future readers will understand. If that sounds like you, we’d love to collaborate.
+Pull requests and issues are welcome. Small, focused changes are easiest to merge; if you’re planning something big, a short issue first helps everyone. Thanks for improving RedByteFX.
 
 ---
 
 ## License
 
-Released under the **MIT License** — see [LICENSE](LICENSE).
+[MIT](LICENSE)
