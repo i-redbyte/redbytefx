@@ -10,6 +10,12 @@ public enum class FxDiagnosticSeverity {
 /**
  * Stable machine-readable code for filtering and tooling. Messages may still change between
  * library versions; codes are intended to stay comparable.
+ *
+ * Rough mapping: [FN_RETURN_TYPE_MISMATCH] — `fn` body vs declared [FxValueType];
+ * [UNSUPPORTED_DSL_IMPLEMENTATION] — ad-hoc marker implementation;
+ * [UNSUPPORTED_EMIT_ANY] — raw Kotlin value in expression position;
+ * [NON_FINITE_FLOAT_LITERAL] — NaN/Infinity literal;
+ * [MISSING_UNIFORM_BINDING] — [FxParam] not on this effect instance.
  */
 public enum class FxDiagnosticCode {
     FN_RETURN_TYPE_MISMATCH,
@@ -29,11 +35,21 @@ public data class FxDiagnostic(
     public val message: String,
     public val hint: String? = null,
 ) {
+    /**
+     * Full human-readable text: [message], then a blank line and [hint] when present.
+     * If [hint] does not already start with `Hint:`, that prefix is added for consistency.
+     */
     public fun fullText(): String =
-        if (hint.isNullOrBlank()) {
-            message
-        } else {
-            "$message $hint"
+        when {
+            hint.isNullOrBlank() -> message
+            else -> {
+                val h = hint.trim()
+                if (h.startsWith("Hint:")) {
+                    "$message\n\n$h"
+                } else {
+                    "$message\n\nHint: $h"
+                }
+            }
         }
 }
 
@@ -70,7 +86,7 @@ internal fun unsupportedDslImplementationDiagnostic(
     severity = FxDiagnosticSeverity.ERROR,
     code = FxDiagnosticCode.UNSUPPORTED_DSL_IMPLEMENTATION,
     message = unsupportedDslImplementationMessage(typeLabel, expr),
-    hint = null,
+    hint = unsupportedDslImplementationHint(typeLabel),
 )
 
 internal fun unsupportedExpressionArgumentDiagnostic(expr: Any): FxDiagnostic = FxDiagnostic(
@@ -88,7 +104,7 @@ internal fun fnReturnTypeMismatchDiagnostic(
     severity = FxDiagnosticSeverity.ERROR,
     code = FxDiagnosticCode.FN_RETURN_TYPE_MISMATCH,
     message = fnBodyReturnTypeMismatchMessage(functionName, returnType, body),
-    hint = null,
+    hint = fnReturnTypeMismatchHint(returnType, body),
 )
 
 internal fun missingUniformBindingDiagnostic(
@@ -98,12 +114,12 @@ internal fun missingUniformBindingDiagnostic(
     severity = FxDiagnosticSeverity.ERROR,
     code = FxDiagnosticCode.MISSING_UNIFORM_BINDING,
     message = missingUniformBindingMessage(typeLabel, debugName),
-    hint = null,
+    hint = missingUniformBindingHint(),
 )
 
 internal fun nonFiniteFloatLiteralDiagnostic(value: Float): FxDiagnostic = FxDiagnostic(
     severity = FxDiagnosticSeverity.ERROR,
     code = FxDiagnosticCode.NON_FINITE_FLOAT_LITERAL,
     message = nonFiniteFloatLiteralMessage(value),
-    hint = null,
+    hint = nonFiniteFloatLiteralHint(),
 )

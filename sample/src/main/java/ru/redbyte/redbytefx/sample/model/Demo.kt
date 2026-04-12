@@ -28,7 +28,11 @@ enum class DemoId {
     Sigil,
     Duotone,
     Aurora,
-    LiquidGlass
+    LiquidGlass,
+    AnimatedGradient,
+    TouchRipple,
+    Metaballs,
+    CrtTerminal
 }
 
 enum class DemoSection(
@@ -247,6 +251,10 @@ val DemoInfo.focusTags: List<String>
         DemoId.Duotone -> listOf("palette fn", "luminance", "color mix")
         DemoId.Aurora -> listOf("hero", "iridescent", "chromatic", "rim", "polar sweep")
         DemoId.LiquidGlass -> listOf("glass", "refraction", "fresnel", "domain warp", "liquid")
+        DemoId.AnimatedGradient -> listOf("gradient", "sin", "rgb", "time", "uv", "port", "agsl")
+        DemoId.TouchRipple -> listOf("pointer", "float2", "touch", "compose", "ripple", "time")
+        DemoId.Metaballs -> listOf("sdf", "metaballs", "smoothmin", "procedural", "animation")
+        DemoId.CrtTerminal -> listOf("crt", "scanlines", "barrel", "chromatic", "retro", "terminal")
     }
 
 val DemoInfo.catalogSearchText: String
@@ -289,14 +297,17 @@ val DemoInfo.section: DemoSection
 
         DemoId.Pulse,
         DemoId.Beacon,
-        DemoId.Sweep -> DemoSection.Motion
+        DemoId.Sweep,
+        DemoId.AnimatedGradient -> DemoSection.Motion
 
         DemoId.Signal,
         DemoId.Film,
         DemoId.Warp,
         DemoId.Glitch,
         DemoId.Radar,
-        DemoId.Circuit -> DemoSection.Procedural
+        DemoId.Circuit,
+        DemoId.Metaballs,
+        DemoId.CrtTerminal -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
@@ -311,7 +322,8 @@ val DemoInfo.section: DemoSection
         DemoId.Sigil,
         DemoId.Reveal,
         DemoId.Aurora,
-        DemoId.LiquidGlass -> DemoSection.Compositing
+        DemoId.LiquidGlass,
+        DemoId.TouchRipple -> DemoSection.Compositing
     }
 
 val DemoInfo.layer: DemoLayer
@@ -322,7 +334,9 @@ val DemoInfo.layer: DemoLayer
         DemoId.Scale,
         DemoId.Offset,
         DemoId.Wave,
-        DemoId.Duotone -> DemoLayer.Core
+        DemoId.Duotone,
+        DemoId.AnimatedGradient,
+        DemoId.TouchRipple -> DemoLayer.Core
 
         DemoId.Pulse,
         DemoId.Signal,
@@ -344,7 +358,9 @@ val DemoInfo.layer: DemoLayer
         DemoId.Circuit,
         DemoId.Sigil,
         DemoId.Aurora,
-        DemoId.LiquidGlass -> DemoLayer.Stdlib
+        DemoId.LiquidGlass,
+        DemoId.Metaballs,
+        DemoId.CrtTerminal -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -363,7 +379,11 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Circuit,
         DemoId.Sigil,
         DemoId.Aurora,
-        DemoId.LiquidGlass -> true
+        DemoId.LiquidGlass,
+        DemoId.AnimatedGradient,
+        DemoId.TouchRipple,
+        DemoId.Metaballs,
+        DemoId.CrtTerminal -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -718,6 +738,60 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val chromaGlass = color(sampleUv(warpedUv - float2(px, 0f)).r, glass.g, sampleUv(warpedUv + float2(px, 0f)).b, glass.a)
             val edge = max(rim, shell)
             mix(glass, chromaGlass, edge * chromaMix)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.AnimatedGradient,
+        title = "Animated Gradient",
+        subtitle = "Classic RGB sin waves over UV — straight port from raw AGSL.",
+        focus = "No sampling, no stdlib: only fragCoord, resolution, uniformTime, and sin/mix-style " +
+            "math. Use it as a reference when translating Shadertoy or hand-written AGSL into RedByteFX.",
+        snippet = """
+            val uv = let(fragCoord / resolution, "uv")
+            val t = let(time * speed, "t")
+            val r = let(0.5f + 0.5f * sin(3f * uv.x + t * 0.7f), "r")
+            val g = let(0.5f + 0.5f * sin(3f * uv.y + t * 1.1f), "g")
+            val b = let(0.5f + 0.5f * sin(3f * (uv.x + uv.y) + t * 0.9f), "b")
+            color(float3(r, g, b), 1f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.TouchRipple,
+        title = "Touch Ripple",
+        subtitle = "Pointer-driven ripples on live content with bindFloat2(...).",
+        focus = "Shows how Compose pointerInput + normalized UV maps to a float2 uniform so runtime " +
+            "interaction and shader rings stay in sync. Core DSL only: length, sin, mix — no stdlib.",
+        snippet = """
+            val d = length(uv - pointer)
+            val waves = sin(d * 32f - time * 2.4f) * 0.5f + 0.5f
+            val ripple = waves / (1f + d * 14f)
+            mix(base, tint, ripple * strength)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Metaballs,
+        title = "Metaballs",
+        subtitle = "Three moving circles merged with smooth-min into soft blobs.",
+        focus = "Builds on sdCircle(...) and softFill(...) with a polynomial smin between fields so " +
+            "metaball-style merging stays readable in generated AGSL.",
+        snippet = """
+            val m12 = sminPoly(d1, d2, 0.085f)
+            val field = sminPoly(m12, d3, blendK)
+            val blob = softFill(field, feather = 0.035f)
+            mix(bg, shaded, blob)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.CrtTerminal,
+        title = "CRT Terminal",
+        subtitle = "Barrel warp, scanlines, edge RGB split, and subtle flicker.",
+        focus = "Post-process stack on sampleUv(...): per-channel offsets from edge mask, " +
+            "scanlines(fragCoord.y, ...), and vignette — a recognizable retro screen without leaving the stdlib sampling path.",
+        snippet = """
+            val warpedUv = float2(saturate(uv.x + delta.x), saturate(uv.y + delta.y))
+            val base = sampleUv(warpedUv)
+            val split = color(sampleUv(warpedUv - float2(px, 0f)).r, base.g, sampleUv(warpedUv + float2(px, 0f)).b, base.a)
+            mix(base, split, edgeAmt * 0.88f) * scanMod * flicker * vignette
         """.trimIndent()
     )
 )

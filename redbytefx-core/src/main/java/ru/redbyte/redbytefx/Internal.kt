@@ -85,6 +85,18 @@ internal fun nonFiniteFloatLiteralMessage(value: Float): String =
     "Only finite float literals are supported in shader source, got $value. " +
         "Use uniformFloat(...) or another uniform helper for runtime-driven values."
 
+internal fun nonFiniteFloatLiteralHint(): String =
+    "For values that are not fixed at compile time, declare a uniform (uniformFloat, " +
+        "autoUniformFloat, ...) and bind from the host instead of embedding non-finite literals."
+
+internal fun missingUniformBindingHint(): String =
+    "Store the FxParam from the same `redbytefx { }` block you pass to FxEffect.newInstance(); " +
+        "do not reuse handles across different compiled effects or ad-hoc FxEffect instances."
+
+internal fun unsupportedDslImplementationHint(typeLabel: String): String =
+    "Build $typeLabel values with constructors and DSL composition (float(...), let(...), " +
+        "fn(...), stdlib helpers) instead of implementing the marker interface in your own class."
+
 internal fun unsupportedExpressionArgumentBaseMessage(expr: Any): String {
     val typeName = expr::class.qualifiedName ?: expr::class.simpleName ?: "unknown"
     return "Unsupported expression argument: $typeName. " +
@@ -96,15 +108,15 @@ internal fun unsupportedExpressionArgumentBaseMessage(expr: Any): String {
 internal fun unsupportedExpressionArgumentHint(expr: Any): String? =
     when (expr) {
         is Int, is Long, is Short, is Byte ->
-            "Hint: integer literals are not implicit shader values — wrap with float(...) for " +
-                "scalars or use float2(...)/float3(...)/float4(...)/color(...) for vectors."
+            "Integer literals are not implicit shader values — wrap with float(...) for scalars or " +
+                "use float2(...)/float3(...)/float4(...)/color(...) for vectors."
         is Float, is Double ->
-            "Hint: wrap scalar numbers with float(...) so they become FloatExpr in shader code."
+            "Wrap scalar numbers with float(...) so they become FloatExpr in shader code."
         is Boolean ->
-            "Hint: use bool(...) to build a BoolExpr."
+            "Use bool(...) to build a BoolExpr."
         is String, is Char ->
-            "Hint: text values cannot be embedded in shader expressions; use uniforms or build " +
-                "values from float(...)/color(...) and DSL math."
+            "Text values cannot be embedded in shader expressions; use uniforms or build values " +
+                "from float(...)/color(...) and DSL math."
         else -> null
     }
 
@@ -119,6 +131,96 @@ internal fun fnBodyReturnTypeMismatchMessage(
         "Return an expression that matches the declared type (for example " +
         "`float(...)` / `float2(...)` / `color(...)`, stdlib helpers, or composed DSL math)."
 }
+
+internal fun fnReturnTypeMismatchHint(
+    expected: FxValueType<*>,
+    body: Any
+): String? =
+    when (expected) {
+        FloatType -> fnReturnHintFloatExpected(body)
+        BoolType -> fnReturnHintBoolExpected(body)
+        Float2Type -> fnReturnHintFloat2Expected(body)
+        Float3Type -> fnReturnHintFloat3Expected(body)
+        Float4Type -> fnReturnHintFloat4Expected(body)
+        ColorType -> fnReturnHintColorExpected(body)
+    }
+
+private fun fnReturnHintFloatExpected(body: Any): String? =
+    when (body) {
+        is ColorExpr ->
+            "You returned a color (half4) where a scalar float is required. " +
+                "Use channel accessors (.r, .g, .b, .a), luminance(...), or float(...) from a scalar."
+        is BoolExpr ->
+            "You returned a bool where a float is required. Use ifElse(...) or mix 0f/1f with a bool mask."
+        is Float2Expr ->
+            "You returned float2 where a float is required. Use .x, .y, length(...), dot(...), or a single component."
+        is Float3Expr ->
+            "You returned float3 where a float is required. Use a swizzle (.x), length(...), or dot(...)."
+        is Float4Expr ->
+            "You returned float4 where a float is required. Use .x, .r, or a scalar component."
+        else -> null
+    }
+
+private fun fnReturnHintBoolExpected(body: Any): String? =
+    when (body) {
+        is FloatExpr ->
+            "You returned a float where a bool is required. Use comparisons (>, <, ==), compareBool(...), or ifElse(...)."
+        is ColorExpr ->
+            "You returned a color where a bool is required. Compare channels or use a predicate on scalars."
+        else -> null
+    }
+
+private fun fnReturnHintFloat2Expected(body: Any): String? =
+    when (body) {
+        is FloatExpr ->
+            "You returned a scalar where float2 is required. Use float2(...), float2(xy, xy), or extend with two components."
+        is Float3Expr ->
+            "You returned float3 where float2 is required. Use .xy or another swizzle."
+        is Float4Expr ->
+            "You returned float4 where float2 is required. Use .xy, .xyzz, or a swizzle."
+        is ColorExpr ->
+            "You returned a color where float2 is required. Use .xy, .rg, or a UV subset."
+        else -> null
+    }
+
+private fun fnReturnHintFloat3Expected(body: Any): String? =
+    when (body) {
+        is FloatExpr ->
+            "You returned a scalar where float3 is required. Use float3(...) or broadcast with float3(x, y, z)."
+        is Float2Expr ->
+            "You returned float2 where float3 is required. Use float3(...) with a third component."
+        is Float4Expr ->
+            "You returned float4 where float3 is required. Use .xyz or drop the w component explicitly."
+        is ColorExpr ->
+            "You returned a color where float3 is required. Use float3(...) from channels or .rgb."
+        else -> null
+    }
+
+private fun fnReturnHintFloat4Expected(body: Any): String? =
+    when (body) {
+        is FloatExpr ->
+            "You returned a scalar where float4 is required. Use float4(...) or color(...) with explicit alpha."
+        is Float2Expr ->
+            "You returned float2 where float4 is required. Use float4(...) with z and w (or 0f, 1f)."
+        is Float3Expr ->
+            "You returned float3 where float4 is required. Use float4(...) or append alpha with float4(rgb, a)."
+        is ColorExpr ->
+            "You returned a color (half4) where float4 is required. Use float4(...) or map rgba explicitly."
+        else -> null
+    }
+
+private fun fnReturnHintColorExpected(body: Any): String? =
+    when (body) {
+        is FloatExpr ->
+            "You returned a scalar float where a color is required. Use color(...), float4(...), or color(tint, alpha)."
+        is Float2Expr ->
+            "You returned float2 where a color is required. Build a color from UV or use color(float3(...), a)."
+        is Float3Expr ->
+            "You returned float3 where a color is required. Use color(rgb, a) or float4(...) with alpha."
+        is Float4Expr ->
+            "You returned float4 where a color is required. Wrap with color(...) if the semantic is RGBA."
+        else -> null
+    }
 
 private fun describeShaderExprKind(body: Any): String =
     when (body) {

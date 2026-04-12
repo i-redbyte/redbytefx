@@ -1,7 +1,6 @@
 package ru.redbyte.redbytefx
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FxDiagnosticsTest {
@@ -14,7 +13,18 @@ class FxDiagnosticsTest {
             message = "Base.",
             hint = "Hint: more."
         )
-        assertEquals("Base. Hint: more.", d.fullText())
+        assertEquals("Base.\n\nHint: more.", d.fullText())
+    }
+
+    @Test
+    fun diagnosticFullTextAddsHintPrefixWhenMissing() {
+        val d = FxDiagnostic(
+            severity = FxDiagnosticSeverity.ERROR,
+            code = FxDiagnosticCode.UNSUPPORTED_EMIT_ANY,
+            message = "Base.",
+            hint = "Use float(...)."
+        )
+        assertEquals("Base.\n\nHint: Use float(...).", d.fullText())
     }
 
     @Test
@@ -47,6 +57,6 @@ class FxDiagnosticsTest {
                 hint = null
             )
         )
-        assertTrue(ex is IllegalStateException)
+        assertEquals(IllegalStateException::class.java, ex.javaClass.superclass)
     }
 }
