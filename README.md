@@ -20,9 +20,9 @@ So the runtime stays native and predictable, while authoring becomes much nicer:
 
 **Platform requirement:** RedByteFX targets **Android API 33+**. The library is built around the modern AGSL / `RuntimeShader` / `RenderEffect` stack and is not intended for lower API levels.
 
-## Why this library exists
+## 🎯 Why this library exists
 
-RedByteFX is for the common case where raw AGSL is technically the right runtime, but ergonomically the wrong authoring surface.
+RedByteFX is for the common case where raw AGSL is technically the right runtime, but writing and maintaining shaders from Kotlin becomes unnecessarily awkward.
 
 It helps when you want:
 
@@ -33,11 +33,11 @@ It helps when you want:
 - Compose integration without building a separate rendering abstraction
 - no performance tax for choosing a friendlier API
 
-## Raw AGSL vs RedByteFX
+## ⚖️ Raw AGSL vs RedByteFX
 
 Same idea, same math, much better ergonomics.
 
-### Hand-written AGSL
+### 📝 Hand-written AGSL
 
 ```glsl
 uniform shader content;
@@ -50,7 +50,7 @@ half4 main(float2 fragCoord) {
 }
 ```
 
-### RedByteFX
+### ✨ RedByteFX
 
 ```kotlin
 val wave = redbytefx {
@@ -63,7 +63,7 @@ val wave = redbytefx {
 
 The shader is still explicit, but now it is real code: types, IDE completion, safer refactors, and runtime params you can bind without managing raw AGSL strings by hand.
 
-## Example from the sample app
+## 🎬 Example from the sample app
 
 This is the kind of effect that gets noisy quickly in raw AGSL, but stays readable when expressions, locals, and compositing helpers are first-class Kotlin constructs:
 
@@ -94,7 +94,7 @@ val effect = redbytefx {
 }
 ```
 
-## Install
+## 📦 Install
 
 RedByteFX is published to **Maven Central**, so for consumers the normal repository setup is enough:
 
@@ -118,7 +118,7 @@ dependencies {
 }
 ```
 
-### Version Catalog / TOML
+### 🗂️ Version Catalog / TOML
 
 `gradle/libs.versions.toml`:
 
@@ -142,7 +142,7 @@ dependencies {
 }
 ```
 
-## Modules
+## 🧩 Modules
 
 | Artifact | What it gives you |
 |----------|-------------------|
@@ -150,7 +150,7 @@ dependencies {
 | `redbytefx-compose` | `FxController`, `rememberFxController`, `Modifier.redbyteFx`, Compose bindings |
 | `redbytefx-stdlib` | Higher-level shader helpers for coordinates, masks, compositing, routing, lighting, SDF, and more |
 
-## Quick start
+## 🚀 Quick start
 
 ```kotlin
 val waveEffect = run {
@@ -184,9 +184,9 @@ Typical flow:
 4. Create an `FxInstance` or `FxController`.
 5. Bind values and apply the effect.
 
-## DSL guide
+## 📚 DSL guide
 
-### Coordinates and sampling
+### 📍 Coordinates and sampling
 
 - `fragCoord` is the current fragment coordinate in pixel space.
 - `resolution` is the current render size in pixels.
@@ -197,7 +197,7 @@ Typical flow:
 - In `stdlib`, `sampleUv(uv)` converts normalized UV back into a sampled read.
 - In `stdlib`, `centeredUv(...)` and `aspectCenteredUv(...)` are good starting points for masks, lighting, SDF, and local scene math.
 
-### Uniforms and runtime params
+### 🎛️ Uniforms and runtime params
 
 - `uniformFloat`, `uniformFloat2`, `uniformFloat3`, `uniformFloat4` declare effect-owned uniforms.
 - `uniformTime()` is just a specialized float uniform intended for elapsed time.
@@ -215,7 +215,7 @@ val effect = redbytefx {
 }
 ```
 
-### Expression types
+### 🔤 Expression types
 
 - `FloatExpr` is a scalar float expression.
 - `BoolExpr` is a boolean expression.
@@ -223,7 +223,7 @@ val effect = redbytefx {
 - `ColorExpr` models color output and maps to AGSL `half4`.
 - These are not runtime values. They are typed nodes in the shader expression tree that the compiler turns into AGSL.
 
-### Constructors
+### 🧱 Constructors
 
 - Use `float(...)` for scalar literals when you need an explicit scalar expression.
 - Use `float2(...)`, `float3(...)`, `float4(...)` to build vectors.
@@ -238,7 +238,7 @@ val offset = float2(0f, sin(uv.x * 12f) * 6f)
 sample(fragCoord + offset) * tint.a
 ```
 
-### Operators and conditionals
+### ➕ Operators and conditionals
 
 - Scalar expressions support `+`, `-`, `*`, `/`.
 - Vector expressions support vector-vector and vector-scalar math where it makes sense.
@@ -253,7 +253,7 @@ Example:
 val mask = ifElse(amount gt 0.5f, 1f, 0f)
 ```
 
-### Built-in math and color helpers
+### 🧮 Built-in math and color helpers
 
 Core covers the usual AGSL-style building blocks such as:
 
@@ -265,7 +265,7 @@ Core covers the usual AGSL-style building blocks such as:
 
 The intent is to stay close to AGSL vocabulary while keeping the call sites typed and Kotlin-friendly.
 
-### Locals with `let(...)`
+### 📌 Locals with `let(...)`
 
 - `let(...)` stores an expression into a named local variable in the generated AGSL.
 - This is one of the main tools for keeping large effects readable.
@@ -280,7 +280,7 @@ val mono = let(grayscale(base), "mono")
 mix(base, mono, luma)
 ```
 
-### Reusable helpers with `fn(...)` and `fnN(...)`
+### 🛠️ Reusable helpers with `fn(...)` and `fnN(...)`
 
 - `fn(...)` creates reusable AGSL helper functions with arity 0 to 4.
 - `fnN(...)` handles helpers with five or more parameters.
@@ -304,7 +304,7 @@ val palette = fn(
 }
 ```
 
-### Core transforms in `core`
+### 🔄 Core transforms in `core`
 
 Core already includes useful authoring helpers such as:
 
@@ -314,7 +314,7 @@ Core already includes useful authoring helpers such as:
 
 These are good for direct ports before you move into richer `stdlib` helpers.
 
-### Higher-level helpers in `stdlib`
+### 🧰 Higher-level helpers in `stdlib`
 
 `redbytefx-stdlib` adds reusable recipes built on top of the core DSL. Common first-stop helpers include:
 
@@ -328,7 +328,7 @@ Good rule of thumb:
 1. Stay in `core` when you are porting raw AGSL directly.
 2. Move into `stdlib` when repeated coordinate, mask, compositing, or shaping patterns start appearing.
 
-### Runtime surfaces
+### 🧪 Runtime API
 
 - `FxEffect` is the immutable compiled shader definition.
 - `FxEffect.agslSource()` returns the generated AGSL for debugging, docs, or tests.
@@ -336,7 +336,7 @@ Good rule of thumb:
 - `FxController` in `redbytefx-compose` wraps one mutable runtime instance for Compose-friendly binding and invalidation.
 - Use one controller or runtime instance per render target.
 
-## Contributing
+## 🤝 Contributing
 
 The project is open to external contributions.
 
@@ -347,7 +347,7 @@ Please keep the existing project style intact:
 - prefer explicit naming and clear local variables over clever compression
 - stay consistent with the current API naming, docs tone, and sample style
 
-### PR flow
+### 🔀 PR flow
 
 1. Fork the repository and create a focused branch.
 2. Make the smallest complete change that solves one clear problem.
@@ -355,6 +355,6 @@ Please keep the existing project style intact:
 4. Update docs or samples if the public API or behavior changed.
 5. Open a PR with a short summary: problem, change, and how you verified it.
 
-## License
+## 📄 License
 
 Released under the [MIT](LICENSE) license.
