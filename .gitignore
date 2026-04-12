@@ -242,6 +242,12 @@ flycheck_*.el
 .idea
 out
 gen
+
+# Maintainer-only docs (keep locally; excluded from public repository)
+CHANGELOG.md
+CONTRIBUTING.md
+docs/
+
 **/build/
 !src/**/build/
 gradle-app.setting

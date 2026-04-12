@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.detekt) apply false
 }
 
+version = providers.gradleProperty("redbytefx.version").orElse("1.0.0").get()
+group = "com.github.i-redbyte"
+
 subprojects {
     afterEvaluate {
         tasks.withType<Detekt>().configureEach {
@@ -34,3 +37,4 @@ tasks.register("qualityCheck") {
         ":sample:detekt"
     )
 }
+

@@ -1,7 +1,10 @@
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.detekt)
+    id("maven-publish")
 }
 
 detekt {
@@ -23,6 +26,12 @@ android {
         buildConfig = false
     }
 
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -36,10 +45,39 @@ kotlin {
 dependencies {
     api(project(":redbytefx-core"))
 
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
+    api(platform(libs.androidx.compose.bom))
+    api(libs.androidx.compose.ui)
+    api(libs.androidx.compose.ui.graphics)
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                groupId = rootProject.group.toString()
+                artifactId = "redbytefx-compose"
+                version = rootProject.version.toString()
+                from(components["release"])
+            }
+        }
+        repositories {
+            mavenLocal()
+            if (System.getenv("GITHUB_TOKEN") != null) {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri(
+                        "https://maven.pkg.github.com/" +
+                            (System.getenv("GITHUB_REPOSITORY") ?: "i-redbyte/redbytefx")
+                    )
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR") ?: ""
+                        password = System.getenv("GITHUB_TOKEN") ?: ""
+                    }
+                }
+            }
+        }
+    }
 }

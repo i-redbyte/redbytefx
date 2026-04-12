@@ -37,6 +37,5 @@
  * 3. verify sampling space (`sample(...)` vs `sampleUv(...)`) before blaming Compose
  * 4. only then suspect render-target sizing, invalidation, or platform/runtime behavior
  *
- * v0.4 authoring hub (repo docs): **`docs/v0.4-authoring-ux.md`**
  */
 package ru.redbyte.redbytefx.compose

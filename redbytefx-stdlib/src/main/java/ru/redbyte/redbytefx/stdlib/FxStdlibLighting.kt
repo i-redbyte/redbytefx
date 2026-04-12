@@ -28,8 +28,7 @@ public fun FxDsl.normalizedUv(
  * when normalized UV is only used for masks/gradients while the actual content read still happens
  * at `fragCoord`.
  *
- * Do not pass pixel coordinates or `fragCoord` here — use core `sample(...)` instead. See
- * **`docs/agsl-vs-redbytefx.md`** in the repo.
+ * Do not pass pixel coordinates or `fragCoord` here — use core `sample(...)` instead.
  */
 public fun FxDsl.sampleUv(
     uv: Float2Expr
