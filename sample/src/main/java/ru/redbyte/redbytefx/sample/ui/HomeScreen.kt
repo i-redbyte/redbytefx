@@ -115,6 +115,18 @@ fun HomeScreen(
                 demoId = DemoId.Wave
             ),
             StarterRoute(
+                label = "PATH 01a",
+                title = "Port A Classic AGSL Gradient",
+                summary = "RGB sin waves over UV with uniform time — no sampling, no stdlib, ideal for line-by-line AGSL ports.",
+                demoId = DemoId.AnimatedGradient
+            ),
+            StarterRoute(
+                label = "PATH 01b",
+                title = "Compose Touch Into Uniforms",
+                summary = "Drag on the preview: a float2 uniform tracks the pointer while animated ripples run in the shader.",
+                demoId = DemoId.TouchRipple
+            ),
+            StarterRoute(
                 label = "PATH 02",
                 title = "See Stdlib Recipes",
                 summary = "Jump into reusable helpers and watch how masks, patterns, and modulation still stay readable in AGSL shape.",

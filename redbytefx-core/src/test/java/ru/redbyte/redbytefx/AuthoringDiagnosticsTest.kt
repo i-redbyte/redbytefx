@@ -87,7 +87,7 @@ class AuthoringDiagnosticsTest {
         val message = checkNotNull(error.message)
         assertTrue(message.contains("kotlin.Int"))
         assertTrue(message.contains("Hint:"))
-        assertTrue(message.contains("integer literals"))
+        assertTrue(message.contains("Integer literals", ignoreCase = true))
         assertTrue(message.contains("float(...)"))
     }
 
