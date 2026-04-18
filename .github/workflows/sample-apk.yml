@@ -1,0 +1,58 @@
+name: Sample APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Assemble universal debug APK
+        run: ./gradlew :sample:assembleDebug --no-daemon
+        # Default APK is a single fat binary (all ABIs); sample has no abi splits.
+
+      - name: Prepare artifact name
+        run: |
+          cp sample/build/outputs/apk/debug/sample-debug.apk redbytefx-sample-demo.apk
+
+      - name: Publish demo APK (fixed release, overwrite)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if ! gh release view demo --repo "${{ github.repository }}" 2>/dev/null; then
+            gh release create demo \
+              --repo "${{ github.repository }}" \
+              --title "Sample demo APK" \
+              --notes "Последняя сборка sample-приложения. Коммит: ${{ github.sha }}"
+          fi
+          gh release upload demo redbytefx-sample-demo.apk \
+            --repo "${{ github.repository }}" \
+            --clobber
