@@ -30,6 +30,7 @@ enum class DemoId {
     Aurora,
     LiquidGlass,
     AnimatedGradient,
+    PhysicsBubble,
     TouchRipple,
     Metaballs,
     CrtTerminal
@@ -252,6 +253,7 @@ val DemoInfo.focusTags: List<String>
         DemoId.Aurora -> listOf("hero", "iridescent", "chromatic", "rim", "polar sweep")
         DemoId.LiquidGlass -> listOf("glass", "refraction", "fresnel", "domain warp", "liquid")
         DemoId.AnimatedGradient -> listOf("gradient", "sin", "rgb", "time", "uv", "port", "agsl")
+        DemoId.PhysicsBubble -> listOf("thin-film", "fresnel", "refraction", "drag", "physics", "port")
         DemoId.TouchRipple -> listOf("pointer", "float2", "touch", "compose", "ripple", "time")
         DemoId.Metaballs -> listOf("sdf", "metaballs", "smoothmin", "procedural", "animation")
         DemoId.CrtTerminal -> listOf("crt", "scanlines", "barrel", "chromatic", "retro", "terminal")
@@ -306,6 +308,7 @@ val DemoInfo.section: DemoSection
         DemoId.Glitch,
         DemoId.Radar,
         DemoId.Circuit,
+        DemoId.PhysicsBubble,
         DemoId.Metaballs,
         DemoId.CrtTerminal -> DemoSection.Procedural
 
@@ -359,6 +362,7 @@ val DemoInfo.layer: DemoLayer
         DemoId.Sigil,
         DemoId.Aurora,
         DemoId.LiquidGlass,
+        DemoId.PhysicsBubble,
         DemoId.Metaballs,
         DemoId.CrtTerminal -> DemoLayer.Stdlib
     }
@@ -381,6 +385,7 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Aurora,
         DemoId.LiquidGlass,
         DemoId.AnimatedGradient,
+        DemoId.PhysicsBubble,
         DemoId.TouchRipple,
         DemoId.Metaballs,
         DemoId.CrtTerminal -> true
@@ -753,6 +758,20 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val g = let(0.5f + 0.5f * sin(3f * uv.y + t * 1.1f), "g")
             val b = let(0.5f + 0.5f * sin(3f * (uv.x + uv.y) + t * 0.9f), "b")
             color(float3(r, g, b), 1f)
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.PhysicsBubble,
+        title = "Physics Bubble",
+        subtitle = "Drag-driven soap bubble with RedByteFX thin-film shading.",
+        focus = "Port of PhysicsBubbleScreen: the Compose spring/drag interaction stays on the UI side, " +
+            "while the bubble optics move into RedByteFX with refraction, Fresnel, chromatic split, " +
+            "noise-driven film thickness, and environment reflection authored in the DSL.",
+        snippet = """
+            val rawUv = fragCoord - bubbleCenter
+            val uv = moveDir * (parallelDist / stretch) + perpVector / squash
+            val thinFilmColor = mix(whiteReflection, filmReflection, interferenceStrength)
+            ifElse(outsideBubble, rawBackground, color(mixedRgb, rawBackground.a))
         """.trimIndent()
     ),
     DemoInfo(

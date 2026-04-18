@@ -23,6 +23,7 @@ import ru.redbyte.redbytefx.sample.ui.demos.DemoLiquidGlass
 import ru.redbyte.redbytefx.sample.ui.demos.DemoMetaballs
 import ru.redbyte.redbytefx.sample.ui.demos.DemoMirror
 import ru.redbyte.redbytefx.sample.ui.demos.DemoOffset
+import ru.redbyte.redbytefx.sample.ui.demos.DemoPhysicsBubble
 import ru.redbyte.redbytefx.sample.ui.demos.DemoPosterize
 import ru.redbyte.redbytefx.sample.ui.demos.DemoPrism
 import ru.redbyte.redbytefx.sample.ui.demos.DemoPulse
@@ -93,6 +94,7 @@ fun DemoScreen(
             DemoId.Aurora -> DemoAurora()
             DemoId.LiquidGlass -> DemoLiquidGlass()
             DemoId.AnimatedGradient -> DemoAnimatedGradient()
+            DemoId.PhysicsBubble -> DemoPhysicsBubble()
             DemoId.TouchRipple -> DemoTouchRipple()
             DemoId.Metaballs -> DemoMetaballs()
             DemoId.CrtTerminal -> DemoCrtTerminal()
