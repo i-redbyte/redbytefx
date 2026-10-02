@@ -2,13 +2,13 @@
 
 # RedByteFX
 
-**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL and to OpenGL ES 3.0.
+**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL, OpenGL ES 3.0, and OpenGL ES 3.1 compute.
 
 Authoring is Kotlin, not a shader string. The compiler emits the text the platform actually runs:
 
-`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, or a GLES 3.0 program`
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, a GLES 3.0 program, or a GLES 3.1 compute program`
 
-**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00, vertex and fragment.
+**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00 vertex and fragment, or GLSL ES 3.10 compute.
 
 ## What you write
 
@@ -45,6 +45,16 @@ val pulse = shader(ShaderTarget.Gles30) {
 }
 ```
 
+OpenGL ES 3.1 is a compute program. It has no vertex or fragment stage. One `storageBlock` is std430, and `compute(localSizeX)` writes its fields. Inspect the text with `computeSource()`. The EGL context for that program is OpenGL ES 3.1.
+
+```kotlin
+val cells = shader(ShaderTarget.Gles31) {
+    lateinit var value: Expr<Vec4<Flt<High>>>
+    storageBlock("cells") { value = vec4("value") }
+    compute(64) { value.store(value) }
+}
+```
+
 `Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. The OpenGL list includes a triangle and the Spheres scene, which draws on its own `GLSurfaceView`.
 
 ## Install
@@ -60,8 +70,8 @@ dependencies {
 
 | Artifact | Role |
 |----------|------|
-| `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL and GLSL ES 3.00 spelling |
-| `redbytefx-gl` | GLES 3.0 link and uniform writes, bound to the EGL thread |
+| `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, and GLSL ES 3.10 compute spelling |
+| `redbytefx-gl` | GLES 3.0 and 3.1 link, uniform writes, and storage uploads, bound to the EGL thread |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
 | `redbytefx-stdlib` | Coordinates, masks, compositing, SDF, and related helpers on top of the same DSL |
 
@@ -121,11 +131,11 @@ Math that spells the same call in both languages includes `sin`, `cos`, `abs`, `
 
 `ShaderProgram` is immutable and readable from any thread. The expression graph and the generated strings exist at compile time.
 
-AGSL playback is `program.newAgslInstance()`. An unchanged uniform does not call the GPU. GLES playback is `GlProgramRuntime` in `redbytefx-gl`: create it, link it, and destroy it on the thread that owns the EGL context. `destroy` unbinds the program before deleting it.
+AGSL playback is `program.newAgslInstance()`. An unchanged uniform does not call the GPU. GLES playback is `GlProgramRuntime` in `redbytefx-gl`: create it, link it, and destroy it on the thread that owns the EGL context. `destroy` unbinds the program before deleting it. `runtime.set(storageBlock, floats)` packs std430 and skips the upload when those bytes are unchanged.
 
 ## Not in this version
 
-The compiler does not emit compute, geometry, or tessellation shaders, desktop GL, GLES 2.0, uniform blocks, shader storage blocks, or multiple fragment outputs. User functions stop at two arguments. A function written for one stage is not callable from the other. Recursion is rejected.
+The compiler does not emit geometry or tessellation shaders, desktop GL, or GLES 2.0.
 
 ## Contributing
 

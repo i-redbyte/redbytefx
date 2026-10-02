@@ -9,6 +9,7 @@ import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.lit
@@ -191,6 +192,56 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun unchangedStorageBytesSkipTheUploadAndAForeignBlockIsRejected() {
+        val device = RecordingGlDevice()
+        lateinit var block: StorageBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles31) {
+                block = storageBlock("cells") { float("value") }
+                compute(64) { }
+            },
+            device,
+        )
+        var wrongThread: GlException? = null
+        Thread {
+            try {
+                runtime.set(block, floatArrayOf(1f))
+            } catch (error: GlException) {
+                wrongThread = error
+            }
+        }.apply {
+            start()
+            join()
+        }
+        assertEquals(GlCode.WrongThread, wrongThread?.code)
+        assertEquals(0, device.storageDataCalls)
+
+        runtime.link()
+        val values = floatArrayOf(1.5f)
+        assertTrue(runtime.set(block, values))
+        assertEquals(1, device.storageDataCalls)
+        assertEquals(0, device.storageSubDataCalls)
+        assertFalse(runtime.set(block, values.copyOf()))
+        assertEquals(1, device.storageDataCalls)
+        assertEquals(0, device.storageSubDataCalls)
+        assertTrue(runtime.set(block, floatArrayOf(0f)))
+        assertEquals(1, device.storageSubDataCalls)
+
+        lateinit var foreign: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            foreign = storageBlock("other") { float("value") }
+            compute(8) { }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.set(foreign, floatArrayOf(1f))
+        }
+        assertEquals(1, device.storageDataCalls)
+
+        runtime.destroy()
+        assertEquals(1, device.deleteBufferCalls)
+    }
+
+    @Test
     fun agslProgramIsRejectedBeforeAnyDriverCall() {
         val device = RecordingGlDevice()
         val program = shader(ShaderTarget.Agsl) {
@@ -318,5 +369,22 @@ private class RecordingGlDevice(
 
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
         writes += "blockBinding"
+    }
+
+    var storageDataCalls = 0
+    var storageSubDataCalls = 0
+
+    override fun shaderStorageData(buffer: Int, data: ByteArray) {
+        storageDataCalls += 1
+        writes += "storageData"
+    }
+
+    override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
+        storageSubDataCalls += 1
+        writes += "storageSubData"
+    }
+
+    override fun bindShaderStorageBase(buffer: Int, binding: Int) {
+        writes += "bindStorage"
     }
 }

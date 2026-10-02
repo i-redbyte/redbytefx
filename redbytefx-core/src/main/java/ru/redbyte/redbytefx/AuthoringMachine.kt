@@ -3,12 +3,14 @@ package ru.redbyte.redbytefx
 public enum class ShaderTarget {
     Agsl,
     Gles30,
+    Gles31,
 }
 
 internal enum class AuthoringPlace {
     Program,
     Vertex,
     Fragment,
+    Compute,
     Function,
 }
 
@@ -17,8 +19,10 @@ internal enum class AuthoringAction {
     DeclareSampler,
     DeclareVarying,
     DeclareUniformBlock,
+    DeclareStorage,
     EnterVertex,
     EnterFragment,
+    EnterCompute,
     EnterFunction,
     LeaveFunction,
     LeaveStage,
@@ -27,6 +31,7 @@ internal enum class AuthoringAction {
     Attribute,
     GlPosition,
     FragmentOut,
+    StorageWrite,
     Let,
     Return,
 }
@@ -54,6 +59,13 @@ internal enum class AuthoringCode {
     GlPositionOutsideVertex,
     FragmentOutOnAgsl,
     FragmentOutOutsideFragment,
+    ComputeOutsideGles31,
+    ComputeOutsideProgram,
+    VertexOnGles31,
+    FragmentOnGles31,
+    StorageOutsideGles31,
+    StorageOutsideProgram,
+    StorageWriteOutsideCompute,
     LetOutsideStage,
     ReturnOutsideStage,
 }
@@ -92,8 +104,11 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         AuthoringAction.DeclareSampler -> declareSampler(state)
         AuthoringAction.DeclareVarying -> declareVarying(state)
         AuthoringAction.DeclareUniformBlock -> declareUniformBlock(state)
+        AuthoringAction.DeclareStorage -> declareStorage(state)
         AuthoringAction.EnterVertex -> enterVertex(state)
         AuthoringAction.EnterFragment -> enterFragment(state)
+        AuthoringAction.EnterCompute -> enterCompute(state)
+        AuthoringAction.StorageWrite -> storageWrite(state)
         AuthoringAction.EnterFunction -> enterFunction(state)
         AuthoringAction.LeaveFunction -> leaveFunction(state)
         AuthoringAction.LeaveStage -> leaveStage(state)
@@ -129,7 +144,8 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
 private fun declareUniform(state: AuthoringState): AuthoringStep = when (state.place) {
     AuthoringPlace.Program -> accept(state)
     AuthoringPlace.Function -> reject(state, AuthoringCode.UniformInsideFunction)
-    AuthoringPlace.Vertex, AuthoringPlace.Fragment -> reject(state, AuthoringCode.UniformOutsideProgram)
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute ->
+        reject(state, AuthoringCode.UniformOutsideProgram)
 }
 
 private fun declareSampler(state: AuthoringState): AuthoringStep = when {
@@ -140,8 +156,14 @@ private fun declareSampler(state: AuthoringState): AuthoringStep = when {
 
 private fun declareUniformBlock(state: AuthoringState): AuthoringStep = when {
     state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.UniformBlockOnAgsl)
-    state.place == AuthoringPlace.Program -> accept(state)
+    state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Program -> accept(state)
     else -> reject(state, AuthoringCode.UniformBlockOutsideProgram)
+}
+
+private fun declareStorage(state: AuthoringState): AuthoringStep = when {
+    state.target != ShaderTarget.Gles31 -> reject(state, AuthoringCode.StorageOutsideGles31)
+    state.place == AuthoringPlace.Program -> accept(state)
+    else -> reject(state, AuthoringCode.StorageOutsideProgram)
 }
 
 private fun declareVarying(state: AuthoringState): AuthoringStep = when {
@@ -152,25 +174,39 @@ private fun declareVarying(state: AuthoringState): AuthoringStep = when {
 
 private fun enterVertex(state: AuthoringState): AuthoringStep = when {
     state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.VertexOutsideProgram)
+    state.target == ShaderTarget.Gles31 -> reject(state, AuthoringCode.VertexOnGles31)
     state.target != ShaderTarget.Gles30 -> reject(state, AuthoringCode.VertexOnAgsl)
     else -> accept(state.copy(place = AuthoringPlace.Vertex))
 }
 
-private fun enterFragment(state: AuthoringState): AuthoringStep = when (state.place) {
-    AuthoringPlace.Program -> accept(state.copy(place = AuthoringPlace.Fragment))
-    else -> reject(state, AuthoringCode.FragmentOutsideProgram)
+private fun enterFragment(state: AuthoringState): AuthoringStep = when {
+    state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.FragmentOutsideProgram)
+    state.target == ShaderTarget.Gles31 -> reject(state, AuthoringCode.FragmentOnGles31)
+    else -> accept(state.copy(place = AuthoringPlace.Fragment))
+}
+
+private fun enterCompute(state: AuthoringState): AuthoringStep = when {
+    state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.ComputeOutsideProgram)
+    state.target != ShaderTarget.Gles31 -> reject(state, AuthoringCode.ComputeOutsideGles31)
+    else -> accept(state.copy(place = AuthoringPlace.Compute))
+}
+
+private fun storageWrite(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Gles31 && state.place == AuthoringPlace.Compute -> accept(state)
+    else -> reject(state, AuthoringCode.StorageWriteOutsideCompute)
 }
 
 private fun enterFunction(state: AuthoringState): AuthoringStep = when (state.place) {
     AuthoringPlace.Function -> reject(state, AuthoringCode.NestedFunction)
-    AuthoringPlace.Program -> reject(state, AuthoringCode.FunctionOutsideStage)
     AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(
         state.copy(place = AuthoringPlace.Function, functionParent = state.place),
     )
+    AuthoringPlace.Program, AuthoringPlace.Compute -> reject(state, AuthoringCode.FunctionOutsideStage)
 }
 
 private fun leaveStage(state: AuthoringState): AuthoringStep = when (state.place) {
-    AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(state.copy(place = AuthoringPlace.Program))
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute ->
+        accept(state.copy(place = AuthoringPlace.Program))
     else -> reject(state, AuthoringCode.LeaveOutsideStage)
 }
 

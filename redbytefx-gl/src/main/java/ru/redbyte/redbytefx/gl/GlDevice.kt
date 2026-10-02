@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.gl
 public enum class GlStage {
     Vertex,
     Fragment,
+    Compute,
 }
 
 public class GlCompileStatus(
@@ -56,4 +57,10 @@ public abstract class GlDevice {
     public abstract fun uniformBlockIndex(program: Int, name: String): Int
 
     public abstract fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int)
+
+    public abstract fun shaderStorageData(buffer: Int, data: ByteArray)
+
+    public abstract fun shaderStorageSubData(buffer: Int, data: ByteArray)
+
+    public abstract fun bindShaderStorageBase(buffer: Int, binding: Int)
 }

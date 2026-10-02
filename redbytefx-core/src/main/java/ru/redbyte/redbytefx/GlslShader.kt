@@ -372,6 +372,63 @@ private fun glslLocalBase(suggested: String?, index: Int): String {
     return if (safe) suggested else sanitizeSuggestedIdentifier(suggested, "l")
 }
 
+internal fun spellCompute(
+    localSizeX: Int,
+    storage: StorageBlock?,
+    writes: List<StorageAssignment>,
+    uniforms: List<Uniform<*>>,
+    names: IdentifierAllocator,
+): ShaderProgram {
+    val bindings = uniforms.map { uniform ->
+        UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
+    }
+    val uniformNames = bindings.associate { it.uniform to it.agslName }
+    val occupied = names.snapshot()
+    val emitter = GlslEmitter(IdentifierAllocator(occupied), uniformNames, emptyMap(), emptyMap())
+    val statements = writes.map { write ->
+        val left = emitter.emit(write.target)
+        val right = emitter.emit(write.value)
+        "  $left = $right;"
+    }
+    val used = linkedSetOf<Uniform<*>>()
+    writes.forEach { write ->
+        collectUniforms(write.target, used)
+        collectUniforms(write.value, used)
+    }
+    val source = buildString {
+        append("#version 310 es\n")
+        append("precision highp float;\n")
+        for (binding in bindings.filter { it.uniform in used }) {
+            append("uniform ").append(glslDeclaration(binding.uniform.shape)).append(' ')
+                .append(binding.agslName).append(";\n")
+        }
+        append(storageText(storage))
+        append("layout(local_size_x = ").append(localSizeX).append(") in;\n")
+        append("void main() {\n")
+        for (line in emitter.declarations) append(line).append('\n')
+        for (line in statements) append(line).append('\n')
+        append("}\n")
+    }
+    return ShaderProgram(
+        target = ShaderTarget.Gles31,
+        bindings = bindings,
+        storageBlock = storage,
+        computeSourceText = source,
+    )
+}
+
+private fun storageText(block: StorageBlock?): String {
+    if (block == null) return ""
+    return buildString {
+        append("layout(std430, binding = 0) buffer ").append(block.typeName).append(" {\n")
+        for (member in block.members) {
+            append("  ").append(glslDeclaration(member.shape)).append(' ')
+                .append(member.memberName).append(";\n")
+        }
+        append("} ").append(block.instanceName).append(";\n")
+    }
+}
+
 internal fun glslReservedNames(): Set<String> = buildSet {
     addAll(RESERVED_USER_FUNCTION_NAMES)
     add("main")

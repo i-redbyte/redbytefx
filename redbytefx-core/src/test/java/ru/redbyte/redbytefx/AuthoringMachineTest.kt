@@ -85,8 +85,26 @@ class AuthoringMachineTest {
         assertAccepted(glesFragment, AuthoringAction.FragmentOut, glesFragment)
         assertRejected(agslFragment, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOnAgsl)
         assertRejected(glesVertex, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOutsideFragment)
+        assertRejected(gles31Program, AuthoringAction.DeclareUniformBlock, AuthoringCode.UniformBlockOutsideProgram)
         assertRejected(agslProgram, AuthoringAction.Let, AuthoringCode.LetOutsideStage)
         assertRejected(agslProgram, AuthoringAction.Return, AuthoringCode.ReturnOutsideStage)
+    }
+
+    @Test
+    fun computeIsItsOwnStageAndKeepsVertexAndFragmentOut() {
+        assertAccepted(gles31Program, AuthoringAction.EnterCompute, gles31Compute)
+        assertAccepted(gles31Compute, AuthoringAction.LeaveStage, gles31Program)
+        assertAccepted(gles31Program, AuthoringAction.DeclareStorage, gles31Program)
+        assertAccepted(gles31Compute, AuthoringAction.StorageWrite, gles31Compute)
+        assertRejected(glesProgram, AuthoringAction.EnterCompute, AuthoringCode.ComputeOutsideGles31)
+        assertRejected(agslProgram, AuthoringAction.EnterCompute, AuthoringCode.ComputeOutsideGles31)
+        assertRejected(gles31Compute, AuthoringAction.EnterCompute, AuthoringCode.ComputeOutsideProgram)
+        assertRejected(gles31Program, AuthoringAction.EnterVertex, AuthoringCode.VertexOnGles31)
+        assertRejected(gles31Program, AuthoringAction.EnterFragment, AuthoringCode.FragmentOnGles31)
+        assertRejected(glesProgram, AuthoringAction.DeclareStorage, AuthoringCode.StorageOutsideGles31)
+        assertRejected(gles31Compute, AuthoringAction.DeclareStorage, AuthoringCode.StorageOutsideProgram)
+        assertRejected(gles31Program, AuthoringAction.StorageWrite, AuthoringCode.StorageWriteOutsideCompute)
+        assertRejected(gles31Compute, AuthoringAction.EnterFunction, AuthoringCode.FunctionOutsideStage)
     }
 
     private fun assertAccepted(
@@ -119,6 +137,8 @@ class AuthoringMachineTest {
     private val glesProgram = authoringState(ShaderTarget.Gles30, AuthoringPlace.Program)
     private val glesVertex = authoringState(ShaderTarget.Gles30, AuthoringPlace.Vertex)
     private val glesFragment = authoringState(ShaderTarget.Gles30, AuthoringPlace.Fragment)
+    private val gles31Program = authoringState(ShaderTarget.Gles31, AuthoringPlace.Program)
+    private val gles31Compute = authoringState(ShaderTarget.Gles31, AuthoringPlace.Compute)
     private val glesFunctionFromVertex = authoringState(
         ShaderTarget.Gles30,
         AuthoringPlace.Function,
