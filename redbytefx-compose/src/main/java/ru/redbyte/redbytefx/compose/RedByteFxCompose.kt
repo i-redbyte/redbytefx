@@ -31,18 +31,18 @@ import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
 
 /**
- * Compose-friendly controller for a runtime [FxInstance].
+ * Compose-friendly controller for one AGSL [ru.redbyte.redbytefx.AgslInstance].
  *
  * A controller owns a single runtime shader control. Use a separate controller when the same
- * compiled [FxEffect] needs to render independently in multiple places or at different sizes.
+ * compiled [ru.redbyte.redbytefx.ShaderProgram] needs to render independently in multiple places
+ * or at different sizes.
  *
- * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform params are
- * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
- * created this controller. If runtime updates throw about a missing uniform, the usual cause is an
- * [FxParam] from a **different** `redbytefx { }` block or effect instance — see **`README.md`**
- * (uniform handles are effect-specific).
+ * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform handles belong
+ * to the program that created this controller. If runtime updates throw about a missing uniform,
+ * the usual cause is a [ru.redbyte.redbytefx.Uniform] from a different `shader { }` program — see
+ * **`README.md`**.
  *
- * Uniform deduplication is delegated to [FxInstance]; the controller only invalidates the host
+ * Uniform deduplication is delegated to the AGSL instance; the controller only invalidates the host
  * when the instance reports an actual change.
  *
  * In composable code, prefer [bindFloat], [bindFloat2], [bindFloat3], [bindFloat4], and
@@ -72,7 +72,7 @@ public class FxController internal constructor(
         }
 
     /**
-     * Updates a scalar float uniform and invalidates the host view when [FxInstance.setFloat]
+     * Updates a scalar float uniform and invalidates the host view when the AGSL instance
      * reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
@@ -247,9 +247,10 @@ public fun FxController.bindTime(
  * Binds a scalar float uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller (same compiled [FxEffect] as [rememberFxController]); matching names from another
- * effect are not interchangeable. Outside composition, use [setFloat] directly instead.
+     * the value has actually changed. The [param] handle must belong to the program that created this
+ * controller (same compiled [ru.redbyte.redbytefx.ShaderProgram] as [rememberFxController]); matching
+ * names from another program are not interchangeable. Outside composition, use [setFloat] directly
+ * instead.
  */
 @Composable
 public fun FxController.bindFloat(
@@ -324,7 +325,7 @@ public fun FxController.bindFloat4(
  * The supplied [controller] is expected to belong to this render target so its resolution stays
  * in sync with the content size. Reusing the same controller across unrelated render targets can
  * cause the runtime resolution to flap between sizes, so independent surfaces should normally own
- * independent controllers even if they share the same compiled [FxEffect].
+ * independent controllers even if they share the same compiled [ru.redbyte.redbytefx.ShaderProgram].
  *
  * Internally this records the content into an offscreen graphics layer and applies the platform
  * render effect produced by the controller's runtime shader control.
