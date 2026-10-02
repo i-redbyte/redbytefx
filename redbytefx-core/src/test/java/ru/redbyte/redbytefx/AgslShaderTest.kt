@@ -26,9 +26,8 @@ class AgslShaderTest {
         assertThrows(IllegalArgumentException::class.java) {
             spell(Shape.Sampler2D, ShaderTarget.Agsl)
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            spell(1f.lit.shape, ShaderTarget.Gles30)
-        }
+        assertEquals("float", spell(1f.lit.shape, ShaderTarget.Gles30))
+        assertEquals("vec2", spell(vec2(0f.lit, 1f.lit).shape, ShaderTarget.Gles30))
     }
 
     @Test

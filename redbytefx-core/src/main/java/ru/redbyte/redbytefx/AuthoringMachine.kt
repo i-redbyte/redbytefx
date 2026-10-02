@@ -20,6 +20,7 @@ internal enum class AuthoringAction {
     EnterFragment,
     EnterFunction,
     LeaveFunction,
+    LeaveStage,
     Sample,
     Texture,
     Attribute,
@@ -41,6 +42,7 @@ internal enum class AuthoringCode {
     FunctionOutsideStage,
     NestedFunction,
     LeaveOutsideFunction,
+    LeaveOutsideStage,
     SampleOutsideAgslFragment,
     TextureOutsideGlesFragment,
     AttributeOutsideVertex,
@@ -87,6 +89,7 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         AuthoringAction.EnterFragment -> enterFragment(state)
         AuthoringAction.EnterFunction -> enterFunction(state)
         AuthoringAction.LeaveFunction -> leaveFunction(state)
+        AuthoringAction.LeaveStage -> leaveStage(state)
         AuthoringAction.Sample -> allow(
             state,
             state.target == ShaderTarget.Agsl && state.place == AuthoringPlace.Fragment,
@@ -150,6 +153,11 @@ private fun enterFunction(state: AuthoringState): AuthoringStep = when (state.pl
     AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(
         state.copy(place = AuthoringPlace.Function, functionParent = state.place),
     )
+}
+
+private fun leaveStage(state: AuthoringState): AuthoringStep = when (state.place) {
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(state.copy(place = AuthoringPlace.Program))
+    else -> reject(state, AuthoringCode.LeaveOutsideStage)
 }
 
 private fun leaveFunction(state: AuthoringState): AuthoringStep {

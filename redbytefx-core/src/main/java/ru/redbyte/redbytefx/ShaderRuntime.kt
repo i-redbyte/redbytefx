@@ -32,7 +32,11 @@ internal class ShaderRuntime(
     init {
         batch {
             for (binding in program.bindings) {
-                setFloat(binding.uniform, binding.uniform.default)
+                val default = binding.uniform.default ?: continue
+                val shape = binding.uniform.shape
+                if (shape is Shape.Scalar && shape.kind == ScalarKind.Float) {
+                    setFloat(binding.uniform, default)
+                }
             }
             setResolution(1f, 1f)
         }

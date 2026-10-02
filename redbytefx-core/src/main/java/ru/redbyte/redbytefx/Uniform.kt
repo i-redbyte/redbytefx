@@ -9,7 +9,7 @@ package ru.redbyte.redbytefx
 public class Uniform<T : ShType> internal constructor(
     public val name: String?,
     public val shape: Shape,
-    internal val default: Float,
+    internal val default: Float?,
 ) {
     public lateinit var expr: Expr<T>
         internal set
@@ -21,6 +21,12 @@ internal fun <T : ShType> createUniform(
     default: Float,
 ): Uniform<T> {
     val handle = Uniform<T>(name, shape, default)
+    handle.expr = Expr(shape, ExprNode.UniformRef(handle))
+    return handle
+}
+
+internal fun <T : ShType> createSampler(name: String, shape: Shape): Uniform<T> {
+    val handle = Uniform<T>(name, shape, null)
     handle.expr = Expr(shape, ExprNode.UniformRef(handle))
     return handle
 }
