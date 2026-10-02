@@ -1,6 +1,6 @@
 package ru.redbyte.redbytefx
 
-internal enum class ShaderTarget {
+public enum class ShaderTarget {
     Agsl,
     Gles30,
 }
@@ -69,6 +69,8 @@ internal data class AuthoringStep(
     val state: AuthoringState,
     val code: AuthoringCode?,
 )
+
+internal class AuthoringException(val code: AuthoringCode) : IllegalStateException(code.name)
 
 internal fun authoringState(
     target: ShaderTarget,

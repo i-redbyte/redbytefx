@@ -28,6 +28,16 @@ internal sealed interface ExprNode {
     data class Binary(val op: ArithOp, val left: Expr<*>, val right: Expr<*>) : ExprNode
 
     data class Construct(val args: List<Expr<*>>) : ExprNode
+
+    data class Local(val suggestedName: String?, val initializer: Expr<*>) : ExprNode
+
+    data class UniformRef(val uniform: Uniform<*>) : ExprNode
+
+    data object FragCoord : ExprNode
+
+    data object Resolution : ExprNode
+
+    data class Sample(val coord: Expr<*>) : ExprNode
 }
 
 internal enum class ArithOp {
