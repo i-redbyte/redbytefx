@@ -52,6 +52,16 @@ public class ShaderDsl internal constructor(
     private var fragmentBody: Expr<*>? = null
     private var vertexPosition: Expr<Vec4<Flt<High>>>? = null
     private var vertexBuilt = false
+    private val functions = mutableListOf<UserFunction>()
+    private val names = IdentifierAllocator(
+        if (target == ShaderTarget.Agsl) agslReservedNames() else glslReservedNames(),
+    )
+    private val stageFunctions = StageFunctions(
+        advance = ::advance,
+        parent = { checkNotNull(state.functionParent) { "Function has no parent stage" } },
+        names = names,
+        register = functions::add,
+    )
 
     public fun uniform(name: String, default: Float): Uniform<Flt<High>> {
         advance(AuthoringAction.DeclareUniform)
@@ -64,6 +74,9 @@ public class ShaderDsl internal constructor(
         uniforms += handle
         return handle
     }
+
+    public fun uniformTime(default: Float = 0f, name: String = "time"): Uniform<Flt<High>> =
+        uniform(name, default)
 
     public fun sampler2D(name: String): Uniform<Sampler2D> {
         advance(AuthoringAction.DeclareSampler)
@@ -81,7 +94,7 @@ public class ShaderDsl internal constructor(
         check(fragmentBody == null) { "Shader already has a fragment stage" }
         advance(AuthoringAction.EnterFragment)
         try {
-            fragmentBody = FragmentDsl(::advance).block()
+            fragmentBody = FragmentDsl(::advance, stageFunctions).block()
         } finally {
             advance(AuthoringAction.LeaveStage)
         }
@@ -105,17 +118,19 @@ public class ShaderDsl internal constructor(
 
     private fun compileAgsl(): ShaderProgram {
         val body = checkNotNull(fragmentBody) { "AGSL shader requires a fragment stage" }
-        val allocator = IdentifierAllocator(agslReservedNames())
+        checkFunctionStage(body, AuthoringPlace.Fragment)
         val bindings = uniforms.map { uniform ->
-            val agslName = allocator.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_"))
+            val agslName = names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_"))
             UniformBinding(uniform, agslName)
         }
-        val names = bindings.associateBy { it.uniform }
-        val emitter = AgslEmitter(allocator, names)
+        val uniformNames = bindings.associateBy { it.uniform }
+        val occupied = names.snapshot()
+        val functionText = renderAgslFunctions(functions, occupied, uniformNames)
+        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames)
         val rendered = emitter.emit(body)
         return ShaderProgram(
             target = target,
-            agsl = renderAgsl(bindings, emitter.declarations, rendered),
+            agsl = renderAgsl(bindings, emitter.declarations, functionText, rendered),
             bindings = bindings,
         )
     }
@@ -143,6 +158,9 @@ public class ShaderDsl internal constructor(
         val position = vertexPosition
             ?: throw ProgramException(ProgramCode.MissingGlPosition, "GLES vertex must assign gl_Position")
         require(isFloatVec4(body.shape)) { "GLES fragment must return a float vec4, was ${body.shape}" }
+        checkFunctionStage(position, AuthoringPlace.Vertex)
+        varyingWrites.forEach { checkFunctionStage(it.value, AuthoringPlace.Vertex) }
+        checkFunctionStage(body, AuthoringPlace.Fragment)
         val reads = linkedSetOf<Varying<*>>()
         collectVaryings(body, reads)
         for (varying in reads) {
@@ -160,6 +178,8 @@ public class ShaderDsl internal constructor(
             writes = varyingWrites,
             position = position,
             fragmentBody = body,
+            names = names,
+            functions = functions,
         )
     }
 
@@ -187,6 +207,22 @@ public class ShaderDsl internal constructor(
             Shape.Vector(ScalarKind.Float, Precision.High, 4),
         )
 
+        public fun <R : ShType> fn(name: String? = null, block: VertexDsl.() -> Expr<R>): Fn0<R> =
+            stageFunctions.fn0(name) { block() }
+
+        public fun <A : ShType, R : ShType> fn(
+            witness: Expr<A>,
+            name: String? = null,
+            block: VertexDsl.(Expr<A>) -> Expr<R>,
+        ): Fn1<A, R> = stageFunctions.fn1(name, witness) { block(it) }
+
+        public fun <A : ShType, B : ShType, R : ShType> fn(
+            first: Expr<A>,
+            second: Expr<B>,
+            name: String? = null,
+            block: VertexDsl.(Expr<A>, Expr<B>) -> Expr<R>,
+        ): Fn2<A, B, R> = stageFunctions.fn2(name, first, second) { left, right -> block(left, right) }
+
         private fun <T : ShType> attribute(name: String, shape: Shape): Expr<T> {
             advance(AuthoringAction.Attribute)
             val handle = AttributeHandle(name, shape)
@@ -201,6 +237,7 @@ private fun isFloatVec4(shape: Shape): Boolean =
 
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
+    private val functions: StageFunctions,
 ) {
     public val fragCoord: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
@@ -230,6 +267,22 @@ public class FragmentDsl internal constructor(
             ExprNode.Sample(coord),
         )
     }
+
+    public fun <R : ShType> fn(name: String? = null, block: FragmentDsl.() -> Expr<R>): Fn0<R> =
+        functions.fn0(name) { block() }
+
+    public fun <A : ShType, R : ShType> fn(
+        witness: Expr<A>,
+        name: String? = null,
+        block: FragmentDsl.(Expr<A>) -> Expr<R>,
+    ): Fn1<A, R> = functions.fn1(name, witness) { block(it) }
+
+    public fun <A : ShType, B : ShType, R : ShType> fn(
+        first: Expr<A>,
+        second: Expr<B>,
+        name: String? = null,
+        block: FragmentDsl.(Expr<A>, Expr<B>) -> Expr<R>,
+    ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> block(left, right) }
 
     public fun <T : ShType> Expr<T>.let(name: String? = null): Expr<T> {
         advance(AuthoringAction.Let)
@@ -265,6 +318,10 @@ private class AgslEmitter(
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
         is ExprNode.Call -> call(node)
+        is ExprNode.Param -> node.name
+        is ExprNode.Compare -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
+        is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
+        is ExprNode.UserCall -> call(ExprNode.Call(node.function.name, node.args))
         is ExprNode.Texture,
         is ExprNode.AttributeRef,
         is ExprNode.VaryingRef -> error("AGSL cannot spell ${node::class.simpleName}")
@@ -317,9 +374,29 @@ private fun agslReservedNames(): Set<String> = buildSet {
     add("rb_sample")
 }
 
+private fun renderAgslFunctions(
+    functions: List<UserFunction>,
+    occupied: Set<String>,
+    uniforms: Map<Uniform<*>, UniformBinding>,
+): String = buildString {
+    for (function in functions) {
+        val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
+        val emitter = AgslEmitter(locals, uniforms)
+        val body = emitter.emit(function.body)
+        val signature = function.parameters.joinToString(", ") {
+            "${spell(it.shape, ShaderTarget.Agsl)} ${it.name}"
+        }
+        append(spell(function.result, ShaderTarget.Agsl)).append(' ').append(function.name)
+            .append('(').append(signature).append(") {\n")
+        emitter.declarations.forEach { append(it).append('\n') }
+        append("  return ").append(body).append(";\n}\n")
+    }
+}
+
 private fun renderAgsl(
     bindings: List<UniformBinding>,
     declarations: List<String>,
+    functions: String,
     output: String,
 ): String = buildString {
     append("uniform shader ").append(RB_INPUT_UNIFORM).append(";\n")
@@ -330,6 +407,7 @@ private fun renderAgsl(
     }
     append('\n')
     append(AGSL_SAMPLE_HELPER)
+    append(functions)
     append("half4 main(float2 fragCoord) {\n")
     for (line in declarations) {
         append(line).append('\n')

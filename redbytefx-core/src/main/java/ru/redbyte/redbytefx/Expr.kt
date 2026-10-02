@@ -52,6 +52,23 @@ internal sealed interface ExprNode {
     data class VaryingRef(val varying: Varying<*>) : ExprNode
 
     data class Call(val function: String, val args: List<Expr<*>>) : ExprNode
+
+    data class Param(val name: String) : ExprNode
+
+    data class Compare(val op: CompareOp, val left: Expr<*>, val right: Expr<*>) : ExprNode
+
+    data class Select(val condition: Expr<*>, val ifTrue: Expr<*>, val ifFalse: Expr<*>) : ExprNode
+
+    data class UserCall(val function: UserFunction, val args: List<Expr<*>>) : ExprNode
+}
+
+internal enum class CompareOp {
+    Gt,
+    Lt,
+    Ge,
+    Le,
+    Eq,
+    Ne,
 }
 
 internal class AttributeHandle(

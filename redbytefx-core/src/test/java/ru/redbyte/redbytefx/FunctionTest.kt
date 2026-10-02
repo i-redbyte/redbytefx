@@ -1,0 +1,136 @@
+package ru.redbyte.redbytefx
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class FunctionTest {
+
+    @Test
+    fun functionIfAndTimeSpellInAgsl() {
+        val program = shader(ShaderTarget.Agsl) {
+            val time = uniformTime()
+            fragment {
+                val wave = fn(0f.lit, "wave") { t ->
+                    val shaped = sin(t).let("shaped")
+                    ifElse(shaped.gt(0f.lit), shaped, 0f.lit)
+                }
+                val sample = wave(time.expr)
+                vec4(sample, sample, sample, 1f.lit)
+            }
+        }
+        val source = program.agslSource()
+        assertTrue(source.contains("uniform float u_time;"))
+        assertTrue(source.contains("float wave(float p0) {"))
+        assertTrue(source.contains("float shaped = sin(p0);"))
+        assertTrue(source.contains("return ((shaped > 0.0) ? shaped : 0.0);"))
+        assertTrue(source.contains("wave(u_time)"))
+        val helper = source.substringBefore("half4 main")
+        assertTrue(helper.contains("float shaped = sin(p0);"))
+        assertTrue(!source.substringAfter("half4 main").contains("float shaped"))
+    }
+
+    @Test
+    fun functionSpellsTheSameCallInGlsl() {
+        val program = shader(ShaderTarget.Gles30) {
+            val time = uniformTime()
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val wave = fn(0f.lit, "wave") { t -> ifElse(t.gt(0.5f.lit), 1f.lit, 0f.lit) }
+                val sample = wave(time.expr)
+                vec4(sample, sample, sample, 1f.lit)
+            }
+        }
+        val fragment = program.fragmentSource()
+        assertTrue(fragment.contains("highp float wave(highp float p0) {"))
+        assertTrue(fragment.contains("return ((p0 > 0.5) ? 1.0 : 0.0);"))
+        assertTrue(fragment.contains("wave(u_time)"))
+    }
+
+    @Test
+    fun aVaryingReadInsideAFunctionMustBeWrittenByTheVertex() {
+        val error = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                val uv = varyingVec2("uv")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    val sample = fn(vec2(0f.lit, 0f.lit), "sample") { coord -> coord.x + uv.expr.x }
+                    vec4(sample(vec2(0f.lit, 0f.lit)), 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.VaryingNotWritten, error.code)
+    }
+
+    @Test
+    fun aVertexFunctionCannotBeCalledFromTheFragment() {
+        lateinit var bump: Fn1<Flt<High>, Flt<High>>
+        val error = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                vertex {
+                    bump = fn(0f.lit, "bump") { t -> t }
+                    glPosition(attributeVec4("position"))
+                }
+                fragment {
+                    val y = bump(0f.lit)
+                    vec4(y, y, y, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.FunctionWrongStage, error.code)
+    }
+
+    @Test
+    fun nestedFunctionUniformAndSampleAreRejected() {
+        val nested = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    fn {
+                        fn { 1f.lit }
+                        1f.lit
+                    }
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(AuthoringCode.NestedFunction, nested.code)
+
+        val uniform = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    fn {
+                        uniform("inside", 1f)
+                        1f.lit
+                    }
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(AuthoringCode.UniformInsideFunction, uniform.code)
+
+        val sample = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    fn { sample() }
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(AuthoringCode.SampleOutsideAgslFragment, sample.code)
+    }
+
+    @Test
+    fun aFunctionRejectsAnArgumentOfTheWrongShape() {
+        lateinit var wave: Fn1<Flt<High>, Flt<High>>
+        shader(ShaderTarget.Agsl) {
+            fragment {
+                wave = fn(0f.lit, "wave") { t -> t }
+                vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        val lie = vec2(0f.lit, 1f.lit) as Expr<Flt<High>>
+        assertThrows(IllegalArgumentException::class.java) { wave(lie) }
+    }
+}
