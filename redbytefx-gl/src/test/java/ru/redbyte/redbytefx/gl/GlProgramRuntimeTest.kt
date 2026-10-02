@@ -81,6 +81,7 @@ class GlProgramRuntimeTest {
         }
         val runtime = GlProgramRuntime(program, device)
         runtime.link()
+        assertEquals(listOf("use", "uniform1f"), device.writes)
         assertEquals(1, device.uniform1fCalls)
         assertEquals(1, device.locationQueries["u_amount"])
         assertFalse(runtime.set(amount, 0f))
@@ -165,6 +166,7 @@ private class RecordingGlDevice(
     var uniform1fCalls = 0
     var uniform1iCalls = 0
     var deleteProgramCalls = 0
+    val writes = mutableListOf<String>()
     private var nextId = 1
     private val stages = mutableMapOf<Int, GlStage>()
 
@@ -210,14 +212,18 @@ private class RecordingGlDevice(
     }
 
     override fun uniform1f(location: Int, value: Float) {
+        writes += "uniform1f"
         uniform1fCalls += 1
     }
 
     override fun uniform1i(location: Int, value: Int) {
+        writes += "uniform1i"
         uniform1iCalls += 1
     }
 
-    override fun useProgram(program: Int) = Unit
+    override fun useProgram(program: Int) {
+        writes += "use"
+    }
 
     override fun activeTexture(unit: Int) {
         textureUnits += unit
