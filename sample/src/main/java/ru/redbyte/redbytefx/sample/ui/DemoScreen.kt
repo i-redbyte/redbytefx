@@ -16,7 +16,6 @@ import ru.redbyte.redbytefx.sample.ui.demos.DemoDuotone
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFilm
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFlip
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFrame
-import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGlitch
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGrade
 import ru.redbyte.redbytefx.sample.ui.demos.DemoHalo
@@ -116,7 +115,6 @@ private fun DemoCatalogSecond(id: DemoId) {
         DemoId.TouchRipple -> DemoTouchRipple()
         DemoId.Metaballs -> DemoMetaballs()
         DemoId.CrtTerminal -> DemoCrtTerminal()
-        DemoId.Gles -> DemoGles()
         else -> error("Demo $id is rendered by the first catalog")
     }
 }

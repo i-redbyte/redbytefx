@@ -56,29 +56,58 @@ import ru.redbyte.redbytefx.sample.ui.LocalCompactChrome
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.DemoScreen
 import ru.redbyte.redbytefx.sample.ui.HomeScreen
+import ru.redbyte.redbytefx.sample.ui.LabHome
+import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
+import ru.redbyte.redbytefx.sample.ui.gl.DemoBalls
+import ru.redbyte.redbytefx.sample.ui.gl.GlExample
+import ru.redbyte.redbytefx.sample.ui.gl.GlExampleList
 
 @Composable
 fun RedByteFxSampleApp(
     initialDemo: DemoId? = null,
     launchDemoRequest: DemoId? = null
 ) {
+    var lab by rememberSaveable {
+        mutableStateOf(if (initialDemo == null) SampleLab.Hub else SampleLab.Agsl)
+    }
     var currentDemo: DemoId? by rememberSaveable { mutableStateOf(initialDemo) }
+    var glExample: GlExample? by rememberSaveable { mutableStateOf(null) }
+    val place = remember(lab, currentDemo, glExample) {
+        SamplePlace(lab, currentDemo, glExample)
+    }
     val appName = stringResource(id = R.string.app_name)
     val currentInfo = remember(currentDemo) {
         currentDemo?.let { id -> DemoCatalog.firstOrNull { it.id == id } }
     }
 
-    val title = currentInfo?.title ?: appName
-    val positionLabel = currentInfo?.let { info ->
-        "#${DemoCatalog.indexOf(info) + 1}/${DemoCatalog.size}"
+    val title = sampleTitle(lab, appName, currentInfo?.title, glExample?.title)
+    val positionLabel = if (lab == SampleLab.Agsl && currentInfo != null) {
+        "#${DemoCatalog.indexOf(currentInfo) + 1}/${DemoCatalog.size}"
+    } else {
+        null
+    }
+    val route = sampleRoute(lab, currentDemo?.name, glExample?.name)
+
+    fun retreat() {
+        when {
+            lab == SampleLab.Agsl && currentDemo != null -> currentDemo = null
+            lab == SampleLab.Gl && glExample != null -> glExample = null
+            else -> {
+                currentDemo = null
+                glExample = null
+                lab = SampleLab.Hub
+            }
+        }
     }
 
-    BackHandler(enabled = currentDemo != null) {
-        currentDemo = null
+    BackHandler(enabled = lab != SampleLab.Hub) {
+        retreat()
     }
 
     LaunchedEffect(launchDemoRequest) {
         if (launchDemoRequest != null && launchDemoRequest != currentDemo) {
+            glExample = null
+            lab = SampleLab.Agsl
             currentDemo = launchDemoRequest
         }
     }
@@ -128,12 +157,12 @@ fun RedByteFxSampleApp(
                                         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
                                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                                     ) {
-                                        if (currentDemo != null) {
+                                        if (lab != SampleLab.Hub) {
                                             CyberBadge(
                                                 text = "Back",
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(14.dp))
-                                                    .clickable { currentDemo = null },
+                                                    .clickable { retreat() },
                                                 accent = MaterialTheme.colorScheme.tertiary,
                                                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                                                 textColor = MaterialTheme.colorScheme.onSurface,
@@ -162,11 +191,7 @@ fun RedByteFxSampleApp(
                                         modifier = Modifier.padding(top = if (isCompactPhone) 6.dp else 10.dp)
                                     )
                                     Text(
-                                        text = if (currentDemo == null) {
-                                            "matrix://shader-lab / redbytefx.sample"
-                                        } else {
-                                            "demo://${currentDemo!!.name.lowercase()} / runtime: live"
-                                        },
+                                        text = route,
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -194,6 +219,7 @@ fun RedByteFxSampleApp(
                 ) { padding ->
                     Box(
                         modifier = Modifier
+                            .fillMaxSize()
                             .padding(padding)
                             .windowInsetsPadding(
                                 WindowInsets.navigationBars.only(
@@ -203,9 +229,9 @@ fun RedByteFxSampleApp(
                             .imePadding()
                     ) {
                         AnimatedContent(
-                            targetState = currentDemo,
+                            targetState = place,
                             transitionSpec = {
-                                val forward = targetState != null
+                                val forward = targetState.depth >= initialState.depth
                                 if (forward) {
                                     slideInHorizontally(
                                         animationSpec = androidx.compose.animation.core.tween(
@@ -245,22 +271,98 @@ fun RedByteFxSampleApp(
                                 }.using(SizeTransform(clip = false))
                             },
                             label = "sample_navigation"
-                        ) { id ->
-                            if (id == null) {
-                                HomeScreen(
-                                    demos = DemoCatalog,
-                                    onOpen = { demoId -> currentDemo = demoId }
-                                )
-                            } else {
-                                DemoScreen(
-                                    id = id,
-                                    onOpenDemo = { demoId -> currentDemo = demoId }
-                                )
-                            }
+                        ) { shown ->
+                            SampleDestination(
+                                place = shown,
+                                onOpenAgsl = {
+                                    currentDemo = null
+                                    glExample = null
+                                    lab = SampleLab.Agsl
+                                },
+                                onOpenGl = {
+                                    glExample = null
+                                    currentDemo = null
+                                    lab = SampleLab.Gl
+                                },
+                                onOpenDemo = { currentDemo = it },
+                                onOpenGlExample = { glExample = it },
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+private fun sampleTitle(
+    lab: SampleLab,
+    appName: String,
+    demoTitle: String?,
+    glTitle: String?,
+): String = when {
+    lab == SampleLab.Agsl && demoTitle != null -> demoTitle
+    lab == SampleLab.Agsl -> "AGSL"
+    lab == SampleLab.Gl && glTitle != null -> glTitle
+    lab == SampleLab.Gl -> "OpenGL ES"
+    else -> appName
+}
+
+private fun sampleRoute(lab: SampleLab, demoName: String?, glName: String?): String = when {
+    lab == SampleLab.Agsl && demoName != null -> "demo://${demoName.lowercase()} / runtime: live"
+    lab == SampleLab.Agsl -> "agsl://cookbook / runtime shader"
+    lab == SampleLab.Gl && glName != null -> "gles://${glName.lowercase()} / es 3.0"
+    lab == SampleLab.Gl -> "gles://examples / es 3.0"
+    else -> "matrix://shader-lab / redbytefx.sample"
+}
+
+@Composable
+private fun SampleDestination(
+    place: SamplePlace,
+    onOpenAgsl: () -> Unit,
+    onOpenGl: () -> Unit,
+    onOpenDemo: (DemoId) -> Unit,
+    onOpenGlExample: (GlExample) -> Unit,
+) {
+    when (place.lab) {
+        SampleLab.Hub -> LabHome(onAgsl = onOpenAgsl, onGl = onOpenGl)
+        SampleLab.Agsl -> {
+            val id = place.demo
+            if (id == null) {
+                HomeScreen(demos = DemoCatalog, onOpen = onOpenDemo)
+            } else {
+                DemoScreen(id = id, onOpenDemo = onOpenDemo)
+            }
+        }
+        SampleLab.Gl -> {
+            val example = place.gl
+            if (example == null) {
+                GlExampleList(onOpen = onOpenGlExample)
+            } else {
+                when (example) {
+                    GlExample.Triangle -> DemoGles()
+                    GlExample.Balls -> DemoBalls()
+                }
+            }
+        }
+    }
+}
+
+private enum class SampleLab {
+    Hub,
+    Agsl,
+    Gl,
+}
+
+private data class SamplePlace(
+    val lab: SampleLab,
+    val demo: DemoId?,
+    val gl: GlExample?,
+) {
+    val depth: Int
+        get() = when (lab) {
+            SampleLab.Hub -> 0
+            SampleLab.Agsl -> if (demo == null) 1 else 2
+            SampleLab.Gl -> if (gl == null) 1 else 2
+        }
 }
