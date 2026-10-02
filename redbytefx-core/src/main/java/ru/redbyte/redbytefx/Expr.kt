@@ -23,6 +23,12 @@ public class Expr<out T : ShType> internal constructor(
 internal sealed interface ExprNode {
     data class Literal(val value: Float, val precision: Precision) : ExprNode
 
+    data class IntLiteral(val value: Int) : ExprNode
+
+    data class Swizzle(val source: Expr<*>, val mask: String) : ExprNode
+
+    data class Cast(val arg: Expr<*>) : ExprNode
+
     data class Unary(val op: UnaryOp, val arg: Expr<*>) : ExprNode
 
     data class Binary(val op: ArithOp, val left: Expr<*>, val right: Expr<*>) : ExprNode

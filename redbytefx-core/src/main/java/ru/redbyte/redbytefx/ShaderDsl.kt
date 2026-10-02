@@ -114,6 +114,9 @@ public class FragmentDsl internal constructor(
     }
 }
 
+internal fun emitAgsl(expr: Expr<*>): String =
+    AgslEmitter(IdentifierAllocator(agslReservedNames()), emptyMap()).emit(expr)
+
 private class AgslEmitter(
     private val allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, UniformBinding>,
@@ -124,6 +127,9 @@ private class AgslEmitter(
 
     fun emit(expr: Expr<*>): String = when (val node = expr.node) {
         is ExprNode.Literal -> formatFloat(node.value)
+        is ExprNode.IntLiteral -> node.value.toString()
+        is ExprNode.Swizzle -> "${emit(node.source)}.${node.mask}"
+        is ExprNode.Cast -> "${spell(expr.shape, ShaderTarget.Agsl)}(${emit(node.arg)})"
         is ExprNode.Unary -> "(-${emit(node.arg)})"
         is ExprNode.Binary -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
         is ExprNode.Construct -> {
