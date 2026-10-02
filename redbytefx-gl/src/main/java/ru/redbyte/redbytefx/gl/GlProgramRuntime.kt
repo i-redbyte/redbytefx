@@ -119,6 +119,7 @@ public class GlProgramRuntime(
         if (destroyed) return
         destroyed = true
         if (programId != 0) {
+            device.useProgram(0)
             device.deleteProgram(programId)
             programId = 0
         }
@@ -129,6 +130,7 @@ public class GlProgramRuntime(
         val unit = nextTextureUnit
         nextTextureUnit += 1
         textureUnits[uniform] = unit
+        device.useProgram(programId)
         device.uniform1i(location, unit)
         return unit
     }
@@ -137,6 +139,7 @@ public class GlProgramRuntime(
         val previous = floatValues[uniform]
         if (previous != null && sameFloatUniformValue(previous, value)) return false
         floatValues[uniform] = value
+        device.useProgram(programId)
         device.uniform1f(location, value)
         return true
     }
