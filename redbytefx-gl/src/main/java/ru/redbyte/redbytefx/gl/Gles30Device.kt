@@ -1,6 +1,8 @@
 package ru.redbyte.redbytefx.gl
 
 import android.opengl.GLES30
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
  * OpenGL ES 3.0 driver calls.
@@ -65,7 +67,46 @@ public class Gles30Device : GlDevice() {
     override fun bindTexture2D(texture: Int) {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
     }
+
+    override fun createBuffer(): Int {
+        GLES30.glGenBuffers(1, statusSlot, 0)
+        return statusSlot[0]
+    }
+
+    override fun deleteBuffer(buffer: Int) {
+        statusSlot[0] = buffer
+        GLES30.glDeleteBuffers(1, statusSlot, 0)
+    }
+
+    override fun uniformBufferData(buffer: Int, data: ByteArray) {
+        GLES30.glBindBuffer(GLES30.GL_UNIFORM_BUFFER, buffer)
+        GLES30.glBufferData(
+            GLES30.GL_UNIFORM_BUFFER,
+            data.size,
+            data.asNativeBuffer(),
+            GLES30.GL_DYNAMIC_DRAW,
+        )
+    }
+
+    override fun uniformBufferSubData(buffer: Int, data: ByteArray) {
+        GLES30.glBindBuffer(GLES30.GL_UNIFORM_BUFFER, buffer)
+        GLES30.glBufferSubData(GLES30.GL_UNIFORM_BUFFER, 0, data.size, data.asNativeBuffer())
+    }
+
+    override fun bindUniformBufferBase(buffer: Int, binding: Int) {
+        GLES30.glBindBufferBase(GLES30.GL_UNIFORM_BUFFER, binding, buffer)
+    }
+
+    override fun uniformBlockIndex(program: Int, name: String): Int =
+        GLES30.glGetUniformBlockIndex(program, name)
+
+    override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
+        GLES30.glUniformBlockBinding(program, blockIndex, binding)
+    }
 }
+
+private fun ByteArray.asNativeBuffer(): ByteBuffer =
+    ByteBuffer.wrap(this).order(ByteOrder.nativeOrder())
 
 private fun stageEnum(stage: GlStage): Int = when (stage) {
     GlStage.Vertex -> GLES30.GL_VERTEX_SHADER

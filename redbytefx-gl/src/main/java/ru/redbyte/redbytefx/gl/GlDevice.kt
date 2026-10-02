@@ -42,4 +42,18 @@ public abstract class GlDevice {
     public abstract fun activeTexture(unit: Int)
 
     public abstract fun bindTexture2D(texture: Int)
+
+    public abstract fun createBuffer(): Int
+
+    public abstract fun deleteBuffer(buffer: Int)
+
+    public abstract fun uniformBufferData(buffer: Int, data: ByteArray)
+
+    public abstract fun uniformBufferSubData(buffer: Int, data: ByteArray)
+
+    public abstract fun bindUniformBufferBase(buffer: Int, binding: Int)
+
+    public abstract fun uniformBlockIndex(program: Int, name: String): Int
+
+    public abstract fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int)
 }

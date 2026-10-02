@@ -16,6 +16,7 @@ internal enum class AuthoringAction {
     DeclareUniform,
     DeclareSampler,
     DeclareVarying,
+    DeclareUniformBlock,
     EnterVertex,
     EnterFragment,
     EnterFunction,
@@ -37,6 +38,8 @@ internal enum class AuthoringCode {
     SamplerOnAgsl,
     VaryingOutsideProgram,
     VaryingOnAgsl,
+    UniformBlockOnAgsl,
+    UniformBlockOutsideProgram,
     VertexOnAgsl,
     VertexOutsideProgram,
     FragmentOutsideProgram,
@@ -88,6 +91,7 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         AuthoringAction.DeclareUniform -> declareUniform(state)
         AuthoringAction.DeclareSampler -> declareSampler(state)
         AuthoringAction.DeclareVarying -> declareVarying(state)
+        AuthoringAction.DeclareUniformBlock -> declareUniformBlock(state)
         AuthoringAction.EnterVertex -> enterVertex(state)
         AuthoringAction.EnterFragment -> enterFragment(state)
         AuthoringAction.EnterFunction -> enterFunction(state)
@@ -132,6 +136,12 @@ private fun declareSampler(state: AuthoringState): AuthoringStep = when {
     state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.SamplerOnAgsl)
     state.place == AuthoringPlace.Program -> accept(state)
     else -> reject(state, AuthoringCode.SamplerOutsideProgram)
+}
+
+private fun declareUniformBlock(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.UniformBlockOnAgsl)
+    state.place == AuthoringPlace.Program -> accept(state)
+    else -> reject(state, AuthoringCode.UniformBlockOutsideProgram)
 }
 
 private fun declareVarying(state: AuthoringState): AuthoringStep = when {
