@@ -2,13 +2,13 @@
 
 # RedByteFX
 
-**RedByteFX** — это Kotlin DSL, который компилирует одну типизированную алгебру шейдера в Android AGSL и в OpenGL ES 3.0.
+**RedByteFX** — это Kotlin DSL, который компилирует одну типизированную алгебру шейдера в Android AGSL, OpenGL ES 3.0 и compute OpenGL ES 3.1.
 
 Пишется Kotlin, а не строка шейдера. Компилятор выпускает текст, который реально исполняет платформа:
 
-`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader или программа GLES 3.0`
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0 или compute-программа GLES 3.1`
 
-**Платформа:** Android API 33+. AGSL требует `RuntimeShader`. Выход OpenGL ES — это GLSL ES 3.00, вершина и фрагмент.
+**Платформа:** Android API 33+. AGSL требует `RuntimeShader`. Выход OpenGL ES — это GLSL ES 3.00, вершина и фрагмент, или GLSL ES 3.10 compute.
 
 ## Что вы пишете
 
@@ -45,6 +45,16 @@ val pulse = shader(ShaderTarget.Gles30) {
 }
 ```
 
+OpenGL ES 3.1 — это compute-программа. В ней нет вершины и фрагмента. Один `storageBlock` использует std430, а `compute(localSizeX)` пишет его поля. Текст: `computeSource()`. EGL-контекст этой программы — OpenGL ES 3.1.
+
+```kotlin
+val cells = shader(ShaderTarget.Gles31) {
+    lateinit var value: Expr<Vec4<Flt<High>>>
+    storageBlock("cells") { value = vec4("value") }
+    compute(64) { value.store(value) }
+}
+```
+
 `Modifier.redbyteFx` накладывает AGSL `RenderEffect`. Программу GLES он не запускает. Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. В списке OpenGL есть треугольник и сцена Spheres на своём `GLSurfaceView`.
 
 ## Установка
@@ -60,8 +70,8 @@ dependencies {
 
 | Артефакт | Роль |
 |----------|------|
-| `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL и GLSL ES 3.00 |
-| `redbytefx-gl` | Линковка GLES 3.0 и запись uniform-ов на потоке EGL |
+| `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00 и compute GLSL ES 3.10 |
+| `redbytefx-gl` | Линковка GLES 3.0 и 3.1, запись uniform-ов и загрузка storage на потоке EGL |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` для AGSL |
 | `redbytefx-stdlib` | Координаты, маски, композитинг, SDF и родственные помощники поверх того же DSL |
 
@@ -121,11 +131,11 @@ shader(ShaderTarget.Agsl) {
 
 `ShaderProgram` неизменяем и читается с любого потока. Граф выражений и сгенерированные строки существуют на компиляции.
 
-Воспроизведение AGSL — `program.newAgslInstance()`. Неизменившийся uniform не идёт на GPU. Воспроизведение GLES — `GlProgramRuntime` в `redbytefx-gl`: создавать, линковать и уничтожать его на потоке EGL-контекста. `destroy` отвязывает программу до удаления.
+Воспроизведение AGSL — `program.newAgslInstance()`. Неизменившийся uniform не идёт на GPU. Воспроизведение GLES — `GlProgramRuntime` в `redbytefx-gl`: создавать, линковать и уничтожать его на потоке EGL-контекста. `destroy` отвязывает программу до удаления. `runtime.set(storageBlock, floats)` упаковывает std430 и пропускает загрузку, когда эти байты не изменились.
 
 ## Чего в этой версии нет
 
-Компилятор не выпускает compute, geometry и tessellation, desktop GL, GLES 2.0, uniform-блоки, shader storage и несколько фрагментных выходов. Пользовательские функции останавливаются на двух аргументах. Функция одной стадии не вызывается из другой. Рекурсия отвергается.
+Компилятор не выпускает geometry и tessellation, desktop GL и GLES 2.0.
 
 ## Участие
 

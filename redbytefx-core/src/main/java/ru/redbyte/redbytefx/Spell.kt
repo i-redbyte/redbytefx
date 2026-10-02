@@ -2,7 +2,7 @@ package ru.redbyte.redbytefx
 
 internal fun spell(shape: Shape, target: ShaderTarget): String = when (target) {
     ShaderTarget.Agsl -> spellAgsl(shape)
-    ShaderTarget.Gles30 -> spellGlsl(shape)
+    ShaderTarget.Gles30, ShaderTarget.Gles31 -> spellGlsl(shape)
 }
 
 internal fun glslDeclaration(shape: Shape): String {

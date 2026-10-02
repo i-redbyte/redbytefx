@@ -9,10 +9,13 @@ import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Shape
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.packStd140
+import ru.redbyte.redbytefx.packStd430
 import ru.redbyte.redbytefx.sameFloatUniformValue
 import java.util.IdentityHashMap
+import kotlin.jvm.JvmName
 
 public enum class GlCode {
     WrongThread,
@@ -49,14 +52,31 @@ public class GlProgramRuntime(
     private var destroyed = false
     private var bufferId = 0
     private var blockBytes: ByteArray? = null
+    private var storageBufferId = 0
+    private var storageBytes: ByteArray? = null
 
     public fun link() {
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         if (linked) return
-        if (program.target != ShaderTarget.Gles30) {
-            reject(GlCode.WrongTarget, "GL runtime requires a GLES 3.0 shader")
+        val id = when (program.target) {
+            ShaderTarget.Agsl -> reject(GlCode.WrongTarget, "GL runtime requires a GLES shader")
+            ShaderTarget.Gles30 -> linkGraphicsProgram()
+            ShaderTarget.Gles31 -> linkComputeProgram()
         }
+        programId = id
+        for (slot in program.spelledUniforms()) {
+            val location = device.uniformLocation(id, slot.name)
+            locations[slot.uniform] = location
+            val default = slot.uniform.default ?: continue
+            if (location >= 0 && isHighFloat(slot.uniform.shape)) {
+                writeFloat(slot.uniform, location, default)
+            }
+        }
+        linked = true
+    }
+
+    private fun linkGraphicsProgram(): Int {
         val vertex = compileStage(GlStage.Vertex, program.vertexSource())
         val fragment = try {
             compileStage(GlStage.Fragment, program.fragmentSource())
@@ -79,16 +99,24 @@ public class GlProgramRuntime(
             device.deleteProgram(id)
             reject(GlCode.LinkFailed, linkedStatus.infoLog)
         }
-        programId = id
-        for (slot in program.spelledUniforms()) {
-            val location = device.uniformLocation(id, slot.name)
-            locations[slot.uniform] = location
-            val default = slot.uniform.default ?: continue
-            if (location >= 0 && isHighFloat(slot.uniform.shape)) {
-                writeFloat(slot.uniform, location, default)
-            }
+        return id
+    }
+
+    private fun linkComputeProgram(): Int {
+        val shader = compileStage(GlStage.Compute, program.computeSource())
+        val id = device.createProgram()
+        if (id == 0) {
+            device.deleteShader(shader)
+            reject(GlCode.LinkFailed, "Driver returned no program name")
         }
-        linked = true
+        device.attachShader(id, shader)
+        val linkedStatus = device.linkProgram(id)
+        device.deleteShader(shader)
+        if (!linkedStatus.ok) {
+            device.deleteProgram(id)
+            reject(GlCode.LinkFailed, linkedStatus.infoLog)
+        }
+        return id
     }
 
     public fun use() {
@@ -140,6 +168,27 @@ public class GlProgramRuntime(
         return true
     }
 
+    @JvmName("setStorage")
+    public fun set(block: StorageBlock, values: FloatArray): Boolean {
+        checkReady()
+        require(block === program.storageBlock) { "Storage block does not belong to this shader" }
+        val packed = packStd430(block, values)
+        val previous = storageBytes
+        if (previous != null && previous.contentEquals(packed)) return false
+        if (storageBufferId == 0) {
+            val created = device.createBuffer()
+            require(created != 0) { "Driver returned no buffer name" }
+            storageBufferId = created
+            device.shaderStorageData(storageBufferId, packed)
+            device.useProgram(programId)
+            device.bindShaderStorageBase(storageBufferId, 0)
+        } else {
+            device.shaderStorageSubData(storageBufferId, packed)
+        }
+        storageBytes = packed.copyOf()
+        return true
+    }
+
     public fun destroy() {
         checkThread()
         if (destroyed) return
@@ -150,6 +199,12 @@ public class GlProgramRuntime(
             bufferId = 0
         }
         blockBytes = null
+        if (storageBufferId != 0) {
+            device.bindShaderStorageBase(0, 0)
+            device.deleteBuffer(storageBufferId)
+            storageBufferId = 0
+        }
+        storageBytes = null
         if (programId != 0) {
             device.useProgram(0)
             device.deleteProgram(programId)

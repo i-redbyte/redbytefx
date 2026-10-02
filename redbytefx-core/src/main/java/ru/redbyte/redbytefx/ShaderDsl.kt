@@ -10,12 +10,16 @@ public class ShaderProgram internal constructor(
     private val fragment: String? = null,
     internal val bindings: List<UniformBinding>,
     public val uniformBlock: UniformBlock? = null,
+    public val storageBlock: StorageBlock? = null,
+    private val computeSourceText: String? = null,
 ) {
     public fun agslSource(): String = agsl ?: error("This shader has no AGSL source")
 
     public fun vertexSource(): String = vertex ?: error("This shader has no GLES vertex source")
 
     public fun fragmentSource(): String = fragment ?: error("This shader has no GLES fragment source")
+
+    public fun computeSource(): String = computeSourceText ?: error("This shader has no GLES compute source")
 
     public fun spelledUniforms(): List<SpelledUniform> =
         bindings.map { SpelledUniform(it.uniform, it.agslName) }
@@ -58,6 +62,9 @@ public class ShaderDsl internal constructor(
     private var vertexBuilt = false
     private val functions = mutableListOf<UserFunction>()
     private var block: UniformBlock? = null
+    private var storage: StorageBlock? = null
+    private var localSizeX: Int? = null
+    private val storageWrites = mutableListOf<StorageAssignment>()
     private val names = IdentifierAllocator(
         if (target == ShaderTarget.Agsl) agslReservedNames() else glslReservedNames(),
     )
@@ -78,6 +85,31 @@ public class ShaderDsl internal constructor(
         val created = builder.finish(name, typeName)
         block = created
         return created
+    }
+
+    public fun storageBlock(name: String, build: StorageBlockBuilder.() -> Unit): StorageBlock {
+        advance(AuthoringAction.DeclareStorage)
+        require(storage == null) { "Shader already has a storage block" }
+        require(name.isNotBlank()) { "Storage block name must not be blank" }
+        val typeName = names.reserve(sanitizeSuggestedIdentifier(name, "b"))
+        val instanceName = names.reserve("b_$typeName")
+        val builder = StorageBlockBuilder(instanceName)
+        builder.build()
+        val created = builder.finish(name, typeName)
+        storage = created
+        return created
+    }
+
+    public fun compute(localSizeX: Int, build: ComputeDsl.() -> Unit) {
+        require(localSizeX > 0) { "Compute local size must be positive, was $localSizeX" }
+        check(this.localSizeX == null) { "Shader already has a compute stage" }
+        advance(AuthoringAction.EnterCompute)
+        try {
+            ComputeDsl(::advance, ::recordStore).build()
+            this.localSizeX = localSizeX
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
     }
 
     public fun uniform(name: String, default: Float): Uniform<Flt<High>> {
@@ -151,7 +183,30 @@ public class ShaderDsl internal constructor(
         return when (target) {
             ShaderTarget.Agsl -> compileAgsl()
             ShaderTarget.Gles30 -> compileGlsl()
+            ShaderTarget.Gles31 -> compileCompute()
         }
+    }
+
+    private fun compileCompute(): ShaderProgram {
+        val size = localSizeX
+            ?: throw ProgramException(ProgramCode.MissingCompute, "GLES 3.1 program requires a compute stage")
+        return spellCompute(
+            localSizeX = size,
+            storage = storage,
+            writes = storageWrites.toList(),
+            uniforms = uniforms,
+            names = names,
+        )
+    }
+
+    private fun recordStore(target: Expr<*>, value: Expr<*>) {
+        val member = (target.node as? ExprNode.BlockRef)?.member
+        val owned = storage?.members?.any { it === member } == true
+        require(member != null && owned) { "Storage write requires a field of this shader's storage block" }
+        require(value.shape == target.shape) {
+            "Storage field expects ${target.shape}, was ${value.shape}"
+        }
+        storageWrites += StorageAssignment(target, value)
     }
 
     private fun compileAgsl(): ShaderProgram {

@@ -1,11 +1,12 @@
 package ru.redbyte.redbytefx.gl
 
 import android.opengl.GLES30
+import android.opengl.GLES31
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /**
- * OpenGL ES 3.0 driver calls.
+ * OpenGL ES 3.0 driver calls, plus the ES 3.1 compute shader and storage buffer calls.
  *
  * Every method must run on the EGL context thread. [GlProgramRuntime] enforces that
  * before it touches this device. This class does not decide that a link succeeded;
@@ -103,6 +104,25 @@ public class Gles30Device : GlDevice() {
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
         GLES30.glUniformBlockBinding(program, blockIndex, binding)
     }
+
+    override fun shaderStorageData(buffer: Int, data: ByteArray) {
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffer)
+        GLES31.glBufferData(
+            GLES31.GL_SHADER_STORAGE_BUFFER,
+            data.size,
+            data.asNativeBuffer(),
+            GLES31.GL_DYNAMIC_DRAW,
+        )
+    }
+
+    override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffer)
+        GLES31.glBufferSubData(GLES31.GL_SHADER_STORAGE_BUFFER, 0, data.size, data.asNativeBuffer())
+    }
+
+    override fun bindShaderStorageBase(buffer: Int, binding: Int) {
+        GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, binding, buffer)
+    }
 }
 
 private fun ByteArray.asNativeBuffer(): ByteBuffer =
@@ -111,4 +131,5 @@ private fun ByteArray.asNativeBuffer(): ByteBuffer =
 private fun stageEnum(stage: GlStage): Int = when (stage) {
     GlStage.Vertex -> GLES30.GL_VERTEX_SHADER
     GlStage.Fragment -> GLES30.GL_FRAGMENT_SHADER
+    GlStage.Compute -> GLES31.GL_COMPUTE_SHADER
 }

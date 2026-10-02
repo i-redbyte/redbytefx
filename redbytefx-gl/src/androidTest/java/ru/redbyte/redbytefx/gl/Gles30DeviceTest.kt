@@ -5,9 +5,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import ru.redbyte.redbytefx.Expr
 import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.Fn1
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
@@ -133,6 +136,29 @@ class Gles30DeviceTest {
             runtime.link()
             runtime.destroy()
             assertNoGlError("uniform block")
+        }
+    }
+
+    @Test
+    fun driverLinksAComputeStorageBlock() {
+        EglPbuffer().use {
+            drainGlError()
+            lateinit var value: Expr<Vec4<Flt<High>>>
+            val program = shader(ShaderTarget.Gles31) {
+                storageBlock("cells") {
+                    value = vec4("value")
+                }
+                compute(64) { value.store(value) }
+            }
+            val version = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+            assumeTrue(version[0] > 3 || (version[0] == 3 && version[1] >= 1))
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.set(checkNotNull(program.storageBlock), floatArrayOf(1f, 0f, 0f, 1f))
+            runtime.destroy()
+            assertNoGlError("compute storage")
         }
     }
 

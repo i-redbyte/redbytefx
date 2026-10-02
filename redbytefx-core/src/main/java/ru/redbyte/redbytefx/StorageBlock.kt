@@ -4,11 +4,11 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /**
- * One std140 uniform block owned by a GLES 3.0 program.
+ * One std430 shader storage block owned by a GLES 3.1 compute program.
  *
  * Fields are highp float scalars and vectors. The block is written as a whole.
  */
-public class UniformBlock internal constructor(
+public class StorageBlock internal constructor(
     public val name: String,
     public val typeName: String,
     internal val instanceName: String,
@@ -17,13 +17,7 @@ public class UniformBlock internal constructor(
     public val byteSize: Int,
 )
 
-internal class BlockMember(
-    val instanceName: String,
-    val memberName: String,
-    val shape: Shape,
-)
-
-public class UniformBlockBuilder internal constructor(
+public class StorageBlockBuilder internal constructor(
     private val instanceName: String,
 ) {
     private val members = mutableListOf<BlockMember>()
@@ -36,17 +30,17 @@ public class UniformBlockBuilder internal constructor(
 
     public fun vec4(name: String): Expr<Vec4<Flt<High>>> = member(name, vector(4))
 
-    internal fun finish(name: String, typeName: String): UniformBlock {
-        require(members.isNotEmpty()) { "Uniform block requires a field" }
-        val layout = std140Layout(members.map { it.shape })
-        return UniformBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize)
+    internal fun finish(name: String, typeName: String): StorageBlock {
+        require(members.isNotEmpty()) { "Storage block requires a field" }
+        val layout = std430Layout(members.map { it.shape })
+        return StorageBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize)
     }
 
     private fun <T : ShType> member(name: String, shape: Shape): Expr<T> {
-        require(name.isNotBlank()) { "Uniform block field name must not be blank" }
+        require(name.isNotBlank()) { "Storage block field name must not be blank" }
         val memberName = sanitizeSuggestedIdentifier(name, "f")
         require(members.none { it.memberName == memberName }) {
-            "Uniform block already has a field named $memberName"
+            "Storage block already has a field named $memberName"
         }
         val member = BlockMember(instanceName, memberName, shape)
         members += member
@@ -54,29 +48,31 @@ public class UniformBlockBuilder internal constructor(
     }
 }
 
-internal class Std140Layout(
-    val offsets: IntArray,
-    val byteSize: Int,
+internal class StorageAssignment(
+    val target: Expr<*>,
+    val value: Expr<*>,
 )
 
-internal fun std140Layout(shapes: List<Shape>): Std140Layout {
+internal fun std430Layout(shapes: List<Shape>): Std140Layout {
     val offsets = IntArray(shapes.size)
     var cursor = 0
+    var alignment = 1
     shapes.forEachIndexed { index, shape ->
-        val alignment = std140Alignment(shape)
-        cursor = roundUp(cursor, alignment)
+        val memberAlignment = std140Alignment(shape)
+        if (memberAlignment > alignment) alignment = memberAlignment
+        cursor = roundUp(cursor, memberAlignment)
         offsets[index] = cursor
         cursor += std140Size(shape)
     }
-    return Std140Layout(offsets, roundUp(cursor, VEC4_ALIGNMENT))
+    return Std140Layout(offsets, roundUp(cursor, alignment))
 }
 
-public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
+public fun packStd430(block: StorageBlock, values: FloatArray): ByteArray {
     val lanes = block.members.sumOf { laneCount(it.shape) }
     require(values.size == lanes) {
-        "Uniform block \"${block.name}\" expects $lanes floats, was ${values.size}"
+        "Storage block \"${block.name}\" expects $lanes floats, was ${values.size}"
     }
-    require(values.all { it.isFinite() }) { "Uniform block values must be finite" }
+    require(values.all { it.isFinite() }) { "Storage block values must be finite" }
     val buffer = ByteBuffer.allocate(block.byteSize).order(ByteOrder.nativeOrder())
     var cursor = 0
     block.members.forEachIndexed { index, member ->
@@ -90,22 +86,3 @@ public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
 }
 
 private fun vector(lanes: Int): Shape = Shape.Vector(ScalarKind.Float, Precision.High, lanes)
-
-internal fun laneCount(shape: Shape): Int = when (shape) {
-    is Shape.Scalar -> 1
-    is Shape.Vector -> shape.lanes
-    else -> error("Block field must be a float scalar or vector")
-}
-
-internal fun std140Alignment(shape: Shape): Int = when (laneCount(shape)) {
-    1 -> FLOAT_ALIGNMENT
-    2 -> FLOAT_ALIGNMENT * 2
-    else -> VEC4_ALIGNMENT
-}
-
-internal fun std140Size(shape: Shape): Int = laneCount(shape) * FLOAT_ALIGNMENT
-
-internal fun roundUp(value: Int, alignment: Int): Int = (value + alignment - 1) / alignment * alignment
-
-private const val FLOAT_ALIGNMENT = 4
-private const val VEC4_ALIGNMENT = 16
