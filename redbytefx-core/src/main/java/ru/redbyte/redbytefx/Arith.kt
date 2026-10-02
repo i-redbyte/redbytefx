@@ -262,19 +262,19 @@ private fun <T : ShType> arith(op: ArithOp, left: Expr<*>, right: Expr<*>): Expr
 private fun <T : ShType> unary(op: UnaryOp, arg: Expr<*>): Expr<T> =
     Expr(unaryShape(op, arg.shape), ExprNode.Unary(op, arg))
 
-private fun isFloatValue(shape: Shape): Boolean = when (shape) {
+internal fun isFloatValue(shape: Shape): Boolean = when (shape) {
     is Shape.Scalar -> shape.kind == ScalarKind.Float
     is Shape.Vector -> shape.kind == ScalarKind.Float
     is Shape.Matrix, Shape.Sampler2D, Shape.ChildShader -> false
 }
 
-private fun isFloatScalar(shape: Shape): Boolean =
+internal fun isFloatScalar(shape: Shape): Boolean =
     shape is Shape.Scalar && shape.kind == ScalarKind.Float
 
-private fun isFloatVector(shape: Shape): Boolean =
+internal fun isFloatVector(shape: Shape): Boolean =
     shape is Shape.Vector && shape.kind == ScalarKind.Float
 
-private fun precisionOf(shape: Shape): Precision? = when (shape) {
+internal fun precisionOf(shape: Shape): Precision? = when (shape) {
     is Shape.Scalar -> shape.precision
     is Shape.Vector -> shape.precision
     is Shape.Matrix, Shape.Sampler2D, Shape.ChildShader -> null

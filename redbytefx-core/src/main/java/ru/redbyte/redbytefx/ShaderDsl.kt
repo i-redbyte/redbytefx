@@ -264,9 +264,15 @@ private class AgslEmitter(
         ExprNode.FragCoord -> "fragCoord"
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
+        is ExprNode.Call -> call(node)
         is ExprNode.Texture,
         is ExprNode.AttributeRef,
         is ExprNode.VaryingRef -> error("AGSL cannot spell ${node::class.simpleName}")
+    }
+
+    private fun call(node: ExprNode.Call): String {
+        val args = node.args.joinToString(", ") { emit(it) }
+        return "${node.function}($args)"
     }
 
     private fun local(node: ExprNode.Local, shape: Shape): String {

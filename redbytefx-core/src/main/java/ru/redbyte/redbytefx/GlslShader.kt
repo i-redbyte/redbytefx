@@ -88,6 +88,7 @@ private fun walk(expr: Expr<*>, visit: (ExprNode) -> Unit) {
             walk(node.sampler, visit)
             walk(node.uv, visit)
         }
+        is ExprNode.Call -> node.args.forEach { walk(it, visit) }
         is ExprNode.Literal,
         is ExprNode.IntLiteral,
         is ExprNode.UniformRef,
@@ -124,6 +125,10 @@ private class GlslEmitter(
         is ExprNode.AttributeRef -> attributes.getValue(node.attribute)
         is ExprNode.VaryingRef -> varyings.getValue(node.varying)
         is ExprNode.Texture -> "texture(${emit(node.sampler)}, ${emit(node.uv)})"
+        is ExprNode.Call -> {
+            val args = node.args.joinToString(", ") { emit(it) }
+            "${node.function}($args)"
+        }
         is ExprNode.Sample,
         ExprNode.FragCoord,
         ExprNode.Resolution -> error("GLSL stage cannot spell ${node::class.simpleName}")
