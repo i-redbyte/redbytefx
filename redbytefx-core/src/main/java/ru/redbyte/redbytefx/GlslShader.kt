@@ -175,7 +175,7 @@ private class GlslEmitter(
             "${node.function}($args)"
         }
         is ExprNode.Param -> node.name
-        is ExprNode.Compare -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
+        is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
         is ExprNode.UserCall -> {
             val args = node.args.joinToString(", ") { emit(it) }

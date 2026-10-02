@@ -367,7 +367,7 @@ private class AgslEmitter(
         is ExprNode.UnclampedSample -> "$RB_INPUT_UNIFORM.eval(${emit(node.coord)})"
         is ExprNode.Call -> call(node)
         is ExprNode.Param -> node.name
-        is ExprNode.Compare -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
+        is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
         is ExprNode.UserCall -> call(ExprNode.Call(node.function.name, node.args))
         is ExprNode.Texture,

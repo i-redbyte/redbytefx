@@ -25,6 +25,15 @@ public interface IntS : ShType
 /** Boolean scalar. */
 public interface BoolS : ShType
 
+/** Two-component boolean vector. This is not [Vec2] of [BoolS]. */
+public interface BVec2 : ShType
+
+/** Three-component boolean vector. */
+public interface BVec3 : ShType
+
+/** Four-component boolean vector. */
+public interface BVec4 : ShType
+
 /** Two-component vector. Rank stays nominal so operators can return [Vec2]. */
 public interface Vec2<S : ShType> : ShType
 
