@@ -15,6 +15,9 @@ public class ShaderProgram internal constructor(
 
     public fun fragmentSource(): String = fragment ?: error("This shader has no GLES fragment source")
 
+    public fun spelledUniforms(): List<SpelledUniform> =
+        bindings.map { SpelledUniform(it.uniform, it.agslName) }
+
     public fun <T : ShType> uniform(agslName: String): Uniform<T> {
         val found = bindings.firstOrNull { it.agslName == agslName }?.uniform
             ?: throw IllegalArgumentException("Shader has no uniform named $agslName")
@@ -26,6 +29,11 @@ public class ShaderProgram internal constructor(
         bindings.firstOrNull { it.uniform === uniform }
             ?: throw IllegalArgumentException("Uniform does not belong to this shader")
 }
+
+public class SpelledUniform internal constructor(
+    public val uniform: Uniform<*>,
+    public val name: String,
+)
 
 public fun shader(target: ShaderTarget, block: ShaderDsl.() -> Unit): ShaderProgram {
     val dsl = ShaderDsl(target)
