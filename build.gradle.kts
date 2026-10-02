@@ -75,10 +75,12 @@ tasks.register("qualityCheck") {
     description = "Unit tests, sample compilation, and Detekt on main sources."
     dependsOn(
         ":redbytefx-core:testDebugUnitTest",
+        ":redbytefx-gl:testDebugUnitTest",
         ":redbytefx-compose:testDebugUnitTest",
         ":redbytefx-stdlib:testDebugUnitTest",
         ":sample:compileDebugKotlin",
         ":redbytefx-core:detekt",
+        ":redbytefx-gl:detekt",
         ":redbytefx-compose:detekt",
         ":redbytefx-stdlib:detekt",
         ":sample:detekt"

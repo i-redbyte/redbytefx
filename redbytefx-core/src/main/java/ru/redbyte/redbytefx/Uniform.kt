@@ -9,7 +9,7 @@ package ru.redbyte.redbytefx
 public class Uniform<T : ShType> internal constructor(
     public val name: String?,
     public val shape: Shape,
-    internal val default: Float?,
+    public val default: Float?,
 ) {
     public lateinit var expr: Expr<T>
         internal set

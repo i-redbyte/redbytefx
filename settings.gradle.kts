@@ -24,6 +24,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "redbytefx"
 include(":redbytefx-core")
+include(":redbytefx-gl")
 include(":redbytefx-compose")
 include(":redbytefx-stdlib")
 include(":sample")
