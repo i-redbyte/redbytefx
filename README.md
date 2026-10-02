@@ -2,17 +2,17 @@
 
 # RedByteFX
 
-**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL, OpenGL ES 3.0, and OpenGL ES 3.1 compute.
+**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL, OpenGL ES 3.0, OpenGL ES 3.1 compute, and OpenGL ES 3.2 geometry and tessellation.
 
 Authoring is Kotlin, not a shader string. The compiler emits the text the platform actually runs:
 
-`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, a GLES 3.0 program, or a GLES 3.1 compute program`
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, a GLES 3.0 program, a GLES 3.1 compute program, or a GLES 3.2 program`
 
-**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00 vertex and fragment, or GLSL ES 3.10 compute.
+**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00 vertex and fragment, GLSL ES 3.10 compute, or GLSL ES 3.20 with geometry and tessellation.
 
 ## What you write
 
-One carrier, `Expr<T>`. Rank is nominal (`Vec2`, `Vec3`, `Vec4`, and the matrix types). Precision is a parameter: `Flt<High>` is a highp float, `Flt<Med>` is a mediump float. Color is a `Vec4` of mediump floats, produced by `color(...)`. There is no separate color type.
+One carrier, `Expr<T>`. Rank is nominal (`Vec2`, `Vec3`, `Vec4`, and the matrix types). Precision is a parameter: `Flt<High>` is a highp float, `Flt<Med>` is a mediump float. Color is a `Vec4` of mediump floats, produced by `color(...)`. There is no separate color type. Write the common cases as `HighFloat`, `HighVec2`, `HighVec3`, `HighVec4`, `MedFloat`, `MedVec2`, `MedVec3`, and `MedVec4`. Uniform handles of those shapes are `HighFloatUniform`, `HighVec2Uniform`, `HighVec3Uniform`, and `HighVec4Uniform`.
 
 `Uniform<T>` is a handle owned by one `ShaderProgram`. Inside a stage you read `uniform.expr`. The handle itself is what Compose and the GLES runtime write. A handle from one program is not valid on another.
 
@@ -49,9 +49,32 @@ OpenGL ES 3.1 is a compute program. It has no vertex or fragment stage. One `sto
 
 ```kotlin
 val cells = shader(ShaderTarget.Gles31) {
-    lateinit var value: Expr<Vec4<Flt<High>>>
-    storageBlock("cells") { value = vec4("value") }
-    compute(64) { value.store(value) }
+    storageBlock("cells") {
+        val value = vec4("value")
+        compute(64) { value.store(value) }
+    }
+}
+```
+
+OpenGL ES 3.2 keeps the vertex and fragment stages and adds optional geometry and tessellation. Tessellation is a control stage and an evaluation stage together. The EGL context for that program is OpenGL ES 3.2. Inspect the extra stages with `geometrySource()`, `tessControlSource()`, and `tessEvalSource()`.
+
+```kotlin
+val patch = shader(ShaderTarget.Gles32) {
+    vertex { glPosition(attributeVec4("position")) }
+    tessControl(3) {
+        tessLevelOuter(0, 1f.lit)
+        tessLevelOuter(1, 1f.lit)
+        tessLevelOuter(2, 1f.lit)
+        tessLevelInner(0, 1f.lit)
+        passPosition()
+    }
+    tessEval(TessPrimitive.Triangles) { glPosition(glIn(0)) }
+    geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+        glPosition(glIn(0))
+        emitVertex()
+        endPrimitive()
+    }
+    fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
 }
 ```
 
@@ -70,8 +93,8 @@ dependencies {
 
 | Artifact | Role |
 |----------|------|
-| `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, and GLSL ES 3.10 compute spelling |
-| `redbytefx-gl` | GLES 3.0 and 3.1 link, uniform writes, and storage uploads, bound to the EGL thread |
+| `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, GLSL ES 3.10 compute, and GLSL ES 3.20 spelling |
+| `redbytefx-gl` | GLES 3.0, 3.1, and 3.2 link, uniform writes, and storage uploads, bound to the EGL thread |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
 | `redbytefx-stdlib` | Coordinates, masks, compositing, SDF, and related helpers on top of the same DSL |
 
@@ -90,7 +113,7 @@ val program = shader(ShaderTarget.Agsl) {
 }
 
 @Composable
-fun WaveLabel(program: ShaderProgram, amplitude: Uniform<Flt<High>>, frequency: Uniform<Flt<High>>) {
+fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: HighFloatUniform) {
     val fx = rememberFxController(program)
     fx.bindFloat(amplitude, 12f)
     fx.bindFloat(frequency, 0.08f)
@@ -102,7 +125,7 @@ fun WaveLabel(program: ShaderProgram, amplitude: Uniform<Flt<High>>, frequency: 
 
 ## Authoring
 
-Stages are a small state machine. Uniforms, samplers, and varyings are declared on the program. `fragment { }` and `vertex { }` are the only places that emit shader code. `vertex` exists only for `ShaderTarget.Gles30`.
+Stages are a small state machine. Uniforms, samplers, and varyings are declared on the program. `fragment { }` and `vertex { }` emit shader code. `vertex` exists for `ShaderTarget.Gles30` and `ShaderTarget.Gles32`. `geometry`, `tessControl`, and `tessEval` exist for `ShaderTarget.Gles32`. `compute` exists for `ShaderTarget.Gles31`.
 
 - `fragCoord` and `resolution` are AGSL fragment inputs, in pixels.
 - `sample()` reads the child shader. It is legal only in an AGSL fragment, and not inside `fn`.
@@ -135,7 +158,7 @@ AGSL playback is `program.newAgslInstance()`. An unchanged uniform does not call
 
 ## Not in this version
 
-The compiler does not emit geometry or tessellation shaders, desktop GL, or GLES 2.0.
+The compiler does not emit GLES 2.0.
 
 ## Contributing
 

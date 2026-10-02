@@ -25,16 +25,26 @@ internal class BlockMember(
 
 public class UniformBlockBuilder internal constructor(
     private val instanceName: String,
+    private val vertexStage: (ShaderDsl.VertexDsl.() -> Unit) -> Unit,
+    private val fragmentStage: (FragmentDsl.() -> Expr<*>) -> Unit,
 ) {
     private val members = mutableListOf<BlockMember>()
 
-    public fun float(name: String): Expr<Flt<High>> = member(name, Shape.Scalar(ScalarKind.Float, Precision.High))
+    public fun float(name: String): HighFloat = member(name, Shape.Scalar(ScalarKind.Float, Precision.High))
 
-    public fun vec2(name: String): Expr<Vec2<Flt<High>>> = member(name, vector(2))
+    public fun vec2(name: String): HighVec2 = member(name, vector(2))
 
-    public fun vec3(name: String): Expr<Vec3<Flt<High>>> = member(name, vector(3))
+    public fun vec3(name: String): HighVec3 = member(name, vector(3))
 
-    public fun vec4(name: String): Expr<Vec4<Flt<High>>> = member(name, vector(4))
+    public fun vec4(name: String): HighVec4 = member(name, vector(4))
+
+    public fun vertex(block: ShaderDsl.VertexDsl.() -> Unit) {
+        vertexStage(block)
+    }
+
+    public fun fragment(block: FragmentDsl.() -> Expr<*>) {
+        fragmentStage(block)
+    }
 
     internal fun finish(name: String, typeName: String): UniformBlock {
         require(members.isNotEmpty()) { "Uniform block requires a field" }

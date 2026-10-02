@@ -4,6 +4,7 @@ public enum class ShaderTarget {
     Agsl,
     Gles30,
     Gles31,
+    Gles32,
 }
 
 internal enum class AuthoringPlace {
@@ -11,6 +12,9 @@ internal enum class AuthoringPlace {
     Vertex,
     Fragment,
     Compute,
+    Geometry,
+    TessControl,
+    TessEval,
     Function,
 }
 
@@ -23,6 +27,9 @@ internal enum class AuthoringAction {
     EnterVertex,
     EnterFragment,
     EnterCompute,
+    EnterGeometry,
+    EnterTessControl,
+    EnterTessEval,
     EnterFunction,
     LeaveFunction,
     LeaveStage,
@@ -30,6 +37,9 @@ internal enum class AuthoringAction {
     Texture,
     Attribute,
     GlPosition,
+    EmitVertex,
+    EndPrimitive,
+    TessLevel,
     FragmentOut,
     StorageWrite,
     Let,
@@ -66,6 +76,15 @@ internal enum class AuthoringCode {
     StorageOutsideGles31,
     StorageOutsideProgram,
     StorageWriteOutsideCompute,
+    GeometryOutsideGles32,
+    GeometryOutsideProgram,
+    TessControlOutsideGles32,
+    TessControlOutsideProgram,
+    TessEvalOutsideGles32,
+    TessEvalOutsideProgram,
+    EmitVertexOutsideGeometry,
+    EndPrimitiveOutsideGeometry,
+    TessLevelOutsideTessControl,
     LetOutsideStage,
     ReturnOutsideStage,
 }
@@ -108,7 +127,13 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         AuthoringAction.EnterVertex -> enterVertex(state)
         AuthoringAction.EnterFragment -> enterFragment(state)
         AuthoringAction.EnterCompute -> enterCompute(state)
+        AuthoringAction.EnterGeometry -> enterGeometry(state)
+        AuthoringAction.EnterTessControl -> enterTessControl(state)
+        AuthoringAction.EnterTessEval -> enterTessEval(state)
         AuthoringAction.StorageWrite -> storageWrite(state)
+        AuthoringAction.EmitVertex -> emitVertex(state)
+        AuthoringAction.EndPrimitive -> endPrimitive(state)
+        AuthoringAction.TessLevel -> tessLevel(state)
         AuthoringAction.EnterFunction -> enterFunction(state)
         AuthoringAction.LeaveFunction -> leaveFunction(state)
         AuthoringAction.LeaveStage -> leaveStage(state)
@@ -119,13 +144,14 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         )
         AuthoringAction.Texture -> allow(
             state,
-            state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Fragment,
+            (state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32) &&
+                state.place == AuthoringPlace.Fragment,
             AuthoringCode.TextureOutsideGlesFragment,
         )
         AuthoringAction.Attribute -> attribute(state)
         AuthoringAction.GlPosition -> allow(
             state,
-            state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Vertex,
+            glPositionLegal(state),
             AuthoringCode.GlPositionOutsideVertex,
         )
         AuthoringAction.FragmentOut -> fragmentOut(state)
@@ -144,8 +170,9 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
 private fun declareUniform(state: AuthoringState): AuthoringStep = when (state.place) {
     AuthoringPlace.Program -> accept(state)
     AuthoringPlace.Function -> reject(state, AuthoringCode.UniformInsideFunction)
-    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute ->
-        reject(state, AuthoringCode.UniformOutsideProgram)
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute,
+    AuthoringPlace.Geometry, AuthoringPlace.TessControl, AuthoringPlace.TessEval,
+    -> reject(state, AuthoringCode.UniformOutsideProgram)
 }
 
 private fun declareSampler(state: AuthoringState): AuthoringStep = when {
@@ -175,8 +202,9 @@ private fun declareVarying(state: AuthoringState): AuthoringStep = when {
 private fun enterVertex(state: AuthoringState): AuthoringStep = when {
     state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.VertexOutsideProgram)
     state.target == ShaderTarget.Gles31 -> reject(state, AuthoringCode.VertexOnGles31)
-    state.target != ShaderTarget.Gles30 -> reject(state, AuthoringCode.VertexOnAgsl)
-    else -> accept(state.copy(place = AuthoringPlace.Vertex))
+    state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32 ->
+        accept(state.copy(place = AuthoringPlace.Vertex))
+    else -> reject(state, AuthoringCode.VertexOnAgsl)
 }
 
 private fun enterFragment(state: AuthoringState): AuthoringStep = when {
@@ -191,6 +219,45 @@ private fun enterCompute(state: AuthoringState): AuthoringStep = when {
     else -> accept(state.copy(place = AuthoringPlace.Compute))
 }
 
+private fun enterGeometry(state: AuthoringState): AuthoringStep = when {
+    state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.GeometryOutsideProgram)
+    state.target != ShaderTarget.Gles32 -> reject(state, AuthoringCode.GeometryOutsideGles32)
+    else -> accept(state.copy(place = AuthoringPlace.Geometry))
+}
+
+private fun enterTessControl(state: AuthoringState): AuthoringStep = when {
+    state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.TessControlOutsideProgram)
+    state.target != ShaderTarget.Gles32 -> reject(state, AuthoringCode.TessControlOutsideGles32)
+    else -> accept(state.copy(place = AuthoringPlace.TessControl))
+}
+
+private fun enterTessEval(state: AuthoringState): AuthoringStep = when {
+    state.place != AuthoringPlace.Program -> reject(state, AuthoringCode.TessEvalOutsideProgram)
+    state.target != ShaderTarget.Gles32 -> reject(state, AuthoringCode.TessEvalOutsideGles32)
+    else -> accept(state.copy(place = AuthoringPlace.TessEval))
+}
+
+private fun emitVertex(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Gles32 && state.place == AuthoringPlace.Geometry -> accept(state)
+    else -> reject(state, AuthoringCode.EmitVertexOutsideGeometry)
+}
+
+private fun endPrimitive(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Gles32 && state.place == AuthoringPlace.Geometry -> accept(state)
+    else -> reject(state, AuthoringCode.EndPrimitiveOutsideGeometry)
+}
+
+private fun tessLevel(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Gles32 && state.place == AuthoringPlace.TessControl -> accept(state)
+    else -> reject(state, AuthoringCode.TessLevelOutsideTessControl)
+}
+
+private fun glPositionLegal(state: AuthoringState): Boolean = when (state.place) {
+    AuthoringPlace.Vertex -> state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32
+    AuthoringPlace.Geometry, AuthoringPlace.TessEval -> state.target == ShaderTarget.Gles32
+    else -> false
+}
+
 private fun storageWrite(state: AuthoringState): AuthoringStep = when {
     state.target == ShaderTarget.Gles31 && state.place == AuthoringPlace.Compute -> accept(state)
     else -> reject(state, AuthoringCode.StorageWriteOutsideCompute)
@@ -201,12 +268,15 @@ private fun enterFunction(state: AuthoringState): AuthoringStep = when (state.pl
     AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(
         state.copy(place = AuthoringPlace.Function, functionParent = state.place),
     )
-    AuthoringPlace.Program, AuthoringPlace.Compute -> reject(state, AuthoringCode.FunctionOutsideStage)
+    AuthoringPlace.Program, AuthoringPlace.Compute, AuthoringPlace.Geometry,
+    AuthoringPlace.TessControl, AuthoringPlace.TessEval,
+    -> reject(state, AuthoringCode.FunctionOutsideStage)
 }
 
 private fun leaveStage(state: AuthoringState): AuthoringStep = when (state.place) {
-    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute ->
-        accept(state.copy(place = AuthoringPlace.Program))
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute,
+    AuthoringPlace.Geometry, AuthoringPlace.TessControl, AuthoringPlace.TessEval,
+    -> accept(state.copy(place = AuthoringPlace.Program))
     else -> reject(state, AuthoringCode.LeaveOutsideStage)
 }
 
@@ -217,13 +287,15 @@ private fun leaveFunction(state: AuthoringState): AuthoringStep {
 
 private fun fragmentOut(state: AuthoringState): AuthoringStep = when {
     state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.FragmentOutOnAgsl)
-    state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Fragment -> accept(state)
+    (state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32) &&
+        state.place == AuthoringPlace.Fragment -> accept(state)
     else -> reject(state, AuthoringCode.FragmentOutOutsideFragment)
 }
 
 private fun attribute(state: AuthoringState): AuthoringStep = when {
     state.place == AuthoringPlace.Function -> reject(state, AuthoringCode.AttributeInsideFunction)
-    state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Vertex -> accept(state)
+    (state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32) &&
+        state.place == AuthoringPlace.Vertex -> accept(state)
     else -> reject(state, AuthoringCode.AttributeOutsideVertex)
 }
 

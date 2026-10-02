@@ -2,17 +2,17 @@
 
 # RedByteFX
 
-**RedByteFX** — это Kotlin DSL, который компилирует одну типизированную алгебру шейдера в Android AGSL, OpenGL ES 3.0 и compute OpenGL ES 3.1.
+**RedByteFX** — это Kotlin DSL, который компилирует одну типизированную алгебру шейдера в Android AGSL, OpenGL ES 3.0, compute OpenGL ES 3.1 и geometry с tessellation OpenGL ES 3.2.
 
 Пишется Kotlin, а не строка шейдера. Компилятор выпускает текст, который реально исполняет платформа:
 
-`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0 или compute-программа GLES 3.1`
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0, compute-программа GLES 3.1 или программа GLES 3.2`
 
-**Платформа:** Android API 33+. AGSL требует `RuntimeShader`. Выход OpenGL ES — это GLSL ES 3.00, вершина и фрагмент, или GLSL ES 3.10 compute.
+**Платформа:** Android API 33+. AGSL требует `RuntimeShader`. Выход OpenGL ES — это GLSL ES 3.00, вершина и фрагмент, GLSL ES 3.10 compute или GLSL ES 3.20 с geometry и tessellation.
 
 ## Что вы пишете
 
-Один носитель значения, `Expr<T>`. Ранг именной (`Vec2`, `Vec3`, `Vec4` и матрицы). Точность — параметр: `Flt<High>` это highp float, `Flt<Med>` это mediump float. Цвет — `Vec4` из mediump-чисел, его даёт `color(...)`. Отдельного типа цвета нет.
+Один носитель значения, `Expr<T>`. Ранг именной (`Vec2`, `Vec3`, `Vec4` и матрицы). Точность — параметр: `Flt<High>` это highp float, `Flt<Med>` это mediump float. Цвет — `Vec4` из mediump-чисел, его даёт `color(...)`. Отдельного типа цвета нет. Частые случаи пишутся как `HighFloat`, `HighVec2`, `HighVec3`, `HighVec4`, `MedFloat`, `MedVec2`, `MedVec3` и `MedVec4`. Рукояти этих форм — `HighFloatUniform`, `HighVec2Uniform`, `HighVec3Uniform` и `HighVec4Uniform`.
 
 `Uniform<T>` — рукоять одной программы `ShaderProgram`. Внутри стадии читается `uniform.expr`. Саму рукоять пишут Compose и GLES-рантайм. Рукоять одной программы недействительна для другой.
 
@@ -49,9 +49,32 @@ OpenGL ES 3.1 — это compute-программа. В ней нет верши
 
 ```kotlin
 val cells = shader(ShaderTarget.Gles31) {
-    lateinit var value: Expr<Vec4<Flt<High>>>
-    storageBlock("cells") { value = vec4("value") }
-    compute(64) { value.store(value) }
+    storageBlock("cells") {
+        val value = vec4("value")
+        compute(64) { value.store(value) }
+    }
+}
+```
+
+OpenGL ES 3.2 сохраняет вершину и фрагмент и добавляет необязательные geometry и tessellation. Tessellation — это вместе control и evaluation. EGL-контекст этой программы — OpenGL ES 3.2. Дополнительные тексты: `geometrySource()`, `tessControlSource()` и `tessEvalSource()`.
+
+```kotlin
+val patch = shader(ShaderTarget.Gles32) {
+    vertex { glPosition(attributeVec4("position")) }
+    tessControl(3) {
+        tessLevelOuter(0, 1f.lit)
+        tessLevelOuter(1, 1f.lit)
+        tessLevelOuter(2, 1f.lit)
+        tessLevelInner(0, 1f.lit)
+        passPosition()
+    }
+    tessEval(TessPrimitive.Triangles) { glPosition(glIn(0)) }
+    geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+        glPosition(glIn(0))
+        emitVertex()
+        endPrimitive()
+    }
+    fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
 }
 ```
 
@@ -70,8 +93,8 @@ dependencies {
 
 | Артефакт | Роль |
 |----------|------|
-| `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00 и compute GLSL ES 3.10 |
-| `redbytefx-gl` | Линковка GLES 3.0 и 3.1, запись uniform-ов и загрузка storage на потоке EGL |
+| `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00, compute GLSL ES 3.10 и GLSL ES 3.20 |
+| `redbytefx-gl` | Линковка GLES 3.0, 3.1 и 3.2, запись uniform-ов и загрузка storage на потоке EGL |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` для AGSL |
 | `redbytefx-stdlib` | Координаты, маски, композитинг, SDF и родственные помощники поверх того же DSL |
 
@@ -90,7 +113,7 @@ val program = shader(ShaderTarget.Agsl) {
 }
 
 @Composable
-fun WaveLabel(program: ShaderProgram, amplitude: Uniform<Flt<High>>, frequency: Uniform<Flt<High>>) {
+fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: HighFloatUniform) {
     val fx = rememberFxController(program)
     fx.bindFloat(amplitude, 12f)
     fx.bindFloat(frequency, 0.08f)
@@ -102,7 +125,7 @@ fun WaveLabel(program: ShaderProgram, amplitude: Uniform<Flt<High>>, frequency: 
 
 ## Авторство
 
-Стадии — небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут только `fragment { }` и `vertex { }`. `vertex` есть только у `ShaderTarget.Gles30`.
+Стадии — небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут `fragment { }` и `vertex { }`. `vertex` есть у `ShaderTarget.Gles30` и `ShaderTarget.Gles32`. `geometry`, `tessControl` и `tessEval` есть у `ShaderTarget.Gles32`. `compute` есть у `ShaderTarget.Gles31`.
 
 - `fragCoord` и `resolution` — входы AGSL-фрагмента, в пикселях.
 - `sample()` читает дочерний шейдер. Это законно только в AGSL-фрагменте и не внутри `fn`.
@@ -135,7 +158,7 @@ shader(ShaderTarget.Agsl) {
 
 ## Чего в этой версии нет
 
-Компилятор не выпускает geometry и tessellation, desktop GL и GLES 2.0.
+Компилятор не выпускает GLES 2.0.
 
 ## Участие
 

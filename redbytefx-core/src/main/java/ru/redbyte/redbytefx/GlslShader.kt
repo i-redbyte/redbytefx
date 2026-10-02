@@ -13,6 +13,11 @@ internal fun linkGlsl(
     functions: List<UserFunction>,
     fragmentWrites: List<FragmentWrite>,
     block: UniformBlock?,
+    version: Int = GLSL_300,
+    programTarget: ShaderTarget = ShaderTarget.Gles30,
+    geometry: String? = null,
+    tessControl: String? = null,
+    tessEval: String? = null,
 ): ShaderProgram {
     val bindings = uniforms.map { uniform ->
         UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
@@ -46,7 +51,7 @@ internal fun linkGlsl(
     collectUniforms(fragmentBody, fragmentUniforms)
     fragmentWrites.forEach { collectUniforms(it.value, fragmentUniforms) }
     return ShaderProgram(
-        target = ShaderTarget.Gles30,
+        target = programTarget,
         vertex = renderStage(
             inputs = attributes.map { "in ${glslDeclaration(it.shape)} ${attributeNames.getValue(it)};" },
             outputs = writes.map { "out ${glslDeclaration(it.varying.shape)} ${varyingNames.getValue(it.varying)};" },
@@ -71,6 +76,7 @@ internal fun linkGlsl(
                 block,
                 writes.map { it.value } + position,
             ),
+            version = version,
         ),
         fragment = renderStage(
             inputs = writes.map { "in ${glslDeclaration(it.varying.shape)} ${varyingNames.getValue(it.varying)};" },
@@ -103,9 +109,13 @@ internal fun linkGlsl(
                 block,
                 listOf(fragmentBody) + fragmentWrites.map { it.value },
             ),
+            version = version,
         ),
         bindings = bindings,
         uniformBlock = block,
+        geometryText = geometry,
+        tessControlText = tessControl,
+        tessEvalText = tessEval,
     )
 }
 
@@ -247,6 +257,8 @@ private fun walk(
         is ExprNode.VaryingRef,
         is ExprNode.Param,
         is ExprNode.BlockRef,
+        is ExprNode.GlIn,
+        ExprNode.TessCoord,
         ExprNode.FragCoord,
         ExprNode.Resolution -> Unit
     }
@@ -284,6 +296,8 @@ private class GlslEmitter(
         }
         is ExprNode.Param -> node.name
         is ExprNode.BlockRef -> "${node.member.instanceName}.${node.member.memberName}"
+        is ExprNode.GlIn -> "gl_in[${node.index}].gl_Position"
+        ExprNode.TessCoord -> "gl_TessCoord"
         is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
         is ExprNode.UserCall -> {
@@ -336,8 +350,9 @@ private fun renderStage(
     outputName: String?,
     outputValue: String?,
     blockText: String,
+    version: Int = GLSL_300,
 ): String = buildString {
-    append("#version 300 es\n")
+    append("#version ").append(version).append(" es\n")
     append("precision highp float;\n")
     for (line in inputs) append(line).append('\n')
     for (binding in uniforms) {
@@ -426,6 +441,97 @@ private fun storageText(block: StorageBlock?): String {
                 .append(member.memberName).append(";\n")
         }
         append("} ").append(block.instanceName).append(";\n")
+    }
+}
+
+internal fun spellGeometry(stage: GeometryStage): String = spellPrimitive(
+    header = listOf(
+        "layout(${stage.input.glslName}) in;",
+        "layout(${stage.output.glslName}, max_vertices = ${stage.maxVertices}) out;",
+    ),
+    commands = stage.commands,
+)
+
+internal fun spellTessControl(stage: TessControlStage): String = spellPrimitive(
+    header = listOf("layout(vertices = ${stage.vertices}) out;"),
+    commands = stage.commands,
+)
+
+internal fun spellTessEval(stage: TessEvalStage): String {
+    val primitive = when (stage.primitive) {
+        TessPrimitive.Triangles -> "triangles"
+        TessPrimitive.Quads -> "quads"
+        TessPrimitive.Isolines -> "isolines"
+    }
+    val spacing = when (stage.spacing) {
+        TessSpacing.Equal -> "equal_spacing"
+        TessSpacing.FractionalEven -> "fractional_even_spacing"
+        TessSpacing.FractionalOdd -> "fractional_odd_spacing"
+    }
+    val order = when (stage.order) {
+        TessVertexOrder.Ccw -> "ccw"
+        TessVertexOrder.Cw -> "cw"
+    }
+    val layout = if (stage.primitive == TessPrimitive.Isolines) {
+        "layout($primitive, $spacing) in;"
+    } else {
+        "layout($primitive, $spacing, $order) in;"
+    }
+    return spellPrimitive(listOf(layout), stage.commands)
+}
+
+internal fun rejectGlInPastPatch(expr: Expr<*>, vertices: Int) {
+    walk(expr, linkedSetOf()) { node ->
+        if (node is ExprNode.GlIn) {
+            require(node.index < vertices) {
+                "gl_in index ${node.index} is outside the patch of $vertices vertices"
+            }
+        }
+    }
+}
+
+private fun spellPrimitive(header: List<String>, commands: List<PrimitiveCommand>): String {
+    commands.forEach { command ->
+        when (command) {
+            is PrimitiveCommand.Position -> rejectUserCalls(command.value)
+            is PrimitiveCommand.OuterLevel -> rejectUserCalls(command.value)
+            is PrimitiveCommand.InnerLevel -> rejectUserCalls(command.value)
+            PrimitiveCommand.EmitVertex, PrimitiveCommand.EndPrimitive, PrimitiveCommand.PassPosition -> Unit
+        }
+    }
+    val emitter = GlslEmitter(IdentifierAllocator(emptySet()), emptyMap(), emptyMap(), emptyMap())
+    val lines = commands.map { command ->
+        when (command) {
+            is PrimitiveCommand.Position -> "  gl_Position = ${emitter.emit(command.value)};"
+            PrimitiveCommand.EmitVertex -> "  EmitVertex();"
+            PrimitiveCommand.EndPrimitive -> "  EndPrimitive();"
+            is PrimitiveCommand.OuterLevel ->
+                "  gl_TessLevelOuter[${command.index}] = ${emitter.emit(command.value)};"
+            is PrimitiveCommand.InnerLevel ->
+                "  gl_TessLevelInner[${command.index}] = ${emitter.emit(command.value)};"
+            PrimitiveCommand.PassPosition ->
+                "  gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;"
+        }
+    }
+    return buildString {
+        append("#version 320 es\n")
+        append("precision highp float;\n")
+        header.forEach { append(it).append('\n') }
+        append("void main() {\n")
+        emitter.declarations.forEach { append(it).append('\n') }
+        lines.forEach { append(it).append('\n') }
+        append("}\n")
+    }
+}
+
+private fun rejectUserCalls(expr: Expr<*>) {
+    walk(expr, linkedSetOf()) { node ->
+        if (node is ExprNode.UserCall) {
+            throw ProgramException(
+                ProgramCode.FunctionWrongStage,
+                "Geometry and tessellation stages cannot call functions",
+            )
+        }
     }
 }
 

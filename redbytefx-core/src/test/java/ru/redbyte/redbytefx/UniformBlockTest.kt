@@ -41,14 +41,13 @@ class UniformBlockTest {
 
     @Test
     fun theBlockIsSpelledOnlyInTheStageThatReadsIt() {
-        lateinit var time: Expr<Flt<High>>
         val program = shader(ShaderTarget.Gles30) {
             uniformBlock("frame") {
-                time = float("time")
+                val time = float("time")
                 vec3("color")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(time, time, time, 1f.lit) }
             }
-            vertex { glPosition(attributeVec4("position")) }
-            fragment { vec4(time, time, time, 1f.lit) }
         }
         val fragment = program.fragmentSource()
         assertTrue(fragment.contains("layout(std140) uniform frame {"))

@@ -9,6 +9,9 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import ru.redbyte.redbytefx.Expr
+import ru.redbyte.redbytefx.GeometryInput
+import ru.redbyte.redbytefx.GeometryOutput
+import ru.redbyte.redbytefx.TessPrimitive
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.Fn1
@@ -159,6 +162,38 @@ class Gles30DeviceTest {
             runtime.set(checkNotNull(program.storageBlock), floatArrayOf(1f, 0f, 0f, 1f))
             runtime.destroy()
             assertNoGlError("compute storage")
+        }
+    }
+
+    @Test
+    fun driverLinksGeometryAndTessellation() {
+        EglPbuffer().use {
+            drainGlError()
+            val version = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+            assumeTrue(version[0] > 3 || (version[0] == 3 && version[1] >= 2))
+            val program = shader(ShaderTarget.Gles32) {
+                vertex { glPosition(attributeVec4("position")) }
+                tessControl(3) {
+                    tessLevelOuter(0, 1f.lit)
+                    tessLevelOuter(1, 1f.lit)
+                    tessLevelOuter(2, 1f.lit)
+                    tessLevelInner(0, 1f.lit)
+                    passPosition()
+                }
+                tessEval(TessPrimitive.Triangles) { glPosition(glIn(0)) }
+                geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+                    glPosition(glIn(0))
+                    emitVertex()
+                    endPrimitive()
+                }
+                fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("geometry")
         }
     }
 

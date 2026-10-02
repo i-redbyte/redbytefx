@@ -19,16 +19,23 @@ public class StorageBlock internal constructor(
 
 public class StorageBlockBuilder internal constructor(
     private val instanceName: String,
+    private val computeStage: (Int, ComputeDsl.() -> Unit) -> Unit,
 ) {
     private val members = mutableListOf<BlockMember>()
 
-    public fun float(name: String): Expr<Flt<High>> = member(name, Shape.Scalar(ScalarKind.Float, Precision.High))
+    public fun float(name: String): HighFloat = member(name, Shape.Scalar(ScalarKind.Float, Precision.High))
 
-    public fun vec2(name: String): Expr<Vec2<Flt<High>>> = member(name, vector(2))
+    public fun vec2(name: String): HighVec2 = member(name, vector(2))
 
-    public fun vec3(name: String): Expr<Vec3<Flt<High>>> = member(name, vector(3))
+    public fun vec3(name: String): HighVec3 = member(name, vector(3))
 
-    public fun vec4(name: String): Expr<Vec4<Flt<High>>> = member(name, vector(4))
+    public fun vec4(name: String): HighVec4 = member(name, vector(4))
+
+    public fun compute(localSizeX: Int, build: ComputeDsl.() -> Unit) {
+        computeStage(localSizeX, build)
+    }
+
+    internal fun memberSnapshot(): List<BlockMember> = members.toList()
 
     internal fun finish(name: String, typeName: String): StorageBlock {
         require(members.isNotEmpty()) { "Storage block requires a field" }

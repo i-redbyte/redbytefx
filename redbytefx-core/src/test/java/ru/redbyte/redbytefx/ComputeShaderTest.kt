@@ -36,12 +36,11 @@ class ComputeShaderTest {
 
     @Test
     fun computeSpellsAStorageWriteAndLeavesGraphicsStagesOut() {
-        lateinit var value: Expr<Vec4<Flt<High>>>
         val program = shader(ShaderTarget.Gles31) {
             storageBlock("cells") {
-                value = vec4("value")
+                val value = vec4("value")
+                compute(64) { value.store(value) }
             }
-            compute(64) { value.store(value) }
         }
         val source = program.computeSource()
         assertTrue(source.contains("#version 310 es"))

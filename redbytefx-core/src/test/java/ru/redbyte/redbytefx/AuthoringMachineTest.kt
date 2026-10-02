@@ -105,6 +105,16 @@ class AuthoringMachineTest {
         assertRejected(gles31Compute, AuthoringAction.DeclareStorage, AuthoringCode.StorageOutsideProgram)
         assertRejected(gles31Program, AuthoringAction.StorageWrite, AuthoringCode.StorageWriteOutsideCompute)
         assertRejected(gles31Compute, AuthoringAction.EnterFunction, AuthoringCode.FunctionOutsideStage)
+        assertAccepted(gles32Program, AuthoringAction.EnterVertex, gles32Vertex)
+        assertAccepted(gles32Program, AuthoringAction.EnterGeometry, gles32Geometry)
+        assertAccepted(gles32Program, AuthoringAction.EnterTessControl, gles32TessControl)
+        assertAccepted(gles32Program, AuthoringAction.EnterTessEval, gles32TessEval)
+        assertAccepted(gles32Geometry, AuthoringAction.EmitVertex, gles32Geometry)
+        assertAccepted(gles32TessControl, AuthoringAction.TessLevel, gles32TessControl)
+        assertRejected(glesProgram, AuthoringAction.EnterGeometry, AuthoringCode.GeometryOutsideGles32)
+        assertRejected(glesProgram, AuthoringAction.EnterTessControl, AuthoringCode.TessControlOutsideGles32)
+        assertRejected(gles32Vertex, AuthoringAction.EmitVertex, AuthoringCode.EmitVertexOutsideGeometry)
+        assertRejected(gles32Geometry, AuthoringAction.EnterFunction, AuthoringCode.FunctionOutsideStage)
     }
 
     private fun assertAccepted(
@@ -137,6 +147,11 @@ class AuthoringMachineTest {
     private val glesProgram = authoringState(ShaderTarget.Gles30, AuthoringPlace.Program)
     private val glesVertex = authoringState(ShaderTarget.Gles30, AuthoringPlace.Vertex)
     private val glesFragment = authoringState(ShaderTarget.Gles30, AuthoringPlace.Fragment)
+    private val gles32Program = authoringState(ShaderTarget.Gles32, AuthoringPlace.Program)
+    private val gles32Vertex = authoringState(ShaderTarget.Gles32, AuthoringPlace.Vertex)
+    private val gles32Geometry = authoringState(ShaderTarget.Gles32, AuthoringPlace.Geometry)
+    private val gles32TessControl = authoringState(ShaderTarget.Gles32, AuthoringPlace.TessControl)
+    private val gles32TessEval = authoringState(ShaderTarget.Gles32, AuthoringPlace.TessEval)
     private val gles31Program = authoringState(ShaderTarget.Gles31, AuthoringPlace.Program)
     private val gles31Compute = authoringState(ShaderTarget.Gles31, AuthoringPlace.Compute)
     private val glesFunctionFromVertex = authoringState(

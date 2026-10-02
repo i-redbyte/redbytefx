@@ -30,10 +30,10 @@ internal fun unaryShape(op: UnaryOp, arg: Shape): Shape {
     return arg
 }
 
-public val Float.lit: Expr<Flt<High>>
+public val Float.lit: HighFloat
     get() = floatLiteral(this, Precision.High)
 
-public val Float.med: Expr<Flt<Med>>
+public val Float.med: MedFloat
     get() = floatLiteral(this, Precision.Med)
 
 public val Int.lit: Expr<Flt<High>>
