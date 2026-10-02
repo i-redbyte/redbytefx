@@ -11,11 +11,11 @@ import ru.redbyte.redbytefx.*
  * local point first via [aspectCenteredUv] and then use an SDF-based fill instead.
  */
 public fun circleMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeFeather = max(feather, 0.0001f)
     val distance = length(uv - center)
@@ -26,11 +26,11 @@ public fun circleMask(
  * Builds a soft circular mask using literal [radius] and [feather] values.
  */
 public fun circleMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
     feather: Float = 0.02f
-): FloatExpr = circleMask(
+): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = float(radius),
@@ -41,11 +41,11 @@ public fun circleMask(
  * Builds a soft circular mask using an expression-driven [radius] and a literal [feather].
  */
 public fun circleMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
     feather: Float
-): FloatExpr = circleMask(
+): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = radius,
@@ -60,12 +60,12 @@ public fun circleMask(
  * than local SDF coordinates.
  */
 public fun ringMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
-    width: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeWidth = max(width, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
@@ -78,12 +78,12 @@ public fun ringMask(
  * Builds a soft ring mask using literal [radius], [width], and [feather] values.
  */
 public fun ringMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
     width: Float,
     feather: Float = 0.02f
-): FloatExpr = ringMask(
+): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = float(radius),
@@ -95,12 +95,12 @@ public fun ringMask(
  * Builds a soft ring mask using expression-driven [radius] and [width] with a literal [feather].
  */
 public fun ringMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
-    width: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
     feather: Float
-): FloatExpr = ringMask(
+): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
@@ -112,12 +112,12 @@ public fun ringMask(
  * Builds a soft ring mask using an expression-driven [radius] and a literal [width].
  */
 public fun ringMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
     width: Float,
     feather: Float = 0.02f
-): FloatExpr = ringMask(
+): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
@@ -133,11 +133,11 @@ public fun ringMask(
  * [softFill] when the authoring flow is already in local SDF coordinates.
  */
 public fun rectMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    size: Float2Expr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    size: Expr<Vec2<Flt<High>>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val halfSizeX = max(size.x * 0.5f, 0f)
     val halfSizeY = max(size.y * 0.5f, 0f)
     val safeFeather = max(feather, 0.0001f)
@@ -151,11 +151,11 @@ public fun rectMask(
  * Builds a soft axis-aligned rectangle mask using a literal [feather] value.
  */
 public fun rectMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    size: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    size: Expr<Vec2<Flt<High>>>,
     feather: Float
-): FloatExpr = rectMask(
+): Expr<Flt<High>> = rectMask(
     uv = uv,
     center = center,
     size = size,

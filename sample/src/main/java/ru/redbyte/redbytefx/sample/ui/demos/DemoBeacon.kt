@@ -27,11 +27,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class BeaconSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val radius: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val radius: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -42,49 +42,49 @@ fun DemoBeacon() {
     var amountUi by rememberSaveable { mutableFloatStateOf(88f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var radiusParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.65f)
-            val radius by autoUniformFloat(0.17f)
-            val amount by autoUniformFloat(0.88f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var radiusParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.65f)
+            val radius = uniform("radius", 0.17f)
+            val amount = uniform("amount", 0.88f)
             timeParam = time
             speedParam = speed
             radiusParam = radius
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val phase = let(pingPong(time * speed, 1f), "phase")
-            val travel = let(easeInOutSine(phase), "travel")
-            val glow = let(easeInOutCubic(pingPong(time * speed + 0.22f, 1f)), "glow")
-            val center = let(
-                float2(
-                    mix(0.18f, 0.82f, travel),
-                    0.5f + sin(time * 0.8f) * 0.12f
-                ),
-                "center"
-            )
-            val focus = let(circleMask(uv, center = center, radius = radius, feather = 0.16f), "focus")
-            val halo = let(
-                ringMask(
-                    uv,
-                    center = center,
-                    radius = radius + 0.06f,
-                    width = 0.08f,
-                    feather = 0.05f
-                ),
-                "halo"
-            )
-            val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
-            val beamTint = let(color(float3(0.12f, 0.94f, 0.98f), base.a), "beam_tint")
-            val haloTint = let(color(float3(1f, 0.86f, 0.35f), base.a), "halo_tint")
-            val focused = let(blendScreen(dimmed, beamTint, focus * amount * 0.7f), "focused")
-
-            blendScreen(focused, haloTint, halo * glow * amount)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val phase = let(pingPong(time.expr * speed.expr, 1f), "phase")
+                val travel = let(easeInOutSine(phase), "travel")
+                val glow = let(easeInOutCubic(pingPong(time.expr * speed.expr + 0.22f, 1f)), "glow")
+                val center = let(
+                    float2(
+                        mix(0.18f, 0.82f, travel),
+                        0.5f + sin(time.expr * 0.8f) * 0.12f
+                    ),
+                    "center"
+                )
+                val focus = let(circleMask(uv, center = center, radius = radius.expr, feather = 0.16f), "focus")
+                val halo = let(
+                    ringMask(
+                        uv,
+                        center = center,
+                        radius = radius.expr + 0.06f,
+                        width = 0.08f,
+                        feather = 0.05f
+                    ),
+                    "halo"
+                )
+                val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
+                val beamTint = let(color(float3(0.12f, 0.94f, 0.98f), base.a), "beam_tint")
+                val haloTint = let(color(float3(1f, 0.86f, 0.35f), base.a), "halo_tint")
+                val focused = let(blendScreen(dimmed, beamTint, focus * amount.expr * 0.7f), "focused")
+                blendScreen(focused, haloTint, halo * glow * amount.expr)
+            }
         }
         BeaconSetup(
             effect = effect,

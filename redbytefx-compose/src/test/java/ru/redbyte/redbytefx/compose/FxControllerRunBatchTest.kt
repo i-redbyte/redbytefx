@@ -3,9 +3,14 @@ package ru.redbyte.redbytefx.compose
 import android.graphics.RenderEffect
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import ru.redbyte.redbytefx.FxInstance
-import ru.redbyte.redbytefx.FxParam
-import ru.redbyte.redbytefx.redbytefx
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.Vec2
+import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.Vec4
+import ru.redbyte.redbytefx.shader
 
 /**
  * [FxController.runBatch] should coalesce host invalidation when multiple imperative setters run
@@ -42,39 +47,41 @@ class FxControllerRunBatchTest {
         assertEquals(2, controller.runtimeInvalidationTick)
     }
 
-    private class TrackingFxInstance : FxInstance {
+    private class TrackingFxInstance : ShaderControl {
         var floatCalls: Int = 0
 
         override fun renderEffect(): RenderEffect =
             error("Not needed for this test")
 
-        override fun setFloat(param: FxParam.Float, value: Float): Boolean {
+        override fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean {
             floatCalls += 1
             return true
         }
 
-        override fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean = false
+        override fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean = false
 
-        override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean = false
+        override fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean = false
 
         override fun setFloat4(
-            param: FxParam.Float4,
+            uniform: Uniform<Vec4<Flt<High>>>,
             x: Float,
             y: Float,
             z: Float,
-            w: Float
+            w: Float,
         ): Boolean = false
 
         override fun setResolution(widthPx: Float, heightPx: Float): Boolean = false
+
+        override fun runBatch(block: () -> Unit) {
+            block()
+        }
     }
 
-    private fun testFloatParam(): FxParam.Float {
-        var param: FxParam.Float? = null
-        redbytefx {
-            val amount = uniformFloat(0f)
-            param = amount
-            sample()
+    private fun testFloatParam(): Uniform<Flt<High>> {
+        val program = shader(ShaderTarget.Agsl) {
+            uniform("amount", 0f)
+            fragment { sample() }
         }
-        return checkNotNull(param)
+        return program.uniform("u_amount")
     }
 }

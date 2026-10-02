@@ -7,8 +7,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import ru.redbyte.redbytefx.FxInstance
-import ru.redbyte.redbytefx.FxParam
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.Vec2
+import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.Vec4
 
 /**
  * Ensures [FxController.composeRenderEffect] tracks [FxInstance.renderEffect] identity changes.
@@ -31,7 +35,7 @@ class FxControllerComposeRenderEffectCacheTest {
         assertNotSame(first, second)
     }
 
-    private class SwappingRenderEffectInstance : FxInstance {
+    private class SwappingRenderEffectInstance : ShaderControl {
 
         private var generation = 0
 
@@ -51,20 +55,24 @@ class FxControllerComposeRenderEffectCacheTest {
 
         override fun renderEffect(): RenderEffect = current
 
-        override fun setFloat(param: FxParam.Float, value: Float): Boolean = false
+        override fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean = false
 
-        override fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean = false
+        override fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean = false
 
-        override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean = false
+        override fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean = false
 
         override fun setFloat4(
-            param: FxParam.Float4,
+            uniform: Uniform<Vec4<Flt<High>>>,
             x: Float,
             y: Float,
             z: Float,
-            w: Float
+            w: Float,
         ): Boolean = false
 
         override fun setResolution(widthPx: Float, heightPx: Float): Boolean = false
+
+        override fun runBatch(block: () -> Unit) {
+            block()
+        }
     }
 }

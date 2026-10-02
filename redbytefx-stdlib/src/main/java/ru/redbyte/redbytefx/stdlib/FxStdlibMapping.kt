@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.stdlib
 
+import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.*
 
 /**
@@ -13,11 +14,6 @@ import ru.redbyte.redbytefx.*
  * This is a small canonical support helper when a shader already has a clear numeric range model
  * and simply needs readable normalization math.
  */
-public fun inverseLerp(
-    inputStart: FloatExpr,
-    inputEnd: FloatExpr,
-    value: FloatExpr
-): FloatExpr = (value - inputStart) / (inputEnd - inputStart)
 
 /**
  * Computes the normalized position of [value] inside the literal `[inputStart, inputEnd]` range.
@@ -25,8 +21,8 @@ public fun inverseLerp(
 public fun inverseLerp(
     inputStart: Float,
     inputEnd: Float,
-    value: FloatExpr
-): FloatExpr = inverseLerp(float(inputStart), float(inputEnd), value)
+    value: Expr<Flt<High>>
+): Expr<Flt<High>> = inverseLerp(float(inputStart), float(inputEnd), value)
 
 /**
  * Remaps [value] from `[inputStart, inputEnd]` into `[outputStart, outputEnd]`.
@@ -39,24 +35,17 @@ public fun inverseLerp(
  * turns raw numeric ranges into readable mask, blend, or motion intensities without inventing
  * ad-hoc inline math every time.
  */
-public fun remap(
-    value: FloatExpr,
-    inputStart: FloatExpr,
-    inputEnd: FloatExpr,
-    outputStart: FloatExpr,
-    outputEnd: FloatExpr
-): FloatExpr = mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))
 
 /**
  * Remaps [value] between two literal ranges.
  */
 public fun remap(
-    value: FloatExpr,
+    value: Expr<Flt<High>>,
     inputStart: Float,
     inputEnd: Float,
     outputStart: Float,
     outputEnd: Float
-): FloatExpr = remap(
+): Expr<Flt<High>> = remap(
     value = value,
     inputStart = float(inputStart),
     inputEnd = float(inputEnd),
@@ -72,10 +61,10 @@ public fun remap(
  * than [inverseLerp] or [remap], so it belongs after the underlying color or mask path is already
  * clear.
  */
-public fun posterize(
-    value: FloatExpr,
-    levels: FloatExpr
-): FloatExpr {
+public fun <P : Prec> posterize(
+    value: Expr<Flt<P>>,
+    levels: Expr<Flt<P>>,
+): Expr<Flt<P>> {
     val safeLevels = max(floor(levels), 2f)
     val steps = safeLevels - 1f
     return floor(saturate(value) * steps + 0.5f) / steps
@@ -85,27 +74,32 @@ public fun posterize(
  * Posterizes a normalized scalar expression into a literal number of [levels].
  */
 public fun posterize(
-    value: FloatExpr,
+    value: Expr<Flt<High>>,
     levels: Float
-): FloatExpr = posterize(value, float(levels))
+): Expr<Flt<High>> = posterize(value, float(levels))
 
 /**
  * Posterizes the RGB channels of [color] while preserving alpha.
  */
+@JvmName("posterizeColor")
 public fun posterize(
-    color: ColorExpr,
-    levels: FloatExpr
-): ColorExpr = color(
-    r = posterize(color.r, levels),
-    g = posterize(color.g, levels),
-    b = posterize(color.b, levels),
-    a = color.a
-)
+    color: Expr<Vec4<Flt<Med>>>,
+    levels: Expr<Flt<High>>,
+): Expr<Vec4<Flt<Med>>> {
+    val medLevels = levels.toMed()
+    return color(
+        r = posterize(color.r, medLevels),
+        g = posterize(color.g, medLevels),
+        b = posterize(color.b, medLevels),
+        a = color.a,
+    )
+}
 
 /**
  * Posterizes the RGB channels of [color] using a literal number of [levels].
  */
+@JvmName("posterizeColorLevels")
 public fun posterize(
-    color: ColorExpr,
-    levels: Float
-): ColorExpr = posterize(color, float(levels))
+    color: Expr<Vec4<Flt<Med>>>,
+    levels: Float,
+): Expr<Vec4<Flt<Med>>> = posterize(color, float(levels))

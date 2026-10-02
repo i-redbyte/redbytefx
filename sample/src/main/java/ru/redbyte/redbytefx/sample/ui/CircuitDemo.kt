@@ -102,10 +102,10 @@ private data class CircuitBoardSpec(
 )
 
 private data class CircuitSetup(
-    val effect: FxEffect,
-    val time: FxParam.Float,
-    val route: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val route: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 private const val CIRCUIT_BOARD_HALF_WIDTH = 0.86f
@@ -452,13 +452,13 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
     )
 }
 
-private fun CircuitPoint.toExpr(): Float2Expr = float2(x, y)
+private fun CircuitPoint.toExpr(): Expr<Vec2<Flt<High>>> = float2(x, y)
 
-private fun circuitUnionMask(expressions: Iterable<FloatExpr>): FloatExpr {
+private fun circuitUnionMask(expressions: Iterable<Expr<Flt<High>>>): Expr<Flt<High>> {
     val items = expressions.toList()
     if (items.isEmpty()) return float(0f)
 
-    fun merge(start: Int, endExclusive: Int): FloatExpr {
+    fun merge(start: Int, endExclusive: Int): Expr<Flt<High>> {
         val count = endExclusive - start
         return when {
             count <= 0 -> float(0f)
@@ -476,18 +476,18 @@ private fun circuitUnionMask(expressions: Iterable<FloatExpr>): FloatExpr {
     return merge(0, items.size)
 }
 
-private fun circuitSelection(route: FloatExpr, node: CircuitNodeSpec): BoolExpr =
+private fun circuitSelection(route: Expr<Flt<High>>, node: CircuitNodeSpec): Expr<BoolS> =
     abs(route - node.shaderIndex) lt 0.25f
 
 private fun circuitRoundedMask(
-    local: Float2Expr,
+    local: Expr<Vec2<Flt<High>>>,
     centerX: Float = 0f,
     centerY: Float = 0f,
     halfWidth: Float,
     halfHeight: Float,
     radius: Float,
     feather: Float
-): FloatExpr = softFill(
+): Expr<Flt<High>> = softFill(
     distance = sdRoundedBox(
         point = local - float2(centerX, centerY),
         halfSize = float2(halfWidth, halfHeight),
@@ -497,9 +497,9 @@ private fun circuitRoundedMask(
 )
 
 private fun circuitNodeMask(
-    board: Float2Expr,
+    board: Expr<Vec2<Flt<High>>>,
     node: CircuitNodeSpec
-): FloatExpr {
+): Expr<Flt<High>> {
     val local = board - node.position.toExpr()
     return when (node.shape) {
         CircuitNodeShape.Pad -> {
@@ -633,9 +633,9 @@ private fun circuitNodeMask(
 }
 
 private fun circuitSegmentMask(
-    board: Float2Expr,
+    board: Expr<Vec2<Flt<High>>>,
     segment: CircuitSegmentSpec
-): FloatExpr = segmentMask(
+): Expr<Flt<High>> = segmentMask(
     point = board,
     start = segment.start.toExpr(),
     end = segment.end.toExpr(),
@@ -652,10 +652,10 @@ private fun circuitSegmentMask(
 )
 
 private fun circuitSegmentPulse(
-    board: Float2Expr,
-    time: FloatExpr,
+    board: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>>,
     segment: CircuitSegmentSpec
-): FloatExpr {
+): Expr<Flt<High>> {
     val start = segment.start.toExpr()
     val end = segment.end.toExpr()
     val phase = fract(time * segment.pulseSpeed + segment.pulseOffset)
@@ -694,9 +694,9 @@ private fun circuitSegmentPulse(
 }
 
 private fun circuitViaMask(
-    board: Float2Expr,
+    board: Expr<Vec2<Flt<High>>>,
     point: CircuitPoint
-): FloatExpr = softFill(
+): Expr<Flt<High>> = softFill(
     distance = sdCircle(board - point.toExpr(), radius = 0.0042f),
     feather = 0.0030f
 )
@@ -814,174 +814,167 @@ fun DemoCircuit() {
     var amountUi by rememberSaveable { mutableFloatStateOf(90f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var routeParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val route by autoUniformFloat(0f)
-            val amount by autoUniformFloat(0.9f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var routeParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val route = uniform("route", 0f)
+            val amount = uniform("amount", 0.9f)
             timeParam = time
             routeParam = route
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(normalizedUv(), "uv")
-            val board = let(aspectCenteredUv(uv, resolution), "board")
-
-            val boardMask = let(
-                softFill(
-                    distance = sdRoundedBox(
-                        point = board,
-                        halfSize = float2(CIRCUIT_BOARD_HALF_WIDTH, CIRCUIT_BOARD_HALF_HEIGHT),
-                        radius = 0.06f
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(normalizedUv(), "uv")
+                val board = let(aspectCenteredUv(uv, resolution), "board")
+                val boardMask = let(
+                    softFill(
+                        distance = sdRoundedBox(
+                            point = board,
+                            halfSize = float2(CIRCUIT_BOARD_HALF_WIDTH, CIRCUIT_BOARD_HALF_HEIGHT),
+                            radius = 0.06f
+                        ),
+                        feather = 0.03f
                     ),
-                    feather = 0.03f
-                ),
-                "board_mask"
-            )
-
-            val nodeMasks = boardSpec.nodes.associate { node ->
-                node.id to let(
-                    circuitNodeMask(board = board, node = node),
-                    "${node.id.name.lowercase()}_mask"
+                    "board_mask"
+                )
+                val nodeMasks = boardSpec.nodes.associate { node ->
+                    node.id to let(
+                        circuitNodeMask(board = board, node = node),
+                        "${node.id.name.lowercase()}_mask"
+                    )
+                }
+                val traceMasks = boardSpec.segments.associate { segment ->
+                    segment.id to let(
+                        circuitSegmentMask(board = board, segment = segment),
+                        "${segment.id}_trace"
+                    )
+                }
+                val pulseMasks = boardSpec.segments.associate { segment ->
+                    segment.id to let(
+                        circuitSegmentPulse(board = board, time = time.expr, segment = segment),
+                        "${segment.id}_pulse"
+                    )
+                }
+                val viaMask = let(
+                    circuitUnionMask(boardSpec.viaPoints.map { circuitViaMask(board = board, point = it) }),
+                    "via_mask"
+                )
+                val passiveCopper = let(
+                    circuitUnionMask(traceMasks.values) +
+                        circuitUnionMask(nodeMasks.values) * 0.72f +
+                        viaMask * 0.54f,
+                    "passive_copper"
+                )
+                val activeNodeMask = let(
+                    circuitUnionMask(
+                        boardSpec.activations.map { (nodeId, activation) ->
+                            ifElse(
+                                circuitSelection(route.expr, nodesById.getValue(nodeId)),
+                                circuitUnionMask(activation.nodeIds.map { activeNodeId ->
+                                    nodeMasks.getValue(activeNodeId)
+                                }),
+                                float(0f)
+                            )
+                        }
+                    ),
+                    "active_node_mask"
+                )
+                val activeTraceMask = let(
+                    circuitUnionMask(
+                        boardSpec.activations.map { (nodeId, activation) ->
+                            ifElse(
+                                circuitSelection(route.expr, nodesById.getValue(nodeId)),
+                                circuitUnionMask(activation.segmentIds.map { segmentId ->
+                                    traceMasks.getValue(segmentId)
+                                }),
+                                float(0f)
+                            )
+                        }
+                    ),
+                    "active_trace_mask"
+                )
+                val activePulseMask = let(
+                    circuitUnionMask(
+                        boardSpec.activations.map { (nodeId, activation) ->
+                            ifElse(
+                                circuitSelection(route.expr, nodesById.getValue(nodeId)),
+                                circuitUnionMask(activation.segmentIds.map { segmentId ->
+                                    pulseMasks.getValue(segmentId)
+                                }),
+                                float(0f)
+                            )
+                        }
+                    ),
+                    "active_pulse_mask"
+                )
+                val selectedNodeMask = let(
+                    circuitUnionMask(
+                        boardSpec.nodes.map { node ->
+                            ifElse(
+                                circuitSelection(route.expr, node),
+                                nodeMasks.getValue(node.id),
+                                float(0f)
+                            )
+                        }
+                    ),
+                    "selected_node_mask"
+                )
+                val relatedNodeMask = let(
+                    max(activeNodeMask - selectedNodeMask * 0.55f, 0f),
+                    "related_node_mask"
+                )
+                val boardTint = let(color(float3(0.02f, 0.12f, 0.08f), 1f), "board_tint")
+                val copperTint = let(color(float3(0.12f, 0.48f, 0.28f), 1f), "copper_tint")
+                val glowTint = let(color(float3(0.05f, 0.36f, 0.56f), 1f), "glow_tint")
+                val signalTint = let(color(float3(0.34f, 0.86f, 1f), 1f), "signal_tint")
+                val sparkTint = let(color(float3(0.98f, 0.86f, 0.18f), 1f), "spark_tint")
+                val hotTint = let(color(float3(1f, 0.96f, 0.82f), 1f), "hot_tint")
+                val substrate = let(maskedMix(base, boardTint, boardMask, 1f), "substrate")
+                val copper = let(
+                    maskedMix(
+                        base = substrate,
+                        revealed = copperTint,
+                        mask = passiveCopper,
+                        amount = 0.74f
+                    ),
+                    "copper"
+                )
+                val energized = let(
+                    maskedMix(
+                        base = copper,
+                        revealed = glowTint,
+                        mask = activeTraceMask + relatedNodeMask * 0.24f,
+                        amount = amount.expr * 0.44f
+                    ),
+                    "energized"
+                )
+                val pulsed = let(
+                    maskedMix(
+                        base = energized,
+                        revealed = signalTint,
+                        mask = activePulseMask + activeTraceMask * 0.08f,
+                        amount = amount.expr * 0.92f
+                    ),
+                    "pulsed"
+                )
+                val sparked = let(
+                    maskedMix(
+                        base = pulsed,
+                        revealed = sparkTint,
+                        mask = activePulseMask * 0.74f,
+                        amount = amount.expr * 0.58f
+                    ),
+                    "sparked"
+                )
+                maskedMix(
+                    base = sparked,
+                    revealed = hotTint,
+                    mask = selectedNodeMask + activePulseMask * 0.14f,
+                    amount = amount.expr * 0.34f
                 )
             }
-            val traceMasks = boardSpec.segments.associate { segment ->
-                segment.id to let(
-                    circuitSegmentMask(board = board, segment = segment),
-                    "${segment.id}_trace"
-                )
-            }
-            val pulseMasks = boardSpec.segments.associate { segment ->
-                segment.id to let(
-                    circuitSegmentPulse(board = board, time = time, segment = segment),
-                    "${segment.id}_pulse"
-                )
-            }
-            val viaMask = let(
-                circuitUnionMask(boardSpec.viaPoints.map { circuitViaMask(board = board, point = it) }),
-                "via_mask"
-            )
-
-            val passiveCopper = let(
-                circuitUnionMask(traceMasks.values) +
-                    circuitUnionMask(nodeMasks.values) * 0.72f +
-                    viaMask * 0.54f,
-                "passive_copper"
-            )
-            val activeNodeMask = let(
-                circuitUnionMask(
-                    boardSpec.activations.map { (nodeId, activation) ->
-                        ifElse(
-                            circuitSelection(route, nodesById.getValue(nodeId)),
-                            circuitUnionMask(activation.nodeIds.map { activeNodeId ->
-                                nodeMasks.getValue(activeNodeId)
-                            }),
-                            float(0f)
-                        )
-                    }
-                ),
-                "active_node_mask"
-            )
-            val activeTraceMask = let(
-                circuitUnionMask(
-                    boardSpec.activations.map { (nodeId, activation) ->
-                        ifElse(
-                            circuitSelection(route, nodesById.getValue(nodeId)),
-                            circuitUnionMask(activation.segmentIds.map { segmentId ->
-                                traceMasks.getValue(segmentId)
-                            }),
-                            float(0f)
-                        )
-                    }
-                ),
-                "active_trace_mask"
-            )
-            val activePulseMask = let(
-                circuitUnionMask(
-                    boardSpec.activations.map { (nodeId, activation) ->
-                        ifElse(
-                            circuitSelection(route, nodesById.getValue(nodeId)),
-                            circuitUnionMask(activation.segmentIds.map { segmentId ->
-                                pulseMasks.getValue(segmentId)
-                            }),
-                            float(0f)
-                        )
-                    }
-                ),
-                "active_pulse_mask"
-            )
-            val selectedNodeMask = let(
-                circuitUnionMask(
-                    boardSpec.nodes.map { node ->
-                        ifElse(
-                            circuitSelection(route, node),
-                            nodeMasks.getValue(node.id),
-                            float(0f)
-                        )
-                    }
-                ),
-                "selected_node_mask"
-            )
-            val relatedNodeMask = let(
-                max(activeNodeMask - selectedNodeMask * 0.55f, 0f),
-                "related_node_mask"
-            )
-
-            val boardTint = let(color(float3(0.02f, 0.12f, 0.08f), 1f), "board_tint")
-            val copperTint = let(color(float3(0.12f, 0.48f, 0.28f), 1f), "copper_tint")
-            val glowTint = let(color(float3(0.05f, 0.36f, 0.56f), 1f), "glow_tint")
-            val signalTint = let(color(float3(0.34f, 0.86f, 1f), 1f), "signal_tint")
-            val sparkTint = let(color(float3(0.98f, 0.86f, 0.18f), 1f), "spark_tint")
-            val hotTint = let(color(float3(1f, 0.96f, 0.82f), 1f), "hot_tint")
-
-            val substrate = let(maskedMix(base, boardTint, boardMask, 1f), "substrate")
-            val copper = let(
-                maskedMix(
-                    base = substrate,
-                    revealed = copperTint,
-                    mask = passiveCopper,
-                    amount = 0.74f
-                ),
-                "copper"
-            )
-            val energized = let(
-                maskedMix(
-                    base = copper,
-                    revealed = glowTint,
-                    mask = activeTraceMask + relatedNodeMask * 0.24f,
-                    amount = amount * 0.44f
-                ),
-                "energized"
-            )
-
-            val pulsed = let(
-                maskedMix(
-                    base = energized,
-                    revealed = signalTint,
-                    mask = activePulseMask + activeTraceMask * 0.08f,
-                    amount = amount * 0.92f
-                ),
-                "pulsed"
-            )
-
-            val sparked = let(
-                maskedMix(
-                    base = pulsed,
-                    revealed = sparkTint,
-                    mask = activePulseMask * 0.74f,
-                    amount = amount * 0.58f
-                ),
-                "sparked"
-            )
-
-            maskedMix(
-                base = sparked,
-                revealed = hotTint,
-                mask = selectedNodeMask + activePulseMask * 0.14f,
-                amount = amount * 0.34f
-            )
         }
         CircuitSetup(
             effect = effect,
@@ -1113,5 +1106,5 @@ private fun CircuitTapTarget(
 }
 
 @Composable
-private fun rememberGeneratedAgsl(effect: FxEffect): String =
+private fun rememberGeneratedAgsl(effect: ShaderProgram): String =
     remember(effect) { effect.agslSource() }

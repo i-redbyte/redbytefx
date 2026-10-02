@@ -26,11 +26,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class CornerSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val size: FxParam.Float,
-    val thickness: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val size: Uniform<Flt<High>>,
+    val thickness: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -41,37 +41,37 @@ fun DemoCorner() {
     var amountUi by rememberSaveable { mutableFloatStateOf(84f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var sizeParam: FxParam.Float? = null
-        var thicknessParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val size by autoUniformFloat(0.22f)
-            val thickness by autoUniformFloat(0.08f)
-            val amount by autoUniformFloat(0.84f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var sizeParam: Uniform<Flt<High>>? = null
+        var thicknessParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val size = uniform("size", 0.22f)
+            val thickness = uniform("thickness", 0.08f)
+            val amount = uniform("amount", 0.84f)
             timeParam = time
             sizeParam = size
             thicknessParam = thickness
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val corners = let(cornerMask(uv, size = size, thickness = thickness, feather = 0.03f), "corners")
-            val sweepCenter = let(0.18f + pingPong(time * 0.18f, 1f) * 0.64f, "sweep_center")
-            val sweep = let(
-                directionalSweep(
-                    uv = uv,
-                    direction = float2(1f, -0.2f),
-                    center = sweepCenter,
-                    width = 0.16f,
-                    feather = 0.08f
-                ),
-                "sweep"
-            )
-            val accent = let(color(float3(0.1f, 0.98f, 0.68f), base.a), "accent")
-
-            maskedScreen(base, accent, corners * sweep, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val corners = let(cornerMask(uv, size = size.expr, thickness = thickness.expr, feather = 0.03f), "corners")
+                val sweepCenter = let(0.18f + pingPong(time.expr * 0.18f, 1f) * 0.64f, "sweep_center")
+                val sweep = let(
+                    directionalSweep(
+                        uv = uv,
+                        direction = float2(1f, -0.2f),
+                        center = sweepCenter,
+                        width = 0.16f,
+                        feather = 0.08f
+                    ),
+                    "sweep"
+                )
+                val accent = let(color(float3(0.1f, 0.98f, 0.68f), base.a), "accent")
+                maskedScreen(base, accent, corners * sweep, amount.expr)
+            }
         }
         CornerSetup(
             effect = effect,

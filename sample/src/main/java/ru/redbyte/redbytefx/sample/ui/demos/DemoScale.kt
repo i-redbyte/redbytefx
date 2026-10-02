@@ -22,11 +22,13 @@ fun DemoScale() {
     var sy by rememberSaveable { mutableFloatStateOf(1f) }
 
     val setup = remember {
-        var p: FxParam.Float2? = null
-        val effect = redbytefx {
-            val scaleAmount = uniformFloat2(1f, 1f, "scale")
+        var p: Uniform<Vec2<Flt<High>>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val scaleAmount = uniformVec2("scale", 1f, 1f)
             p = scaleAmount
-            sample(scale(scale = scaleAmount))
+            fragment {
+                sample(scale(scaleAmount.expr))
+            }
         }
         Pair(effect, p!!)
     }

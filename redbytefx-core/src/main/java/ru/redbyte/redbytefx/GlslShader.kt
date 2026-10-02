@@ -114,6 +114,7 @@ private fun walk(
         is ExprNode.Swizzle -> walk(node.source, seen, visit)
         is ExprNode.Cast -> walk(node.arg, seen, visit)
         is ExprNode.Sample -> walk(node.coord, seen, visit)
+        is ExprNode.UnclampedSample -> walk(node.coord, seen, visit)
         is ExprNode.Texture -> {
             walk(node.sampler, seen, visit)
             walk(node.uv, seen, visit)
@@ -181,6 +182,7 @@ private class GlslEmitter(
             "${node.function.name}($args)"
         }
         is ExprNode.Sample,
+        is ExprNode.UnclampedSample,
         ExprNode.FragCoord,
         ExprNode.Resolution -> error("GLSL stage cannot spell ${node::class.simpleName}")
     }
@@ -248,6 +250,8 @@ private fun arithSymbol(op: ArithOp): String = when (op) {
     ArithOp.Sub -> "-"
     ArithOp.Mul -> "*"
     ArithOp.Div -> "/"
+    ArithOp.And -> "&&"
+    ArithOp.Or -> "||"
 }
 
 private fun glslLocalBase(suggested: String?, index: Int): String {

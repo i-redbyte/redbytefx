@@ -45,6 +45,8 @@ internal sealed interface ExprNode {
 
     data class Sample(val coord: Expr<*>) : ExprNode
 
+    data class UnclampedSample(val coord: Expr<*>) : ExprNode
+
     data class Texture(val sampler: Expr<*>, val uv: Expr<*>) : ExprNode
 
     data class AttributeRef(val attribute: AttributeHandle) : ExprNode
@@ -86,6 +88,8 @@ internal enum class ArithOp {
     Sub,
     Mul,
     Div,
+    And,
+    Or,
 }
 
 internal enum class UnaryOp {

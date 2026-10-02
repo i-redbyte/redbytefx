@@ -114,6 +114,23 @@ class AgslShaderTest {
         assertEquals(1f, writer.float2Values("uResolution").last().first)
         assertEquals(3f, writer.float2Values("uResolution").last().second)
     }
+
+    @Test
+    fun vectorUniformDefaultIsWrittenOnce() {
+        lateinit var offset: Uniform<Vec2<Flt<High>>>
+        val program = shader(ShaderTarget.Agsl) {
+            offset = uniformVec2("offset", 0.25f, 0.5f)
+            fragment { sample() }
+        }
+        val writer = RecordingUniformWriter()
+        val runtime = ShaderRuntime(program, writer) {}
+
+        assertEquals(listOf(0.25f to 0.5f), writer.float2Values("u_offset"))
+        assertFalse(runtime.set(offset, 0.25f, 0.5f))
+        assertEquals(1, writer.float2Values("u_offset").size)
+        assertTrue(runtime.set(offset, 1f, 0.5f))
+        assertEquals(listOf(0.25f to 0.5f, 1f to 0.5f), writer.float2Values("u_offset"))
+    }
 }
 
 internal class RecordingUniformWriter : UniformWriter {

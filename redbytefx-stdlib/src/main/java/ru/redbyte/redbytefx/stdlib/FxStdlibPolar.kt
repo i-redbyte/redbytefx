@@ -11,9 +11,9 @@ private const val TAU: Float = 6.2831855f
  * in higher-level shader recipes. Treat it as one of the tiny canonical polar primitives.
  */
 public fun radialDistance(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f)
-): FloatExpr = length(uv - center)
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+): Expr<Flt<High>> = length(uv - center)
 
 /**
  * Returns the normalized polar angle of [uv] around [center] in the `[0, 1)` range.
@@ -22,9 +22,9 @@ public fun radialDistance(
  * canonical angular primitive to inspect before reaching for higher-level polar masks.
  */
 public fun polarAngle01(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+): Expr<Flt<High>> {
     val delta = uv - center
     return fract(atan(delta.y, delta.x) / TAU + 1f)
 }
@@ -36,9 +36,9 @@ public fun polarAngle01(
  * stay in explicit polar space instead of recomputing radius/angle separately.
  */
 public fun polarCoordinates(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f)
-): Float2Expr = float2(
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+): Expr<Vec2<Flt<High>>> = float2(
     radialDistance(uv, center),
     polarAngle01(uv, center)
 )
@@ -50,12 +50,12 @@ public fun polarCoordinates(
  * This is the canonical polar mask helper for radar sweeps, arcs, and rotating wedges.
  */
 public fun angularSweep(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    angle: FloatExpr,
-    width: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    angle: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val sweepAngle = polarAngle01(uv, center)
     val safeWidth = max(width, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
@@ -68,12 +68,12 @@ public fun angularSweep(
  * Builds a soft angular sweep mask using literal [width] and [feather] values.
  */
 public fun angularSweep(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    angle: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    angle: Expr<Flt<High>>,
     width: Float,
     feather: Float = 0.02f
-): FloatExpr = angularSweep(
+): Expr<Flt<High>> = angularSweep(
     uv = uv,
     center = center,
     angle = angle,
@@ -89,14 +89,14 @@ public fun angularSweep(
  * own.
  */
 public fun arcMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
-    ringWidth: FloatExpr,
-    angle: FloatExpr,
-    arcWidth: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr = ringMask(
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
+    ringWidth: Expr<Flt<High>>,
+    angle: Expr<Flt<High>>,
+    arcWidth: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
@@ -114,14 +114,14 @@ public fun arcMask(
  * Builds a soft polar arc mask using an expression-driven [radius] with literal sizing values.
  */
 public fun arcMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    radius: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    radius: Expr<Flt<High>>,
     ringWidth: Float,
-    angle: FloatExpr,
+    angle: Expr<Flt<High>>,
     arcWidth: Float,
     feather: Float = 0.02f
-): FloatExpr = arcMask(
+): Expr<Flt<High>> = arcMask(
     uv = uv,
     center = center,
     radius = radius,
@@ -135,14 +135,14 @@ public fun arcMask(
  * Builds a soft polar arc mask using literal sizing values.
  */
 public fun arcMask(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
     ringWidth: Float,
-    angle: FloatExpr,
+    angle: Expr<Flt<High>>,
     arcWidth: Float,
     feather: Float = 0.02f
-): FloatExpr = arcMask(
+): Expr<Flt<High>> = arcMask(
     uv = uv,
     center = center,
     radius = float(radius),
