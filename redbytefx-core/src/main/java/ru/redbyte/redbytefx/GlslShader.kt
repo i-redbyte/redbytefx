@@ -12,6 +12,7 @@ internal fun linkGlsl(
     names: IdentifierAllocator,
     functions: List<UserFunction>,
     fragmentWrites: List<FragmentWrite>,
+    block: UniformBlock?,
 ): ShaderProgram {
     val bindings = uniforms.map { uniform ->
         UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
@@ -66,6 +67,10 @@ internal fun linkGlsl(
             ),
             outputName = null,
             outputValue = null,
+            blockText = blockText(
+                block,
+                writes.map { it.value } + position,
+            ),
         ),
         fragment = renderStage(
             inputs = writes.map { "in ${glslDeclaration(it.varying.shape)} ${varyingNames.getValue(it.varying)};" },
@@ -94,9 +99,36 @@ internal fun linkGlsl(
             ),
             outputName = if (orderedWrites.isEmpty()) "oColor" else null,
             outputValue = if (orderedWrites.isEmpty()) fragmentText else null,
+            blockText = blockText(
+                block,
+                listOf(fragmentBody) + fragmentWrites.map { it.value },
+            ),
         ),
         bindings = bindings,
+        uniformBlock = block,
     )
+}
+
+private fun blockText(block: UniformBlock?, roots: List<Expr<*>>): String {
+    if (block == null || !referencesBlock(roots)) return ""
+    return buildString {
+        append("layout(std140) uniform ").append(block.typeName).append(" {\n")
+        for (member in block.members) {
+            append("  ").append(glslDeclaration(member.shape)).append(' ')
+                .append(member.memberName).append(";\n")
+        }
+        append("} ").append(block.instanceName).append(";\n")
+    }
+}
+
+private fun referencesBlock(roots: List<Expr<*>>): Boolean {
+    var found = false
+    roots.forEach { root ->
+        walk(root, linkedSetOf()) { node ->
+            if (node is ExprNode.BlockRef) found = true
+        }
+    }
+    return found
 }
 
 internal fun collectVaryings(expr: Expr<*>, into: MutableSet<Varying<*>>) {
@@ -214,6 +246,7 @@ private fun walk(
         is ExprNode.AttributeRef,
         is ExprNode.VaryingRef,
         is ExprNode.Param,
+        is ExprNode.BlockRef,
         ExprNode.FragCoord,
         ExprNode.Resolution -> Unit
     }
@@ -250,6 +283,7 @@ private class GlslEmitter(
             "${node.function}($args)"
         }
         is ExprNode.Param -> node.name
+        is ExprNode.BlockRef -> "${node.member.instanceName}.${node.member.memberName}"
         is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
         is ExprNode.UserCall -> {
@@ -301,14 +335,16 @@ private fun renderStage(
     functions: String,
     outputName: String?,
     outputValue: String?,
+    blockText: String,
 ): String = buildString {
     append("#version 300 es\n")
     append("precision highp float;\n")
     for (line in inputs) append(line).append('\n')
     for (binding in uniforms) {
         append("uniform ").append(glslDeclaration(binding.uniform.shape)).append(' ')
-            .append(binding.agslName).append(";\n")
+            .        append(binding.agslName).append(";\n")
     }
+    append(blockText)
     for (line in outputs) append(line).append('\n')
     append(functions)
     append("void main() {\n")

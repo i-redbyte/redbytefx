@@ -9,6 +9,7 @@ public class ShaderProgram internal constructor(
     private val vertex: String? = null,
     private val fragment: String? = null,
     internal val bindings: List<UniformBinding>,
+    public val uniformBlock: UniformBlock? = null,
 ) {
     public fun agslSource(): String = agsl ?: error("This shader has no AGSL source")
 
@@ -56,6 +57,7 @@ public class ShaderDsl internal constructor(
     private var vertexPosition: Expr<Vec4<Flt<High>>>? = null
     private var vertexBuilt = false
     private val functions = mutableListOf<UserFunction>()
+    private var block: UniformBlock? = null
     private val names = IdentifierAllocator(
         if (target == ShaderTarget.Agsl) agslReservedNames() else glslReservedNames(),
     )
@@ -65,6 +67,18 @@ public class ShaderDsl internal constructor(
         names = names,
         register = functions::add,
     )
+
+    public fun uniformBlock(name: String, build: UniformBlockBuilder.() -> Unit): UniformBlock {
+        advance(AuthoringAction.DeclareUniformBlock)
+        require(block == null) { "Shader already has a uniform block" }
+        require(name.isNotBlank()) { "Uniform block name must not be blank" }
+        val typeName = sanitizeSuggestedIdentifier(name, "b")
+        val builder = UniformBlockBuilder("b_$typeName")
+        builder.build()
+        val created = builder.finish(name, typeName)
+        block = created
+        return created
+    }
 
     public fun uniform(name: String, default: Float): Uniform<Flt<High>> {
         advance(AuthoringAction.DeclareUniform)
@@ -255,6 +269,7 @@ public class ShaderDsl internal constructor(
             names = names,
             functions = functions,
             fragmentWrites = fragmentWrites,
+            block = block,
         )
     }
 
@@ -468,7 +483,8 @@ private class AgslEmitter(
         is ExprNode.UserCall -> call(ExprNode.Call(node.function.name, node.args))
         is ExprNode.Texture,
         is ExprNode.AttributeRef,
-        is ExprNode.VaryingRef -> error("AGSL cannot spell ${node::class.simpleName}")
+        is ExprNode.VaryingRef,
+        is ExprNode.BlockRef -> error("AGSL cannot spell ${node::class.simpleName}")
     }
 
     private fun call(node: ExprNode.Call): String {

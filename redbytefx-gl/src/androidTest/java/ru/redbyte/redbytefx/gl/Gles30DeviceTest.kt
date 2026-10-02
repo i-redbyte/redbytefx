@@ -118,6 +118,25 @@ class Gles30DeviceTest {
     }
 
     @Test
+    fun driverLinksAUniformBlock() {
+        EglPbuffer().use {
+            drainGlError()
+            lateinit var time: ru.redbyte.redbytefx.Expr<Flt<High>>
+            val program = shader(ShaderTarget.Gles30) {
+                uniformBlock("frame") {
+                    time = float("time")
+                }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(time, time, time, 1f.lit) }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("uniform block")
+        }
+    }
+
+    @Test
     fun driverRejectsAShaderThatDoesNotCompile() {
         EglPbuffer().use {
             drainGlError()

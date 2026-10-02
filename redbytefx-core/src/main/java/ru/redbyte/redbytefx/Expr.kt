@@ -62,6 +62,8 @@ internal sealed interface ExprNode {
     data class Select(val condition: Expr<*>, val ifTrue: Expr<*>, val ifFalse: Expr<*>) : ExprNode
 
     data class UserCall(val function: UserFunction, val args: List<Expr<*>>) : ExprNode
+
+    data class BlockRef(val member: BlockMember) : ExprNode
 }
 
 internal enum class CompareOp {

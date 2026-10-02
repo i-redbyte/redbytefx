@@ -9,6 +9,8 @@ import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Shape
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.UniformBlock
+import ru.redbyte.redbytefx.packStd140
 import ru.redbyte.redbytefx.sameFloatUniformValue
 import java.util.IdentityHashMap
 
@@ -45,6 +47,8 @@ public class GlProgramRuntime(
     private var nextTextureUnit = 0
     private var linked = false
     private var destroyed = false
+    private var bufferId = 0
+    private var blockBytes: ByteArray? = null
 
     public fun link() {
         checkThread()
@@ -114,10 +118,38 @@ public class GlProgramRuntime(
         return true
     }
 
+    public fun set(block: UniformBlock, values: FloatArray): Boolean {
+        checkReady()
+        require(block === program.uniformBlock) { "Uniform block does not belong to this shader" }
+        val packed = packStd140(block, values)
+        val previous = blockBytes
+        if (previous != null && previous.contentEquals(packed)) return false
+        if (bufferId == 0) {
+            val created = device.createBuffer()
+            require(created != 0) { "Driver returned no buffer name" }
+            bufferId = created
+            device.uniformBufferData(bufferId, packed)
+            device.useProgram(programId)
+            val index = device.uniformBlockIndex(programId, block.typeName)
+            if (index >= 0) device.uniformBlockBinding(programId, index, 0)
+            device.bindUniformBufferBase(bufferId, 0)
+        } else {
+            device.uniformBufferSubData(bufferId, packed)
+        }
+        blockBytes = packed.copyOf()
+        return true
+    }
+
     public fun destroy() {
         checkThread()
         if (destroyed) return
         destroyed = true
+        if (bufferId != 0) {
+            device.bindUniformBufferBase(0, 0)
+            device.deleteBuffer(bufferId)
+            bufferId = 0
+        }
+        blockBytes = null
         if (programId != 0) {
             device.useProgram(0)
             device.deleteProgram(programId)

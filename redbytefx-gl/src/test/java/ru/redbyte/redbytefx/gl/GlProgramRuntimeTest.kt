@@ -10,6 +10,7 @@ import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.med
 import ru.redbyte.redbytefx.shader
@@ -135,6 +136,61 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun unchangedBlockBytesSkipTheUploadAndAForeignBlockIsRejected() {
+        val device = RecordingGlDevice()
+        lateinit var block: UniformBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles30) {
+                block = uniformBlock("frame") {
+                    float("time")
+                    vec3("color")
+                }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+            device,
+        )
+        var wrongThread: GlException? = null
+        Thread {
+            try {
+                runtime.set(block, floatArrayOf(1f, 0f, 0f, 0f))
+            } catch (error: GlException) {
+                wrongThread = error
+            }
+        }.apply {
+            start()
+            join()
+        }
+        assertEquals(GlCode.WrongThread, wrongThread?.code)
+        assertEquals(0, device.bufferDataCalls)
+
+        runtime.link()
+        val values = floatArrayOf(1f, 0.2f, 0.4f, 0.6f)
+        assertTrue(runtime.set(block, values))
+        assertEquals(1, device.bufferDataCalls)
+        assertEquals(0, device.bufferSubDataCalls)
+        assertFalse(runtime.set(block, values.copyOf()))
+        assertEquals(1, device.bufferDataCalls)
+        assertEquals(0, device.bufferSubDataCalls)
+        assertTrue(runtime.set(block, floatArrayOf(0f, 0.2f, 0.4f, 0.6f)))
+        assertEquals(1, device.bufferSubDataCalls)
+
+        lateinit var foreign: UniformBlock
+        shader(ShaderTarget.Gles30) {
+            foreign = uniformBlock("other") { float("time") }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.set(foreign, floatArrayOf(1f))
+        }
+        assertEquals(1, device.bufferDataCalls)
+
+        runtime.destroy()
+        assertEquals(1, device.deleteBufferCalls)
+    }
+
+    @Test
     fun agslProgramIsRejectedBeforeAnyDriverCall() {
         val device = RecordingGlDevice()
         val program = shader(ShaderTarget.Agsl) {
@@ -231,5 +287,36 @@ private class RecordingGlDevice(
 
     override fun bindTexture2D(texture: Int) {
         boundTextures += texture
+    }
+
+    var bufferDataCalls = 0
+    var bufferSubDataCalls = 0
+    var deleteBufferCalls = 0
+    private var nextBuffer = 1
+
+    override fun createBuffer(): Int = nextBuffer++
+
+    override fun deleteBuffer(buffer: Int) {
+        deleteBufferCalls += 1
+    }
+
+    override fun uniformBufferData(buffer: Int, data: ByteArray) {
+        bufferDataCalls += 1
+        writes += "bufferData"
+    }
+
+    override fun uniformBufferSubData(buffer: Int, data: ByteArray) {
+        bufferSubDataCalls += 1
+        writes += "bufferSubData"
+    }
+
+    override fun bindUniformBufferBase(buffer: Int, binding: Int) {
+        writes += "bindBuffer"
+    }
+
+    override fun uniformBlockIndex(program: Int, name: String): Int = 0
+
+    override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
+        writes += "blockBinding"
     }
 }
