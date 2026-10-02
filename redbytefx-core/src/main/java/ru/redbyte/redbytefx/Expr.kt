@@ -50,6 +50,8 @@ internal sealed interface ExprNode {
     data class AttributeRef(val attribute: AttributeHandle) : ExprNode
 
     data class VaryingRef(val varying: Varying<*>) : ExprNode
+
+    data class Call(val function: String, val args: List<Expr<*>>) : ExprNode
 }
 
 internal class AttributeHandle(
