@@ -24,6 +24,7 @@ internal enum class ProgramCode {
     MissingFragment,
     MissingGlPosition,
     VaryingNotWritten,
+    FunctionWrongStage,
 }
 
 internal class ProgramException(
