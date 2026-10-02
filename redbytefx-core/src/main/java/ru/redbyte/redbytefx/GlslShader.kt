@@ -11,6 +11,7 @@ internal fun linkGlsl(
     fragmentBody: Expr<*>,
     names: IdentifierAllocator,
     functions: List<UserFunction>,
+    fragmentWrites: List<FragmentWrite>,
 ): ShaderProgram {
     val bindings = uniforms.map { uniform ->
         UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
@@ -22,6 +23,9 @@ internal fun linkGlsl(
         names.reserve(sanitizeIdentifier(varying.name, "v_"))
     }
     val uniformNames = bindings.associate { it.uniform to it.agslName }
+    val outputNames = fragmentWrites.associate { write ->
+        write.output to names.reserve(sanitizeSuggestedIdentifier(write.output.name, "o"))
+    }
     val occupied = names.snapshot()
     val vertexEmitter = GlslEmitter(IdentifierAllocator(occupied), uniformNames, attributeNames, varyingNames)
     val fragmentEmitter = GlslEmitter(IdentifierAllocator(occupied), uniformNames, attributeNames, varyingNames)
@@ -30,11 +34,16 @@ internal fun linkGlsl(
     }
     val positionText = vertexEmitter.emit(position)
     val fragmentText = fragmentEmitter.emit(fragmentBody)
+    val orderedWrites = fragmentWrites.sortedBy { it.output.location }
+    val outputText = orderedWrites.map { write ->
+        outputNames.getValue(write.output) to fragmentEmitter.emit(write.value)
+    }
     val vertexUniforms = linkedSetOf<Uniform<*>>()
     val fragmentUniforms = linkedSetOf<Uniform<*>>()
     writes.forEach { collectUniforms(it.value, vertexUniforms) }
     collectUniforms(position, vertexUniforms)
     collectUniforms(fragmentBody, fragmentUniforms)
+    fragmentWrites.forEach { collectUniforms(it.value, fragmentUniforms) }
     return ShaderProgram(
         target = ShaderTarget.Gles30,
         vertex = renderStage(
@@ -45,7 +54,11 @@ internal fun linkGlsl(
             statements = vertexAssignments.map { (name, value) -> "  $name = $value;" } +
                 "  gl_Position = $positionText;",
             functions = renderGlslFunctions(
-                functions.filter { it.stage == AuthoringPlace.Vertex },
+                functionsForStage(
+                    functions,
+                    AuthoringPlace.Vertex,
+                    writes.map { it.value } + position,
+                ),
                 occupied,
                 uniformNames,
                 attributeNames,
@@ -56,19 +69,31 @@ internal fun linkGlsl(
         ),
         fragment = renderStage(
             inputs = writes.map { "in ${glslDeclaration(it.varying.shape)} ${varyingNames.getValue(it.varying)};" },
-            outputs = listOf("out ${glslDeclaration(fragmentBody.shape)} oColor;"),
+            outputs = if (orderedWrites.isEmpty()) {
+                listOf("out ${glslDeclaration(fragmentBody.shape)} oColor;")
+            } else {
+                orderedWrites.map { write ->
+                    val output = write.output
+                    "layout(location = ${output.location}) out ${glslDeclaration(output.shape)} " +
+                        "${outputNames.getValue(output)};"
+                }
+            },
             uniforms = bindings.filter { it.uniform in fragmentUniforms },
             declarations = fragmentEmitter.declarations,
-            statements = emptyList(),
+            statements = outputText.map { (name, value) -> "  $name = $value;" },
             functions = renderGlslFunctions(
-                functions.filter { it.stage == AuthoringPlace.Fragment },
+                functionsForStage(
+                    functions,
+                    AuthoringPlace.Fragment,
+                    listOf(fragmentBody) + fragmentWrites.map { it.value },
+                ),
                 occupied,
                 uniformNames,
                 attributeNames,
                 varyingNames,
             ),
-            outputName = "oColor",
-            outputValue = fragmentText,
+            outputName = if (orderedWrites.isEmpty()) "oColor" else null,
+            outputValue = if (orderedWrites.isEmpty()) fragmentText else null,
         ),
         bindings = bindings,
     )
@@ -82,13 +107,63 @@ internal fun collectVaryings(expr: Expr<*>, into: MutableSet<Varying<*>>) {
 
 internal fun checkFunctionStage(expr: Expr<*>, stage: AuthoringPlace) {
     walk(expr, linkedSetOf()) { node ->
-        if (node is ExprNode.UserCall && node.function.stage != stage) {
+        if (node is ExprNode.UserCall && node.function.stage != stage && isStageDependent(node.function)) {
             throw ProgramException(
                 ProgramCode.FunctionWrongStage,
                 "Function \"${node.function.name}\" is not defined in this stage",
             )
         }
     }
+}
+
+internal fun rejectRecursion(functions: List<UserFunction>) {
+    for (function in functions) {
+        val callees = linkedSetOf<UserFunction>()
+        walk(function.body, linkedSetOf(function)) { node ->
+            if (node is ExprNode.UserCall) callees += node.function
+        }
+        if (function in callees) {
+            throw ProgramException(
+                ProgramCode.RecursiveFunction,
+                "Function \"${function.name}\" recurses",
+            )
+        }
+    }
+}
+
+private fun functionsForStage(
+    functions: List<UserFunction>,
+    stage: AuthoringPlace,
+    roots: List<Expr<*>>,
+): List<UserFunction> {
+    val reachable = linkedSetOf<UserFunction>()
+    roots.forEach { root ->
+        walk(root, linkedSetOf()) { node ->
+            if (node is ExprNode.UserCall) reachable += node.function
+        }
+    }
+    val owned = functions.filter { it.stage == stage }
+    val copies = reachable.filter { it.stage != stage && !isStageDependent(it) }
+    return owned + copies
+}
+
+private fun isStageDependent(function: UserFunction): Boolean {
+    var dependent = false
+    walk(function.body, linkedSetOf()) { node ->
+        if (isStageNode(node)) dependent = true
+    }
+    return dependent
+}
+
+private fun isStageNode(node: ExprNode): Boolean = when (node) {
+    is ExprNode.AttributeRef,
+    is ExprNode.Texture,
+    is ExprNode.Sample,
+    is ExprNode.UnclampedSample,
+    ExprNode.FragCoord,
+    ExprNode.Resolution,
+    -> true
+    else -> false
 }
 
 private fun collectUniforms(expr: Expr<*>, into: MutableSet<Uniform<*>>) {

@@ -79,6 +79,9 @@ class AuthoringMachineTest {
         )
         assertRejected(glesFragment, AuthoringAction.Attribute, AuthoringCode.AttributeOutsideVertex)
         assertRejected(glesFragment, AuthoringAction.GlPosition, AuthoringCode.GlPositionOutsideVertex)
+        assertAccepted(glesFragment, AuthoringAction.FragmentOut, glesFragment)
+        assertRejected(agslFragment, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOnAgsl)
+        assertRejected(glesVertex, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOutsideFragment)
         assertRejected(agslProgram, AuthoringAction.Let, AuthoringCode.LetOutsideStage)
         assertRejected(agslProgram, AuthoringAction.Return, AuthoringCode.ReturnOutsideStage)
     }

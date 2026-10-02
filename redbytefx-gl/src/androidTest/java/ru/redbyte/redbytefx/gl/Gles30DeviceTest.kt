@@ -8,12 +8,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.Fn1
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
+import ru.redbyte.redbytefx.vec4
 
 @RunWith(AndroidJUnit4::class)
 class Gles30DeviceTest {
@@ -66,6 +70,50 @@ class Gles30DeviceTest {
             assertEquals(0, after[0])
             assertNoGlError("destroy")
             GLES30.glDeleteTextures(1, names, 0)
+        }
+    }
+
+    @Test
+    fun driverLinksAPureFunctionCopiedIntoBothStages() {
+        EglPbuffer().use {
+            drainGlError()
+            lateinit var bump: Fn1<Flt<High>, Flt<High>>
+            val program = shader(ShaderTarget.Gles30) {
+                val time = uniformTime()
+                vertex {
+                    bump = fn(0f.lit, "bump") { value -> value + time.expr }
+                    glPosition(vec4(bump(0f.lit), 0f.lit, 0f.lit, 1f.lit))
+                }
+                fragment {
+                    val shade = bump(time.expr)
+                    vec4(shade, shade, shade, 1f.lit)
+                }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("pure function")
+        }
+    }
+
+    @Test
+    fun driverLinksTwoFragmentOutputs() {
+        EglPbuffer().use {
+            drainGlError()
+            val program = shader(ShaderTarget.Gles30) {
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    val albedo = outVec4("albedo", 0)
+                    val glow = outVec4("glow", 1)
+                    albedo.set(vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit))
+                    glow.set(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit))
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("fragment outputs")
         }
     }
 
