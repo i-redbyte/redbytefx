@@ -256,6 +256,27 @@ public class ShaderDsl internal constructor(
             block: VertexDsl.(Expr<A>, Expr<B>) -> Expr<R>,
         ): Fn2<A, B, R> = stageFunctions.fn2(name, first, second) { left, right -> block(left, right) }
 
+        public fun <A : ShType, B : ShType, C : ShType, R : ShType> fn(
+            first: Expr<A>,
+            second: Expr<B>,
+            third: Expr<C>,
+            name: String? = null,
+            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+        ): Fn3<A, B, C, R> = stageFunctions.fn3(name, first, second, third) { left, mid, right ->
+            block(left, mid, right)
+        }
+
+        public fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn(
+            first: Expr<A>,
+            second: Expr<B>,
+            third: Expr<C>,
+            fourth: Expr<D>,
+            name: String? = null,
+            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+        ): Fn4<A, B, C, D, R> = stageFunctions.fn4(name, first, second, third, fourth) { a, b, c, d ->
+            block(a, b, c, d)
+        }
+
         private fun <T : ShType> attribute(name: String, shape: Shape): Expr<T> {
             advance(AuthoringAction.Attribute)
             val handle = AttributeHandle(name, shape)
@@ -327,6 +348,27 @@ public class FragmentDsl internal constructor(
         name: String? = null,
         block: FragmentDsl.(Expr<A>, Expr<B>) -> Expr<R>,
     ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> block(left, right) }
+
+    public fun <A : ShType, B : ShType, C : ShType, R : ShType> fn(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        name: String? = null,
+        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+    ): Fn3<A, B, C, R> = functions.fn3(name, first, second, third) { left, mid, right ->
+        block(left, mid, right)
+    }
+
+    public fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        name: String? = null,
+        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+    ): Fn4<A, B, C, D, R> = functions.fn4(name, first, second, third, fourth) { a, b, c, d ->
+        block(a, b, c, d)
+    }
 
     @JvmName("letValue")
     public fun <T : ShType> let(value: Expr<T>, name: String? = null): Expr<T> = value.let(name)

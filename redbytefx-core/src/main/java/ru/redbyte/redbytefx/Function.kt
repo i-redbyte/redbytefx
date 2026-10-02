@@ -47,6 +47,34 @@ public class Fn2<A : ShType, B : ShType, R : ShType> internal constructor(
     }
 }
 
+public class Fn3<A : ShType, B : ShType, C : ShType, R : ShType> internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(first: Expr<A>, second: Expr<B>, third: Expr<C>): Expr<R> {
+        requireArgument(function, 0, first)
+        requireArgument(function, 1, second)
+        requireArgument(function, 2, third)
+        return Expr(function.result, ExprNode.UserCall(function, listOf(first, second, third)))
+    }
+}
+
+public class Fn4<A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+    ): Expr<R> {
+        requireArgument(function, 0, first)
+        requireArgument(function, 1, second)
+        requireArgument(function, 2, third)
+        requireArgument(function, 3, fourth)
+        return Expr(function.result, ExprNode.UserCall(function, listOf(first, second, third, fourth)))
+    }
+}
+
 internal class StageFunctions(
     private val advance: (AuthoringAction) -> Unit,
     private val parent: () -> AuthoringPlace,
@@ -84,6 +112,46 @@ internal class StageFunctions(
         )
     }
 
+    fun <A : ShType, B : ShType, C : ShType, R : ShType> fn3(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        body: (Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+    ): Fn3<A, B, C, R> {
+        val formals = listOf(
+            Formal("p0", first.shape),
+            Formal("p1", second.shape),
+            Formal("p2", third.shape),
+        )
+        return Fn3(
+            define(name, formals) {
+                body(param(formals[0]), param(formals[1]), param(formals[2]))
+            },
+        )
+    }
+
+    fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn4(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        body: (Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+    ): Fn4<A, B, C, D, R> {
+        val formals = listOf(
+            Formal("p0", first.shape),
+            Formal("p1", second.shape),
+            Formal("p2", third.shape),
+            Formal("p3", fourth.shape),
+        )
+        return Fn4(
+            define(name, formals) {
+                body(param(formals[0]), param(formals[1]), param(formals[2]), param(formals[3]))
+            },
+        )
+    }
+
     private fun <R : ShType> define(
         name: String?,
         parameters: List<Formal>,
@@ -106,6 +174,15 @@ internal class StageFunctions(
         } finally {
             advance(AuthoringAction.LeaveFunction)
         }
+    }
+}
+
+private fun <T : ShType> param(formal: Formal): Expr<T> = Expr(formal.shape, ExprNode.Param(formal.name))
+
+private fun requireArgument(function: UserFunction, index: Int, arg: Expr<*>) {
+    val expected = function.parameters[index].shape
+    require(arg.shape == expected) {
+        "Function \"${function.name}\" expects $expected, was ${arg.shape}"
     }
 }
 

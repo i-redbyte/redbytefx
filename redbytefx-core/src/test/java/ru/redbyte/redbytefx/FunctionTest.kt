@@ -121,6 +121,66 @@ class FunctionTest {
     }
 
     @Test
+    fun threeAndFourArgumentFunctionsStayOutOfMain() {
+        val program = shader(ShaderTarget.Agsl) {
+            fragment {
+                val mix3 = fn(0f.lit, 0f.lit, 0f.lit, "mix3") { left, mid, right ->
+                    val sum = (left + mid + right).let("p0")
+                    sum
+                }
+                val mix4 = fn(0f.lit, 0f.lit, 0f.lit, 0f.lit, "mix4") { a, b, c, d ->
+                    a + b + c + d
+                }
+                val sample = mix4(mix3(1f.lit, 2f.lit, 3f.lit), 0f.lit, 0f.lit, 0f.lit)
+                vec4(sample, sample, sample, 1f.lit)
+            }
+        }
+        val source = program.agslSource()
+        assertTrue(source.contains("half4 main"))
+        assertTrue(source.contains("float mix3(float p0, float p1, float p2) {"))
+        assertTrue(source.contains("float p0_1 = ((p0 + p1) + p2);"))
+        assertTrue(source.contains("float mix4(float p0, float p1, float p2, float p3) {"))
+        val main = source.substringAfter("half4 main")
+        assertTrue(!main.contains("float p0_1"))
+        assertTrue(main.contains("mix4(mix3(1.0, 2.0, 3.0), 0.0, 0.0, 0.0)"))
+    }
+
+    @Test
+    fun aThreeArgumentFunctionRejectsTheWrongShape() {
+        lateinit var mix3: Fn3<Flt<High>, Flt<High>, Flt<High>, Flt<High>>
+        shader(ShaderTarget.Agsl) {
+            fragment {
+                mix3 = fn(0f.lit, 0f.lit, 0f.lit, "mix3") { left, mid, right -> left + mid + right }
+                vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        val lie = vec2(0f.lit, 1f.lit) as Expr<Flt<High>>
+        assertThrows(IllegalArgumentException::class.java) { mix3(lie, 0f.lit, 0f.lit) }
+        assertThrows(IllegalArgumentException::class.java) { mix3(0f.lit, lie, 0f.lit) }
+        assertThrows(IllegalArgumentException::class.java) { mix3(0f.lit, 0f.lit, lie) }
+    }
+
+    @Test
+    fun aVertexFunctionIsAbsentFromTheFragmentStage() {
+        val program = shader(ShaderTarget.Gles30) {
+            vertex {
+                val lift = fn(0f.lit, 0f.lit, 0f.lit, 0f.lit, "lift") { a, b, c, d -> a + b + c + d }
+                val y = lift(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                glPosition(vec4(0f.lit, y, 0f.lit, 1f.lit))
+            }
+            fragment {
+                vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        val vertex = program.vertexSource()
+        val fragment = program.fragmentSource()
+        assertTrue(vertex.contains("highp float lift(highp float p0, highp float p1, highp float p2, highp float p3)"))
+        assertTrue(vertex.contains("lift(0.0, 0.0, 0.0, 1.0)"))
+        assertTrue(!fragment.contains("lift"))
+    }
+
+    @Test
     fun aFunctionRejectsAnArgumentOfTheWrongShape() {
         lateinit var wave: Fn1<Flt<High>, Flt<High>>
         shader(ShaderTarget.Agsl) {
