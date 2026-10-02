@@ -2,359 +2,135 @@
 
 # RedByteFX
 
-**RedByteFX** is a Kotlin-first DSL for Android AGSL that lets you write shader logic as real Kotlin-shaped code instead of long hand-written shader strings.
+**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL and to OpenGL ES 3.0.
 
-AGSL itself is powerful, but from Kotlin it is usually awkward:
+Authoring is Kotlin, not a shader string. The compiler emits the text the platform actually runs:
 
-- shader code lives inside strings
-- uniforms are manual and easy to mistype
-- even small effects grow a lot of boilerplate
-- Compose wiring often needs extra runtime plumbing
-- debugging starts with “which string did I just break?”
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, or a GLES 3.0 program`
 
-RedByteFX keeps the actual Android runtime path intact:
+**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00, vertex and fragment.
 
-`Kotlin DSL -> generated AGSL -> RuntimeShader / RenderEffect`
+## What you write
 
-So the runtime stays native and predictable, while authoring becomes much nicer: typed expressions, readable locals through `let(...)`, reusable helpers through `fn(...)`, effect-specific uniform handles, Compose bindings, and generated AGSL you can inspect with `agslSource()`.
+One carrier, `Expr<T>`. Rank is nominal (`Vec2`, `Vec3`, `Vec4`, and the matrix types). Precision is a parameter: `Flt<High>` is a highp float, `Flt<Med>` is a mediump float. Color is a `Vec4` of mediump floats, produced by `color(...)`. There is no separate color type.
 
-**Platform requirement:** RedByteFX targets **Android API 33+**. The library is built around the modern AGSL / `RuntimeShader` / `RenderEffect` stack and is not intended for lower API levels.
-
-## 🎯 Why this library exists
-
-RedByteFX is for the common case where raw AGSL is technically the right runtime, but writing and maintaining shaders from Kotlin becomes unnecessarily awkward.
-
-It helps when you want:
-
-- shader code that feels native to Kotlin
-- typed uniforms and expressions instead of stringly-typed glue
-- readable ports of AGSL or Shadertoy-style math
-- a direct path from authored code to inspectable generated AGSL
-- Compose integration without building a separate rendering abstraction
-- no performance tax for choosing a friendlier API
-
-## ⚖️ Raw AGSL vs RedByteFX
-
-Same idea, same math, much better ergonomics.
-
-### 📝 Hand-written AGSL
-
-```glsl
-uniform shader content;
-uniform float wave_amplitude;
-uniform float wave_frequency;
-
-half4 main(float2 fragCoord) {
-  float2 offset = float2(0.0, sin(fragCoord.x * wave_frequency) * wave_amplitude);
-  return content.eval(fragCoord + offset);
-}
-```
-
-### ✨ RedByteFX
+`Uniform<T>` is a handle owned by one `ShaderProgram`. Inside a stage you read `uniform.expr`. The handle itself is what Compose and the GLES runtime write. A handle from one program is not valid on another.
 
 ```kotlin
-val wave = redbytefx {
-    val amplitude = uniformFloat(0f, "wave_amplitude")
-    val frequency = uniformFloat(0.08f, "wave_frequency")
-    val offset = float2(0f, sin(fragCoord.x * frequency) * amplitude)
-    sample(fragCoord + offset)
-}
-```
-
-The shader is still explicit, but now it is real code: types, IDE completion, safer refactors, and runtime params you can bind without managing raw AGSL strings by hand.
-
-## 🎬 Example from the sample app
-
-This is the kind of effect that gets noisy quickly in raw AGSL, but stays readable when expressions, locals, and compositing helpers are first-class Kotlin constructs:
-
-```kotlin
-val effect = redbytefx {
-    val amount by autoUniformFloat(0.82f)
-    val warmth by autoUniformFloat(0.58f)
-    val glow by autoUniformFloat(0.38f)
-
-    val base = let(sample(), "base")
-    val saturated = let(
-        adjustSaturation(base, mix(0.9f, 1.55f, amount)),
-        "saturated"
-    )
-    val tint = let(
-        color(
-            mix(0.26f, 0.94f, warmth),
-            mix(0.48f, 0.72f, warmth),
-            mix(0.92f, 0.38f, warmth),
-            base.a
-        ),
-        "tint"
-    )
-    val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
-    val screened = let(blendScreen(multiplied, tint, glow), "screened")
-
-    blendOverlay(base, screened, amount)
-}
-```
-
-## 📦 Install
-
-RedByteFX is published to **Maven Central**, so for consumers the normal repository setup is enough:
-
-```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
+val wave = shader(ShaderTarget.Agsl) {
+    val amplitude = uniform("wave_amplitude", 0f)
+    val frequency = uniform("wave_frequency", 0.08f)
+    fragment {
+        val offset = float2(0f, sin(fragCoord.x * frequency.expr) * amplitude.expr)
+        sample(fragCoord + offset)
     }
 }
 ```
 
-Add the modules you need:
+AGSL is fragment-only. The generated entry stays `half4 main(float2 fragCoord)`, which `RuntimeShader` requires. Inspect it with `wave.agslSource()`.
+
+OpenGL ES 3.0 needs both stages. Varyings written in the vertex stage are read in the fragment stage. Inspect them with `vertexSource()` and `fragmentSource()`.
+
+```kotlin
+val pulse = shader(ShaderTarget.Gles30) {
+    val time = uniformTime()
+    vertex {
+        val position = attributeVec2("position")
+        glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
+    }
+    fragment {
+        val wave = sin(time.expr)
+        vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
+    }
+}
+```
+
+`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. The OpenGL list includes a triangle and the Spheres scene, which draws on its own `GLSurfaceView`.
+
+## Install
 
 ```kotlin
 dependencies {
     implementation("io.github.i-redbyte:redbytefx-core:1.0.0")
+    implementation("io.github.i-redbyte:redbytefx-gl:1.0.0")
     implementation("io.github.i-redbyte:redbytefx-compose:1.0.0")
     implementation("io.github.i-redbyte:redbytefx-stdlib:1.0.0")
 }
 ```
 
-### 🗂️ Version Catalog / TOML
+| Artifact | Role |
+|----------|------|
+| `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL and GLSL ES 3.00 spelling |
+| `redbytefx-gl` | GLES 3.0 link and uniform writes, bound to the EGL thread |
+| `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
+| `redbytefx-stdlib` | Coordinates, masks, compositing, SDF, and related helpers on top of the same DSL |
 
-`gradle/libs.versions.toml`:
+## Compose
 
-```toml
-[versions]
-redbytefx = "1.0.0"
-
-[libraries]
-redbytefx-core = { module = "io.github.i-redbyte:redbytefx-core", version.ref = "redbytefx" }
-redbytefx-compose = { module = "io.github.i-redbyte:redbytefx-compose", version.ref = "redbytefx" }
-redbytefx-stdlib = { module = "io.github.i-redbyte:redbytefx-stdlib", version.ref = "redbytefx" }
-```
-
-Module `build.gradle.kts`:
+Uniforms are declared on the program, then bound by the same handle.
 
 ```kotlin
-dependencies {
-    implementation(libs.redbytefx.core)
-    implementation(libs.redbytefx.compose)
-    implementation(libs.redbytefx.stdlib)
-}
-```
-
-## 🧩 Modules
-
-| Artifact | What it gives you |
-|----------|-------------------|
-| `redbytefx-core` | Authoring DSL, compiler, uniforms, runtime bridge, `redbytefx { }` |
-| `redbytefx-compose` | `FxController`, `rememberFxController`, `Modifier.redbyteFx`, Compose bindings |
-| `redbytefx-stdlib` | Higher-level shader helpers for coordinates, masks, compositing, routing, lighting, SDF, and more |
-
-## 🚀 Quick start
-
-```kotlin
-val waveEffect = run {
-    var amplitude: FxParam.Float? = null
-    var frequency: FxParam.Float? = null
-    val effect = redbytefx {
-        val amp = uniformFloat(0f, "wave_amplitude")
-        val freq = uniformFloat(0.08f, "wave_frequency")
-        amplitude = amp
-        frequency = freq
-        val offset = float2(0f, sin(fragCoord.x * freq) * amp)
+val program = shader(ShaderTarget.Agsl) {
+    val amplitude = uniform("wave_amplitude", 0f)
+    val frequency = uniform("wave_frequency", 0.08f)
+    fragment {
+        val offset = float2(0f, sin(fragCoord.x * frequency.expr) * amplitude.expr)
         sample(fragCoord + offset)
     }
-    Triple(effect, amplitude!!, frequency!!)
 }
 
 @Composable
-fun WaveLabel(amp: Float, freq: Float) {
-    val fx = rememberFxController(waveEffect.first)
-    fx.bindFloat(waveEffect.second, amp)
-    fx.bindFloat(waveEffect.third, freq)
+fun WaveLabel(program: ShaderProgram, amplitude: Uniform<Flt<High>>, frequency: Uniform<Flt<High>>) {
+    val fx = rememberFxController(program)
+    fx.bindFloat(amplitude, 12f)
+    fx.bindFloat(frequency, 0.08f)
     Text("RedByteFX", modifier = Modifier.redbyteFx(fx))
 }
 ```
 
-Typical flow:
+`rememberFxController` owns one AGSL runtime. Use one controller per render target. `redbyteFx` writes the resolution from the draw size. `RuntimeShader` is touched on the UI thread.
 
-1. Compile an effect once with `redbytefx { ... }`.
-2. Inspect `effect.agslSource()` if you want to verify the generated AGSL shape.
-3. Keep the returned `FxParam` handles for runtime binding.
-4. Create an `FxInstance` or `FxController`.
-5. Bind values and apply the effect.
+## Authoring
 
-## 📚 DSL guide
+Stages are a small state machine. Uniforms, samplers, and varyings are declared on the program. `fragment { }` and `vertex { }` are the only places that emit shader code. `vertex` exists only for `ShaderTarget.Gles30`.
 
-### 📍 Coordinates and sampling
-
-- `fragCoord` is the current fragment coordinate in pixel space.
-- `resolution` is the current render size in pixels.
-- `sample()` reads the input content in pixel space and defaults to `fragCoord`.
-- `sample(coord)` reads the input at another pixel-space coordinate.
-- `sampleUnclamped(...)` skips coordinate clamping and is mainly for deliberate edge experiments.
-- In `stdlib`, `normalizedUv()` converts from pixel space to normalized UV `[0, 1]²`.
-- In `stdlib`, `sampleUv(uv)` converts normalized UV back into a sampled read.
-- In `stdlib`, `centeredUv(...)` and `aspectCenteredUv(...)` are good starting points for masks, lighting, SDF, and local scene math.
-
-### 🎛️ Uniforms and runtime params
-
-- `uniformFloat`, `uniformFloat2`, `uniformFloat3`, `uniformFloat4` declare effect-owned uniforms.
-- `uniformTime()` is just a specialized float uniform intended for elapsed time.
-- `autoUniformFloat`, `autoUniformTime`, `autoUniformFloat2/3/4` derive readable debug names from the delegated Kotlin property name.
-- The returned `FxParam.*` handles are both DSL expressions and runtime handles.
-- Uniform handles are effect-specific: a param from one `redbytefx { ... }` block must not be reused with another compiled effect.
-
-Example:
+- `fragCoord` and `resolution` are AGSL fragment inputs, in pixels.
+- `sample()` reads the child shader. It is legal only in an AGSL fragment, and not inside `fn`.
+- `texture(sampler, uv)` is legal only in a GLES fragment.
+- `attributeVec2` and `glPosition` are legal only in a GLES vertex.
+- `let(expr, "name")` names a local in the generated shader.
+- `fn` takes 0, 1, or 2 arguments. A witness value supplies the erased shape: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Parameters are `p0` and `p1`. Functions do not nest, and they cannot declare uniforms.
 
 ```kotlin
-val effect = redbytefx {
-    val amount by autoUniformFloat(0.5f)
-    val shift = uniformFloat2(0f, 0f, "shift")
-    sample(fragCoord + shift * amount)
+shader(ShaderTarget.Agsl) {
+    fragment {
+        val gain = fn(0f.lit, "gain") { p0 -> saturate(p0) }
+        val tone = gain(sample().r.toHigh()).toMed()
+        color(tone, tone, tone, sample().a)
+    }
 }
 ```
 
-### 🔤 Expression types
+Scalar floats of one precision support `+`, `-`, `*`, `/`. Vectors support vector-vector and vector-scalar math of the same precision. Comparisons are `gt`, `lt`, `ge`, `le`, `eq`, `ne`. `gte` is another spelling of `ge`. `ifElse(condition, ifTrue, ifFalse)` is the ternary. Boolean scalars support `and`, `or`, and `not`.
 
-- `FloatExpr` is a scalar float expression.
-- `BoolExpr` is a boolean expression.
-- `Float2Expr`, `Float3Expr`, `Float4Expr` model vector expressions.
-- `ColorExpr` models color output and maps to AGSL `half4`.
-- These are not runtime values. They are typed nodes in the shader expression tree that the compiler turns into AGSL.
+Math that spells the same call in both languages includes `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, and `length`. There is no `sqrt` builtin: a non-negative root is `pow(max(x, 0f), 0.5f)`.
 
-### 🧱 Constructors
+`redbytefx-stdlib` adds coordinate and compositing recipes on the same `fragment` receiver: `normalizedUv`, `sampleUv`, `centeredUv`, masks, reveals, blend helpers, and SDF helpers such as `sdCircle` and `softFill`.
 
-- Use `float(...)` for scalar literals when you need an explicit scalar expression.
-- Use `float2(...)`, `float3(...)`, `float4(...)` to build vectors.
-- Use `color(r, g, b, a)` or `color(rgb, a)` to build color output.
+## Runtime
 
-Example:
+`ShaderProgram` is immutable and readable from any thread. The expression graph and the generated strings exist at compile time.
 
-```kotlin
-val uv = fragCoord / resolution
-val tint = color(0.2f, 0.8f, 1f, 1f)
-val offset = float2(0f, sin(uv.x * 12f) * 6f)
-sample(fragCoord + offset) * tint.a
-```
+AGSL playback is `program.newAgslInstance()`. An unchanged uniform does not call the GPU. GLES playback is `GlProgramRuntime` in `redbytefx-gl`: create it, link it, and destroy it on the thread that owns the EGL context. `destroy` unbinds the program before deleting it.
 
-### ➕ Operators and conditionals
+## Not in this version
 
-- Scalar expressions support `+`, `-`, `*`, `/`.
-- Vector expressions support vector-vector and vector-scalar math where it makes sense.
-- Whole-number literals like `1 - amount` and `2 * uv` are supported to keep AGSL-style ports readable.
-- Comparisons use `lt`, `lte`, `gt`, `gte`, `eq`, `neq`.
-- `ifElse(condition, ifTrue, ifFalse)` selects between expressions inside the shader.
-- Boolean expressions support `and`, `or`, and `!`.
+The compiler does not emit compute, geometry, or tessellation shaders, desktop GL, GLES 2.0, uniform blocks, shader storage blocks, or multiple fragment outputs. User functions stop at two arguments. A function written for one stage is not callable from the other. Recursion is rejected.
 
-Example:
+## Contributing
 
-```kotlin
-val mask = ifElse(amount gt 0.5f, 1f, 0f)
-```
+Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt. Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
 
-### 🧮 Built-in math and color helpers
+## License
 
-Core covers the usual AGSL-style building blocks such as:
-
-- `mix`, `clamp`, `smoothstep`, `step`, `saturate`
-- `sin`, `cos`, `atan`, `pow`, `sqrt`, `abs`, `floor`, `ceil`, `fract`
-- `min`, `max`, `mod`
-- `dot`, `length`, `distance`, `normalize`
-- `luminance`, `grayscale`
-
-The intent is to stay close to AGSL vocabulary while keeping the call sites typed and Kotlin-friendly.
-
-### 📌 Locals with `let(...)`
-
-- `let(...)` stores an expression into a named local variable in the generated AGSL.
-- This is one of the main tools for keeping large effects readable.
-- If you pass a name, RedByteFX normalizes it into a safe AGSL identifier.
-
-Example:
-
-```kotlin
-val base = let(sample(), "base")
-val luma = let(luminance(base), "luma")
-val mono = let(grayscale(base), "mono")
-mix(base, mono, luma)
-```
-
-### 🛠️ Reusable helpers with `fn(...)` and `fnN(...)`
-
-- `fn(...)` creates reusable AGSL helper functions with arity 0 to 4.
-- `fnN(...)` handles helpers with five or more parameters.
-- Use this when you want generated AGSL to keep a visible function boundary instead of becoming one very long expression tree.
-
-Example:
-
-```kotlin
-val palette = fn(
-    name = "palette_rgb",
-    arg1 = FloatType,
-    arg2 = FloatType,
-    returns = Float3Type
-) { tone, warmth ->
-    val phase = let(tone * 6.2831855f, "phase")
-    float3(
-        0.24f + 0.45f * sin(phase + warmth * 0.90f + 0.10f),
-        0.30f + 0.42f * sin(phase + warmth * 1.50f + 2.10f),
-        0.42f + 0.36f * sin(phase + warmth * 2.10f + 4.20f)
-    )
-}
-```
-
-### 🔄 Core transforms in `core`
-
-Core already includes useful authoring helpers such as:
-
-- `flipX`, `flipY`
-- `mirrorX`, `mirrorY`
-- basic coordinate transforms that stay close to the underlying AGSL model
-
-These are good for direct ports before you move into richer `stdlib` helpers.
-
-### 🧰 Higher-level helpers in `stdlib`
-
-`redbytefx-stdlib` adds reusable recipes built on top of the core DSL. Common first-stop helpers include:
-
-- coordinates: `normalizedUv`, `sampleUv`, `centeredUv`, `aspectCenteredUv`
-- masks and reveal: `circleMask`, `rectMask`, `ringMask`, `horizontalReveal`, `verticalReveal`, `radialReveal`
-- compositing: `maskedMix`, `alphaMask`, `maskedScreen`, `maskedOverlay`, `blendMultiply`, `blendScreen`, `blendOverlay`
-- lighting and shaping: `rimLight`, `centerGlow`, SDF helpers, routing helpers, noise and warp helpers
-
-Good rule of thumb:
-
-1. Stay in `core` when you are porting raw AGSL directly.
-2. Move into `stdlib` when repeated coordinate, mask, compositing, or shaping patterns start appearing.
-
-### 🧪 Runtime API
-
-- `FxEffect` is the immutable compiled shader definition.
-- `FxEffect.agslSource()` returns the generated AGSL for debugging, docs, or tests.
-- `FxInstance` is the low-level mutable runtime API for imperative hosts.
-- `FxController` in `redbytefx-compose` wraps one mutable runtime instance for Compose-friendly binding and invalidation.
-- Use one controller or runtime instance per render target.
-
-## 🤝 Contributing
-
-The project is open to external contributions.
-
-Please keep the existing project style intact:
-
-- preserve the Kotlin-first DSL feel
-- keep generated AGSL readable
-- prefer explicit naming and clear local variables over clever compression
-- stay consistent with the current API naming, docs tone, and sample style
-
-### 🔀 PR flow
-
-1. Fork the repository and create a focused branch.
-2. Make the smallest complete change that solves one clear problem.
-3. Run `./gradlew qualityCheck` and any relevant module tests.
-4. Update docs or samples if the public API or behavior changed.
-5. Open a PR with a short summary: problem, change, and how you verified it.
-
-## 📄 License
-
-Released under the [MIT](LICENSE) license.
+[MIT](LICENSE)

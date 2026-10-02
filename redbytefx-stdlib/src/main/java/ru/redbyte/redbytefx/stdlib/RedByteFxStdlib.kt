@@ -1,5 +1,5 @@
 /**
- * Standard shader library for RedByteFX: reusable recipes built with the `redbytefx { }` DSL.
+ * Standard shader library for RedByteFX: reusable recipes built inside `shader(ShaderTarget) { fragment { ... } }`.
  *
  * **Core vs stdlib:** `ru.redbyte.redbytefx` (`:redbytefx-core`) owns the
  * language surface (types, uniforms, compiler, essential math/color). This module adds higher-level
