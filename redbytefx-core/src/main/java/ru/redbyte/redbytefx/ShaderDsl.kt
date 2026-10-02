@@ -50,6 +50,8 @@ public class ShaderDsl internal constructor(
     private val varyings = mutableListOf<Varying<*>>()
     private val attributes = mutableListOf<AttributeHandle>()
     private val varyingWrites = mutableListOf<VaryingWrite>()
+    private val fragmentOutputs = mutableListOf<FragmentOutput>()
+    private val fragmentWrites = mutableListOf<FragmentWrite>()
     private var fragmentBody: Expr<*>? = null
     private var vertexPosition: Expr<Vec4<Flt<High>>>? = null
     private var vertexBuilt = false
@@ -113,7 +115,7 @@ public class ShaderDsl internal constructor(
         check(fragmentBody == null) { "Shader already has a fragment stage" }
         advance(AuthoringAction.EnterFragment)
         try {
-            fragmentBody = FragmentDsl(::advance, stageFunctions).block()
+            fragmentBody = FragmentDsl(::advance, stageFunctions, ::declareFragmentOut, ::writeFragmentOut).block()
         } finally {
             advance(AuthoringAction.LeaveStage)
         }
@@ -130,9 +132,12 @@ public class ShaderDsl internal constructor(
         }
     }
 
-    internal fun compile(): ShaderProgram = when (target) {
-        ShaderTarget.Agsl -> compileAgsl()
-        ShaderTarget.Gles30 -> compileGlsl()
+    internal fun compile(): ShaderProgram {
+        rejectRecursion(functions)
+        return when (target) {
+            ShaderTarget.Agsl -> compileAgsl()
+            ShaderTarget.Gles30 -> compileGlsl()
+        }
     }
 
     private fun compileAgsl(): ShaderProgram {
@@ -184,6 +189,32 @@ public class ShaderDsl internal constructor(
         return handle
     }
 
+    private fun declareFragmentOut(name: String, location: Int): FragmentOutput {
+        advance(AuthoringAction.FragmentOut)
+        require(name.isNotBlank()) { "Fragment output name must not be blank" }
+        require(location >= 0) { "Fragment output location must be non-negative, was $location" }
+        require(fragmentOutputs.none { it.location == location }) {
+            "Fragment output location $location is already used"
+        }
+        val output = FragmentOutput(name, location)
+        fragmentOutputs += output
+        return output
+    }
+
+    private fun writeFragmentOut(output: FragmentOutput, value: Expr<*>) {
+        advance(AuthoringAction.FragmentOut)
+        require(fragmentOutputs.any { it === output }) {
+            "Fragment output \"${output.name}\" does not belong to this shader"
+        }
+        require(value.shape == output.shape) {
+            "Fragment output \"${output.name}\" expects ${output.shape}, was ${value.shape}"
+        }
+        require(fragmentWrites.none { it.output === output }) {
+            "Fragment output \"${output.name}\" is already written"
+        }
+        fragmentWrites += FragmentWrite(output, value)
+    }
+
     private fun compileGlsl(): ShaderProgram {
         if (!vertexBuilt) throw ProgramException(ProgramCode.MissingVertex, "GLES program requires a vertex stage")
         val body = fragmentBody
@@ -194,8 +225,18 @@ public class ShaderDsl internal constructor(
         checkFunctionStage(position, AuthoringPlace.Vertex)
         varyingWrites.forEach { checkFunctionStage(it.value, AuthoringPlace.Vertex) }
         checkFunctionStage(body, AuthoringPlace.Fragment)
+        fragmentWrites.forEach { checkFunctionStage(it.value, AuthoringPlace.Fragment) }
+        for (output in fragmentOutputs) {
+            if (fragmentWrites.none { it.output === output }) {
+                throw ProgramException(
+                    ProgramCode.FragmentOutNotWritten,
+                    "Fragment output \"${output.name}\" was not written",
+                )
+            }
+        }
         val reads = linkedSetOf<Varying<*>>()
         collectVaryings(body, reads)
+        fragmentWrites.forEach { collectVaryings(it.value, reads) }
         for (varying in reads) {
             if (varyingWrites.none { it.varying === varying }) {
                 throw ProgramException(
@@ -213,6 +254,7 @@ public class ShaderDsl internal constructor(
             fragmentBody = body,
             names = names,
             functions = functions,
+            fragmentWrites = fragmentWrites,
         )
     }
 
@@ -277,6 +319,8 @@ public class ShaderDsl internal constructor(
             block(a, b, c, d)
         }
 
+        public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = stageFunctions.recur(arg)
+
         private fun <T : ShType> attribute(name: String, shape: Shape): Expr<T> {
             advance(AuthoringAction.Attribute)
             val handle = AttributeHandle(name, shape)
@@ -295,6 +339,8 @@ private fun isMedVec4(shape: Shape): Boolean =
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val functions: StageFunctions,
+    private val declareOut: (String, Int) -> FragmentOutput,
+    private val writeOut: (FragmentOutput, Expr<*>) -> Unit,
 ) {
     public val fragCoord: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
@@ -323,6 +369,12 @@ public class FragmentDsl internal constructor(
             Shape.Vector(ScalarKind.Float, Precision.Med, 4),
             ExprNode.UnclampedSample(coord),
         )
+    }
+
+    public fun outVec4(name: String, location: Int): FragmentOutput = declareOut(name, location)
+
+    public fun FragmentOutput.set(value: Expr<Vec4<Flt<High>>>) {
+        writeOut(this, value)
     }
 
     public fun sample(coord: Expr<Vec2<Flt<High>>> = fragCoord): Expr<Vec4<Flt<Med>>> {
@@ -369,6 +421,8 @@ public class FragmentDsl internal constructor(
     ): Fn4<A, B, C, D, R> = functions.fn4(name, first, second, third, fourth) { a, b, c, d ->
         block(a, b, c, d)
     }
+
+    public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = functions.recur(arg)
 
     @JvmName("letValue")
     public fun <T : ShType> let(value: Expr<T>, name: String? = null): Expr<T> = value.let(name)

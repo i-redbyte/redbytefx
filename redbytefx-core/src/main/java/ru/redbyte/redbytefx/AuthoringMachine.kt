@@ -25,6 +25,7 @@ internal enum class AuthoringAction {
     Texture,
     Attribute,
     GlPosition,
+    FragmentOut,
     Let,
     Return,
 }
@@ -48,6 +49,8 @@ internal enum class AuthoringCode {
     AttributeOutsideVertex,
     AttributeInsideFunction,
     GlPositionOutsideVertex,
+    FragmentOutOnAgsl,
+    FragmentOutOutsideFragment,
     LetOutsideStage,
     ReturnOutsideStage,
 }
@@ -106,6 +109,7 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
             state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Vertex,
             AuthoringCode.GlPositionOutsideVertex,
         )
+        AuthoringAction.FragmentOut -> fragmentOut(state)
         AuthoringAction.Let -> allow(
             state,
             state.place != AuthoringPlace.Program,
@@ -163,6 +167,12 @@ private fun leaveStage(state: AuthoringState): AuthoringStep = when (state.place
 private fun leaveFunction(state: AuthoringState): AuthoringStep {
     val parent = state.functionParent ?: return reject(state, AuthoringCode.LeaveOutsideFunction)
     return accept(state.copy(place = parent, functionParent = null))
+}
+
+private fun fragmentOut(state: AuthoringState): AuthoringStep = when {
+    state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.FragmentOutOnAgsl)
+    state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Fragment -> accept(state)
+    else -> reject(state, AuthoringCode.FragmentOutOutsideFragment)
 }
 
 private fun attribute(state: AuthoringState): AuthoringStep = when {

@@ -9,9 +9,12 @@ internal class UserFunction(
     val name: String,
     val stage: AuthoringPlace,
     val parameters: List<Formal>,
-    val body: Expr<*>,
-    val result: Shape,
-)
+    body: Expr<*>,
+    result: Shape,
+) {
+    var body: Expr<*> = body
+    var result: Shape = result
+}
 
 public class Fn0<R : ShType> internal constructor(
     private val function: UserFunction,
@@ -82,6 +85,15 @@ internal class StageFunctions(
     private val register: (UserFunction) -> Unit,
 ) {
     private var index = 0
+    private var defining: UserFunction? = null
+
+    fun <T : ShType> recur(arg: Expr<T>): Expr<T> {
+        val function = defining ?: throw IllegalArgumentException("recur is only valid inside a function")
+        require(function.parameters.size == 1 && arg.shape == function.parameters[0].shape) {
+            "recur expects the function parameter, was ${arg.shape}"
+        }
+        return Expr(function.result, ExprNode.UserCall(function, listOf(arg)))
+    }
 
     fun <R : ShType> fn0(name: String?, body: () -> Expr<R>): Fn0<R> =
         Fn0(define(name, emptyList()) { body() })
@@ -159,16 +171,26 @@ internal class StageFunctions(
     ): UserFunction {
         advance(AuthoringAction.EnterFunction)
         try {
-            val result = body()
-            advance(AuthoringAction.Return)
+            val provisional = parameters.firstOrNull()?.shape
+                ?: Shape.Scalar(ScalarKind.Float, Precision.High)
             val function = UserFunction(
                 name = names.reserve(functionBase(name, index)),
                 stage = parent(),
                 parameters = parameters,
-                body = result,
-                result = result.shape,
+                body = Expr<ShType>(provisional, ExprNode.Param(parameters.firstOrNull()?.name ?: "p0")),
+                result = provisional,
             )
             index += 1
+            val previous = defining
+            defining = function
+            val result = try {
+                body()
+            } finally {
+                defining = previous
+            }
+            advance(AuthoringAction.Return)
+            function.body = result
+            function.result = result.shape
             register(function)
             return function
         } finally {

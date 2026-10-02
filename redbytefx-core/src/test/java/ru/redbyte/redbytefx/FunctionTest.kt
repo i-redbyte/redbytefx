@@ -69,8 +69,9 @@ class FunctionTest {
         val error = assertThrows(ProgramException::class.java) {
             shader(ShaderTarget.Gles30) {
                 vertex {
-                    bump = fn(0f.lit, "bump") { t -> t }
-                    glPosition(attributeVec4("position"))
+                    val position = attributeVec4("position")
+                    bump = fn(0f.lit, "bump") { t -> t + position.x }
+                    glPosition(position)
                 }
                 fragment {
                     val y = bump(0f.lit)
@@ -79,6 +80,64 @@ class FunctionTest {
             }
         }
         assertEquals(ProgramCode.FunctionWrongStage, error.code)
+    }
+
+    @Test
+    fun aPureFunctionIsCopiedIntoBothStages() {
+        lateinit var bump: Fn1<Flt<High>, Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            val time = uniformTime()
+            vertex {
+                bump = fn(0f.lit, "bump") { t -> t + time.expr }
+                glPosition(vec4(bump(0f.lit), 0f.lit, 0f.lit, 1f.lit))
+            }
+            fragment {
+                val y = bump(time.expr)
+                vec4(y, y, y, 1f.lit)
+            }
+        }
+        val vertex = program.vertexSource()
+        val fragment = program.fragmentSource()
+        assertTrue(vertex.contains("highp float bump(highp float p0)"))
+        assertTrue(fragment.contains("highp float bump(highp float p0)"))
+        assertTrue(vertex.contains("bump(0.0)"))
+        assertTrue(fragment.contains("bump(u_time)"))
+    }
+
+    @Test
+    fun recursionIsRejectedBeforeEmission() {
+        val direct = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    fn(0f.lit, "loop") { t -> recur(t) }
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.RecursiveFunction, direct.code)
+
+        val shape = Shape.Scalar(ScalarKind.Float, Precision.High)
+        val param = Expr<Flt<High>>(shape, ExprNode.Param("p0"))
+        val first = UserFunction(
+            "earlier",
+            AuthoringPlace.Fragment,
+            listOf(Formal("p0", shape)),
+            param,
+            shape,
+        )
+        val second = UserFunction(
+            "later",
+            AuthoringPlace.Fragment,
+            listOf(Formal("p0", shape)),
+            param,
+            shape,
+        )
+        first.body = Expr<ShType>(shape, ExprNode.UserCall(second, listOf(param)))
+        second.body = Expr<ShType>(shape, ExprNode.UserCall(first, listOf(param)))
+        val cycle = assertThrows(ProgramException::class.java) {
+            rejectRecursion(listOf(first, second))
+        }
+        assertEquals(ProgramCode.RecursiveFunction, cycle.code)
     }
 
     @Test
