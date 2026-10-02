@@ -4,10 +4,16 @@ import java.util.IdentityHashMap
 
 public class ShaderProgram internal constructor(
     public val target: ShaderTarget,
-    private val agsl: String,
+    private val agsl: String? = null,
+    private val vertex: String? = null,
+    private val fragment: String? = null,
     internal val bindings: List<UniformBinding>,
 ) {
-    public fun agslSource(): String = agsl
+    public fun agslSource(): String = agsl ?: error("This shader has no AGSL source")
+
+    public fun vertexSource(): String = vertex ?: error("This shader has no GLES vertex source")
+
+    public fun fragmentSource(): String = fragment ?: error("This shader has no GLES fragment source")
 
     public fun <T : ShType> uniform(agslName: String): Uniform<T> {
         val found = bindings.firstOrNull { it.agslName == agslName }?.uniform
@@ -32,7 +38,12 @@ public class ShaderDsl internal constructor(
 ) {
     private var state = authoringState(target, AuthoringPlace.Program)
     private val uniforms = mutableListOf<Uniform<*>>()
-    private var output: Expr<Vec4<Flt<Med>>>? = null
+    private val varyings = mutableListOf<Varying<*>>()
+    private val attributes = mutableListOf<AttributeHandle>()
+    private val varyingWrites = mutableListOf<VaryingWrite>()
+    private var fragmentBody: Expr<*>? = null
+    private var vertexPosition: Expr<Vec4<Flt<High>>>? = null
+    private var vertexBuilt = false
 
     public fun uniform(name: String, default: Float): Uniform<Flt<High>> {
         advance(AuthoringAction.DeclareUniform)
@@ -46,20 +57,46 @@ public class ShaderDsl internal constructor(
         return handle
     }
 
-    public fun fragment(block: FragmentDsl.() -> Expr<Vec4<Flt<Med>>>) {
-        check(output == null) { "Shader already has a fragment stage" }
+    public fun sampler2D(name: String): Uniform<Sampler2D> {
+        advance(AuthoringAction.DeclareSampler)
+        val handle = createSampler<Sampler2D>(name, Shape.Sampler2D)
+        uniforms += handle
+        return handle
+    }
+
+    public fun varyingVec2(name: String): Varying<Vec2<Flt<High>>> = varying(
+        name,
+        Shape.Vector(ScalarKind.Float, Precision.High, 2),
+    )
+
+    public fun fragment(block: FragmentDsl.() -> Expr<*>) {
+        check(fragmentBody == null) { "Shader already has a fragment stage" }
         advance(AuthoringAction.EnterFragment)
-        output = FragmentDsl(::advance).block()
+        try {
+            fragmentBody = FragmentDsl(::advance).block()
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
     }
 
     public fun vertex(block: VertexDsl.() -> Unit) {
+        check(!vertexBuilt) { "Shader already has a vertex stage" }
         advance(AuthoringAction.EnterVertex)
-        VertexDsl().block()
+        vertexBuilt = true
+        try {
+            VertexDsl().block()
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
     }
 
-    internal fun compile(): ShaderProgram {
-        check(target == ShaderTarget.Agsl) { "Only AGSL shaders can be spelled right now" }
-        val body = checkNotNull(output) { "AGSL shader requires a fragment stage" }
+    internal fun compile(): ShaderProgram = when (target) {
+        ShaderTarget.Agsl -> compileAgsl()
+        ShaderTarget.Gles30 -> compileGlsl()
+    }
+
+    private fun compileAgsl(): ShaderProgram {
+        val body = checkNotNull(fragmentBody) { "AGSL shader requires a fragment stage" }
         val allocator = IdentifierAllocator(agslReservedNames())
         val bindings = uniforms.map { uniform ->
             val agslName = allocator.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_"))
@@ -83,9 +120,76 @@ public class ShaderDsl internal constructor(
         }
         throw AuthoringException(code)
     }
+
+    private fun <T : ShType> varying(name: String, shape: Shape): Varying<T> {
+        advance(AuthoringAction.DeclareVarying)
+        val handle = createVarying<T>(name, shape)
+        varyings += handle
+        return handle
+    }
+
+    private fun compileGlsl(): ShaderProgram {
+        if (!vertexBuilt) throw ProgramException(ProgramCode.MissingVertex, "GLES program requires a vertex stage")
+        val body = fragmentBody
+            ?: throw ProgramException(ProgramCode.MissingFragment, "GLES program requires a fragment stage")
+        val position = vertexPosition
+            ?: throw ProgramException(ProgramCode.MissingGlPosition, "GLES vertex must assign gl_Position")
+        require(isFloatVec4(body.shape)) { "GLES fragment must return a float vec4, was ${body.shape}" }
+        val reads = linkedSetOf<Varying<*>>()
+        collectVaryings(body, reads)
+        for (varying in reads) {
+            if (varyingWrites.none { it.varying === varying }) {
+                throw ProgramException(
+                    ProgramCode.VaryingNotWritten,
+                    "Fragment reads varying \"${varying.name}\" that the vertex did not write",
+                )
+            }
+        }
+        return linkGlsl(
+            uniforms = uniforms,
+            varyings = varyings,
+            attributes = attributes,
+            writes = varyingWrites,
+            position = position,
+            fragmentBody = body,
+        )
+    }
+
+    public inner class VertexDsl {
+        public fun <T : ShType> Varying<T>.set(value: Expr<T>) {
+            require(value.shape == shape) {
+                "Varying \"${this.name}\" expects $shape, was ${value.shape}"
+            }
+            varyingWrites += VaryingWrite(this, value)
+        }
+
+        public fun glPosition(value: Expr<Vec4<Flt<High>>>) {
+            advance(AuthoringAction.GlPosition)
+            check(vertexPosition == null) { "gl_Position is already assigned" }
+            vertexPosition = value
+        }
+
+        public fun attributeVec2(name: String): Expr<Vec2<Flt<High>>> = attribute(
+            name,
+            Shape.Vector(ScalarKind.Float, Precision.High, 2),
+        )
+
+        public fun attributeVec4(name: String): Expr<Vec4<Flt<High>>> = attribute(
+            name,
+            Shape.Vector(ScalarKind.Float, Precision.High, 4),
+        )
+
+        private fun <T : ShType> attribute(name: String, shape: Shape): Expr<T> {
+            advance(AuthoringAction.Attribute)
+            val handle = AttributeHandle(name, shape)
+            attributes += handle
+            return Expr(shape, ExprNode.AttributeRef(handle))
+        }
+    }
 }
 
-public class VertexDsl internal constructor()
+private fun isFloatVec4(shape: Shape): Boolean =
+    shape is Shape.Vector && shape.kind == ScalarKind.Float && shape.lanes == 4
 
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
@@ -99,6 +203,17 @@ public class FragmentDsl internal constructor(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
         ExprNode.Resolution,
     )
+
+    public fun texture(
+        sampler: Uniform<Sampler2D>,
+        uv: Expr<Vec2<Flt<High>>>,
+    ): Expr<Vec4<Flt<High>>> {
+        advance(AuthoringAction.Texture)
+        return Expr(
+            Shape.Vector(ScalarKind.Float, Precision.High, 4),
+            ExprNode.Texture(sampler.expr, uv),
+        )
+    }
 
     public fun sample(coord: Expr<Vec2<Flt<High>>> = fragCoord): Expr<Vec4<Flt<Med>>> {
         advance(AuthoringAction.Sample)
@@ -141,6 +256,9 @@ private class AgslEmitter(
         ExprNode.FragCoord -> "fragCoord"
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
+        is ExprNode.Texture,
+        is ExprNode.AttributeRef,
+        is ExprNode.VaryingRef -> error("AGSL cannot spell ${node::class.simpleName}")
     }
 
     private fun local(node: ExprNode.Local, shape: Shape): String {

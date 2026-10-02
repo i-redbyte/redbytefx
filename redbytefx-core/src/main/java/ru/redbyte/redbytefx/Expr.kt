@@ -44,7 +44,23 @@ internal sealed interface ExprNode {
     data object Resolution : ExprNode
 
     data class Sample(val coord: Expr<*>) : ExprNode
+
+    data class Texture(val sampler: Expr<*>, val uv: Expr<*>) : ExprNode
+
+    data class AttributeRef(val attribute: AttributeHandle) : ExprNode
+
+    data class VaryingRef(val varying: Varying<*>) : ExprNode
 }
+
+internal class AttributeHandle(
+    val name: String,
+    val shape: Shape,
+)
+
+internal class VaryingWrite(
+    val varying: Varying<*>,
+    val value: Expr<*>,
+)
 
 internal enum class ArithOp {
     Add,
