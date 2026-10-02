@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx
 
 import java.util.IdentityHashMap
+import kotlin.jvm.JvmName
 
 public class ShaderProgram internal constructor(
     public val target: ShaderTarget,
@@ -78,6 +79,24 @@ public class ShaderDsl internal constructor(
     public fun uniformTime(default: Float = 0f, name: String = "time"): Uniform<Flt<High>> =
         uniform(name, default)
 
+    public fun uniformVec2(name: String, x: Float = 0f, y: Float = 0f): Uniform<Vec2<Flt<High>>> =
+        vectorUniform(name, 2, floatArrayOf(x, y))
+
+    public fun uniformVec3(
+        name: String,
+        x: Float = 0f,
+        y: Float = 0f,
+        z: Float = 0f,
+    ): Uniform<Vec3<Flt<High>>> = vectorUniform(name, 3, floatArrayOf(x, y, z))
+
+    public fun uniformVec4(
+        name: String,
+        x: Float = 0f,
+        y: Float = 0f,
+        z: Float = 0f,
+        w: Float = 0f,
+    ): Uniform<Vec4<Flt<High>>> = vectorUniform(name, 4, floatArrayOf(x, y, z, w))
+
     public fun sampler2D(name: String): Uniform<Sampler2D> {
         advance(AuthoringAction.DeclareSampler)
         val handle = createSampler<Sampler2D>(name, Shape.Sampler2D)
@@ -118,6 +137,7 @@ public class ShaderDsl internal constructor(
 
     private fun compileAgsl(): ShaderProgram {
         val body = checkNotNull(fragmentBody) { "AGSL shader requires a fragment stage" }
+        require(isFloatVec4(body.shape)) { "AGSL fragment must return a float vec4, was ${body.shape}" }
         checkFunctionStage(body, AuthoringPlace.Fragment)
         val bindings = uniforms.map { uniform ->
             val agslName = names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_"))
@@ -128,9 +148,10 @@ public class ShaderDsl internal constructor(
         val functionText = renderAgslFunctions(functions, occupied, uniformNames)
         val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames)
         val rendered = emitter.emit(body)
+        val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
         return ShaderProgram(
             target = target,
-            agsl = renderAgsl(bindings, emitter.declarations, functionText, rendered),
+            agsl = renderAgsl(bindings, emitter.declarations, functionText, output),
             bindings = bindings,
         )
     }
@@ -142,6 +163,18 @@ public class ShaderDsl internal constructor(
             return
         }
         throw AuthoringException(code)
+    }
+
+    private fun <T : ShType> vectorUniform(name: String, lanes: Int, components: FloatArray): Uniform<T> {
+        advance(AuthoringAction.DeclareUniform)
+        require(components.all { it.isFinite() }) { "Uniform default must be finite" }
+        val handle = createVectorUniform<T>(
+            name = name,
+            shape = Shape.Vector(ScalarKind.Float, Precision.High, lanes),
+            components = components,
+        )
+        uniforms += handle
+        return handle
     }
 
     private fun <T : ShType> varying(name: String, shape: Shape): Varying<T> {
@@ -235,6 +268,9 @@ public class ShaderDsl internal constructor(
 private fun isFloatVec4(shape: Shape): Boolean =
     shape is Shape.Vector && shape.kind == ScalarKind.Float && shape.lanes == 4
 
+private fun isMedVec4(shape: Shape): Boolean =
+    isFloatVec4(shape) && shape is Shape.Vector && shape.precision == Precision.Med
+
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val functions: StageFunctions,
@@ -257,6 +293,14 @@ public class FragmentDsl internal constructor(
         return Expr(
             Shape.Vector(ScalarKind.Float, Precision.High, 4),
             ExprNode.Texture(sampler.expr, uv),
+        )
+    }
+
+    public fun sampleUnclamped(coord: Expr<Vec2<Flt<High>>> = fragCoord): Expr<Vec4<Flt<Med>>> {
+        advance(AuthoringAction.Sample)
+        return Expr(
+            Shape.Vector(ScalarKind.Float, Precision.Med, 4),
+            ExprNode.UnclampedSample(coord),
         )
     }
 
@@ -283,6 +327,9 @@ public class FragmentDsl internal constructor(
         name: String? = null,
         block: FragmentDsl.(Expr<A>, Expr<B>) -> Expr<R>,
     ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> block(left, right) }
+
+    @JvmName("letValue")
+    public fun <T : ShType> let(value: Expr<T>, name: String? = null): Expr<T> = value.let(name)
 
     public fun <T : ShType> Expr<T>.let(name: String? = null): Expr<T> {
         advance(AuthoringAction.Let)
@@ -317,6 +364,7 @@ private class AgslEmitter(
         ExprNode.FragCoord -> "fragCoord"
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
+        is ExprNode.UnclampedSample -> "$RB_INPUT_UNIFORM.eval(${emit(node.coord)})"
         is ExprNode.Call -> call(node)
         is ExprNode.Param -> node.name
         is ExprNode.Compare -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
@@ -349,6 +397,8 @@ private val ArithOp.symbol: String
         ArithOp.Sub -> "-"
         ArithOp.Mul -> "*"
         ArithOp.Div -> "/"
+        ArithOp.And -> "&&"
+        ArithOp.Or -> "||"
     }
 
 private fun localBase(suggested: String?, index: Int): String {

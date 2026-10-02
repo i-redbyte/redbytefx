@@ -33,7 +33,8 @@ enum class DemoId {
     PhysicsBubble,
     TouchRipple,
     Metaballs,
-    CrtTerminal
+    CrtTerminal,
+    Gles
 }
 
 enum class DemoSection(
@@ -257,6 +258,7 @@ val DemoInfo.focusTags: List<String>
         DemoId.TouchRipple -> listOf("pointer", "float2", "touch", "compose", "ripple", "time")
         DemoId.Metaballs -> listOf("sdf", "metaballs", "smoothmin", "procedural", "animation")
         DemoId.CrtTerminal -> listOf("crt", "scanlines", "barrel", "chromatic", "retro", "terminal")
+        DemoId.Gles -> listOf("gles", "opengl", "vertex", "triangle")
     }
 
 val DemoInfo.catalogSearchText: String
@@ -310,7 +312,8 @@ val DemoInfo.section: DemoSection
         DemoId.Circuit,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> DemoSection.Procedural
+        DemoId.CrtTerminal,
+        DemoId.Gles -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
@@ -364,7 +367,8 @@ val DemoInfo.layer: DemoLayer
         DemoId.LiquidGlass,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> DemoLayer.Stdlib
+        DemoId.CrtTerminal,
+        DemoId.Gles -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -388,7 +392,8 @@ val DemoInfo.isAnimated: Boolean
         DemoId.PhysicsBubble,
         DemoId.TouchRipple,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> true
+        DemoId.CrtTerminal,
+        DemoId.Gles -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -412,8 +417,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Flip X/Y with simple float uniforms.",
         focus = "Shows the smallest useful RedByteFX effect: uniforms, helper transforms, and bindFloat(...).",
         snippet = """
-            val flipX = uniformFloat(0f, "flip_x")
-            val flipY = uniformFloat(0f, "flip_y")
+            val flipX = uniform("flip_x", 0f)
+            val flipY = uniform("flip_y", 0f)
             sample(flipY(coord = flipX(amount = flipX), amount = flipY))
         """.trimIndent()
     ),
@@ -423,8 +428,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Symmetry X/Y using left/right or top/bottom half.",
         focus = "Shows parameterized helpers with multiple uniforms and enum-like values mapped into shader floats.",
         snippet = """
-            val enabled = uniformFloat(0f, "mirror_x_enabled")
-            val from = uniformFloat(MirrorXFrom.Right.shaderValue, "mirror_x_from")
+            val enabled = uniform("mirror_x_enabled", 0f)
+            val from = uniform("mirror_x_from", MirrorXFrom.Right.shaderValue)
             sample(mirrorX(amount = enabled, from = from))
         """.trimIndent()
     ),
@@ -434,7 +439,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Custom rotation written directly in the DSL.",
         focus = "Shows that the DSL is not limited to presets: you can write raw coordinate math yourself.",
         snippet = """
-            val angle = uniformFloat(0f, "angle_deg")
+            val angle = uniform("angle_deg", 0f)
             val theta = radians(angle)
             val rotated = pivot + float2(
                 c * delta.x - s * delta.y,
@@ -449,7 +454,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Uniform float2 with pivot-aware scaling.",
         focus = "Shows vector uniforms and helper composition around the current content center.",
         snippet = """
-            val scale = uniformFloat2(1f, 1f, "scale")
+            val scale = uniformVec2("scale", 1f, 1f)
             sample(scale(scale = scale))
         """.trimIndent()
     ),
@@ -459,7 +464,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Translate content with a float2 uniform.",
         focus = "Shows the most direct coordinate remap path and bindFloat2(...).",
         snippet = """
-            val delta = uniformFloat2(0f, 0f, "offset")
+            val delta = uniformVec2("offset", 0f, 0f)
             sample(offset(delta = delta))
         """.trimIndent()
     ),
@@ -469,8 +474,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "Non-linear sine warp to prove the DSL is not just presets.",
         focus = "Shows locals with let(...), custom math, and a warp built from ordinary shader expressions.",
         snippet = """
-            val amp = uniformFloat(0f, "wave_amplitude")
-            val freq = uniformFloat(0.08f, "wave_frequency")
+            val amp = uniform("wave_amplitude", 0f)
+            val freq = uniform("wave_frequency", 0.08f)
             val waveOffset = let(float2(0f, sin(fragCoord.x * freq) * amp), "wave_offset")
             sample(fragCoord + waveOffset)
         """.trimIndent()
@@ -504,8 +509,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
         subtitle = "A secondary color recipe layered on top of the core DSL path.",
         focus = "Extends the canonical core sampling/color path with posterize(...) and remap-style quantization once the base DSL mental model already feels comfortable.",
         snippet = """
-            val levels by autoUniformFloat(5f)
-            val amount by autoUniformFloat(0.85f)
+            val levels = uniform("levels", 5f)
+            val amount = uniform("amount", 0.85f)
             val base = let(sample(), "base")
             mix(base, posterize(base, levels), amount)
         """.trimIndent()
@@ -811,6 +816,25 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val base = sampleUv(warpedUv)
             val split = color(sampleUv(warpedUv - float2(px, 0f)).r, base.g, sampleUv(warpedUv + float2(px, 0f)).b, base.a)
             mix(base, split, edgeAmt * 0.88f) * scanMod * flicker * vignette
+        """.trimIndent()
+    ),
+    DemoInfo(
+        id = DemoId.Gles,
+        title = "GLES Triangle",
+        subtitle = "OpenGL ES 3.0 vertex and fragment stages on their own surface.",
+        focus = "A GLSurfaceView owns the EGL context. The shader is shader(Gles30), not Modifier.redbyteFx.",
+        snippet = """
+            shader(ShaderTarget.Gles30) {
+                val time = uniformTime()
+                vertex {
+                    val position = attributeVec2("position")
+                    glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
+                }
+                fragment {
+                    val wave = sin(time.expr)
+                    vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
+                }
+            }
         """.trimIndent()
     )
 )

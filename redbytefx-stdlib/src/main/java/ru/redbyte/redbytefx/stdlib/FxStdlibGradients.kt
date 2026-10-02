@@ -3,9 +3,9 @@ package ru.redbyte.redbytefx.stdlib
 import ru.redbyte.redbytefx.*
 
 private fun projectedUv(
-    uv: Float2Expr,
-    direction: Float2Expr
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>>
+): Expr<Flt<High>> {
     val safeLength = max(length(direction), 0.0001f)
     val dir = direction / safeLength
     val centered = uv - float2(0.5f, 0.5f)
@@ -21,11 +21,11 @@ private fun projectedUv(
  * directional effects.
  */
 public fun linearRamp(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
-    start: FloatExpr = float(0f),
-    end: FloatExpr = float(1f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
+    start: Expr<Flt<High>> = float(0f),
+    end: Expr<Flt<High>> = float(1f)
+): Expr<Flt<High>> {
     val safeEnd = ifElse(abs(end - start) lt 0.0001f, start + 0.0001f, end)
     return saturate(remap(projectedUv(uv, direction), start, safeEnd, float(0f), float(1f)))
 }
@@ -34,11 +34,11 @@ public fun linearRamp(
  * Builds a normalized linear ramp using literal [start] and [end] values.
  */
 public fun linearRamp(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     start: Float,
     end: Float
-): FloatExpr = linearRamp(
+): Expr<Flt<High>> = linearRamp(
     uv = uv,
     direction = direction,
     start = float(start),
@@ -52,11 +52,11 @@ public fun linearRamp(
  * as the radial companion to [linearRamp] for soft falloff, glow, or vignette-style masks.
  */
 public fun radialRamp(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    innerRadius: FloatExpr,
-    outerRadius: FloatExpr
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    innerRadius: Expr<Flt<High>>,
+    outerRadius: Expr<Flt<High>>
+): Expr<Flt<High>> {
     val safeInner = max(innerRadius, 0f)
     val safeOuter = max(outerRadius, safeInner + 0.0001f)
     return 1f - smoothstep(safeInner, safeOuter, length(uv - center))
@@ -66,11 +66,11 @@ public fun radialRamp(
  * Builds a radial ramp around [center] using literal radii.
  */
 public fun radialRamp(
-    uv: Float2Expr,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    uv: Expr<Vec2<Flt<High>>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     innerRadius: Float,
     outerRadius: Float
-): FloatExpr = radialRamp(
+): Expr<Flt<High>> = radialRamp(
     uv = uv,
     center = center,
     innerRadius = float(innerRadius),
@@ -86,12 +86,12 @@ public fun radialRamp(
  * gradient helper to teach.
  */
 public fun directionalSweep(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
-    center: FloatExpr,
-    width: FloatExpr,
-    feather: FloatExpr = float(0.08f)
-): FloatExpr = bandMask(
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
+    center: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.08f)
+): Expr<Flt<High>> = bandMask(
     position = projectedUv(uv, direction),
     center = center,
     width = width,
@@ -103,12 +103,12 @@ public fun directionalSweep(
  * literal [feather].
  */
 public fun directionalSweep(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
-    center: FloatExpr,
-    width: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
+    center: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
     feather: Float
-): FloatExpr = directionalSweep(
+): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = center,
@@ -121,12 +121,12 @@ public fun directionalSweep(
  * and feather values.
  */
 public fun directionalSweep(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
-    center: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
+    center: Expr<Flt<High>>,
     width: Float,
     feather: Float = 0.08f
-): FloatExpr = directionalSweep(
+): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = center,
@@ -138,12 +138,12 @@ public fun directionalSweep(
  * Creates a soft directional sweep band using literal center, width, and feather values.
  */
 public fun directionalSweep(
-    uv: Float2Expr,
-    direction: Float2Expr = float2(1f, 0f),
+    uv: Expr<Vec2<Flt<High>>>,
+    direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     center: Float,
     width: Float,
     feather: Float = 0.08f
-): FloatExpr = directionalSweep(
+): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = float(center),

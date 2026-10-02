@@ -26,16 +26,21 @@ internal class ShaderRuntime(
     private var batchDepth = 0
     private var pending = false
     private val floatValues = java.util.IdentityHashMap<Uniform<*>, Float>()
+    private val vectorValues = java.util.IdentityHashMap<Uniform<*>, FloatArray>()
     private var resolutionWidth: Float? = null
     private var resolutionHeight: Float? = null
 
     init {
         batch {
             for (binding in program.bindings) {
-                val default = binding.uniform.default ?: continue
                 val shape = binding.uniform.shape
-                if (shape is Shape.Scalar && shape.kind == ScalarKind.Float) {
+                val default = binding.uniform.default
+                if (default != null && shape is Shape.Scalar && shape.kind == ScalarKind.Float) {
                     setFloat(binding.uniform, default)
+                }
+                val components = binding.uniform.components
+                if (components != null && shape is Shape.Vector && shape.kind == ScalarKind.Float) {
+                    writeVector(binding.uniform, components)
                 }
             }
             setResolution(1f, 1f)
@@ -43,6 +48,21 @@ internal class ShaderRuntime(
     }
 
     internal fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = setFloat(uniform, value)
+
+    internal fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean {
+        if (sameStored2(uniform, x, y)) return false
+        return writeVector(uniform, floatArrayOf(x, y))
+    }
+
+    internal fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean {
+        if (sameStored3(uniform, x, y, z)) return false
+        return writeVector(uniform, floatArrayOf(x, y, z))
+    }
+
+    internal fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean {
+        if (sameStored4(uniform, x, y, z, w)) return false
+        return writeVector(uniform, floatArrayOf(x, y, z, w))
+    }
 
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         val width = sanitizeResolution(widthPx)
@@ -80,6 +100,46 @@ internal class ShaderRuntime(
         return true
     }
 
+    private fun sameStored2(uniform: Uniform<*>, x: Float, y: Float): Boolean {
+        val previous = vectorValues[uniform] ?: return false
+        return previous.size == 2 &&
+            sameFloatUniformValue(previous[0], x) &&
+            sameFloatUniformValue(previous[1], y)
+    }
+
+    private fun sameStored3(uniform: Uniform<*>, x: Float, y: Float, z: Float): Boolean {
+        val previous = vectorValues[uniform] ?: return false
+        return previous.size == 3 &&
+            sameFloatUniformValue(previous[0], x) &&
+            sameFloatUniformValue(previous[1], y) &&
+            sameFloatUniformValue(previous[2], z)
+    }
+
+    private fun sameStored4(uniform: Uniform<*>, x: Float, y: Float, z: Float, w: Float): Boolean {
+        val previous = vectorValues[uniform] ?: return false
+        return previous.size == 4 &&
+            sameFloatUniformValue(previous[0], x) &&
+            sameFloatUniformValue(previous[1], y) &&
+            sameFloatUniformValue(previous[2], z) &&
+            sameFloatUniformValue(previous[3], w)
+    }
+
+    private fun writeVector(uniform: Uniform<*>, value: FloatArray): Boolean {
+        val binding = program.binding(uniform)
+        val previous = vectorValues[uniform]
+        if (previous != null && sameVector(previous, value)) return false
+        val stored = value.copyOf()
+        vectorValues[uniform] = stored
+        when (stored.size) {
+            2 -> writer.setFloat2(binding.agslName, stored[0], stored[1])
+            3 -> writer.setFloat3(binding.agslName, stored[0], stored[1], stored[2])
+            4 -> writer.setFloat4(binding.agslName, stored[0], stored[1], stored[2], stored[3])
+            else -> error("Vector uniform width must be 2, 3, or 4")
+        }
+        notifyChanged()
+        return true
+    }
+
     private fun notifyChanged() {
         if (batchDepth > 0) {
             pending = true
@@ -89,4 +149,12 @@ internal class ShaderRuntime(
     }
 
     private fun sanitizeResolution(value: Float): Float = if (value > 0f) value else 1f
+}
+
+private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
+    if (previous.size != value.size) return false
+    for (index in previous.indices) {
+        if (!sameFloatUniformValue(previous[index], value[index])) return false
+    }
+    return true
 }

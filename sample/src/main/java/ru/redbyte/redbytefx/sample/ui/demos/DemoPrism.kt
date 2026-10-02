@@ -21,10 +21,10 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 
 
 private data class PrismSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val amount: FxParam.Float,
-    val spread: FxParam.Float,
-    val shift: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val amount: Uniform<Flt<High>>,
+    val spread: Uniform<Flt<High>>,
+    val shift: Uniform<Flt<High>>
 )
 
 @Composable
@@ -34,31 +34,31 @@ fun DemoPrism() {
     var shiftUi by rememberSaveable { mutableFloatStateOf(10f) }
 
     val setup = remember {
-        var amountParam: FxParam.Float? = null
-        var spreadParam: FxParam.Float? = null
-        var shiftParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val amount by autoUniformFloat(0.76f)
-            val spread by autoUniformFloat(0.22f)
-            val shift by autoUniformFloat(10f)
+        var amountParam: Uniform<Flt<High>>? = null
+        var spreadParam: Uniform<Flt<High>>? = null
+        var shiftParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val amount = uniform("amount", 0.76f)
+            val spread = uniform("spread", 0.22f)
+            val shift = uniform("shift", 10f)
             amountParam = amount
             spreadParam = spread
             shiftParam = shift
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
-            val tint = let(color(palette, base.a), "tint")
-            val refracted = let(
-                chromaticOffset(
-                    offset = shift,
-                    direction = float2(1f, 0.3f),
-                    amount = amount
-                ),
-                "refracted"
-            )
-
-            blendScreen(refracted, tint, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val palette = let(cosinePalette(luminance(base) + uv.x * spread.expr), "palette")
+                val tint = let(color(palette, base.a), "tint")
+                val refracted = let(
+                    chromaticOffset(
+                        offset = shift.expr,
+                        direction = float2(1f, 0.3f),
+                        amount = amount.expr
+                    ),
+                    "refracted"
+                )
+                blendScreen(refracted, tint, amount.expr)
+            }
         }
         PrismSetup(
             effect = effect,

@@ -16,6 +16,7 @@ import ru.redbyte.redbytefx.sample.ui.demos.DemoDuotone
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFilm
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFlip
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFrame
+import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGlitch
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGrade
 import ru.redbyte.redbytefx.sample.ui.demos.DemoHalo
@@ -64,40 +65,58 @@ fun DemoScreen(
             onOpen = onOpenDemo
         )
     ) {
-        when (id) {
-            DemoId.Flip -> DemoFlip()
-            DemoId.Mirror -> DemoMirror()
-            DemoId.Rotate -> DemoRotate()
-            DemoId.Scale -> DemoScale()
-            DemoId.Offset -> DemoOffset()
-            DemoId.Wave -> DemoWave()
-            DemoId.Pulse -> DemoPulse()
-            DemoId.Signal -> DemoSignal()
-            DemoId.Posterize -> DemoPosterize()
-            DemoId.Film -> DemoFilm()
-            DemoId.Grade -> DemoGrade()
-            DemoId.Warp -> DemoWarp()
-            DemoId.Prism -> DemoPrism()
-            DemoId.Spotlight -> DemoSpotlight()
-            DemoId.Beacon -> DemoBeacon()
-            DemoId.Composite -> DemoComposite()
-            DemoId.Frame -> DemoFrame()
-            DemoId.Corner -> DemoCorner()
-            DemoId.Reveal -> DemoReveal()
-            DemoId.Sweep -> DemoSweep()
-            DemoId.Glitch -> DemoGlitch()
-            DemoId.Radar -> DemoRadar()
-            DemoId.Halo -> DemoHalo()
-            DemoId.Circuit -> DemoCircuit()
-            DemoId.Sigil -> DemoSigil()
-            DemoId.Duotone -> DemoDuotone()
-            DemoId.Aurora -> DemoAurora()
-            DemoId.LiquidGlass -> DemoLiquidGlass()
-            DemoId.AnimatedGradient -> DemoAnimatedGradient()
-            DemoId.PhysicsBubble -> DemoPhysicsBubble()
-            DemoId.TouchRipple -> DemoTouchRipple()
-            DemoId.Metaballs -> DemoMetaballs()
-            DemoId.CrtTerminal -> DemoCrtTerminal()
+        if (id.ordinal < DemoId.Frame.ordinal) {
+            DemoCatalogFirst(id)
+        } else {
+            DemoCatalogSecond(id)
         }
+    }
+}
+
+@Composable
+private fun DemoCatalogFirst(id: DemoId) {
+    when (id) {
+        DemoId.Flip -> DemoFlip()
+        DemoId.Mirror -> DemoMirror()
+        DemoId.Rotate -> DemoRotate()
+        DemoId.Scale -> DemoScale()
+        DemoId.Offset -> DemoOffset()
+        DemoId.Wave -> DemoWave()
+        DemoId.Pulse -> DemoPulse()
+        DemoId.Signal -> DemoSignal()
+        DemoId.Posterize -> DemoPosterize()
+        DemoId.Film -> DemoFilm()
+        DemoId.Grade -> DemoGrade()
+        DemoId.Warp -> DemoWarp()
+        DemoId.Prism -> DemoPrism()
+        DemoId.Spotlight -> DemoSpotlight()
+        DemoId.Beacon -> DemoBeacon()
+        DemoId.Composite -> DemoComposite()
+        else -> error("Demo $id is rendered by the second catalog")
+    }
+}
+
+@Composable
+private fun DemoCatalogSecond(id: DemoId) {
+    when (id) {
+        DemoId.Frame -> DemoFrame()
+        DemoId.Corner -> DemoCorner()
+        DemoId.Reveal -> DemoReveal()
+        DemoId.Sweep -> DemoSweep()
+        DemoId.Glitch -> DemoGlitch()
+        DemoId.Radar -> DemoRadar()
+        DemoId.Halo -> DemoHalo()
+        DemoId.Circuit -> DemoCircuit()
+        DemoId.Sigil -> DemoSigil()
+        DemoId.Duotone -> DemoDuotone()
+        DemoId.Aurora -> DemoAurora()
+        DemoId.LiquidGlass -> DemoLiquidGlass()
+        DemoId.AnimatedGradient -> DemoAnimatedGradient()
+        DemoId.PhysicsBubble -> DemoPhysicsBubble()
+        DemoId.TouchRipple -> DemoTouchRipple()
+        DemoId.Metaballs -> DemoMetaballs()
+        DemoId.CrtTerminal -> DemoCrtTerminal()
+        DemoId.Gles -> DemoGles()
+        else -> error("Demo $id is rendered by the first catalog")
     }
 }

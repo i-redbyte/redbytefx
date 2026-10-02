@@ -23,11 +23,11 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 private data class PulseSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val grid: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val grid: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -38,46 +38,46 @@ fun DemoPulse() {
     var amountUi by rememberSaveable { mutableFloatStateOf(85f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var gridParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var gridParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
             val timeUniform = uniformTime(name = "pulse_time")
-            val speedUniform = uniformFloat(1f, "pulse_speed")
-            val gridUniform = uniformFloat(10f, "pulse_grid")
-            val amountUniform = uniformFloat(0.85f, "pulse_amount")
+            val speedUniform = uniform("pulse_speed", 1f)
+            val gridUniform = uniform("pulse_grid", 10f)
+            val amountUniform = uniform("pulse_amount", 0.85f)
             timeParam = timeUniform
             speedParam = speedUniform
             gridParam = gridUniform
             amountParam = amountUniform
-
-            val base = let(sample(), "base")
-            val uv = let(normalizedUv(), "uv")
-            val safeGrid = let(max(gridUniform, 1f), "safe_grid")
-            val pixelUv = let(floor(uv * safeGrid) / safeGrid, "pixel_uv")
-            val pixelBase = let(sampleUv(pixelUv), "pixel_base")
-            val row = let(floor(uv.y * safeGrid), "row")
-            val wave = let(
-                pulse(timeUniform, speedUniform, row * 0.7f),
-                "wave"
-            )
-            val glow = let(pow(wave, 3f), "glow")
-            val column = let(fract(uv.x * safeGrid + timeUniform * 0.25f), "column")
-            val active = let(ceil(smoothstep(0.82f, 0.98f, column)), "active")
-            val accent = let(
-                color(
-                    float3(
-                        mix(0.08f, 0.25f, glow),
-                        mix(0.22f, 0.95f, glow),
-                        mix(0.45f, 1f, glow)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(normalizedUv(), "uv")
+                val safeGrid = let(max(gridUniform.expr, 1f), "safe_grid")
+                val pixelUv = let(floor(uv * safeGrid) / safeGrid, "pixel_uv")
+                val pixelBase = let(sampleUv(pixelUv), "pixel_base")
+                val row = let(floor(uv.y * safeGrid), "row")
+                val wave = let(
+                    pulse(timeUniform.expr, speedUniform.expr, row * 0.7f),
+                    "wave"
+                )
+                val glow = let(pow(wave, 3f), "glow")
+                val column = let(fract(uv.x * safeGrid + timeUniform.expr * 0.25f), "column")
+                val active = let(ceil(smoothstep(0.82f, 0.98f, column)), "active")
+                val accent = let(
+                    color(
+                        float3(
+                            mix(0.08f, 0.25f, glow),
+                            mix(0.22f, 0.95f, glow),
+                            mix(0.45f, 1f, glow)
+                        ),
+                        base.a
                     ),
-                    base.a
-                ),
-                "accent"
-            )
-
-            mix(base, mix(pixelBase, accent, active * glow), amountUniform)
+                    "accent"
+                )
+                mix(base, mix(pixelBase, accent, active * glow), amountUniform.expr)
+            }
         }
         PulseSetup(effect, timeParam!!, speedParam!!, gridParam!!, amountParam!!)
     }

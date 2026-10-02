@@ -23,11 +23,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class WarpSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val warpAmount: FxParam.Float,
-    val scale: FxParam.Float,
-    val driftAmount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val warpAmount: Uniform<Flt<High>>,
+    val scale: Uniform<Flt<High>>,
+    val driftAmount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -38,29 +38,29 @@ fun DemoWarp() {
     var driftAmountUi by rememberSaveable { mutableFloatStateOf(18f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var warpAmountParam: FxParam.Float? = null
-        var scaleParam: FxParam.Float? = null
-        var driftAmountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val warpAmount by autoUniformFloat(0.35f)
-            val scale by autoUniformFloat(3.2f)
-            val driftAmount by autoUniformFloat(18f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var warpAmountParam: Uniform<Flt<High>>? = null
+        var scaleParam: Uniform<Flt<High>>? = null
+        var driftAmountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val warpAmount = uniform("warpAmount", 0.35f)
+            val scale = uniform("scale", 3.2f)
+            val driftAmount = uniform("driftAmount", 18f)
             timeParam = time
             warpAmountParam = warpAmount
             scaleParam = scale
             driftAmountParam = driftAmount
-
-            val uv = let(fragCoord / resolution, "uv")
-            val noiseUv = let(
-                uv * scale + float2(time * 0.06f, -time * 0.04f),
-                "noise_uv"
-            )
-            val warpedUv = let(domainWarp(noiseUv, time * 0.25f, warpAmount), "warped_uv")
-            val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount, "drift")
-
-            sample(fragCoord + float2(0f, drift))
+            fragment {
+                val uv = let(fragCoord / resolution, "uv")
+                val noiseUv = let(
+                    uv * scale.expr + float2(time.expr * 0.06f, -time.expr * 0.04f),
+                    "noise_uv"
+                )
+                val warpedUv = let(domainWarp(noiseUv, time.expr * 0.25f, warpAmount.expr), "warped_uv")
+                val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount.expr, "drift")
+                sample(fragCoord + float2(0f, drift))
+            }
         }
         WarpSetup(
             effect = effect,

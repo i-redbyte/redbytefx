@@ -30,11 +30,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class HaloSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val radius: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val radius: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -45,65 +45,65 @@ fun DemoHalo() {
     var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var radiusParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.68f)
-            val radius by autoUniformFloat(0.24f)
-            val amount by autoUniformFloat(0.82f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var radiusParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.68f)
+            val radius = uniform("radius", 0.24f)
+            val amount = uniform("amount", 0.82f)
             timeParam = time
             speedParam = speed
             radiusParam = radius
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val local = let(centeredUv(uv), "local")
-            val aspectLocal = let(aspectCenteredUv(uv, resolution), "aspect_local")
-            val dir = let(radialDirection(uv, resolution), "dir")
-            val phase = let(easeInOutSine(pingPong(time * speed * 0.18f, 1f)), "phase")
-            val glow = let(
-                centerGlow(
-                    uv = uv,
-                    resolution = resolution,
-                    radius = radius * (0.82f + phase * 0.32f),
-                    feather = 0.18f
-                ),
-                "glow"
-            )
-            val rim = let(
-                rimLight(
-                    uv = uv,
-                    resolution = resolution,
-                    radius = radius + 0.08f * phase,
-                    width = 0.075f,
-                    feather = 0.024f
-                ),
-                "rim"
-            )
-            val drift = let(saturate(0.5f + aspectLocal.x * 0.55f - local.y * 0.25f), "drift")
-            val facing = let(saturate(dir.x * 0.5f - dir.y * 0.35f + 0.5f), "facing")
-            val mask = let(max(glow * 0.9f, rim), "mask")
-            val tint = let(
-                color(
-                    mix(0.04f, 0.18f, drift),
-                    mix(0.22f, 1f, glow + rim * 0.45f),
-                    mix(0.12f, 0.72f, facing),
-                    base.a
-                ),
-                "tint"
-            )
-            val screened = let(maskedScreen(base, tint, mask, amount), "screened")
-
-            maskedOverlay(
-                base = screened,
-                blend = color(float3(0.82f, 1f, 0.74f), base.a),
-                mask = rim,
-                amount = amount * 0.28f
-            )
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val local = let(centeredUv(uv), "local")
+                val aspectLocal = let(aspectCenteredUv(uv, resolution), "aspect_local")
+                val dir = let(radialDirection(uv, resolution), "dir")
+                val phase = let(easeInOutSine(pingPong(time.expr * speed.expr * 0.18f, 1f)), "phase")
+                val glow = let(
+                    centerGlow(
+                        uv = uv,
+                        resolution = resolution,
+                        radius = radius.expr * (0.82f + phase * 0.32f),
+                        feather = 0.18f
+                    ),
+                    "glow"
+                )
+                val rim = let(
+                    rimLight(
+                        uv = uv,
+                        resolution = resolution,
+                        radius = radius.expr + 0.08f * phase,
+                        width = 0.075f,
+                        feather = 0.024f
+                    ),
+                    "rim"
+                )
+                val drift = let(saturate(0.5f + aspectLocal.x * 0.55f - local.y * 0.25f), "drift")
+                val facing = let(saturate(dir.x * 0.5f - dir.y * 0.35f + 0.5f), "facing")
+                val mask = let(max(glow * 0.9f, rim), "mask")
+                val tint = let(
+                    color(
+                        mix(0.04f, 0.18f, drift),
+                        mix(0.22f, 1f, glow + rim * 0.45f),
+                        mix(0.12f, 0.72f, facing),
+                        base.a
+                    ),
+                    "tint"
+                )
+                val screened = let(maskedScreen(base, tint, mask, amount.expr), "screened")
+                maskedOverlay(
+                    base = screened,
+                    blend = color(float3(0.82f, 1f, 0.74f), base.a),
+                    mask = rim,
+                    amount = amount.expr * 0.28f
+                )
+            }
         }
         HaloSetup(
             effect = effect,

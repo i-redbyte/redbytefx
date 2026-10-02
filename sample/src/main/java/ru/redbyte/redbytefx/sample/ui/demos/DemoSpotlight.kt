@@ -25,10 +25,10 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 
 
 private data class SpotlightSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val center: FxParam.Float2,
-    val radius: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val center: Uniform<Vec2<Flt<High>>>,
+    val radius: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -39,53 +39,53 @@ fun DemoSpotlight() {
     var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
 
     val setup = remember {
-        var centerParam: FxParam.Float2? = null
-        var radiusParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val center by autoUniformFloat2(0.36f, 0.52f)
-            val radius by autoUniformFloat(0.18f)
-            val amount by autoUniformFloat(0.82f)
+        var centerParam: Uniform<Vec2<Flt<High>>>? = null
+        var radiusParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val center = uniformVec2("center", 0.36f, 0.52f)
+            val radius = uniform("radius", 0.18f)
+            val amount = uniform("amount", 0.82f)
             centerParam = center
             radiusParam = radius
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val focus = let(
-                circleMask(
-                    uv,
-                    center = center,
-                    radius = radius,
-                    feather = 0.18f
-                ),
-                "focus"
-            )
-            val halo = let(
-                ringMask(
-                    uv,
-                    center = center,
-                    radius = radius + 0.07f,
-                    width = 0.1f,
-                    feather = 0.05f
-                ),
-                "halo"
-            )
-            val panel = let(
-                rectMask(
-                    uv,
-                    center = float2(0.78f, 0.5f),
-                    size = float2(0.26f, 0.58f),
-                    feather = 0.04f
-                ),
-                "panel"
-            )
-            val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
-            val haloTint = let(color(float3(0.15f, 0.92f, 0.98f), base.a), "halo_tint")
-            val panelTint = let(color(float3(0.98f, 0.73f, 0.26f), base.a), "panel_tint")
-            val focused = let(blendScreen(dimmed, haloTint, halo * amount), "focused")
-
-            blendOverlay(focused, panelTint, panel * amount * 0.35f)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val focus = let(
+                    circleMask(
+                        uv,
+                        center = center.expr,
+                        radius = radius.expr,
+                        feather = 0.18f
+                    ),
+                    "focus"
+                )
+                val halo = let(
+                    ringMask(
+                        uv,
+                        center = center.expr,
+                        radius = radius.expr + 0.07f,
+                        width = 0.1f,
+                        feather = 0.05f
+                    ),
+                    "halo"
+                )
+                val panel = let(
+                    rectMask(
+                        uv,
+                        center = float2(0.78f, 0.5f),
+                        size = float2(0.26f, 0.58f),
+                        feather = 0.04f
+                    ),
+                    "panel"
+                )
+                val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
+                val haloTint = let(color(float3(0.15f, 0.92f, 0.98f), base.a), "halo_tint")
+                val panelTint = let(color(float3(0.98f, 0.73f, 0.26f), base.a), "panel_tint")
+                val focused = let(blendScreen(dimmed, haloTint, halo * amount.expr), "focused")
+                blendOverlay(focused, panelTint, panel * amount.expr * 0.35f)
+            }
         }
         SpotlightSetup(
             effect = effect,

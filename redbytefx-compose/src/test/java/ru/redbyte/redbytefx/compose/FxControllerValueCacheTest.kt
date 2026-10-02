@@ -2,10 +2,15 @@ package ru.redbyte.redbytefx.compose
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import ru.redbyte.redbytefx.FxInstance
-import ru.redbyte.redbytefx.FxParam
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.Vec2
+import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.sameFloatUniformValue
-import ru.redbyte.redbytefx.redbytefx
+import ru.redbyte.redbytefx.shader
 import android.graphics.RenderEffect
 
 class FxControllerValueCacheTest {
@@ -166,7 +171,7 @@ class FxControllerValueCacheTest {
     }
 }
 
-private class TrackingFxInstance : FxInstance {
+private class TrackingFxInstance : ShaderControl {
     var floatCalls: Int = 0
     var float2Calls: Int = 0
     var float3Calls: Int = 0
@@ -182,7 +187,7 @@ private class TrackingFxInstance : FxInstance {
 
     override fun renderEffect(): RenderEffect = error("Not needed for this test")
 
-    override fun setFloat(param: FxParam.Float, value: Float): Boolean {
+    override fun setFloat(param: Uniform<Flt<High>>, value: Float): Boolean {
         val previous = lastFloat
         if (previous != null && sameFloatUniformValue(previous, value)) return false
         lastFloat = value
@@ -190,7 +195,7 @@ private class TrackingFxInstance : FxInstance {
         return true
     }
 
-    override fun setFloat2(param: FxParam.Float2, x: Float, y: Float): Boolean {
+    override fun setFloat2(param: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean {
         val previous = lastFloat2
         if (previous != null &&
             sameFloatUniformValue(previous.first, x) &&
@@ -203,7 +208,7 @@ private class TrackingFxInstance : FxInstance {
         return true
     }
 
-    override fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float): Boolean {
+    override fun setFloat3(param: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean {
         val previous = lastFloat3
         if (previous != null &&
             sameFloatUniformValue(previous.first, x) &&
@@ -218,7 +223,7 @@ private class TrackingFxInstance : FxInstance {
     }
 
     override fun setFloat4(
-        param: FxParam.Float4,
+        param: Uniform<Vec4<Flt<High>>>,
         x: Float,
         y: Float,
         z: Float,
@@ -236,6 +241,10 @@ private class TrackingFxInstance : FxInstance {
         lastFloat4 = floatArrayOf(x, y, z, w)
         float4Calls += 1
         return true
+    }
+
+    override fun runBatch(block: () -> Unit) {
+        block()
     }
 
     override fun setResolution(widthPx: Float, heightPx: Float): Boolean {
@@ -256,42 +265,37 @@ private class TrackingFxInstance : FxInstance {
     }
 }
 
-private fun testFloatParam(): FxParam.Float {
-    var param: FxParam.Float? = null
-    redbytefx {
-        val amount = uniformFloat(0f)
-        param = amount
-        sample()
+private fun testFloatParam(): Uniform<Flt<High>> = shader(ShaderTarget.Agsl) {
+    val amount = uniform("amount", 0f)
+    fragment { sample() }
+    amount
+}.let { program ->
+    checkNotNull(program.uniform("u_amount"))
+}
+
+private fun testFloat2Param(): Uniform<Vec2<Flt<High>>> {
+    var param: Uniform<Vec2<Flt<High>>>? = null
+    shader(ShaderTarget.Agsl) {
+        param = uniformVec2("offset", 0f, 0f)
+        fragment { sample() }
     }
     return checkNotNull(param)
 }
 
-private fun testFloat2Param(): FxParam.Float2 {
-    var param: FxParam.Float2? = null
-    redbytefx {
-        val offset = uniformFloat2(0f, 0f)
-        param = offset
-        sample()
+private fun testFloat3Param(): Uniform<Vec3<Flt<High>>> {
+    var param: Uniform<Vec3<Flt<High>>>? = null
+    shader(ShaderTarget.Agsl) {
+        param = uniformVec3("tint", 0f, 0f, 0f)
+        fragment { sample() }
     }
     return checkNotNull(param)
 }
 
-private fun testFloat3Param(): FxParam.Float3 {
-    var param: FxParam.Float3? = null
-    redbytefx {
-        val tint = uniformFloat3(0f, 0f, 0f)
-        param = tint
-        sample()
-    }
-    return checkNotNull(param)
-}
-
-private fun testFloat4Param(): FxParam.Float4 {
-    var param: FxParam.Float4? = null
-    redbytefx {
-        val rgba = uniformFloat4(0f, 0f, 0f, 0f)
-        param = rgba
-        sample()
+private fun testFloat4Param(): Uniform<Vec4<Flt<High>>> {
+    var param: Uniform<Vec4<Flt<High>>>? = null
+    shader(ShaderTarget.Agsl) {
+        param = uniformVec4("rgba", 0f, 0f, 0f, 0f)
+        fragment { sample() }
     }
     return checkNotNull(param)
 }

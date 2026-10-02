@@ -10,15 +10,15 @@ import ru.redbyte.redbytefx.*
  * it is useful once the author already understands the simpler coordinate/mask/compositing flow.
  */
 public fun fbm(
-    point: Float2Expr,
+    point: Expr<Vec2<Flt<High>>>,
     octaves: Int = 4,
-    lacunarity: FloatExpr = float(2f),
-    gain: FloatExpr = float(0.5f)
-): FloatExpr {
+    lacunarity: Expr<Flt<High>> = float(2f),
+    gain: Expr<Flt<High>> = float(0.5f)
+): Expr<Flt<High>> {
     val safeOctaves = octaves.coerceIn(1, 6)
-    var sum: FloatExpr = float(0f)
-    var amplitude: FloatExpr = float(0.5f)
-    var frequency: FloatExpr = float(1f)
+    var sum: Expr<Flt<High>> = float(0f)
+    var amplitude: Expr<Flt<High>> = float(0.5f)
+    var frequency: Expr<Flt<High>> = float(1f)
 
     repeat(safeOctaves) {
         sum += valueNoise(point * frequency) * amplitude
@@ -33,11 +33,11 @@ public fun fbm(
  * Builds fractal Brownian motion using literal [lacunarity] and [gain] values.
  */
 public fun fbm(
-    point: Float2Expr,
+    point: Expr<Vec2<Flt<High>>>,
     octaves: Int,
     lacunarity: Float,
     gain: Float
-): FloatExpr = fbm(
+): Expr<Flt<High>> = fbm(
     point = point,
     octaves = octaves,
     lacunarity = float(lacunarity),
@@ -52,10 +52,10 @@ public fun fbm(
  * clearly in ordinary UV or local coordinate space.
  */
 public fun domainWarp(
-    point: Float2Expr,
-    time: FloatExpr = float(0f),
-    amount: FloatExpr = float(0.35f)
-): Float2Expr {
+    point: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>> = float(0f),
+    amount: Expr<Flt<High>> = float(0.35f)
+): Expr<Vec2<Flt<High>>> {
     val q = float2(
         fbm(point + float2(time * 0.11f + 1.7f, 9.2f)),
         fbm(point + float2(8.3f, time * 0.13f + 2.8f))
@@ -67,10 +67,10 @@ public fun domainWarp(
  * Applies a lightweight domain warp using literal time and amount values.
  */
 public fun domainWarp(
-    point: Float2Expr,
+    point: Expr<Vec2<Flt<High>>>,
     time: Float,
     amount: Float
-): Float2Expr = domainWarp(
+): Expr<Vec2<Flt<High>>> = domainWarp(
     point = point,
     time = float(time),
     amount = float(amount)
@@ -80,10 +80,10 @@ public fun domainWarp(
  * Applies a lightweight domain warp using an animated time expression and a literal amount.
  */
 public fun domainWarp(
-    point: Float2Expr,
-    time: FloatExpr,
+    point: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>>,
     amount: Float
-): Float2Expr = domainWarp(
+): Expr<Vec2<Flt<High>>> = domainWarp(
     point = point,
     time = time,
     amount = float(amount)

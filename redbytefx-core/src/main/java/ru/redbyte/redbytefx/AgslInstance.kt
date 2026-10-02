@@ -41,6 +41,15 @@ public class AgslInstance internal constructor(
 
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = runtime.set(uniform, value)
 
+    public fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean =
+        runtime.set(uniform, x, y)
+
+    public fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean =
+        runtime.set(uniform, x, y, z)
+
+    public fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean =
+        runtime.set(uniform, x, y, z, w)
+
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean =
         runtime.setResolution(widthPx, heightPx)
 

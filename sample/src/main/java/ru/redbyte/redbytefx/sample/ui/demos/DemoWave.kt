@@ -17,9 +17,9 @@ import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 
 private data class WaveSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val amplitude: FxParam.Float,
-    val frequency: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val amplitude: Uniform<Flt<High>>,
+    val frequency: Uniform<Flt<High>>
 )
 
 
@@ -29,20 +29,21 @@ fun DemoWave() {
     var frequencyUi by rememberSaveable { mutableFloatStateOf(8f) }
 
     val setup = remember {
-        var amplitudeParam: FxParam.Float? = null
-        var frequencyParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val amplitudeUniform = uniformFloat(0f, "wave_amplitude")
-            val frequencyUniform = uniformFloat(0.08f, "wave_frequency")
+        var amplitudeParam: Uniform<Flt<High>>? = null
+        var frequencyParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val amplitudeUniform = uniform("wave_amplitude", 0f)
+            val frequencyUniform = uniform("wave_frequency", 0.08f)
             amplitudeParam = amplitudeUniform
             frequencyParam = frequencyUniform
-
-            val x = let(fragCoord.x, "x")
-            val waveOffset = let(float2(
-                0f,
-                sin(x * frequencyUniform) * amplitudeUniform
-            ), "wave_offset")
-            sample(fragCoord + waveOffset)
+            fragment {
+                val x = let(fragCoord.x, "x")
+                val waveOffset = let(float2(
+                    0f,
+                    sin(x * frequencyUniform.expr) * amplitudeUniform.expr
+                ), "wave_offset")
+                sample(fragCoord + waveOffset)
+            }
         }
         WaveSetup(effect, amplitudeParam!!, frequencyParam!!)
     }

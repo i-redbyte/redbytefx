@@ -35,11 +35,11 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 private data class RevealSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val mode: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val mode: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 private enum class RevealMode { Horizontal, Vertical, Radial }
@@ -52,44 +52,44 @@ fun DemoReveal() {
     var mode by rememberSaveable { mutableStateOf(RevealMode.Horizontal) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var modeParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.72f)
-            val modeValue by autoUniformFloat(0f)
-            val amount by autoUniformFloat(0.9f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var modeParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.72f)
+            val modeValue = uniform("modeValue", 0f)
+            val amount = uniform("amount", 0.9f)
             timeParam = time
             speedParam = speed
             modeParam = modeValue
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val progress = let(easeInOutSine(pingPong(time * speed, 1f)), "progress")
-            val horizontal = let(horizontalReveal(uv, progress, feather = 0.07f), "horizontal")
-            val vertical = let(verticalReveal(uv, progress, feather = 0.07f, fromTop = false), "vertical")
-            val radial = let(radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f), "radial")
-            val reveal = let(
-                ifElse(
-                    modeValue lt 0.5f,
-                    horizontal,
-                    ifElse(modeValue lt 1.5f, vertical, radial)
-                ),
-                "reveal"
-            )
-            val stylized = let(
-                blendScreen(
-                    posterize(base, 5f),
-                    color(float3(0.16f, 0.94f, 1f), base.a),
-                    0.55f
-                ),
-                "stylized"
-            )
-
-            maskedMix(base, stylized, reveal, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val progress = let(easeInOutSine(pingPong(time.expr * speed.expr, 1f)), "progress")
+                val horizontal = let(horizontalReveal(uv, progress, feather = 0.07f), "horizontal")
+                val vertical = let(verticalReveal(uv, progress, feather = 0.07f, fromTop = false), "vertical")
+                val radial = let(radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f), "radial")
+                val reveal = let(
+                    ifElse(
+                        modeValue.expr lt 0.5f,
+                        horizontal,
+                        ifElse(modeValue.expr lt 1.5f, vertical, radial)
+                    ),
+                    "reveal"
+                )
+                val stylized = let(
+                    blendScreen(
+                        posterize(base, 5f),
+                        color(float3(0.16f, 0.94f, 1f), base.a),
+                        0.55f
+                    ),
+                    "stylized"
+                )
+                maskedMix(base, stylized, reveal, amount.expr)
+            }
         }
         RevealSetup(
             effect = effect,

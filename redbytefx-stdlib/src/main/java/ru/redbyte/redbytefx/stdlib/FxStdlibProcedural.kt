@@ -9,7 +9,7 @@ import ru.redbyte.redbytefx.*
  * cryptographic or statistically rigorous randomness. Treat it as a procedural support primitive,
  * not as part of the first canonical authoring path.
  */
-public fun hash21(point: Float2Expr): FloatExpr =
+public fun hash21(point: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> =
     fract(sin(point.x * 127.1f + point.y * 311.7f) * 43758.5453f)
 
 /**
@@ -19,7 +19,7 @@ public fun hash21(point: Float2Expr): FloatExpr =
  * is already deliberately entering procedural territory, but it should not crowd out the simpler
  * canonical mask/ramp/shape helpers in the first teaching pass.
  */
-public fun valueNoise(point: Float2Expr): FloatExpr {
+public fun valueNoise(point: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> {
     val cell = floor(point)
     val local = fract(point)
     val smooth = local * local * (float2(3f, 3f) - 2f * local)
@@ -41,10 +41,10 @@ public fun valueNoise(point: Float2Expr): FloatExpr {
  * for texture/noise passes once the main scene logic is already readable.
  */
 public fun grain(
-    uv: Float2Expr,
-    time: FloatExpr = float(0f),
-    scale: FloatExpr = float(180f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>> = float(0f),
+    scale: Expr<Flt<High>> = float(180f)
+): Expr<Flt<High>> {
     val safeScale = max(scale, 1f)
     val animatedUv = uv * safeScale + float2(time * 19.19f, time * 37.73f)
     return hash21(animatedUv) * 2f - 1f
@@ -54,10 +54,10 @@ public fun grain(
  * Builds centered grain in the `[-1, 1]` range using literal time and scale values.
  */
 public fun grain(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     time: Float,
     scale: Float
-): FloatExpr = grain(
+): Expr<Flt<High>> = grain(
     uv = uv,
     time = float(time),
     scale = float(scale)
@@ -67,10 +67,10 @@ public fun grain(
  * Builds centered grain in the `[-1, 1]` range using a time expression and a literal scale.
  */
 public fun grain(
-    uv: Float2Expr,
-    time: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>>,
     scale: Float
-): FloatExpr = grain(
+): Expr<Flt<High>> = grain(
     uv = uv,
     time = time,
     scale = float(scale)
@@ -83,10 +83,10 @@ public fun grain(
  * final framing or grading passes, not as the first mask helper to teach.
  */
 public fun vignette(
-    uv: Float2Expr,
-    innerRadius: FloatExpr,
-    outerRadius: FloatExpr
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    innerRadius: Expr<Flt<High>>,
+    outerRadius: Expr<Flt<High>>
+): Expr<Flt<High>> {
     val safeInner = max(innerRadius, 0f)
     val safeOuter = max(outerRadius, safeInner + 0.0001f)
     val centered = (uv - float2(0.5f, 0.5f)) * 2f
@@ -98,10 +98,10 @@ public fun vignette(
  * Builds a radial vignette mask from normalized UV coordinates using literal radii.
  */
 public fun vignette(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     innerRadius: Float,
     outerRadius: Float
-): FloatExpr = vignette(
+): Expr<Flt<High>> = vignette(
     uv = uv,
     innerRadius = float(innerRadius),
     outerRadius = float(outerRadius)

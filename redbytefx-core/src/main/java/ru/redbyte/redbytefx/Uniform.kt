@@ -10,6 +10,7 @@ public class Uniform<T : ShType> internal constructor(
     public val name: String?,
     public val shape: Shape,
     public val default: Float?,
+    public val components: FloatArray? = null,
 ) {
     public lateinit var expr: Expr<T>
         internal set
@@ -21,6 +22,16 @@ internal fun <T : ShType> createUniform(
     default: Float,
 ): Uniform<T> {
     val handle = Uniform<T>(name, shape, default)
+    handle.expr = Expr(shape, ExprNode.UniformRef(handle))
+    return handle
+}
+
+internal fun <T : ShType> createVectorUniform(
+    name: String,
+    shape: Shape,
+    components: FloatArray,
+): Uniform<T> {
+    val handle = Uniform<T>(name, shape, null, components)
     handle.expr = Expr(shape, ExprNode.UniformRef(handle))
     return handle
 }

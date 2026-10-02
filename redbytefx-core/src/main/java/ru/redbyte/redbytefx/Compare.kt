@@ -12,6 +12,10 @@ public infix fun <P : Prec> Expr<Flt<P>>.eq(other: Expr<Flt<P>>): Expr<BoolS> = 
 
 public infix fun <P : Prec> Expr<Flt<P>>.ne(other: Expr<Flt<P>>): Expr<BoolS> = compare(CompareOp.Ne, this, other)
 
+public infix fun Expr<BoolS>.and(other: Expr<BoolS>): Expr<BoolS> = boolOp(ArithOp.And, this, other)
+
+public infix fun Expr<BoolS>.or(other: Expr<BoolS>): Expr<BoolS> = boolOp(ArithOp.Or, this, other)
+
 public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse: Expr<T>): Expr<T> {
     require(condition.shape == boolScalar) { "ifElse condition must be a bool, was ${condition.shape}" }
     require(ifTrue.shape == ifFalse.shape) {
@@ -19,6 +23,9 @@ public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse:
     }
     return Expr(ifTrue.shape, ExprNode.Select(condition, ifTrue, ifFalse))
 }
+
+private fun boolOp(op: ArithOp, left: Expr<BoolS>, right: Expr<BoolS>): Expr<BoolS> =
+    Expr(Shape.Scalar(ScalarKind.Bool, null), ExprNode.Binary(op, left, right))
 
 private fun <P : Prec> compare(op: CompareOp, left: Expr<Flt<P>>, right: Expr<Flt<P>>): Expr<BoolS> {
     require(isFloatScalar(left.shape) && left.shape == right.shape) {
