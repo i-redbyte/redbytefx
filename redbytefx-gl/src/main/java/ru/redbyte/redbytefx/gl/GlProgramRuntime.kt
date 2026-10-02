@@ -61,7 +61,7 @@ public class GlProgramRuntime(
         if (linked) return
         val id = when (program.target) {
             ShaderTarget.Agsl -> reject(GlCode.WrongTarget, "GL runtime requires a GLES shader")
-            ShaderTarget.Gles30 -> linkGraphicsProgram()
+            ShaderTarget.Gles30, ShaderTarget.Gles32 -> linkGraphicsProgram()
             ShaderTarget.Gles31 -> linkComputeProgram()
         }
         programId = id
@@ -77,24 +77,29 @@ public class GlProgramRuntime(
     }
 
     private fun linkGraphicsProgram(): Int {
-        val vertex = compileStage(GlStage.Vertex, program.vertexSource())
-        val fragment = try {
-            compileStage(GlStage.Fragment, program.fragmentSource())
+        val shaders = mutableListOf<Int>()
+        try {
+            shaders += compileStage(GlStage.Vertex, program.vertexSource())
+            if (program.hasTessellation()) {
+                shaders += compileStage(GlStage.TessControl, program.tessControlSource())
+                shaders += compileStage(GlStage.TessEval, program.tessEvalSource())
+            }
+            if (program.hasGeometry()) {
+                shaders += compileStage(GlStage.Geometry, program.geometrySource())
+            }
+            shaders += compileStage(GlStage.Fragment, program.fragmentSource())
         } catch (error: GlException) {
-            device.deleteShader(vertex)
+            shaders.forEach(device::deleteShader)
             throw error
         }
         val id = device.createProgram()
         if (id == 0) {
-            device.deleteShader(vertex)
-            device.deleteShader(fragment)
+            shaders.forEach(device::deleteShader)
             reject(GlCode.LinkFailed, "Driver returned no program name")
         }
-        device.attachShader(id, vertex)
-        device.attachShader(id, fragment)
+        shaders.forEach { device.attachShader(id, it) }
         val linkedStatus = device.linkProgram(id)
-        device.deleteShader(vertex)
-        device.deleteShader(fragment)
+        shaders.forEach(device::deleteShader)
         if (!linkedStatus.ok) {
             device.deleteProgram(id)
             reject(GlCode.LinkFailed, linkedStatus.infoLog)

@@ -28,6 +28,7 @@ internal enum class ProgramCode {
     RecursiveFunction,
     FragmentOutNotWritten,
     MissingCompute,
+    TessStageMissing,
 }
 
 internal class ProgramException(

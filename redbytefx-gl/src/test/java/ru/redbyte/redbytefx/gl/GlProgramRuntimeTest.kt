@@ -8,7 +8,10 @@ import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
+import ru.redbyte.redbytefx.GeometryInput
+import ru.redbyte.redbytefx.GeometryOutput
 import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.TessPrimitive
 import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.UniformBlock
@@ -239,6 +242,27 @@ class GlProgramRuntimeTest {
 
         runtime.destroy()
         assertEquals(1, device.deleteBufferCalls)
+    }
+
+    @Test
+    fun gles32LinksVertexTessellationGeometryAndFragment() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles32) {
+                vertex { glPosition(attributeVec4("position")) }
+                tessControl(3) { passPosition() }
+                tessEval(TessPrimitive.Triangles) { glPosition(glIn(0)) }
+                geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+                    glPosition(glIn(0))
+                    emitVertex()
+                }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+            device,
+        )
+        runtime.link()
+        assertEquals(5, device.createShaderCalls)
+        runtime.destroy()
     }
 
     @Test

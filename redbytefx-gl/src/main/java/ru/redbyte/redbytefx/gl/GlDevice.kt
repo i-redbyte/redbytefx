@@ -2,6 +2,9 @@ package ru.redbyte.redbytefx.gl
 
 public enum class GlStage {
     Vertex,
+    TessControl,
+    TessEval,
+    Geometry,
     Fragment,
     Compute,
 }

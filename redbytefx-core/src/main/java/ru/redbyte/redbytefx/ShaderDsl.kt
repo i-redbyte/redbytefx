@@ -12,6 +12,9 @@ public class ShaderProgram internal constructor(
     public val uniformBlock: UniformBlock? = null,
     public val storageBlock: StorageBlock? = null,
     private val computeSourceText: String? = null,
+    private val geometryText: String? = null,
+    private val tessControlText: String? = null,
+    private val tessEvalText: String? = null,
 ) {
     public fun agslSource(): String = agsl ?: error("This shader has no AGSL source")
 
@@ -20,6 +23,18 @@ public class ShaderProgram internal constructor(
     public fun fragmentSource(): String = fragment ?: error("This shader has no GLES fragment source")
 
     public fun computeSource(): String = computeSourceText ?: error("This shader has no GLES compute source")
+
+    public fun hasGeometry(): Boolean = geometryText != null
+
+    public fun geometrySource(): String = geometryText ?: error("This shader has no GLES geometry source")
+
+    public fun hasTessellation(): Boolean = tessControlText != null
+
+    public fun tessControlSource(): String =
+        tessControlText ?: error("This shader has no GLES tessellation control source")
+
+    public fun tessEvalSource(): String =
+        tessEvalText ?: error("This shader has no GLES tessellation evaluation source")
 
     public fun spelledUniforms(): List<SpelledUniform> =
         bindings.map { SpelledUniform(it.uniform, it.agslName) }
@@ -63,8 +78,12 @@ public class ShaderDsl internal constructor(
     private val functions = mutableListOf<UserFunction>()
     private var block: UniformBlock? = null
     private var storage: StorageBlock? = null
+    private var buildingStorageMembers: List<BlockMember>? = null
     private var localSizeX: Int? = null
     private val storageWrites = mutableListOf<StorageAssignment>()
+    private var geometryStage: GeometryStage? = null
+    private var tessControlStage: TessControlStage? = null
+    private var tessEvalStage: TessEvalStage? = null
     private val names = IdentifierAllocator(
         if (target == ShaderTarget.Agsl) agslReservedNames() else glslReservedNames(),
     )
@@ -80,7 +99,7 @@ public class ShaderDsl internal constructor(
         require(block == null) { "Shader already has a uniform block" }
         require(name.isNotBlank()) { "Uniform block name must not be blank" }
         val typeName = sanitizeSuggestedIdentifier(name, "b")
-        val builder = UniformBlockBuilder("b_$typeName")
+        val builder = UniformBlockBuilder("b_$typeName", ::vertex, ::fragment)
         builder.build()
         val created = builder.finish(name, typeName)
         block = created
@@ -93,7 +112,15 @@ public class ShaderDsl internal constructor(
         require(name.isNotBlank()) { "Storage block name must not be blank" }
         val typeName = names.reserve(sanitizeSuggestedIdentifier(name, "b"))
         val instanceName = names.reserve("b_$typeName")
-        val builder = StorageBlockBuilder(instanceName)
+        lateinit var builder: StorageBlockBuilder
+        builder = StorageBlockBuilder(instanceName) { size, body ->
+            buildingStorageMembers = builder.memberSnapshot()
+            try {
+                compute(size, body)
+            } finally {
+                buildingStorageMembers = null
+            }
+        }
         builder.build()
         val created = builder.finish(name, typeName)
         storage = created
@@ -112,7 +139,7 @@ public class ShaderDsl internal constructor(
         }
     }
 
-    public fun uniform(name: String, default: Float): Uniform<Flt<High>> {
+    public fun uniform(name: String, default: Float): HighFloatUniform {
         advance(AuthoringAction.DeclareUniform)
         require(default.isFinite()) { "Uniform default must be finite, was $default" }
         val handle = createUniform<Flt<High>>(
@@ -124,10 +151,10 @@ public class ShaderDsl internal constructor(
         return handle
     }
 
-    public fun uniformTime(default: Float = 0f, name: String = "time"): Uniform<Flt<High>> =
+    public fun uniformTime(default: Float = 0f, name: String = "time"): HighFloatUniform =
         uniform(name, default)
 
-    public fun uniformVec2(name: String, x: Float = 0f, y: Float = 0f): Uniform<Vec2<Flt<High>>> =
+    public fun uniformVec2(name: String, x: Float = 0f, y: Float = 0f): HighVec2Uniform =
         vectorUniform(name, 2, floatArrayOf(x, y))
 
     public fun uniformVec3(
@@ -135,7 +162,7 @@ public class ShaderDsl internal constructor(
         x: Float = 0f,
         y: Float = 0f,
         z: Float = 0f,
-    ): Uniform<Vec3<Flt<High>>> = vectorUniform(name, 3, floatArrayOf(x, y, z))
+    ): HighVec3Uniform = vectorUniform(name, 3, floatArrayOf(x, y, z))
 
     public fun uniformVec4(
         name: String,
@@ -143,7 +170,7 @@ public class ShaderDsl internal constructor(
         y: Float = 0f,
         z: Float = 0f,
         w: Float = 0f,
-    ): Uniform<Vec4<Flt<High>>> = vectorUniform(name, 4, floatArrayOf(x, y, z, w))
+    ): HighVec4Uniform = vectorUniform(name, 4, floatArrayOf(x, y, z, w))
 
     public fun sampler2D(name: String): Uniform<Sampler2D> {
         advance(AuthoringAction.DeclareSampler)
@@ -167,6 +194,64 @@ public class ShaderDsl internal constructor(
         }
     }
 
+    public fun geometry(
+        input: GeometryInput,
+        output: GeometryOutput,
+        maxVertices: Int,
+        build: GeometryDsl.() -> Unit,
+    ) {
+        require(maxVertices in 1..MAX_GEOMETRY_VERTICES) {
+            "Geometry maxVertices must be 1..$MAX_GEOMETRY_VERTICES, was $maxVertices"
+        }
+        check(geometryStage == null) { "Shader already has a geometry stage" }
+        advance(AuthoringAction.EnterGeometry)
+        val commands = mutableListOf<PrimitiveCommand>()
+        try {
+            GeometryDsl(input, ::advance, commands::add).build()
+            require(commands.any { it == PrimitiveCommand.EmitVertex }) {
+                "Geometry stage must emit a vertex"
+            }
+            geometryStage = GeometryStage(input, output, maxVertices, commands.toList())
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
+    }
+
+    public fun tessControl(vertices: Int, build: TessControlDsl.() -> Unit) {
+        require(vertices in 1..MAX_PATCH_VERTICES) {
+            "Tessellation patch must have 1..$MAX_PATCH_VERTICES vertices, was $vertices"
+        }
+        check(tessControlStage == null) { "Shader already has a tessellation control stage" }
+        advance(AuthoringAction.EnterTessControl)
+        val commands = mutableListOf<PrimitiveCommand>()
+        try {
+            TessControlDsl(vertices, ::advance, commands::add).build()
+            tessControlStage = TessControlStage(vertices, commands.toList())
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
+    }
+
+    public fun tessEval(
+        primitive: TessPrimitive,
+        spacing: TessSpacing = TessSpacing.Equal,
+        order: TessVertexOrder = TessVertexOrder.Ccw,
+        build: TessEvalDsl.() -> Unit,
+    ) {
+        check(tessEvalStage == null) { "Shader already has a tessellation evaluation stage" }
+        advance(AuthoringAction.EnterTessEval)
+        val commands = mutableListOf<PrimitiveCommand>()
+        try {
+            TessEvalDsl(::advance, commands::add).build()
+            require(commands.any { it is PrimitiveCommand.Position }) {
+                "Tessellation evaluation must assign gl_Position"
+            }
+            tessEvalStage = TessEvalStage(primitive, spacing, order, commands.toList())
+        } finally {
+            advance(AuthoringAction.LeaveStage)
+        }
+    }
+
     public fun vertex(block: VertexDsl.() -> Unit) {
         check(!vertexBuilt) { "Shader already has a vertex stage" }
         advance(AuthoringAction.EnterVertex)
@@ -184,6 +269,7 @@ public class ShaderDsl internal constructor(
             ShaderTarget.Agsl -> compileAgsl()
             ShaderTarget.Gles30 -> compileGlsl()
             ShaderTarget.Gles31 -> compileCompute()
+            ShaderTarget.Gles32 -> compileGlsl(version = GLSL_320, programTarget = ShaderTarget.Gles32)
         }
     }
 
@@ -201,7 +287,7 @@ public class ShaderDsl internal constructor(
 
     private fun recordStore(target: Expr<*>, value: Expr<*>) {
         val member = (target.node as? ExprNode.BlockRef)?.member
-        val owned = storage?.members?.any { it === member } == true
+        val owned = (storage?.members ?: buildingStorageMembers)?.any { it === member } == true
         require(member != null && owned) { "Storage write requires a field of this shader's storage block" }
         require(value.shape == target.shape) {
             "Storage field expects ${target.shape}, was ${value.shape}"
@@ -284,7 +370,23 @@ public class ShaderDsl internal constructor(
         fragmentWrites += FragmentWrite(output, value)
     }
 
-    private fun compileGlsl(): ShaderProgram {
+    private fun compileGlsl(
+        version: Int = GLSL_300,
+        programTarget: ShaderTarget = ShaderTarget.Gles30,
+    ): ShaderProgram {
+        val control = tessControlStage
+        val evaluation = tessEvalStage
+        if ((control == null) != (evaluation == null)) {
+            throw ProgramException(
+                ProgramCode.TessStageMissing,
+                "Tessellation needs both a control stage and an evaluation stage",
+            )
+        }
+        if (control != null && evaluation != null) {
+            evaluation.commands.forEach { command ->
+                if (command is PrimitiveCommand.Position) rejectGlInPastPatch(command.value, control.vertices)
+            }
+        }
         if (!vertexBuilt) throw ProgramException(ProgramCode.MissingVertex, "GLES program requires a vertex stage")
         val body = fragmentBody
             ?: throw ProgramException(ProgramCode.MissingFragment, "GLES program requires a fragment stage")
@@ -325,6 +427,11 @@ public class ShaderDsl internal constructor(
             functions = functions,
             fragmentWrites = fragmentWrites,
             block = block,
+            version = version,
+            programTarget = programTarget,
+            geometry = geometryStage?.let(::spellGeometry),
+            tessControl = control?.let(::spellTessControl),
+            tessEval = evaluation?.let(::spellTessEval),
         )
     }
 
@@ -400,7 +507,7 @@ public class ShaderDsl internal constructor(
     }
 }
 
-private fun isFloatVec4(shape: Shape): Boolean =
+internal fun isFloatVec4(shape: Shape): Boolean =
     shape is Shape.Vector && shape.kind == ScalarKind.Float && shape.lanes == 4
 
 private fun isMedVec4(shape: Shape): Boolean =
@@ -539,7 +646,9 @@ private class AgslEmitter(
         is ExprNode.Texture,
         is ExprNode.AttributeRef,
         is ExprNode.VaryingRef,
-        is ExprNode.BlockRef -> error("AGSL cannot spell ${node::class.simpleName}")
+        is ExprNode.BlockRef,
+        is ExprNode.GlIn,
+        ExprNode.TessCoord -> error("AGSL cannot spell ${node::class.simpleName}")
     }
 
     private fun call(node: ExprNode.Call): String {

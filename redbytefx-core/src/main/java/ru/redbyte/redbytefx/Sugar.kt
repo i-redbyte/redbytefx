@@ -2,11 +2,11 @@ package ru.redbyte.redbytefx
 
 import kotlin.jvm.JvmName
 
-public fun float(value: Float): Expr<Flt<High>> = value.lit
+public fun float(value: Float): HighFloat = value.lit
 
 public fun <P : Prec> float2(x: Expr<Flt<P>>, y: Expr<Flt<P>>): Expr<Vec2<Flt<P>>> = vec2(x, y)
 
-public fun float2(x: Float, y: Float): Expr<Vec2<Flt<High>>> = vec2(x.lit, y.lit)
+public fun float2(x: Float, y: Float): HighVec2 = vec2(x.lit, y.lit)
 
 public fun <P : Prec> float2(x: Expr<Flt<P>>, y: Float): Expr<Vec2<Flt<P>>> = vec2(x, y.litSame(x))
 
@@ -18,7 +18,7 @@ public fun <P : Prec> float3(
     z: Expr<Flt<P>>,
 ): Expr<Vec3<Flt<P>>> = vec3(x, y, z)
 
-public fun float3(x: Float, y: Float, z: Float): Expr<Vec3<Flt<High>>> = vec3(x.lit, y.lit, z.lit)
+public fun float3(x: Float, y: Float, z: Float): HighVec3 = vec3(x.lit, y.lit, z.lit)
 
 public fun <P : Prec> float4(
     x: Expr<Flt<P>>,
@@ -27,7 +27,7 @@ public fun <P : Prec> float4(
     w: Expr<Flt<P>>,
 ): Expr<Vec4<Flt<P>>> = vec4(x, y, z, w)
 
-public fun float4(x: Float, y: Float, z: Float, w: Float): Expr<Vec4<Flt<High>>> =
+public fun float4(x: Float, y: Float, z: Float, w: Float): HighVec4 =
     vec4(x.lit, y.lit, z.lit, w.lit)
 
 @JvmName("colorHigh")
@@ -36,7 +36,7 @@ public fun color(
     g: Expr<Flt<High>>,
     b: Expr<Flt<High>>,
     a: Expr<Flt<High>>,
-): Expr<Vec4<Flt<Med>>> = vec4(r.toMed(), g.toMed(), b.toMed(), a.toMed())
+): MedVec4 = vec4(r.toMed(), g.toMed(), b.toMed(), a.toMed())
 
 @JvmName("colorMed")
 public fun color(
@@ -44,28 +44,28 @@ public fun color(
     g: Expr<Flt<Med>>,
     b: Expr<Flt<Med>>,
     a: Expr<Flt<Med>>,
-): Expr<Vec4<Flt<Med>>> = vec4(r, g, b, a)
+): MedVec4 = vec4(r, g, b, a)
 
 @JvmName("colorVec3HighAlphaHigh")
-public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Expr<Flt<High>>): Expr<Vec4<Flt<Med>>> =
+public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Expr<Flt<High>>): MedVec4 =
     color(rgb.x, rgb.y, rgb.z, a)
 
 @JvmName("colorVec3HighAlphaMed")
-public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Expr<Flt<Med>>): Expr<Vec4<Flt<Med>>> =
+public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Expr<Flt<Med>>): MedVec4 =
     vec4(rgb.x.toMed(), rgb.y.toMed(), rgb.z.toMed(), a)
 
 @JvmName("colorVec3Med")
-public fun color(rgb: Expr<Vec3<Flt<Med>>>, a: Expr<Flt<Med>>): Expr<Vec4<Flt<Med>>> =
+public fun color(rgb: Expr<Vec3<Flt<Med>>>, a: Expr<Flt<Med>>): MedVec4 =
     vec4(rgb.x, rgb.y, rgb.z, a)
 
 @JvmName("colorVec3HighAlphaFloat")
-public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Float): Expr<Vec4<Flt<Med>>> = color(rgb, a.lit)
+public fun color(rgb: Expr<Vec3<Flt<High>>>, a: Float): MedVec4 = color(rgb, a.lit)
 
 @JvmName("colorFromHighVec4")
-public fun color(value: Expr<Vec4<Flt<High>>>): Expr<Vec4<Flt<Med>>> = value.toMed()
+public fun color(value: Expr<Vec4<Flt<High>>>): MedVec4 = value.toMed()
 
 @JvmName("colorFromMedVec4")
-public fun color(value: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> = value
+public fun color(value: Expr<Vec4<Flt<Med>>>): MedVec4 = value
 
 @JvmName("colorHighChannelsMedAlpha")
 public fun color(
@@ -73,7 +73,7 @@ public fun color(
     g: Expr<Flt<High>>,
     b: Expr<Flt<High>>,
     a: Expr<Flt<Med>>,
-): Expr<Vec4<Flt<Med>>> = vec4(r.toMed(), g.toMed(), b.toMed(), a)
+): MedVec4 = vec4(r.toMed(), g.toMed(), b.toMed(), a)
 
 @JvmName("timesMedVec4High")
 public operator fun Expr<Vec4<Flt<Med>>>.times(rhs: Expr<Flt<High>>): Expr<Vec4<Flt<Med>>> = this * rhs.toMed()

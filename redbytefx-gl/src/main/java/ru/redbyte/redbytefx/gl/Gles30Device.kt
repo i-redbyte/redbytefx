@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.gl
 
 import android.opengl.GLES30
 import android.opengl.GLES31
+import android.opengl.GLES32
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -131,5 +132,8 @@ private fun ByteArray.asNativeBuffer(): ByteBuffer =
 private fun stageEnum(stage: GlStage): Int = when (stage) {
     GlStage.Vertex -> GLES30.GL_VERTEX_SHADER
     GlStage.Fragment -> GLES30.GL_FRAGMENT_SHADER
+    GlStage.TessControl -> GLES32.GL_TESS_CONTROL_SHADER
+    GlStage.TessEval -> GLES32.GL_TESS_EVALUATION_SHADER
+    GlStage.Geometry -> GLES32.GL_GEOMETRY_SHADER
     GlStage.Compute -> GLES31.GL_COMPUTE_SHADER
 }
