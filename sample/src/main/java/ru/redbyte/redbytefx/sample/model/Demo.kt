@@ -33,8 +33,7 @@ enum class DemoId {
     PhysicsBubble,
     TouchRipple,
     Metaballs,
-    CrtTerminal,
-    Gles
+    CrtTerminal
 }
 
 enum class DemoSection(
@@ -258,7 +257,6 @@ val DemoInfo.focusTags: List<String>
         DemoId.TouchRipple -> listOf("pointer", "float2", "touch", "compose", "ripple", "time")
         DemoId.Metaballs -> listOf("sdf", "metaballs", "smoothmin", "procedural", "animation")
         DemoId.CrtTerminal -> listOf("crt", "scanlines", "barrel", "chromatic", "retro", "terminal")
-        DemoId.Gles -> listOf("gles", "opengl", "vertex", "triangle")
     }
 
 val DemoInfo.catalogSearchText: String
@@ -312,8 +310,7 @@ val DemoInfo.section: DemoSection
         DemoId.Circuit,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal,
-        DemoId.Gles -> DemoSection.Procedural
+        DemoId.CrtTerminal -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
@@ -367,8 +364,7 @@ val DemoInfo.layer: DemoLayer
         DemoId.LiquidGlass,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal,
-        DemoId.Gles -> DemoLayer.Stdlib
+        DemoId.CrtTerminal -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -392,8 +388,7 @@ val DemoInfo.isAnimated: Boolean
         DemoId.PhysicsBubble,
         DemoId.TouchRipple,
         DemoId.Metaballs,
-        DemoId.CrtTerminal,
-        DemoId.Gles -> true
+        DemoId.CrtTerminal -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -816,25 +811,6 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val base = sampleUv(warpedUv)
             val split = color(sampleUv(warpedUv - float2(px, 0f)).r, base.g, sampleUv(warpedUv + float2(px, 0f)).b, base.a)
             mix(base, split, edgeAmt * 0.88f) * scanMod * flicker * vignette
-        """.trimIndent()
-    ),
-    DemoInfo(
-        id = DemoId.Gles,
-        title = "GLES Triangle",
-        subtitle = "OpenGL ES 3.0 vertex and fragment stages on their own surface.",
-        focus = "A GLSurfaceView owns the EGL context. The shader is shader(Gles30), not Modifier.redbyteFx.",
-        snippet = """
-            shader(ShaderTarget.Gles30) {
-                val time = uniformTime()
-                vertex {
-                    val position = attributeVec2("position")
-                    glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
-                }
-                fragment {
-                    val wave = sin(time.expr)
-                    vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
-                }
-            }
         """.trimIndent()
     )
 )
