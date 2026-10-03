@@ -29,3 +29,7 @@ Dokka **(source)** links use `https://github.com/i-redbyte/redbytefx/blob/<branc
 ```
 
 Open `build/docs/site/index.html`.
+
+## CI note: “No Gradle build results detected”
+
+If the GitHub Actions **Job summary** from `gradle/actions/setup-gradle` shows that line, it only means the action did not record a Gradle run in its summary table (for example when the Gradle step was skipped or ran in a job without `setup-gradle`). It is **not** a build failure. The cache lines above it are normal. Workflows that call `./gradlew` use `setup-gradle` immediately before the Gradle step so the summary lists `qualityCheck` / `dokkaHtmlSite` when the build runs.
