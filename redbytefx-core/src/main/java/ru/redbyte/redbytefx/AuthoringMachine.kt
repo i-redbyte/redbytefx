@@ -2,11 +2,24 @@ package ru.redbyte.redbytefx
 
 import androidx.annotation.RequiresApi
 
+/**
+ * Compilation target for [shader].
+ *
+ * AGSL emits a single fragment shader for [android.graphics.RuntimeShader].
+ * GLES targets emit GLSL ES sources for [ru.redbyte.redbytefx.gl.GlProgramRuntime].
+ */
 public enum class ShaderTarget {
+    /** Android 12+ fragment shader for Compose [ru.redbyte.redbytefx.compose.redbyteFx]. */
     @RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
     Agsl,
+
+    /** GLES 3.0 vertex and fragment program. */
     Gles30,
+
+    /** GLES 3.1 compute shader. */
     Gles31,
+
+    /** GLES 3.2 program with optional geometry and tessellation stages. */
     Gles32,
 }
 

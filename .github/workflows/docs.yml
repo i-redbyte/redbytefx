@@ -28,12 +28,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Generate Dokka HTML
-        run: ./gradlew dokkaHtmlAll
+      - name: Generate API site
+        run: ./gradlew dokkaHtmlSite
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: redbytefx-core/build/dokka/html
+          path: build/docs/site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
