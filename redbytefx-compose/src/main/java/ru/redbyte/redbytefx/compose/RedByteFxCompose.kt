@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -441,12 +442,17 @@ public fun FxController.bindFloat4(
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
     composed {
         val layer = rememberGraphicsLayer()
+        var appliedRenderEffect by remember(controller) { mutableStateOf<androidx.compose.ui.graphics.RenderEffect?>(null) }
         drawWithCache {
             layer.compositingStrategy = CompositingStrategy.Offscreen
             onDrawWithContent {
                 controller.runtimeInvalidationTick
                 controller.syncResolution(size.width, size.height)
-                layer.renderEffect = controller.composeRenderEffect
+                val renderEffect = controller.composeRenderEffect
+                if (appliedRenderEffect !== renderEffect) {
+                    appliedRenderEffect = renderEffect
+                    layer.renderEffect = renderEffect
+                }
                 layer.record {
                     this@onDrawWithContent.drawContent()
                 }
