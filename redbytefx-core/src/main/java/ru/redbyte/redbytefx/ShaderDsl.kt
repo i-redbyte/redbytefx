@@ -3,6 +3,13 @@ package ru.redbyte.redbytefx
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
 
+/**
+ * Immutable result of [shader].
+ *
+ * Holds generated source text and [Uniform] handles for runtime upload.
+ * Thread-safe to read; compile new programs on any thread, play AGSL on the UI thread,
+ * and play GLES on the thread that owns the EGL context.
+ */
 public class ShaderProgram internal constructor(
     public val target: ShaderTarget,
     private val agsl: String? = null,
@@ -78,16 +85,30 @@ public class ShaderProgram internal constructor(
             ?: throw IllegalArgumentException("Uniform does not belong to this shader")
 }
 
+/** GLES/AGSL name paired with the [Uniform] handle declared in Kotlin. */
 public class SpelledUniform internal constructor(
     public val uniform: Uniform<*>,
     public val name: String,
 )
 
+/**
+ * Compiles a [ShaderProgram] for [target].
+ *
+ * Declare uniforms and stages inside [block]. Use [ShaderProgram.agslSource] or the GLES
+ * `*Source()` accessors to inspect output. AGSL playback: [newAgslInstance]. GLES playback:
+ * [ru.redbyte.redbytefx.gl.GlProgramRuntime] or [ru.redbyte.redbytefx.gl.compose.GlSurface].
+ */
 public fun shader(target: ShaderTarget, block: ShaderDsl.() -> Unit): ShaderProgram {
     val dsl = ShaderDsl(target)
     return dsl.author(block)
 }
 
+/**
+ * Root authoring scope for one shader program.
+ *
+ * Call [fragment], [vertex], [compute], [geometry], [tessControl], and [tessEval] as required by
+ * [ShaderTarget]. Uniforms are declared here, not inside [FragmentDsl.fn].
+ */
 public class ShaderDsl internal constructor(
     private val target: ShaderTarget,
 ) {
@@ -822,6 +843,12 @@ internal fun isFloatVec4(shape: Shape): Boolean =
 private fun isMedVec4(shape: Shape): Boolean =
     isFloatVec4(shape) && shape is Shape.Vector && shape.precision == Precision.Med
 
+/**
+ * Fragment stage DSL.
+ *
+ * [fragCoord] and [resolution] are in pixels. [sample] reads the child shader on AGSL only.
+ * [texture] samples a [Sampler2D] on GLES only.
+ */
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val functions: StageFunctions,
@@ -829,11 +856,13 @@ public class FragmentDsl internal constructor(
     private val writeOut: (FragmentOutput, Expr<*>) -> Unit,
     private val sink: StatementSink,
 ) {
+    /** Fragment position in pixels (AGSL and GLES). */
     public val fragCoord: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
         ExprNode.FragCoord,
     )
 
+    /** Drawable size in pixels; Compose sets this through [ru.redbyte.redbytefx.compose.redbyteFx]. */
     public val resolution: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
         ExprNode.Resolution,

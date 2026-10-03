@@ -22,6 +22,7 @@ vanniktech-maven-publish-base = { id = "com.vanniktech.maven.publish.base", vers
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [libraries]
+dokka-android-doc = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }

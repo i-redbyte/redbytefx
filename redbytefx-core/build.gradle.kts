@@ -3,8 +3,8 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
-    alias(libs.plugins.dokka)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.dokka)
     alias(libs.plugins.detekt)
     alias(libs.plugins.vanniktech.maven.publish.base)
 }
@@ -40,7 +40,12 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.annotation)
+    dokkaPlugin(libs.dokka.android.doc)
     testImplementation(libs.junit4)
+}
+
+tasks.named<org.jetbrains.dokka.gradle.DokkaTask>("dokkaHtml") {
+    dependsOn(tasks.named("compileDebugKotlin"))
 }
 
 val hasSigningConfiguration =

@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
+import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     alias(libs.plugins.dokka) apply false
@@ -46,6 +47,33 @@ subprojects {
     }
 
     afterEvaluate {
+        if (plugins.hasPlugin("org.jetbrains.dokka")) {
+            val isAndroidLibrary = plugins.hasPlugin("com.android.library")
+            if (isAndroidLibrary) {
+                dependencies.add("dokkaPlugin", rootProject.libs.dokka.android.doc)
+            }
+            tasks.withType<DokkaTask>().configureEach {
+                moduleName.set(project.name)
+                val compile = tasks.findByName("compileDebugKotlin")
+                if (compile != null) {
+                    dependsOn(compile)
+                }
+                if (isAndroidLibrary) {
+                    val mainJava = layout.projectDirectory.dir("src/main/java").asFile
+                    val mainKotlin = layout.projectDirectory.dir("src/main/kotlin").asFile
+                    val sourceSet = dokkaSourceSets.findByName("main")
+                        ?: dokkaSourceSets.register("main") { displayName.set("main") }.get()
+                    sourceSet.apply {
+                        if (mainJava.isDirectory) {
+                            sourceRoots.from(mainJava)
+                        }
+                        if (mainKotlin.isDirectory) {
+                            sourceRoots.from(mainKotlin)
+                        }
+                    }
+                }
+            }
+        }
         tasks.withType<Detekt>().configureEach {
             val mainRoots = listOf("src/main/java", "src/main/kotlin")
                 .map { project.layout.projectDirectory.file(it).asFile }
@@ -71,16 +99,101 @@ subprojects {
     }
 }
 
+private data class DocModule(val path: String, val title: String, val blurb: String)
+
+private val docModules = listOf(
+    DocModule(":redbytefx-core", "redbytefx-core", "Shader DSL, compiler, and AGSL instance"),
+    DocModule(":redbytefx-gl", "redbytefx-gl", "OpenGL ES 3.x program runtime"),
+    DocModule(":redbytefx-gl-compose", "redbytefx-gl-compose", "Compose GlSurface and GlController"),
+    DocModule(":redbytefx-compose", "redbytefx-compose", "AGSL FxController and redbyteFx"),
+    DocModule(":redbytefx-stdlib", "redbytefx-stdlib", "Fragment helpers and SDF recipes"),
+)
+
 tasks.register("dokkaHtmlAll") {
     group = "documentation"
     description = "Generate HTML API reference for all library modules."
-    dependsOn(
-        ":redbytefx-core:dokkaHtml",
-        ":redbytefx-gl:dokkaHtml",
-        ":redbytefx-gl-compose:dokkaHtml",
-        ":redbytefx-compose:dokkaHtml",
-        ":redbytefx-stdlib:dokkaHtml",
-    )
+    dependsOn(docModules.map { "${it.path}:dokkaHtml" })
+}
+
+tasks.register("dokkaHtmlSite") {
+    group = "documentation"
+    description = "Assemble a GitHub Pages site with an index and per-module Dokka output."
+    dependsOn("dokkaHtmlAll")
+    val siteDir = layout.buildDirectory.dir("docs/site")
+    outputs.dir(siteDir)
+    doLast {
+        val site = siteDir.get().asFile
+        if (site.exists()) {
+            site.deleteRecursively()
+        }
+        site.mkdirs()
+        val entries = docModules.map { module ->
+            val projectDir = project(module.path).layout.buildDirectory.get().asFile
+            val source = projectDir.resolve("dokka/html")
+            val targetName = module.path.removePrefix(":")
+            val target = site.resolve(targetName)
+            target.mkdirs()
+            if (source.isDirectory && source.resolve("index.html").isFile) {
+                source.copyRecursively(target, overwrite = true)
+            } else {
+                val slug = module.path.removePrefix(":")
+                target.resolve("index.html").writeText(
+                    """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head><meta charset="utf-8"/><title>${module.title}</title></head>
+                    <body>
+                      <p><a href="../index.html">RedByteFX</a></p>
+                      <h1>${module.title}</h1>
+                      <p>${module.blurb}</p>
+                      <p>Generated Dokka HTML for this Android module is not available yet. Browse
+                      <a href="https://github.com/i-redbyte/redbytefx/tree/main/$slug/src/main/java">sources</a>
+                      or use IDE KDoc on the Maven dependency.</p>
+                    </body>
+                    </html>
+                    """.trimIndent(),
+                )
+            }
+            module
+        }
+        val docsDir = rootProject.file("docs")
+        if (docsDir.isDirectory) {
+            val siteDocs = site.resolve("docs")
+            siteDocs.mkdirs()
+            docsDir.listFiles()?.filter { it.extension == "md" }?.forEach { file ->
+                file.copyTo(siteDocs.resolve(file.name), overwrite = true)
+            }
+        }
+        val links = entries.joinToString("\n") { module ->
+            val slug = module.path.removePrefix(":")
+            """        <li><a href="$slug/index.html">${module.title}</a> - ${module.blurb}</li>"""
+        }
+        site.resolve("index.html").writeText(
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="utf-8"/>
+              <title>RedByteFX API reference</title>
+              <style>
+                body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+                a { color: #0b57d0; }
+              </style>
+            </head>
+            <body>
+              <h1>RedByteFX</h1>
+              <p>Typed Kotlin shader DSL for Android AGSL and OpenGL ES 3.x.</p>
+              <ul>
+            $links
+              </ul>
+              <p><a href="docs/language-reference.md">Language reference</a> |
+              <a href="docs/error-codes.md">Error codes</a></p>
+              <p>Platform: library minSdk 24; AGSL requires API 31+.</p>
+            </body>
+            </html>
+            """.trimIndent(),
+        )
+    }
 }
 
 tasks.register("qualityCheck") {
