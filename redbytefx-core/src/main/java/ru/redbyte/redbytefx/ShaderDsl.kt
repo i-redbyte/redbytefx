@@ -466,10 +466,13 @@ public class ShaderDsl internal constructor(
             UniformBinding(uniform, agslName)
         }
         val uniformNames = bindings.associateBy { it.uniform }
+        val varyingNames = varyings.associateWith { varying ->
+            names.reserve(sanitizeIdentifier(varying.name, "v_"))
+        }
         val occupied = names.snapshot()
-        val functionText = renderAgslFunctions(functions, occupied, uniformNames)
+        val functionText = renderAgslFunctions(functions, occupied, uniformNames, varyingNames)
         val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames)
-        val statements = spellStageStatements(fragmentStatements, emitter)
+        val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
         val rendered = emitter.emit(body)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
         return ShaderProgram(
@@ -1147,11 +1150,12 @@ private fun renderAgslFunctions(
     functions: List<UserFunction>,
     occupied: Set<String>,
     uniforms: Map<Uniform<*>, UniformBinding>,
+    varyingNames: Map<Varying<*>, String>,
 ): String = buildString {
     for (function in functions) {
         val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
         val emitter = AgslEmitter(locals, uniforms)
-        val statements = spellStageStatements(function.statements, emitter)
+        val statements = spellStageStatements(function.statements, emitter, varyingNames)
         val body = emitter.emit(function.body)
         val signature = function.parameters.joinToString(", ") {
             "${spell(it.shape, ShaderTarget.Agsl)} ${it.name}"
