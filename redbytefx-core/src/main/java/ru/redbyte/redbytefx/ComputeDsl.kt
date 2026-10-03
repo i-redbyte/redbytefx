@@ -1,5 +1,11 @@
 package ru.redbyte.redbytefx
 
+/**
+ * Compute shader stage DSL ([ShaderTarget.Gles31]).
+ *
+ * [globalId], [localId], and [workGroupId] mirror `gl_GlobalInvocationID` and friends.
+ * [store] writes storage buffers; [barrier] and `shared*` arrays coordinate workgroup memory.
+ */
 public class ComputeDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val sink: StatementSink,

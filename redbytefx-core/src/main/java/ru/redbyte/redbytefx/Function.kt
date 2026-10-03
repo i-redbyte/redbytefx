@@ -1,5 +1,14 @@
 package ru.redbyte.redbytefx
 
+/**
+ * Callable handles for user functions declared with `fn { … }` inside a shader stage.
+ *
+ * [FragmentDsl.fn], [ShaderDsl.VertexDsl.fn], and other stage DSLs return [Fn0] … [Fn8]. The number
+ * is the **parameter count**, not an arbitrary id. Witness expressions (`fn(witness) { … }`) fix each
+ * parameter type at compile time. Call the handle with [invoke] to emit `name(args…)` in AGSL/GLSL.
+ *
+ * Functions cannot nest, recurse, or call across stages; see the language reference.
+ */
 internal class Formal(
     val name: String,
     val shape: Shape,
@@ -17,18 +26,22 @@ internal class UserFunction(
     var statements: List<PrimitiveCommand> = emptyList()
 }
 
+/** User function with no parameters (from `fn(name) { … }`). */
 public class Fn0<R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(): Expr<R> = call(emptyList())
 
     private fun call(args: List<Expr<*>>): Expr<R> =
         Expr(function.result, ExprNode.UserCall(function, args))
 }
 
+/** User function with one parameter (witness type [A]). */
 public class Fn1<A : ShType, R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(arg: Expr<A>): Expr<R> {
         require(arg.shape == function.parameters[0].shape) {
             "Function \"${function.name}\" expects ${function.parameters[0].shape}, was ${arg.shape}"
@@ -37,9 +50,11 @@ public class Fn1<A : ShType, R : ShType> internal constructor(
     }
 }
 
+/** User function with two parameters. */
 public class Fn2<A : ShType, B : ShType, R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(first: Expr<A>, second: Expr<B>): Expr<R> {
         require(first.shape == function.parameters[0].shape) {
             "Function \"${function.name}\" expects ${function.parameters[0].shape}, was ${first.shape}"
@@ -51,9 +66,11 @@ public class Fn2<A : ShType, B : ShType, R : ShType> internal constructor(
     }
 }
 
+/** User function with three parameters. */
 public class Fn3<A : ShType, B : ShType, C : ShType, R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(first: Expr<A>, second: Expr<B>, third: Expr<C>): Expr<R> {
         requireArgument(function, 0, first)
         requireArgument(function, 1, second)
@@ -62,9 +79,11 @@ public class Fn3<A : ShType, B : ShType, C : ShType, R : ShType> internal constr
     }
 }
 
+/** User function with four parameters. */
 public class Fn4<A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(
         first: Expr<A>,
         second: Expr<B>,
@@ -79,9 +98,11 @@ public class Fn4<A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> int
     }
 }
 
+/** User function with five parameters. */
 public class Fn5<A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, R : ShType> internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(
         first: Expr<A>,
         second: Expr<B>,
@@ -98,6 +119,7 @@ public class Fn5<A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, R :
     }
 }
 
+/** User function with six parameters. */
 public class Fn6<
     A : ShType,
     B : ShType,
@@ -109,6 +131,7 @@ public class Fn6<
     > internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(
         first: Expr<A>,
         second: Expr<B>,
@@ -130,6 +153,7 @@ public class Fn6<
     }
 }
 
+/** User function with seven parameters. */
 public class Fn7<
     A : ShType,
     B : ShType,
@@ -142,6 +166,7 @@ public class Fn7<
     > internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(
         first: Expr<A>,
         second: Expr<B>,
@@ -161,6 +186,7 @@ public class Fn7<
     }
 }
 
+/** User function with eight parameters. */
 public class Fn8<
     A : ShType,
     B : ShType,
@@ -174,6 +200,7 @@ public class Fn8<
     > internal constructor(
     private val function: UserFunction,
 ) {
+    /** Emits a call to this function in generated shader source. */
     public operator fun invoke(
         first: Expr<A>,
         second: Expr<B>,

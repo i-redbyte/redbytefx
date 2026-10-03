@@ -3,6 +3,13 @@ package ru.redbyte.redbytefx
 import kotlin.jvm.JvmName
 
 /**
+ * Float vector constructors, Kotlin literal extensions, and `+` `-` `*` `/` on [Expr].
+ *
+ * Operators require matching float precision and compatible scalar/vector ranks. Integer math lives
+ * in [IntArith.kt]; comparisons in [Compare.kt].
+ */
+
+/**
  * Result shape of float addition, subtraction, multiplication, or division.
  *
  * A scalar broadcasts over a vector of the same precision. Mismatched precision, rank, or a
@@ -30,15 +37,19 @@ internal fun unaryShape(op: UnaryOp, arg: Shape): Shape {
     return arg
 }
 
+/** Kotlin [Float] → highp shader literal (extension form of [float]). */
 public val Float.lit: HighFloat
     get() = floatLiteral(this, Precision.High)
 
+/** Kotlin [Float] → mediump shader literal (`half` / `mediump`). */
 public val Float.med: MedFloat
     get() = floatLiteral(this, Precision.Med)
 
+/** Kotlin [Int] → highp float literal (via [IntS.intLit] and [Expr.toFloat]). */
 public val Int.lit: Expr<Flt<High>>
     get() = toFloat().lit
 
+/** Low-level `vec2` builder; prefer [float2] in [Sugar.kt] at call sites. */
 public fun <P : Prec> vec2(x: Expr<Flt<P>>, y: Expr<Flt<P>>): Expr<Vec2<Flt<P>>> =
     vector(x, y)
 

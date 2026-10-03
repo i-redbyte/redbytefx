@@ -2,6 +2,15 @@ package ru.redbyte.redbytefx
 
 import kotlin.jvm.JvmName
 
+/**
+ * Comparisons and boolean logic on shader expressions.
+ *
+ * Scalar floats use infix [gt], [lt], [ge], [le], [eq], [ne] (spell as `>`, `<`, … in GLSL).
+ * Vector compares return [BVec2] / [BVec3] / [BVec4]; reduce with [any] or [all].
+ * [ifElse] is the portable ternary. Prefer [gte] in [Sugar.kt] when `>=` reads more clearly in Kotlin.
+ */
+
+/** Float greater-than; result is a shader `bool`. */
 public infix fun <P : Prec> Expr<Flt<P>>.gt(other: Expr<Flt<P>>): Expr<BoolS> = compare(CompareOp.Gt, this, other)
 
 public infix fun <P : Prec> Expr<Flt<P>>.lt(other: Expr<Flt<P>>): Expr<BoolS> = compare(CompareOp.Lt, this, other)
@@ -108,6 +117,7 @@ public infix fun Expr<BoolS>.and(other: Expr<BoolS>): Expr<BoolS> = boolOp(Arith
 
 public infix fun Expr<BoolS>.or(other: Expr<BoolS>): Expr<BoolS> = boolOp(ArithOp.Or, this, other)
 
+/** Portable `condition ? ifTrue : ifFalse` for matching expression types. */
 public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse: Expr<T>): Expr<T> {
     require(condition.shape == boolScalar) { "ifElse condition must be a bool, was ${condition.shape}" }
     require(ifTrue.shape == ifFalse.shape) {

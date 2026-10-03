@@ -2,9 +2,18 @@ package ru.redbyte.redbytefx
 
 import kotlin.jvm.JvmName
 
+/**
+ * Integer [Expr] literals and arithmetic for loop indices and compute addressing.
+ *
+ * Integer math is separate from float [Arith.kt] operators. Use [intLit] for shader `int` constants
+ * and [toFloat] when a value must participate in float expressions.
+ */
+
+/** Kotlin [Int] → shader `int` literal (for `repeat` bounds, compute indices, etc.). */
 public val Int.intLit: Expr<IntS>
     get() = Expr(Shape.Scalar(ScalarKind.Int, null), ExprNode.IntLiteral(this))
 
+/** Widens a shader int expression to highp float (explicit cast in generated source). */
 public fun Expr<IntS>.toFloat(): Expr<Flt<High>> = Expr(
     Shape.Scalar(ScalarKind.Float, Precision.High),
     ExprNode.Cast(this),

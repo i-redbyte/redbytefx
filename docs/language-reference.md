@@ -25,6 +25,20 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/main/REA
 - `fn(witness..., "name") { p0, ... -> expr }` - no nesting, no recursion.
 - `discard()` / `discard(cond)` - fragment only.
 
+## Literals and types
+
+- `float(1f)`, `float2(…)`, `float3(…)`, `float4(…)` — GLSL-style constructors; `1f.lit` / `1f.med` extensions do the same for scalars.
+- `color(…)` — mediump RGBA for fragment color.
+- `HighVec4`, `MedVec4`, … — typealiases over `Expr<…>` (see `Aliases.kt`).
+
+## User functions (`fn`)
+
+Stage DSLs expose `fn { … }` and `fn(witness) { p -> … }`. The return type is `Fn0` … `Fn8` (parameter count). Call with `invoke()` or `fnHandle(arg)` to emit a user function in shader source. No nesting, recursion, or cross-stage calls.
+
+## Comparisons
+
+Infix `gt`, `lt`, `ge`, `le`, `eq`, `ne` on floats; `gte` alias in `Sugar.kt`. Vector compares yield `bvec*`; use `any` / `all`. `ifElse(cond, a, b)` for ternaries.
+
 ## Swizzles
 
 Vector expressions use GLSL-style property names: `.xy`, `.rgb`, `.rgba`, and single-letter lanes

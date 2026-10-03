@@ -1,5 +1,12 @@
 package ru.redbyte.redbytefx
 
+/**
+ * Readable names for common [Expr] and [Uniform] shapes.
+ *
+ * These are **typealiases** only (`HighVec4` = `Expr<Vec4<Flt<High>>>`). They do not change code
+ * generation; use them in app code and KDoc for clarity.
+ */
+
 /** Highp float expression. Same type as [Expr] of [Flt] with [High]. */
 public typealias HighFloat = Expr<Flt<High>>
 
