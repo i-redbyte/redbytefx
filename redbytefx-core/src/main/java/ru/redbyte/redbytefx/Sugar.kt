@@ -2,8 +2,22 @@ package ru.redbyte.redbytefx
 
 import kotlin.jvm.JvmName
 
+/**
+ * Literal constructors and authoring sugar that mirror GLSL spelling.
+ *
+ * - [float], [float2], [float3], [float4] turn Kotlin constants or [Expr] values into shader literals
+ *   and vectors (same names as in GLSL, not generic helpers).
+ * - [color] builds mediump RGBA ([MedVec4]) for typical fragment output.
+ * - [gte] / [gt] / … in this file are infix comparisons; names match shader operators (`>=`, `>`).
+ * - [Float.lit], [Float.med], and [Int.lit] (in [Arith.kt]) promote Kotlin numbers to [Expr].
+ *
+ * See also [Builtin] for portable math (`sin`, `mix`, …) and [SwizzleAccess] for `.xy` / `.rgba`.
+ */
+
+/** Kotlin [Float] → highp shader literal (`float` in GLSL). */
 public fun float(value: Float): HighFloat = value.lit
 
+/** Builds a `float2` / `vec2` from two expressions of the same precision. */
 public fun <P : Prec> float2(x: Expr<Flt<P>>, y: Expr<Flt<P>>): Expr<Vec2<Flt<P>>> = vec2(x, y)
 
 public fun float2(x: Float, y: Float): HighVec2 = vec2(x.lit, y.lit)
@@ -81,8 +95,10 @@ public operator fun Expr<Vec4<Flt<Med>>>.times(rhs: Expr<Flt<High>>): Expr<Vec4<
 public fun <P : Prec> float3(xy: Expr<Vec2<Flt<P>>>, z: Expr<Flt<P>>): Expr<Vec3<Flt<P>>> =
     vec3(xy.x, xy.y, z)
 
+/** Infix `>=` for float expressions (Kotlin cannot use `>=` as an infix name here). */
 public infix fun <P : Prec> Expr<Flt<P>>.gte(rhs: Float): Expr<BoolS> = this ge rhs
 
+/** Infix `>=` for float expressions (alias of [ge] from [Compare.kt]). */
 public infix fun <P : Prec> Expr<Flt<P>>.gte(other: Expr<Flt<P>>): Expr<BoolS> = this ge other
 
 public fun grayscale(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {

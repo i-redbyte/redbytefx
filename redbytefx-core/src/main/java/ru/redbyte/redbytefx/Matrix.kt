@@ -2,6 +2,13 @@ package ru.redbyte.redbytefx
 
 import kotlin.jvm.JvmName
 
+/**
+ * Column-major `mat2` / `mat3` / `mat4` constructors and matrix–vector multiply.
+ *
+ * Each [mat2] argument is one **column** (`vec2` … `vec4`). Use `matrix * vector` via [times].
+ */
+
+/** Column-major 2×2 matrix from two column vectors. */
 public fun mat2(
     c0: Expr<Vec2<Flt<High>>>,
     c1: Expr<Vec2<Flt<High>>>,

@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx
 
+/** GLES geometry shader input primitive ([ShaderTarget.Gles32]). */
 public enum class GeometryInput {
     Points,
     Lines,
@@ -8,24 +9,28 @@ public enum class GeometryInput {
     TrianglesAdjacency,
 }
 
+/** GLES geometry shader output primitive layout. */
 public enum class GeometryOutput {
     Points,
     LineStrip,
     TriangleStrip,
 }
 
+/** Tessellation primitive mode for patch shaders. */
 public enum class TessPrimitive {
     Triangles,
     Quads,
     Isolines,
 }
 
+/** Tessellation spacing mode (`equal_spacing`, … in GLSL). */
 public enum class TessSpacing {
     Equal,
     FractionalEven,
     FractionalOdd,
 }
 
+/** Winding order for tessellation patches. */
 public enum class TessVertexOrder {
     Ccw,
     Cw,
