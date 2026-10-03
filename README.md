@@ -172,7 +172,7 @@ The compiler does not emit GLES 2.0 or desktop GL. It does not emit `while`, rec
 
 Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt. Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
 
-API site locally: `./gradlew dokkaHtmlSite` (output in `build/docs/site`). CI publishes that folder to GitHub Pages on push to `main` or `support-opengl`; enable **Settings → Pages → Source: GitHub Actions** once per repo (see [docs/github-pages.md](docs/github-pages.md)).
+API site locally: `./gradlew dokkaHtmlSite` (entry `build/docs/site/libs/redbytefx/index.html`). CI publishes `build/docs/site` on push to `main`, `master`, or `support-opengl`; enable **Settings → Pages → Source: GitHub Actions** once (see [docs/github-pages.md](docs/github-pages.md)).
 
 ## License
 
