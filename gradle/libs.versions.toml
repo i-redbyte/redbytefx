@@ -11,7 +11,7 @@ androidx-test-ext = "1.2.1"
 robolectric = "4.14.1"
 vanniktech-maven-publish = "0.36.0"
 annotation = "1.9.1"
-dokka = "2.0.0"
+dokka = "2.2.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

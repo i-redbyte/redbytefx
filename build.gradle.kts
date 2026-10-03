@@ -1,6 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
-import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.dokka.gradle.DokkaExtension
 
 plugins {
     alias(libs.plugins.dokka) apply false
@@ -47,31 +47,11 @@ subprojects {
     }
 
     afterEvaluate {
-        if (plugins.hasPlugin("org.jetbrains.dokka")) {
+        extensions.findByType<DokkaExtension>()?.let { dokka ->
+            dokka.moduleName.set(project.name)
             val isAndroidLibrary = plugins.hasPlugin("com.android.library")
             if (isAndroidLibrary) {
                 dependencies.add("dokkaPlugin", rootProject.libs.dokka.android.doc)
-            }
-            tasks.withType<DokkaTask>().configureEach {
-                moduleName.set(project.name)
-                val compile = tasks.findByName("compileDebugKotlin")
-                if (compile != null) {
-                    dependsOn(compile)
-                }
-                if (isAndroidLibrary) {
-                    val mainJava = layout.projectDirectory.dir("src/main/java").asFile
-                    val mainKotlin = layout.projectDirectory.dir("src/main/kotlin").asFile
-                    val sourceSet = dokkaSourceSets.findByName("main")
-                        ?: dokkaSourceSets.register("main") { displayName.set("main") }.get()
-                    sourceSet.apply {
-                        if (mainJava.isDirectory) {
-                            sourceRoots.from(mainJava)
-                        }
-                        if (mainKotlin.isDirectory) {
-                            sourceRoots.from(mainKotlin)
-                        }
-                    }
-                }
             }
         }
         tasks.withType<Detekt>().configureEach {
@@ -112,7 +92,7 @@ private val docModules = listOf(
 tasks.register("dokkaHtmlAll") {
     group = "documentation"
     description = "Generate HTML API reference for all library modules."
-    dependsOn(docModules.map { "${it.path}:dokkaHtml" })
+    dependsOn(docModules.map { "${it.path}:dokkaGeneratePublicationHtml" })
 }
 
 tasks.register("dokkaHtmlSite") {
