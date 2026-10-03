@@ -35,6 +35,7 @@ public class StorageArray<T : ShType> internal constructor(
         Expr(member.shape, ExprNode.Index(member, index))
 }
 
+@RedByteFxDsl
 public class StorageBlockBuilder internal constructor(
     private val instanceName: String,
     private val computeStage: (ComputeLayout, ComputeDsl.() -> Unit) -> Unit,

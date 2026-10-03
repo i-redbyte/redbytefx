@@ -26,6 +26,7 @@ internal class BlockMember(
     val unsized: Boolean = false,
 )
 
+@RedByteFxDsl
 public class UniformBlockBuilder internal constructor(
     private val instanceName: String,
     private val vertexStage: (ShaderDsl.VertexDsl.() -> Unit) -> Unit,

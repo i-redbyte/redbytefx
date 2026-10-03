@@ -5,7 +5,9 @@ package ru.redbyte.redbytefx
  *
  * [globalId], [localId], and [workGroupId] mirror `gl_GlobalInvocationID` and friends.
  * [store] writes storage buffers; [barrier] and `shared*` arrays coordinate workgroup memory.
+ * `fn` bodies use [FnDsl] and do not see [globalId] or [store] implicitly.
  */
+@RedByteFxDsl
 public class ComputeDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val sink: StatementSink,
@@ -14,6 +16,8 @@ public class ComputeDsl internal constructor(
     private val shared: MutableList<BlockMember>,
     private val checkStore: (Expr<*>, Expr<*>) -> Unit,
 ) {
+    private val fnScope = FnDsl(advance, functions, sink)
+
     public val globalId: Expr<Vec3<IntS>> = invocation(InvocationKind.Global)
 
     public val localId: Expr<Vec3<IntS>> = invocation(InvocationKind.Local)
@@ -55,30 +59,30 @@ public class ComputeDsl internal constructor(
         sink.whenTrue(condition, body)
     }
 
-    public fun <R : ShType> fn(name: String? = null, block: ComputeDsl.() -> Expr<R>): Fn0<R> =
-        functions.fn0(name) { block() }
+    public fun <R : ShType> fn(name: String? = null, block: FnDsl.() -> Expr<R>): Fn0<R> =
+        functions.fn0(name) { fnScope.block() }
 
     public fun <A : ShType, R : ShType> fn(
         witness: Expr<A>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>) -> Expr<R>,
-    ): Fn1<A, R> = functions.fn1(name, witness) { block(it) }
+        block: FnDsl.(Expr<A>) -> Expr<R>,
+    ): Fn1<A, R> = functions.fn1(name, witness) { fnScope.block(it) }
 
     public fun <A : ShType, B : ShType, R : ShType> fn(
         first: Expr<A>,
         second: Expr<B>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>) -> Expr<R>,
-    ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> block(left, right) }
+        block: FnDsl.(Expr<A>, Expr<B>) -> Expr<R>,
+    ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> fnScope.block(left, right) }
 
     public fun <A : ShType, B : ShType, C : ShType, R : ShType> fn(
         first: Expr<A>,
         second: Expr<B>,
         third: Expr<C>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
     ): Fn3<A, B, C, R> = functions.fn3(name, first, second, third) { left, mid, right ->
-        block(left, mid, right)
+        fnScope.block(left, mid, right)
     }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn(
@@ -87,9 +91,9 @@ public class ComputeDsl internal constructor(
         third: Expr<C>,
         fourth: Expr<D>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
     ): Fn4<A, B, C, D, R> = functions.fn4(name, first, second, third, fourth) { a, b, c, d ->
-        block(a, b, c, d)
+        fnScope.block(a, b, c, d)
     }
 
     public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = functions.recur(arg)
@@ -101,9 +105,9 @@ public class ComputeDsl internal constructor(
         fourth: Expr<D>,
         fifth: Expr<E>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
     ): Fn5<A, B, C, D, E, R> = functions.fn5(name, first, second, third, fourth, fifth) { a, b, c, d, e ->
-        block(a, b, c, d, e)
+        fnScope.block(a, b, c, d, e)
     }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, R : ShType> fn(
@@ -114,10 +118,10 @@ public class ComputeDsl internal constructor(
         fifth: Expr<E>,
         sixth: Expr<F>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
     ): Fn6<A, B, C, D, E, F, R> =
         functions.fn6(name, first, second, third, fourth, fifth, sixth) { a, b, c, d, e, f ->
-            block(a, b, c, d, e, f)
+            fnScope.block(a, b, c, d, e, f)
         }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, G : ShType, R : ShType> fn(
@@ -129,10 +133,10 @@ public class ComputeDsl internal constructor(
         sixth: Expr<F>,
         seventh: Expr<G>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
     ): Fn7<A, B, C, D, E, F, G, R> =
         functions.fn7(name, first, second, third, fourth, fifth, sixth, seventh) { a, b, c, d, e, f, g ->
-            block(a, b, c, d, e, f, g)
+            fnScope.block(a, b, c, d, e, f, g)
         }
 
     public fun <
@@ -155,10 +159,10 @@ public class ComputeDsl internal constructor(
         seventh: Expr<G>,
         eighth: Expr<H>,
         name: String? = null,
-        block: ComputeDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
     ): Fn8<A, B, C, D, E, F, G, H, R> =
         functions.fn8(name, first, second, third, fourth, fifth, sixth, seventh, eighth) { a, b, c, d, e, f, g, h ->
-            block(a, b, c, d, e, f, g, h)
+            fnScope.block(a, b, c, d, e, f, g, h)
         }
 
     private fun <T : ShType> sharedArray(name: String, shape: Shape, size: Int): StorageArray<T> {
