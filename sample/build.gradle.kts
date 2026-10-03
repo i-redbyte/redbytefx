@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "ru.redbyte.redbytefx.sample"
-        minSdk = 33
+        minSdk = 24
         targetSdk = 36
         versionCode = 3
         versionName = "1.1.0"

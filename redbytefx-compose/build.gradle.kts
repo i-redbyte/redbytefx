@@ -20,7 +20,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 33
+        minSdk = 24
     }
 
     buildFeatures {
@@ -40,6 +40,7 @@ kotlin {
 
 dependencies {
     api(project(":redbytefx-core"))
+    implementation(libs.androidx.annotation)
 
     api(platform(libs.androidx.compose.bom))
     api(libs.androidx.compose.ui)
