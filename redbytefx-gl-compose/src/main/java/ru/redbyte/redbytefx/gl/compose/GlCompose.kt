@@ -1,8 +1,10 @@
 package ru.redbyte.redbytefx.gl.compose
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
@@ -10,7 +12,10 @@ import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.Uniform
 
 /**
- * Remembers a [GlController] for [program]. Pair with [GlSurface] in the same composition.
+ * Remembers a [GlController] for [program].
+ *
+ * Use one controller per [GlSurface]. Changing [config] recreates the controller; changing
+ * [program] identity should use a new `remember` key (for example `key(program)` around [GlSurface]).
  */
 @Composable
 public fun rememberGlController(
@@ -18,6 +23,12 @@ public fun rememberGlController(
     config: GlSurfaceConfig = GlSurfaceConfig(),
 ): GlController = remember(program, config) { GlController(program, config) }
 
+/**
+ * Binds a scalar float uniform after successful recomposition (queued to the GL thread).
+ *
+ * For animation time prefer [bindTime] or set the uniform from [GlFrame.seconds] inside [GlSurface]'s
+ * `onFrame` callback.
+ */
 @Composable
 public fun GlController.bindFloat(param: Uniform<Flt<High>>, value: Float) {
     SideEffect {
@@ -25,9 +36,48 @@ public fun GlController.bindFloat(param: Uniform<Flt<High>>, value: Float) {
     }
 }
 
+/** Binds an int uniform after successful recomposition (queued to the GL thread). */
 @Composable
 public fun GlController.bindInt(param: Uniform<IntS>, value: Int) {
     SideEffect {
         set(param, value)
     }
+}
+
+/**
+ * Drives [param] with elapsed time in seconds, similar to [ru.redbyte.redbytefx.compose.FxController.bindTime].
+ *
+ * Intended for uniforms from `uniformTime(...)`. Updates are queued to the GL thread; when [isPlaying]
+ * is `false`, the current value is held. [offsetSeconds] shifts the reported time without resetting
+ * accumulated phase.
+ */
+@Composable
+public fun GlController.bindTime(
+    param: Uniform<Flt<High>>,
+    isPlaying: Boolean = true,
+    offsetSeconds: Float = 0f,
+) {
+    val state = remember(this, param) { GlTimeBindingState() }
+    LaunchedEffect(this, param, isPlaying, offsetSeconds) {
+        if (!isPlaying) {
+            state.lastFrameNanos = null
+            set(param, offsetSeconds + state.elapsedSeconds)
+            return@LaunchedEffect
+        }
+        while (true) {
+            withFrameNanos { frameNanos ->
+                val lastFrameNanos = state.lastFrameNanos
+                if (lastFrameNanos != null) {
+                    state.elapsedSeconds += (frameNanos - lastFrameNanos) / 1_000_000_000f
+                }
+                state.lastFrameNanos = frameNanos
+                set(param, offsetSeconds + state.elapsedSeconds)
+            }
+        }
+    }
+}
+
+private class GlTimeBindingState {
+    var elapsedSeconds: Float = 0f
+    var lastFrameNanos: Long? = null
 }
