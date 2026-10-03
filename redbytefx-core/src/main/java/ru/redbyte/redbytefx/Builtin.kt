@@ -98,6 +98,16 @@ public fun <P : Prec> dot(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): 
 @JvmName("dotVec4")
 public fun <P : Prec> dot(left: Expr<Vec4<Flt<P>>>, right: Expr<Vec4<Flt<P>>>): Expr<Flt<P>> = dotOf(left, right)
 
+public fun <T : ShType> normalize(value: Expr<T>): Expr<T> = unaryFloatValue("normalize", value)
+
+@JvmName("distanceVec3")
+public fun <P : Prec> distance(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Flt<P>> =
+    distanceOf(left, right)
+
+@JvmName("crossVec3")
+public fun <P : Prec> cross(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Vec3<Flt<P>>> =
+    crossOf(left, right)
+
 private fun <T : ShType> derivative(function: String, value: Expr<T>): Expr<T> {
     requireAuthoring(AuthoringAction.Derivative)
     return unaryFloat(function, value)
@@ -107,6 +117,19 @@ private fun <T : ShType> unaryFloat(function: String, value: Expr<T>): Expr<T> {
     require(isFloatValue(value.shape)) { "$function requires a float value, was ${value.shape}" }
     return call(value.shape, function, listOf(value))
 }
+
+private fun <T : ShType> unaryFloatValue(function: String, value: Expr<T>): Expr<T> {
+    require(isFloatValue(value.shape) || isFloatVector(value.shape)) {
+        "$function requires a float scalar or vector, was ${value.shape}"
+    }
+    return call(value.shape, function, listOf(value))
+}
+
+private fun <P : Prec> distanceOf(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Flt<P>> =
+    call(floatScalar(left.shape), "distance", listOf(left, right))
+
+private fun <P : Prec> crossOf(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Vec3<Flt<P>>> =
+    call(left.shape, "cross", listOf(left, right))
 
 private fun <T : ShType> sameShape(function: String, left: Expr<T>, right: Expr<T>): Expr<T> {
     require(isFloatValue(left.shape) && left.shape == right.shape) {

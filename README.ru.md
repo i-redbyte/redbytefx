@@ -8,7 +8,7 @@
 
 `shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0, compute-программа GLES 3.1 или программа GLES 3.2`
 
-**Платформа:** Android API 33+. AGSL требует `RuntimeShader`. Выход OpenGL ES - это GLSL ES 3.00, вершина и фрагмент, GLSL ES 3.10 compute или GLSL ES 3.20 с geometry и tessellation.
+**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) требует **API 31+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose` (`GlSurface`). GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
 ## Что вы пишете
 

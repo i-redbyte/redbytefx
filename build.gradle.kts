@@ -2,6 +2,7 @@ import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
 
 plugins {
+    alias(libs.plugins.dokka) apply false
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.compose.compiler) apply false
@@ -68,6 +69,18 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register("dokkaHtmlAll") {
+    group = "documentation"
+    description = "Generate HTML API reference for all library modules."
+    dependsOn(
+        ":redbytefx-core:dokkaHtml",
+        ":redbytefx-gl:dokkaHtml",
+        ":redbytefx-gl-compose:dokkaHtml",
+        ":redbytefx-compose:dokkaHtml",
+        ":redbytefx-stdlib:dokkaHtml",
+    )
 }
 
 tasks.register("qualityCheck") {
