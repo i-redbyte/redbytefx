@@ -9,7 +9,8 @@
  * 4. bind static Compose state via [GlController.bindFloat] / [GlController.bindInt], or
  *    [GlController.bindTime] for `uniformTime(...)` handles
  *
- * Uniform writes from composition are queued to the GL thread; imperative updates can use
- * [GlController.set] and [GlController.runOnGl] once [GlSurface] is attached.
+ * Uniform writes from composition are queued to the GL thread. Writes made before [GlSurface]
+ * links are kept and applied after link. Imperative updates can use [GlController.set] and
+ * [GlController.runOnGl].
  */
 package ru.redbyte.redbytefx.gl.compose

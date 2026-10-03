@@ -16,8 +16,7 @@ internal object GlBuffer {
         val ids = IntArray(1)
         GLES30.glGenBuffers(1, ids, 0)
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, ids[0])
-        val data = checkNotNull(vec2UploadScratch.get())
-        data.clear()
+        val data = scratch(vertices.size)
         data.put(vertices).position(0)
         GLES30.glBufferData(
             GLES30.GL_ARRAY_BUFFER,
@@ -77,5 +76,18 @@ internal object GlBuffer {
     fun deleteBuffer(id: Int) {
         if (id == 0) return
         GLES30.glDeleteBuffers(1, intArrayOf(id), 0)
+    }
+
+    private fun scratch(count: Int): FloatBuffer {
+        val existing = vec2UploadScratch.get()
+        if (existing != null && existing.capacity() >= count) {
+            existing.clear()
+            return existing
+        }
+        val created = ByteBuffer.allocateDirect(count * Float.SIZE_BYTES)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+        vec2UploadScratch.set(created)
+        return created
     }
 }

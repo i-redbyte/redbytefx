@@ -20,6 +20,16 @@ class GlRequirementsTest {
             fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
         }
         assertEquals(glEs30LinkRequirement(), program.glLinkRequirementHint())
+        assertEquals(0, eglClientMinor(program))
+    }
+
+    @Test
+    fun computeProgramGetsEs31Hint() {
+        val program = shader(ShaderTarget.Gles31) {
+            compute(1) { }
+        }
+        assertEquals(glEs31LinkRequirement(), program.glLinkRequirementHint())
+        assertEquals(1, eglClientMinor(program))
     }
 
     @Test
@@ -35,6 +45,7 @@ class GlRequirementsTest {
             fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
         }
         assertEquals(glEs32LinkRequirement(), program.glLinkRequirementHint())
+        assertEquals(2, eglClientMinor(program))
     }
 
     @Test
