@@ -7,9 +7,16 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.viewinterop.AndroidView
 import java.nio.ByteBuffer
@@ -19,6 +26,12 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 /**
  * Embeds a [GLSurfaceView] that links and draws [controller.program].
+ *
+ * Link progress is exposed as [GlController.linkState]; the default [overlay] shows [GlLinkErrorOverlay]
+ * when linking fails. [onFrame] runs on the GL thread before each draw — use [GlFrame.seconds] for time
+ * uniforms and [GlFrame.runtime] for direct [ru.redbyte.redbytefx.gl.GlProgramRuntime] calls.
+ *
+ * Rendering follows the host [androidx.lifecycle.Lifecycle] (`onResume` / `onPause` on the surface).
  */
 @Composable
 public fun GlSurface(
@@ -33,7 +46,9 @@ public fun GlSurface(
         }
     },
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
     val linkState by controller.linkState
+    var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     Box(modifier = modifier) {
         key(controller.program) {
             AndroidView(
@@ -58,9 +73,11 @@ public fun GlSurface(
                         )
                         tag = this
                     }
+                    glSurfaceView = surfaceView
                     surfaceView
                 },
                 onRelease = { view ->
+                    glSurfaceView = null
                     val surface = view as GLSurfaceView
                     surface.onPause()
                     surface.queueEvent {
@@ -70,6 +87,27 @@ public fun GlSurface(
                     }
                 },
             )
+        }
+        DisposableEffect(lifecycleOwner, glSurfaceView) {
+            val surface = glSurfaceView
+            if (surface == null) {
+                return@DisposableEffect onDispose {}
+            }
+            val lifecycle = lifecycleOwner.lifecycle
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> surface.onResume()
+                    Lifecycle.Event.ON_PAUSE -> surface.onPause()
+                    else -> Unit
+                }
+            }
+            lifecycle.addObserver(observer)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                surface.onResume()
+            }
+            onDispose {
+                lifecycle.removeObserver(observer)
+            }
         }
         overlay(linkState)
     }

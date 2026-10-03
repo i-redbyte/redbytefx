@@ -66,7 +66,7 @@ mavenPublishing {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = SourcesJar.Sources(),
-            javadocJar = JavadocJar.Empty()
+            javadocJar = JavadocJar.Dokka("dokkaHtml")
         )
     )
     coordinates(

@@ -26,6 +26,7 @@ import ru.redbyte.redbytefx.sameFloatUniformValue
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
 
+/** Machine-readable reason for [GlException]. */
 public enum class GlCode {
     WrongThread,
     WrongTarget,
@@ -72,6 +73,7 @@ public class GlProgramRuntime(
     private var storageBytes: ByteArray? = null
     private var storageFloats: FloatArray? = null
 
+    /** Compiles and links GLES stages from [ShaderProgram]; safe to call once per instance. */
     public fun link() {
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
@@ -168,6 +170,7 @@ public class GlProgramRuntime(
         return id
     }
 
+    /** Binds this program on the owning GL thread; call before draws and uniform uploads. */
     public fun use() {
         checkReady()
         device.useProgram(programId)
@@ -317,6 +320,7 @@ public class GlProgramRuntime(
         return true
     }
 
+    /** Deletes GL objects; the instance must not be used afterward. */
     public fun destroy() {
         checkThread()
         if (destroyed) return

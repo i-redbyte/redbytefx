@@ -39,6 +39,7 @@ public class GlController internal constructor(
     internal var glQueue: ((() -> Unit) -> Unit)? = null
     internal var runtime: GlProgramRuntime? = null
 
+    /** Runs [block] on the GL thread after [GlSurface] attaches; no-op until then. */
     public fun runOnGl(block: () -> Unit) {
         val queue = glQueue
         if (queue != null) {
