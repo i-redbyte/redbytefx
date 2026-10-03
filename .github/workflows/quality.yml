@@ -10,6 +10,9 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout
@@ -22,10 +25,24 @@ jobs:
           java-version: "17"
 
       - name: Install Android SDK packages
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
+          SDK_ROOT="${ANDROID_HOME}"
+          CMDLINE_BIN="${SDK_ROOT}/cmdline-tools/latest/bin"
+          if [ ! -x "${CMDLINE_BIN}/sdkmanager" ]; then
+            for dir in "${SDK_ROOT}/cmdline-tools"/*; do
+              if [ -x "${dir}/bin/sdkmanager" ]; then
+                CMDLINE_BIN="${dir}/bin"
+                break
+              fi
+            done
+          fi
+          if [ ! -x "${CMDLINE_BIN}/sdkmanager" ]; then
+            echo "::error::sdkmanager not found under ${SDK_ROOT}/cmdline-tools"
+            exit 1
+          fi
+          echo "${CMDLINE_BIN}" >> "${GITHUB_PATH}"
+          echo "${SDK_ROOT}/platform-tools" >> "${GITHUB_PATH}"
+          export PATH="${CMDLINE_BIN}:${SDK_ROOT}/platform-tools:${PATH}"
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
