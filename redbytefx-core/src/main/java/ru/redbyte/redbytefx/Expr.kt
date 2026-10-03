@@ -65,9 +65,25 @@ internal sealed interface ExprNode {
 
     data class BlockRef(val member: BlockMember) : ExprNode
 
-    data class GlIn(val index: Int) : ExprNode
+    data class GlIn(val index: Expr<*>) : ExprNode
 
     data object TessCoord : ExprNode
+
+    data class Index(val member: BlockMember, val index: Expr<*>) : ExprNode
+
+    data class VaryingAt(val varying: Varying<*>, val index: Expr<*>) : ExprNode
+
+    data class SlotRef(val slot: LocalSlot) : ExprNode
+
+    data class TextureCube(val sampler: Expr<*>, val direction: Expr<*>) : ExprNode
+
+    data class Invocation(val kind: InvocationKind) : ExprNode
+}
+
+internal enum class InvocationKind {
+    Global,
+    Local,
+    WorkGroup,
 }
 
 internal enum class CompareOp {
@@ -87,6 +103,11 @@ internal class AttributeHandle(
 internal class VaryingWrite(
     val varying: Varying<*>,
     val value: Expr<*>,
+)
+
+internal class LocalSlot(
+    val shape: Shape,
+    val suggestedName: String?,
 )
 
 internal enum class ArithOp {

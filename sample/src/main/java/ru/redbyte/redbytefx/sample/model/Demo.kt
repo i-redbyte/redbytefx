@@ -37,34 +37,49 @@ enum class DemoId {
 }
 
 enum class DemoSection(
-    val title: String,
-    val subtitle: String
+    val title: Phrase,
+    val subtitle: Phrase,
 ) {
     Foundations(
-        title = "Foundations",
-        subtitle = "Core transforms, direct coordinate math, and the smallest useful shader building blocks."
+        title = Phrase("Foundations", "Основы"),
+        subtitle = Phrase(
+            "Core transforms, direct coordinate math, and the smallest useful shader building blocks.",
+            "Преобразования, прямая математика координат и самые маленькие полезные блоки шейдера.",
+        ),
     ),
     Motion(
-        title = "Motion",
-        subtitle = "Time-driven effects, eased timelines, and animated runtime bindings."
+        title = Phrase("Motion", "Движение"),
+        subtitle = Phrase(
+            "Time-driven effects, eased timelines, and animated runtime bindings.",
+            "Эффекты от времени, сглаженные шкалы и живые параметры.",
+        ),
     ),
     Procedural(
-        title = "Procedural",
-        subtitle = "Noise, signals, warp fields, and pattern helpers layered on top of the DSL."
+        title = Phrase("Procedural", "Процедурные"),
+        subtitle = Phrase(
+            "Noise, signals, warp fields, and pattern helpers layered on top of the DSL.",
+            "Шум, сигналы, поля искажения и готовые приёмы поверх описания.",
+        ),
     ),
     Color(
-        title = "Color",
-        subtitle = "Palettes, grading, quantization, and color-first shader authoring."
+        title = Phrase("Color", "Цвет"),
+        subtitle = Phrase(
+            "Palettes, grading, quantization, and color-first shader authoring.",
+            "Палитры, цветокор, квантование и сборка шейдера от цвета.",
+        ),
     ),
     Compositing(
-        title = "Compositing",
-        subtitle = "Masks, reveals, and layered UI treatments built from reusable recipe helpers."
-    )
+        title = Phrase("Compositing", "Сборка"),
+        subtitle = Phrase(
+            "Masks, reveals, and layered UI treatments built from reusable recipe helpers.",
+            "Маски, проявления и слои интерфейса из готовых функций.",
+        ),
+    ),
 }
 
-enum class DemoLayer(val label: String) {
-    Core("CORE DSL"),
-    Stdlib("STDLIB")
+enum class DemoLayer(val label: Phrase) {
+    Core(Phrase("CORE DSL", "Ядро")),
+    Stdlib(Phrase("STDLIB", "Библиотека")),
 }
 
 data class DemoInfo(
@@ -77,8 +92,8 @@ data class DemoInfo(
 
 data class DemoFollowUp(
     val demo: DemoInfo,
-    val label: String,
-    val description: String
+    val label: Phrase,
+    val description: Phrase,
 )
 
 enum class DemoPathKind {
@@ -90,60 +105,78 @@ enum class DemoPathKind {
 
 data class DemoPathSignal(
     val kind: DemoPathKind,
-    val badge: String,
-    val title: String,
-    val body: String,
-    val family: String? = null
+    val badge: Phrase,
+    val title: Phrase,
+    val body: Phrase,
+    val family: String? = null,
 )
 
 data class CanonicalGuide(
-    val label: String,
-    val title: String,
-    val summary: String,
+    val label: Phrase,
+    val title: Phrase,
+    val summary: Phrase,
     val helperPreview: String,
-    val demoIds: List<DemoId>
+    val demoIds: List<DemoId>,
 )
 
 val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
     CanonicalGuide(
-        label = "COORDINATES",
-        title = "Coordinate space and sampling",
-        summary = "Normalize coordinates once, keep sampling-space decisions explicit, then build local UV/light space from there.",
+        label = Phrase("COORDINATES", "КООРДИНАТЫ"),
+        title = Phrase("Coordinate space and sampling", "Пространство координат и выборка"),
+        summary = Phrase(
+            "Normalize coordinates once, keep sampling-space decisions explicit, then build local UV/light space from there.",
+            "Один раз приведите координаты к общему виду, явно решите, в каком пространстве идёт выборка, и уже от этого соберите локальные координаты света.",
+        ),
         helperPreview = "normalizedUv(...), sampleUv(...), centeredUv(...), aspectCenteredUv(...)",
         demoIds = listOf(DemoId.Halo)
     ),
     CanonicalGuide(
-        label = "MASKS / REVEAL",
-        title = "Readable masks before style chrome",
-        summary = "Start from named masks and reveal helpers instead of re-writing edge and falloff math inside every shader.",
+        label = Phrase("MASKS / REVEAL", "МАСКИ И ПРОЯВЛЕНИЕ"),
+        title = Phrase("Readable masks before style chrome", "Сначала понятные маски, потом украшение"),
+        summary = Phrase(
+            "Start from named masks and reveal helpers instead of re-writing edge and falloff math inside every shader.",
+            "Начинайте с именованных масок и проявления, а не переписывайте кромку и спад в каждом шейдере.",
+        ),
         helperPreview = "circleMask(...), rectMask(...), ringMask(...), horizontalReveal(...), verticalReveal(...), radialReveal(...)",
         demoIds = listOf(DemoId.Spotlight, DemoId.Reveal)
     ),
     CanonicalGuide(
-        label = "COMPOSITING",
-        title = "Layered color work with explicit intent",
-        summary = "Keep base, blend, mask, and amount readable so the generated AGSL still matches the authored compositing story.",
+        label = Phrase("COMPOSITING", "СБОРКА"),
+        title = Phrase("Layered color work with explicit intent", "Слои цвета с ясным замыслом"),
+        summary = Phrase(
+            "Keep base, blend, mask, and amount readable so the generated AGSL still matches the authored compositing story.",
+            "Держите основу, смешивание, маску и долю читаемыми, чтобы получившийся AGSL совпадал с задуманной сборкой.",
+        ),
         helperPreview = "maskedMix(...), alphaMask(...), maskedScreen(...)",
         demoIds = listOf(DemoId.Composite)
     ),
     CanonicalGuide(
-        label = "SHAPING / SDF",
-        title = "Signed distance to fill/stroke",
-        summary = "Turn distance fields into fills and strokes first, then build larger authored scenes from those stable shape pieces.",
+        label = Phrase("SHAPING / SDF", "ФОРМА И РАССТОЯНИЕ"),
+        title = Phrase("Signed distance to fill/stroke", "От расстояния до заливки и обводки"),
+        summary = Phrase(
+            "Turn distance fields into fills and strokes first, then build larger authored scenes from those stable shape pieces.",
+            "Сначала превратите поле расстояния в заливку и обводку, потом собирайте из этих устойчивых кусков более крупные сцены.",
+        ),
         helperPreview = "sdCircle(...), sdRoundedBox(...), softFill(...), softStroke(...)",
         demoIds = listOf(DemoId.Sigil)
     ),
     CanonicalGuide(
-        label = "SIGNAL / GRADIENTS / POLAR",
-        title = "Time-driven ramps and scan logic",
-        summary = "Treat time, sweeps, ramps, and polar scans as named authored signals instead of one-off procedural fragments.",
+        label = Phrase("SIGNAL / GRADIENTS / POLAR", "СИГНАЛ, ГРАДИЕНТЫ, ПОЛЯРНЫЕ"),
+        title = Phrase("Time-driven ramps and scan logic", "Наклоны от времени и логика сканирования"),
+        summary = Phrase(
+            "Treat time, sweeps, ramps, and polar scans as named authored signals instead of one-off procedural fragments.",
+            "Время, проходы, наклоны и полярное сканирование - это именованные сигналы, а не одноразовые куски.",
+        ),
         helperPreview = "pulse(...), bandMask(...), linearRamp(...), radialRamp(...), angularSweep(...)",
         demoIds = listOf(DemoId.Signal, DemoId.Sweep, DemoId.Radar)
     ),
     CanonicalGuide(
-        label = "ROUTING",
-        title = "Scene structure from reusable segments",
-        summary = "Build authored route logic from segment helpers before reaching for heavier scene-specific math.",
+        label = Phrase("ROUTING", "МАРШРУТЫ"),
+        title = Phrase("Scene structure from reusable segments", "Сцена из готовых отрезков"),
+        summary = Phrase(
+            "Build authored route logic from segment helpers before reaching for heavier scene-specific math.",
+            "Собирайте маршрут из функций отрезка, прежде чем браться за тяжёлую математику конкретной сцены.",
+        ),
         helperPreview = "segmentMask(...), segmentProgress(...), segmentPulse(...)",
         demoIds = listOf(DemoId.Circuit)
     )
@@ -185,40 +218,61 @@ val DemoInfo.pathSignal: DemoPathSignal
     get() = when {
         isStartHere && layer == DemoLayer.Core -> DemoPathSignal(
             kind = DemoPathKind.StartHere,
-            badge = "START HERE",
-            title = "Recommended first raw DSL route",
-            body = "Use this demo as a first mental model for coordinates, locals, uniforms, and AGSL-shaped sampling before layering on stdlib recipes.",
-            family = canonicalFamily
+            badge = Phrase("START HERE", "С ЧЕГО НАЧАТЬ"),
+            title = Phrase(
+                "Recommended first raw DSL route",
+                "Рекомендуемый первый путь по голому описанию",
+            ),
+            body = Phrase(
+                "Use this demo as a first mental model for coordinates, locals, uniforms, and AGSL-shaped sampling before layering on stdlib recipes.",
+                "Возьмите этот пример как первую модель: координаты, локальные значения, параметры и выборка в форме AGSL, прежде чем наслаивать приёмы библиотеки.",
+            ),
+            family = canonicalFamily,
         )
 
         isStartHere -> DemoPathSignal(
             kind = DemoPathKind.StartHere,
-            badge = "START HERE",
-            title = "Recommended first stdlib route",
-            body = "This demo is part of the curated starter path. Read it as a preferred entry into named helpers before exploring more stylized variants.",
-            family = canonicalFamily
+            badge = Phrase("START HERE", "С ЧЕГО НАЧАТЬ"),
+            title = Phrase(
+                "Recommended first stdlib route",
+                "Рекомендуемый первый путь по библиотеке",
+            ),
+            body = Phrase(
+                "This demo is part of the curated starter path. Read it as a preferred entry into named helpers before exploring more stylized variants.",
+                "Пример входит в короткий стартовый маршрут. Читайте его как вход в именованные функции, прежде чем смотреть более украшенные варианты.",
+            ),
+            family = canonicalFamily,
         )
 
         isCanonicalDemo -> DemoPathSignal(
             kind = DemoPathKind.Canonical,
-            badge = "CANONICAL",
-            title = "Curated helper family",
-            body = "This sits on the recommended first teaching surface. Learn this helper family before jumping into broader stylistic or recipe-heavy demos.",
-            family = canonicalFamily
+            badge = Phrase("CANONICAL", "ОСНОВНОЙ ПУТЬ"),
+            title = Phrase("Curated helper family", "Подобранное семейство функций"),
+            body = Phrase(
+                "This sits on the recommended first teaching surface. Learn this helper family before jumping into broader stylistic or recipe-heavy demos.",
+                "Это первая учебная поверхность. Сначала разберите это семейство, потом переходите к более свободным приёмам.",
+            ),
+            family = canonicalFamily,
         )
 
         layer == DemoLayer.Stdlib -> DemoPathSignal(
             kind = DemoPathKind.Exploratory,
-            badge = "EXPLORATORY",
-            title = "Secondary stdlib territory",
-            body = "Useful helpers live here, but this is intentionally beyond the first teaching surface. Map it back to the canonical families first, then use it for richer style work."
+            badge = Phrase("EXPLORATORY", "ДАЛЬШЕ ПО КАРТЕ"),
+            title = Phrase("Secondary stdlib territory", "Вторая территория библиотеки"),
+            body = Phrase(
+                "Useful helpers live here, but this is intentionally beyond the first teaching surface. Map it back to the canonical families first, then use it for richer style work.",
+                "Здесь полезные функции, но это уже за первой учебной поверхностью. Сначала сопоставьте их с основными семействами, потом берите для более богатого стиля.",
+            ),
         )
 
         else -> DemoPathSignal(
             kind = DemoPathKind.Foundation,
-            badge = "FOUNDATION",
-            title = "Supportive raw DSL building block",
-            body = "This demo stays close to AGSL shape and helps reinforce the core language model, even though it is not one of the primary starter stops."
+            badge = Phrase("FOUNDATION", "ОПОРА"),
+            title = Phrase("Supportive raw DSL building block", "Опорный блок голого описания"),
+            body = Phrase(
+                "This demo stays close to AGSL shape and helps reinforce the core language model, even though it is not one of the primary starter stops.",
+                "Пример держится близко к форме AGSL и укрепляет модель языка, хотя и не стоит на главных стартовых остановках.",
+            ),
         )
     }
 
@@ -265,27 +319,43 @@ val DemoInfo.catalogSearchText: String
         append(' ')
         append(title)
         append(' ')
+        append(DemoRussian.title(id))
+        append(' ')
         append(subtitle)
+        append(' ')
+        append(DemoRussian.subtitle(id))
         append(' ')
         append(focus)
         append(' ')
-        append(section.title)
+        append(DemoRussian.focus(id))
         append(' ')
-        append(section.subtitle)
+        append(section.title.en)
         append(' ')
-        append(layer.label)
+        append(section.title.ru)
         append(' ')
-        append(if (isAnimated) "animated" else "static")
+        append(section.subtitle.en)
+        append(' ')
+        append(section.subtitle.ru)
+        append(' ')
+        append(layer.label.en)
+        append(' ')
+        append(layer.label.ru)
+        append(' ')
+        append(if (isAnimated) "animated живое" else "static неподвижное")
         append(' ')
         if (isStartHere) {
-            append("start here ")
+            append("start here с чего начать ")
         }
         if (isCanonicalDemo) {
-            append("canonical ")
+            append("canonical основной ")
             append(canonicalFamily)
+            append(' ')
+            canonicalFamily?.let { append(DemoRussian.family(it).ru) }
             append(' ')
         }
         append(focusTags.joinToString(separator = " "))
+        append(' ')
+        append(focusTags.joinToString(separator = " ") { DemoRussian.tag(it) })
     }.lowercase()
 
 val DemoInfo.section: DemoSection
@@ -748,7 +818,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
     DemoInfo(
         id = DemoId.AnimatedGradient,
         title = "Animated Gradient",
-        subtitle = "Classic RGB sin waves over UV — straight port from raw AGSL.",
+        subtitle = "Classic RGB sin waves over UV - straight port from raw AGSL.",
         focus = "No sampling, no stdlib: only fragCoord, resolution, uniformTime, and sin/mix-style " +
             "math. Use it as a reference when translating Shadertoy or hand-written AGSL into RedByteFX.",
         snippet = """
@@ -779,7 +849,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         title = "Touch Ripple",
         subtitle = "Pointer-driven ripples on live content with bindFloat2(...).",
         focus = "Shows how Compose pointerInput + normalized UV maps to a float2 uniform so runtime " +
-            "interaction and shader rings stay in sync. Core DSL only: length, sin, mix — no stdlib.",
+            "interaction and shader rings stay in sync. Core DSL only: length, sin, mix - no stdlib.",
         snippet = """
             val d = length(uv - pointer)
             val waves = sin(d * 32f - time * 2.4f) * 0.5f + 0.5f
@@ -805,7 +875,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         title = "CRT Terminal",
         subtitle = "Barrel warp, scanlines, edge RGB split, and subtle flicker.",
         focus = "Post-process stack on sampleUv(...): per-channel offsets from edge mask, " +
-            "scanlines(fragCoord.y, ...), and vignette — a recognizable retro screen without leaving the stdlib sampling path.",
+            "scanlines(fragCoord.y, ...), and vignette - a recognizable retro screen without leaving the stdlib sampling path.",
         snippet = """
             val warpedUv = float2(saturate(uv.x + delta.x), saturate(uv.y + delta.y))
             val base = sampleUv(warpedUv)
@@ -863,60 +933,98 @@ private fun buildDemoFollowUp(
     if (currentIsCurated && candidatePath.kind == DemoPathKind.Exploratory) score += 4
     if (currentPath.family != null && currentPath.family == candidatePath.family) score += 4
 
+    val shared = sharedTags.firstOrNull()?.let { tag ->
+        Phrase(tag, DemoRussian.tag(tag))
+    }
     val (label, description) = when {
         !currentIsCurated && candidatePath.kind == DemoPathKind.StartHere -> {
-            "BACK TO START HERE" to
-                "Jump back to a recommended first-stop demo so the broader helper surface maps onto the curated mental model."
+            Phrase("BACK TO START HERE", "ОБРАТНО К НАЧАЛУ") to
+                Phrase(
+                    "Jump back to a recommended first-stop demo so the broader helper surface maps onto the curated mental model.",
+                    "Вернитесь к рекомендуемой первой остановке, чтобы широкий набор функций лёг на уже собранную модель.",
+                )
         }
 
         !currentIsCurated && candidatePath.kind == DemoPathKind.Canonical -> {
-            "BACK TO CANONICAL" to
-                "Use this curated demo to reconnect the current effect with the recommended helper family before returning to richer variants."
+            Phrase("BACK TO CANONICAL", "ОБРАТНО К ОСНОВНОМУ ПУТИ") to
+                Phrase(
+                    "Use this curated demo to reconnect the current effect with the recommended helper family before returning to richer variants.",
+                    "Этим примером свяжите текущий эффект с рекомендуемым семейством, прежде чем возвращаться к более богатым вариантам.",
+                )
         }
 
         currentIsCurated && candidatePath.kind == DemoPathKind.Exploratory -> {
-            "RICHER VARIANT" to
-                "See how the same mental model expands into a more stylized or helper-heavier demo once the canonical path is clear."
+            Phrase("RICHER VARIANT", "БОЛЕЕ БОГАТЫЙ ВАРИАНТ") to
+                Phrase(
+                    "See how the same mental model expands into a more stylized or helper-heavier demo once the canonical path is clear.",
+                    "Посмотрите, как та же модель разрастается в более украшенный пример, когда основной путь уже ясен.",
+                )
         }
 
         currentPath.family != null && currentPath.family == candidatePath.family -> {
-            "SAME PATH FAMILY" to
-                "Stay inside the same curated family and compare another demo that reinforces the same teaching surface."
+            Phrase("SAME PATH FAMILY", "ТО ЖЕ СЕМЕЙСТВО") to
+                Phrase(
+                    "Stay inside the same curated family and compare another demo that reinforces the same teaching surface.",
+                    "Оставайтесь в том же семействе и сравните другой пример той же учебной поверхности.",
+                )
         }
 
         sameSection && !sameLayer -> {
-            "SAME TOPIC, OTHER LAYER" to
-                "Compare the same ${current.section.title.lowercase()} ideas through ${candidate.layer.label.lowercase()} authoring."
+            Phrase("SAME TOPIC, OTHER LAYER", "ТА ЖЕ ТЕМА, ДРУГОЙ СЛОЙ") to
+                Phrase(
+                    "Compare the same ${current.section.title.en.lowercase()} ideas through ${candidate.layer.label.en.lowercase()} authoring.",
+                    "Сравните те же идеи раздела «${current.section.title.ru}» в слое «${candidate.layer.label.ru}».",
+                )
         }
 
-        sameSection && sharedTags.isNotEmpty() -> {
-            "NEXT IN ${candidate.section.title.uppercase()}" to
-                "Stay in ${candidate.section.title.lowercase()} and follow the shared ${sharedTags.first()} thread into a nearby demo."
+        sameSection && shared != null -> {
+            Phrase(
+                "NEXT IN ${candidate.section.title.en.uppercase()}",
+                "ДАЛЬШЕ В РАЗДЕЛЕ «${candidate.section.title.ru.uppercase()}»",
+            ) to Phrase(
+                "Stay in ${candidate.section.title.en.lowercase()} and follow the shared ${shared.en} thread into a nearby demo.",
+                "Оставайтесь в разделе «${candidate.section.title.ru}» и идите по общей нити «${shared.ru}» в соседний пример.",
+            )
         }
 
-        sharedTags.isNotEmpty() -> {
-            "SHARES ${sharedTags.first().uppercase()}" to
-                "Jump sideways into another demo that reuses the same ${sharedTags.first()} idea in a different context."
+        shared != null -> {
+            Phrase("SHARES ${shared.en.uppercase()}", "ОБЩЕЕ: ${shared.ru.uppercase()}") to
+                Phrase(
+                    "Jump sideways into another demo that reuses the same ${shared.en} idea in a different context.",
+                    "Шагните в сторону: другой пример использует ту же идею «${shared.ru}» в ином контексте.",
+                )
         }
 
         sameLayer -> {
-            "MORE ${candidate.layer.label}" to
-                "Keep reading the same authoring layer before switching mental models."
+            Phrase("MORE ${candidate.layer.label.en}", "ЕЩЁ ИЗ СЛОЯ «${candidate.layer.label.ru.uppercase()}»") to
+                Phrase(
+                    "Keep reading the same authoring layer before switching mental models.",
+                    "Сначала дочитайте тот же слой, потом меняйте модель.",
+                )
         }
 
         sameMotion -> {
             if (candidate.isAnimated) {
-                "MORE ANIMATED FLOW" to
-                    "Compare another time-driven demo with a similar live-preview rhythm."
+                Phrase("MORE ANIMATED FLOW", "ЕЩЁ ЖИВОЕ ДВИЖЕНИЕ") to
+                    Phrase(
+                        "Compare another time-driven demo with a similar live-preview rhythm.",
+                        "Сравните другой пример от времени с похожим ритмом живой картинки.",
+                    )
             } else {
-                "MORE STATIC INSPECTION" to
-                    "Compare another still demo where the generated AGSL is easier to read without animation noise."
+                Phrase("MORE STATIC INSPECTION", "ЕЩЁ НЕПОДВИЖНЫЙ РАЗБОР") to
+                    Phrase(
+                        "Compare another still demo where the generated AGSL is easier to read without animation noise.",
+                        "Сравните другой неподвижный пример: получившийся AGSL легче читать без шума движения.",
+                    )
             }
         }
 
         else -> {
-            "KEEP EXPLORING" to
-                "Use this as a nearby reference point while you map the catalog."
+            Phrase("KEEP EXPLORING", "СМОТРЕТЬ ДАЛЬШЕ") to
+                Phrase(
+                    "Use this as a nearby reference point while you map the catalog.",
+                    "Возьмите это как соседнюю опору, пока разбираетесь в каталоге.",
+                )
         }
     }
 

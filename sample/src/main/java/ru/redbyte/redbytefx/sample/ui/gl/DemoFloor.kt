@@ -58,7 +58,7 @@ internal fun floorScene(): TimedScene {
 @Composable
 internal fun DemoFloor() {
     val scene = remember { floorScene() }
-    GlCanvas(scene.program, scene.mesh) { frame ->
+    GlCanvas(scene.program, scene.mesh, dsl = floorDsl) { frame ->
         frame.bind(scene)
         frame.replace(floorMesh(frame.seconds * 0.7f))
     }

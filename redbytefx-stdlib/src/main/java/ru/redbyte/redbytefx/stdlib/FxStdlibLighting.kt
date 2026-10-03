@@ -28,7 +28,7 @@ public fun FragmentDsl.normalizedUv(
  * when normalized UV is only used for masks/gradients while the actual content read still happens
  * at `fragCoord`.
  *
- * Do not pass pixel coordinates or `fragCoord` here — use core `sample(...)` instead.
+ * Do not pass pixel coordinates or `fragCoord` here - use core `sample(...)` instead.
  */
 public fun FragmentDsl.sampleUv(
     uv: Expr<Vec2<Flt<High>>>

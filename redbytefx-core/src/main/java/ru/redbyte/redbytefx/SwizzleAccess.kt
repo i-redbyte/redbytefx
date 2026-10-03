@@ -41,6 +41,15 @@ public val <P : Prec> Expr<Vec2<Flt<P>>>.y: Expr<Flt<P>> get() = swizzleAs(this,
 @get:JvmName("xyVec2")
 public val <P : Prec> Expr<Vec2<Flt<P>>>.xy: Expr<Vec2<Flt<P>>> get() = swizzleAs(this, "xy")
 
+@get:JvmName("xIntVec3")
+public val Expr<Vec3<IntS>>.x: Expr<IntS> get() = swizzleAs(this, "x")
+
+@get:JvmName("yIntVec3")
+public val Expr<Vec3<IntS>>.y: Expr<IntS> get() = swizzleAs(this, "y")
+
+@get:JvmName("zIntVec3")
+public val Expr<Vec3<IntS>>.z: Expr<IntS> get() = swizzleAs(this, "z")
+
 @get:JvmName("xVec3")
 public val <P : Prec> Expr<Vec3<Flt<P>>>.x: Expr<Flt<P>> get() = swizzleAs(this, "x")
 

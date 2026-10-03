@@ -89,4 +89,111 @@ class ComputeShaderTest {
             }
         }
     }
+
+    @Test
+    fun computeIndexesAStd430ArrayByInvocationId() {
+        val program = shader(ShaderTarget.Gles31) {
+            storageBlock("grid") {
+                val values = vec4Array("values", 4)
+                compute(8, 2, 1) {
+                    values[globalId.x].store(vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit))
+                }
+            }
+        }
+        val source = program.computeSource()
+        assertTrue(source.contains("ivec3(gl_GlobalInvocationID)"))
+        assertTrue(source.contains("highp vec4 values[4];"))
+        assertTrue(source.contains("layout(local_size_x = 8, local_size_y = 2, local_size_z = 1) in;"))
+        assertTrue(source.contains("b_grid.values[ivec3(gl_GlobalInvocationID).x]"))
+
+        lateinit var colors: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            colors = storageBlock("colors") { vec3Array("values", 2) }
+            compute(1) { }
+        }
+        assertEquals(0, colors.offsets[0])
+        assertEquals(32, colors.byteSize)
+        val packed = packStd430(colors, floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f))
+        assertEquals(32, packed.size)
+        val rejected = assertThrows(IllegalArgumentException::class.java) {
+            packStd430(colors, floatArrayOf(1f, 2f, 3f))
+        }
+        assertTrue(rejected.message!!.contains("colors"))
+        assertTrue(rejected.message!!.contains("6"))
+    }
+
+    @Test
+    fun packStd430PadsAVec3AndDerivesAnUnsizedTail() {
+        lateinit var color: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            color = storageBlock("color") { vec3Array("rgb", 1) }
+            compute(1) { }
+        }
+        val packed = packStd430(color, floatArrayOf(1f, 2f, 3f))
+        assertEquals(16, packed.size)
+        val view = java.nio.ByteBuffer.wrap(packed).order(java.nio.ByteOrder.nativeOrder())
+        assertEquals(1f, view.float, 0f)
+        assertEquals(2f, view.float, 0f)
+        assertEquals(3f, view.float, 0f)
+        assertEquals(0f, view.float, 0f)
+
+        lateinit var tail: StorageBlock
+        val unsized = shader(ShaderTarget.Gles31) {
+            tail = storageBlock("tail") {
+                float("head")
+                floatArray("rest")
+            }
+            compute(1) { }
+        }
+        assertTrue(unsized.computeSource().contains("highp float rest[];"))
+        val tailBytes = packStd430(tail, floatArrayOf(1f, 2f, 3f))
+        assertEquals(12, tailBytes.size)
+        assertEquals(12, tail.byteSize(3))
+        val hidden = assertThrows(IllegalStateException::class.java) { tail.byteSize }
+        assertTrue(hidden.message!!.contains("tail"))
+        assertTrue(hidden.message!!.contains("byteSize"))
+        val notLast = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles31) {
+                storageBlock("cells") {
+                    floatArray("rest")
+                    float("head")
+                }
+                compute(1) { }
+            }
+        }
+        assertEquals(ProgramCode.UnsizedStorageNotLast, notLast.code)
+    }
+
+    @Test
+    fun sharedMemoryStaysInsideComputeAndUniformBlocksStayOffAgsl() {
+        val shared = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    sharedFloat("cells", 4)
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(AuthoringCode.SharedOutsideCompute, shared.code)
+
+        val agsl = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                uniformBlock("frame") { float("gain") }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+        }
+        assertEquals(AuthoringCode.UniformBlockOnAgsl, agsl.code)
+
+        lateinit var gain: HighFloat
+        val compute = shader(ShaderTarget.Gles31) {
+            uniformBlock("frame") { gain = float("gain") }
+            storageBlock("cells") {
+                val value = float("value")
+                compute(4) { value.store(gain) }
+            }
+        }
+        assertTrue(compute.computeSource().contains("layout(std140) uniform frame {"))
+        assertTrue(compute.computeSource().contains("highp float gain;"))
+    }
 }

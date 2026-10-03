@@ -1,14 +1,23 @@
 package ru.redbyte.redbytefx.gl
 
+import ru.redbyte.redbytefx.BoolS
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
-import ru.redbyte.redbytefx.Precision
+import ru.redbyte.redbytefx.IntS
+import ru.redbyte.redbytefx.Mat2
+import ru.redbyte.redbytefx.Mat3
+import ru.redbyte.redbytefx.Mat4
+import ru.redbyte.redbytefx.Med
 import ru.redbyte.redbytefx.Sampler2D
+import ru.redbyte.redbytefx.SamplerCube
 import ru.redbyte.redbytefx.ScalarKind
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Shape
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.Vec2
+import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.packStd140
@@ -24,6 +33,7 @@ public enum class GlCode {
     Destroyed,
     CompileFailed,
     LinkFailed,
+    TextureUnitLimit,
 }
 
 public class GlException(
@@ -44,6 +54,8 @@ public class GlProgramRuntime(
 ) {
     private val locations = IdentityHashMap<Uniform<*>, Int>()
     private val floatValues = IdentityHashMap<Uniform<*>, Float>()
+    private val vectorValues = IdentityHashMap<Uniform<*>, FloatArray>()
+    private val intValues = IdentityHashMap<Uniform<*>, Int>()
     private val textureUnits = IdentityHashMap<Uniform<*>, Int>()
     private val textureIds = IdentityHashMap<Uniform<*>, Int>()
     private var programId = 0
@@ -68,9 +80,25 @@ public class GlProgramRuntime(
         for (slot in program.spelledUniforms()) {
             val location = device.uniformLocation(id, slot.name)
             locations[slot.uniform] = location
-            val default = slot.uniform.default ?: continue
-            if (location >= 0 && isHighFloat(slot.uniform.shape)) {
+            if (location < 0) continue
+            val default = slot.uniform.default
+            if (default != null && isGlFloatScalar(slot.uniform.shape)) {
                 writeFloat(slot.uniform, location, default)
+            }
+            val components = slot.uniform.components
+            if (components != null && isGlFloatVector(slot.uniform.shape)) {
+                writeVector(slot.uniform, location, components)
+            }
+            if (components != null && slot.uniform.shape is Shape.Matrix) {
+                writeMatrix(slot.uniform, location, components)
+            }
+            val intDefault = slot.uniform.intDefault
+            if (intDefault != null && isGlIntScalar(slot.uniform.shape)) {
+                writeInt(slot.uniform, location, intDefault)
+            }
+            val boolDefault = slot.uniform.boolDefault
+            if (boolDefault != null && isGlBoolScalar(slot.uniform.shape)) {
+                writeInt(slot.uniform, location, if (boolDefault) 1 else 0)
             }
         }
         linked = true
@@ -129,17 +157,74 @@ public class GlProgramRuntime(
         device.useProgram(programId)
     }
 
-    public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean {
+    public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = writeScalar(uniform, value)
+
+    @JvmName("setMedFloat")
+    public fun set(uniform: Uniform<Flt<Med>>, value: Float): Boolean = writeScalar(uniform, value)
+
+    public fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y))
+
+    @JvmName("setMedVec2")
+    public fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y))
+
+    public fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y, z))
+
+    @JvmName("setMedVec3")
+    public fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y, z))
+
+    public fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y, z, w))
+
+    @JvmName("setMedVec4")
+    public fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean =
+        writeVector(uniform, floatArrayOf(x, y, z, w))
+
+    public fun bind(uniform: Uniform<Sampler2D>, texture: Int): Boolean =
+        bindSampler(uniform, texture, Shape.Sampler2D, device::bindTexture2D)
+
+    @JvmName("bindCube")
+    public fun bind(uniform: Uniform<SamplerCube>, texture: Int): Boolean =
+        bindSampler(uniform, texture, Shape.SamplerCube, device::bindTextureCube)
+
+    public fun set(uniform: Uniform<IntS>, value: Int): Boolean = writeIntUniform(uniform, value)
+
+    public fun set(uniform: Uniform<BoolS>, value: Boolean): Boolean =
+        writeIntUniform(uniform, if (value) 1 else 0)
+
+    @JvmName("setMat2")
+    public fun set(uniform: Uniform<Mat2>, values: FloatArray): Boolean = writeMatrixUniform(uniform, values, 4)
+
+    @JvmName("setMat3")
+    public fun set(uniform: Uniform<Mat3>, values: FloatArray): Boolean = writeMatrixUniform(uniform, values, 9)
+
+    @JvmName("setMat4")
+    public fun set(uniform: Uniform<Mat4>, values: FloatArray): Boolean = writeMatrixUniform(uniform, values, 16)
+
+    public fun dispatch(x: Int, y: Int = 1, z: Int = 1) {
+        require(x >= 1 && y >= 1 && z >= 1) {
+            "Compute dispatch size must be at least 1, was $x, $y, $z"
+        }
         checkReady()
-        require(isHighFloat(uniform.shape)) { "GL float uniform must be a highp float" }
-        val location = locationOf(uniform)
-        if (location < 0) return false
-        return writeFloat(uniform, location, value)
+        if (program.target != ShaderTarget.Gles31) {
+            reject(GlCode.WrongTarget, "dispatch requires a GLES 3.1 compute program")
+        }
+        device.useProgram(programId)
+        device.dispatchCompute(x, y, z)
+        device.shaderStorageBarrier()
     }
 
-    public fun bind(uniform: Uniform<Sampler2D>, texture: Int): Boolean {
+    private fun bindSampler(
+        uniform: Uniform<*>,
+        texture: Int,
+        expected: Shape,
+        bind: (Int) -> Unit,
+    ): Boolean {
         checkReady()
-        require(uniform.shape == Shape.Sampler2D) { "GL sampler bind requires sampler2D" }
+        require(uniform.shape == expected) { "GL sampler bind requires $expected" }
         val location = locationOf(uniform)
         if (location < 0) return false
         val unit = textureUnits[uniform] ?: assignUnit(uniform, location)
@@ -147,7 +232,7 @@ public class GlProgramRuntime(
         if (previous != null && previous == texture) return false
         textureIds[uniform] = texture
         device.activeTexture(unit)
-        device.bindTexture2D(texture)
+        bind(texture)
         return true
     }
 
@@ -187,6 +272,8 @@ public class GlProgramRuntime(
             device.shaderStorageData(storageBufferId, packed)
             device.useProgram(programId)
             device.bindShaderStorageBase(storageBufferId, 0)
+        } else if (previous == null || previous.size != packed.size) {
+            device.shaderStorageData(storageBufferId, packed)
         } else {
             device.shaderStorageSubData(storageBufferId, packed)
         }
@@ -219,12 +306,90 @@ public class GlProgramRuntime(
     }
 
     private fun assignUnit(uniform: Uniform<*>, location: Int): Int {
+        val limit = device.maxCombinedTextureImageUnits()
+        if (nextTextureUnit >= limit) {
+            reject(
+                GlCode.TextureUnitLimit,
+                "Texture unit $nextTextureUnit is outside GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS $limit",
+            )
+        }
         val unit = nextTextureUnit
         nextTextureUnit += 1
         textureUnits[uniform] = unit
         device.useProgram(programId)
         device.uniform1i(location, unit)
         return unit
+    }
+
+    private fun writeScalar(uniform: Uniform<*>, value: Float): Boolean {
+        checkReady()
+        require(isGlFloatScalar(uniform.shape)) { "GL float uniform must be a float" }
+        val location = locationOf(uniform)
+        if (location < 0) return false
+        return writeFloat(uniform, location, value)
+    }
+
+    private fun writeVector(uniform: Uniform<*>, value: FloatArray): Boolean {
+        checkReady()
+        require(isGlFloatVector(uniform.shape)) { "GL vector uniform must be a float vector" }
+        val location = locationOf(uniform)
+        if (location < 0) return false
+        return writeVector(uniform, location, value)
+    }
+
+    private fun writeVector(uniform: Uniform<*>, location: Int, value: FloatArray): Boolean {
+        val previous = vectorValues[uniform]
+        if (previous != null && sameVector(previous, value)) return false
+        vectorValues[uniform] = value.copyOf()
+        device.useProgram(programId)
+        when (value.size) {
+            2 -> device.uniform2f(location, value[0], value[1])
+            3 -> device.uniform3f(location, value[0], value[1], value[2])
+            4 -> device.uniform4f(location, value[0], value[1], value[2], value[3])
+            else -> error("Vector uniform width must be 2, 3, or 4")
+        }
+        return true
+    }
+
+    private fun writeIntUniform(uniform: Uniform<*>, value: Int): Boolean {
+        checkReady()
+        val location = locationOf(uniform)
+        if (location < 0) return false
+        return writeInt(uniform, location, value)
+    }
+
+    private fun writeInt(uniform: Uniform<*>, location: Int, value: Int): Boolean {
+        val previous = intValues[uniform]
+        if (previous != null && previous == value) return false
+        intValues[uniform] = value
+        device.useProgram(programId)
+        device.uniform1i(location, value)
+        return true
+    }
+
+    private fun writeMatrixUniform(uniform: Uniform<*>, values: FloatArray, expected: Int): Boolean {
+        checkReady()
+        require(values.size == expected) {
+            "Matrix uniform expects $expected floats, was ${values.size}"
+        }
+        require(uniform.shape is Shape.Matrix) { "GL matrix uniform must be a matrix" }
+        val location = locationOf(uniform)
+        if (location < 0) return false
+        return writeMatrix(uniform, location, values)
+    }
+
+    private fun writeMatrix(uniform: Uniform<*>, location: Int, values: FloatArray): Boolean {
+        val previous = vectorValues[uniform]
+        if (previous != null && sameVector(previous, values)) return false
+        vectorValues[uniform] = values.copyOf()
+        device.useProgram(programId)
+        when (values.size) {
+            4 -> device.uniformMatrix2fv(location, values)
+            9 -> device.uniformMatrix3fv(location, values)
+            16 -> device.uniformMatrix4fv(location, values)
+            else -> error("Matrix uniform width must be 4, 9, or 16")
+        }
+        return true
     }
 
     private fun writeFloat(uniform: Uniform<*>, location: Int, value: Float): Boolean {
@@ -266,7 +431,24 @@ public class GlProgramRuntime(
     }
 }
 
-private fun isHighFloat(shape: Shape): Boolean =
-    shape is Shape.Scalar && shape.kind == ScalarKind.Float && shape.precision == Precision.High
+private fun isGlFloatScalar(shape: Shape): Boolean =
+    shape is Shape.Scalar && shape.kind == ScalarKind.Float
+
+private fun isGlFloatVector(shape: Shape): Boolean =
+    shape is Shape.Vector && shape.kind == ScalarKind.Float
+
+private fun isGlIntScalar(shape: Shape): Boolean =
+    shape is Shape.Scalar && shape.kind == ScalarKind.Int
+
+private fun isGlBoolScalar(shape: Shape): Boolean =
+    shape is Shape.Scalar && shape.kind == ScalarKind.Bool
+
+private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
+    if (previous.size != value.size) return false
+    for (index in previous.indices) {
+        if (!sameFloatUniformValue(previous[index], value[index])) return false
+    }
+    return true
+}
 
 private fun reject(code: GlCode, message: String): Nothing = throw GlException(code, message)

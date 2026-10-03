@@ -44,6 +44,11 @@ internal enum class AuthoringAction {
     StorageWrite,
     Let,
     Return,
+    Discard,
+    Derivative,
+    DeclareShared,
+    Barrier,
+    Repeat,
 }
 
 internal enum class AuthoringCode {
@@ -51,6 +56,8 @@ internal enum class AuthoringCode {
     UniformInsideFunction,
     SamplerOutsideProgram,
     SamplerOnAgsl,
+    MatrixOnAgsl,
+    BoolOnAgsl,
     VaryingOutsideProgram,
     VaryingOnAgsl,
     UniformBlockOnAgsl,
@@ -87,6 +94,11 @@ internal enum class AuthoringCode {
     TessLevelOutsideTessControl,
     LetOutsideStage,
     ReturnOutsideStage,
+    DiscardOutsideFragment,
+    DerivativeOutsideFragment,
+    SharedOutsideCompute,
+    BarrierOutsideCompute,
+    RepeatOutsideStage,
 }
 
 internal data class AuthoringState(
@@ -96,11 +108,10 @@ internal data class AuthoringState(
 ) {
     init {
         val parentOk = when (place) {
-            AuthoringPlace.Function ->
-                functionParent == AuthoringPlace.Vertex || functionParent == AuthoringPlace.Fragment
+            AuthoringPlace.Function -> functionParent in STAGE_PARENTS
             else -> functionParent == null
         }
-        require(parentOk) { "Function state requires a vertex or fragment parent" }
+        require(parentOk) { "Function state requires a stage parent" }
     }
 }
 
@@ -165,6 +176,31 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
             state.place != AuthoringPlace.Program,
             AuthoringCode.ReturnOutsideStage,
         )
+        AuthoringAction.Discard -> allow(
+            state,
+            fragmentOnly(state),
+            AuthoringCode.DiscardOutsideFragment,
+        )
+        AuthoringAction.Derivative -> allow(
+            state,
+            fragmentOnly(state),
+            AuthoringCode.DerivativeOutsideFragment,
+        )
+        AuthoringAction.DeclareShared -> allow(
+            state,
+            computeOnly(state),
+            AuthoringCode.SharedOutsideCompute,
+        )
+        AuthoringAction.Barrier -> allow(
+            state,
+            computeOnly(state),
+            AuthoringCode.BarrierOutsideCompute,
+        )
+        AuthoringAction.Repeat -> allow(
+            state,
+            state.place != AuthoringPlace.Program,
+            AuthoringCode.RepeatOutsideStage,
+        )
     }
 
 private fun declareUniform(state: AuthoringState): AuthoringStep = when (state.place) {
@@ -183,7 +219,7 @@ private fun declareSampler(state: AuthoringState): AuthoringStep = when {
 
 private fun declareUniformBlock(state: AuthoringState): AuthoringStep = when {
     state.target == ShaderTarget.Agsl -> reject(state, AuthoringCode.UniformBlockOnAgsl)
-    state.target == ShaderTarget.Gles30 && state.place == AuthoringPlace.Program -> accept(state)
+    state.place == AuthoringPlace.Program && state.target != ShaderTarget.Agsl -> accept(state)
     else -> reject(state, AuthoringCode.UniformBlockOutsideProgram)
 }
 
@@ -265,12 +301,10 @@ private fun storageWrite(state: AuthoringState): AuthoringStep = when {
 
 private fun enterFunction(state: AuthoringState): AuthoringStep = when (state.place) {
     AuthoringPlace.Function -> reject(state, AuthoringCode.NestedFunction)
-    AuthoringPlace.Vertex, AuthoringPlace.Fragment -> accept(
-        state.copy(place = AuthoringPlace.Function, functionParent = state.place),
-    )
-    AuthoringPlace.Program, AuthoringPlace.Compute, AuthoringPlace.Geometry,
-    AuthoringPlace.TessControl, AuthoringPlace.TessEval,
-    -> reject(state, AuthoringCode.FunctionOutsideStage)
+    AuthoringPlace.Vertex, AuthoringPlace.Fragment, AuthoringPlace.Compute,
+    AuthoringPlace.Geometry, AuthoringPlace.TessControl, AuthoringPlace.TessEval,
+    -> accept(state.copy(place = AuthoringPlace.Function, functionParent = state.place))
+    AuthoringPlace.Program -> reject(state, AuthoringCode.FunctionOutsideStage)
 }
 
 private fun leaveStage(state: AuthoringState): AuthoringStep = when (state.place) {
@@ -301,6 +335,52 @@ private fun attribute(state: AuthoringState): AuthoringStep = when {
 
 private fun allow(state: AuthoringState, legal: Boolean, code: AuthoringCode): AuthoringStep =
     if (legal) accept(state) else reject(state, code)
+
+private fun fragmentOnly(state: AuthoringState): Boolean = when (state.place) {
+    AuthoringPlace.Fragment -> true
+    AuthoringPlace.Function -> state.functionParent == AuthoringPlace.Fragment
+    else -> false
+}
+
+private fun computeOnly(state: AuthoringState): Boolean = when (state.place) {
+    AuthoringPlace.Compute -> true
+    AuthoringPlace.Function -> state.functionParent == AuthoringPlace.Compute
+    else -> false
+}
+
+private val STAGE_PARENTS = setOf(
+    AuthoringPlace.Vertex,
+    AuthoringPlace.Fragment,
+    AuthoringPlace.Compute,
+    AuthoringPlace.Geometry,
+    AuthoringPlace.TessControl,
+    AuthoringPlace.TessEval,
+)
+
+internal fun requireAuthoring(action: AuthoringAction) {
+    val gate = authoringGate.get() ?: throw AuthoringException(authoringFallback(action))
+    gate(action)
+}
+
+internal fun <T> withAuthoring(advance: (AuthoringAction) -> Unit, block: () -> T): T {
+    val previous = authoringGate.get()
+    authoringGate.set(advance)
+    try {
+        return block()
+    } finally {
+        if (previous == null) authoringGate.remove() else authoringGate.set(previous)
+    }
+}
+
+private fun authoringFallback(action: AuthoringAction): AuthoringCode = when (action) {
+    AuthoringAction.Derivative -> AuthoringCode.DerivativeOutsideFragment
+    AuthoringAction.Discard -> AuthoringCode.DiscardOutsideFragment
+    AuthoringAction.DeclareShared -> AuthoringCode.SharedOutsideCompute
+    AuthoringAction.Barrier -> AuthoringCode.BarrierOutsideCompute
+    else -> AuthoringCode.RepeatOutsideStage
+}
+
+private val authoringGate = ThreadLocal<(AuthoringAction) -> Unit>()
 
 private fun accept(state: AuthoringState): AuthoringStep = AuthoringStep(state, null)
 

@@ -58,6 +58,8 @@ public sealed interface Shape {
 
     public data object Sampler2D : Shape
 
+    public data object SamplerCube : Shape
+
     public data object ChildShader : Shape
 
     private companion object {

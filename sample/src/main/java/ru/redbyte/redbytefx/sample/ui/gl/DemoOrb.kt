@@ -80,5 +80,5 @@ internal fun orbScene(): TimedScene {
 @Composable
 internal fun DemoOrb() {
     val scene = remember { orbScene() }
-    GlCanvas(scene.program, scene.mesh) { frame -> frame.bind(scene) }
+    GlCanvas(scene.program, scene.mesh, dsl = orbDsl) { frame -> frame.bind(scene) }
 }

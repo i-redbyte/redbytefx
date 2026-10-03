@@ -57,6 +57,9 @@ import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.DemoScreen
 import ru.redbyte.redbytefx.sample.ui.HomeScreen
 import ru.redbyte.redbytefx.sample.ui.LabHome
+import ru.redbyte.redbytefx.sample.ui.say
+import ru.redbyte.redbytefx.sample.ui.show
+import ru.redbyte.redbytefx.sample.ui.shownTitle
 import ru.redbyte.redbytefx.sample.ui.gl.GlExample
 import ru.redbyte.redbytefx.sample.ui.gl.GlExampleList
 import ru.redbyte.redbytefx.sample.ui.gl.GlExampleScreen
@@ -79,7 +82,7 @@ fun RedByteFxSampleApp(
         currentDemo?.let { id -> DemoCatalog.firstOrNull { it.id == id } }
     }
 
-    val title = sampleTitle(lab, appName, currentInfo?.title, glExample?.title)
+    val title = sampleTitle(lab, appName, currentInfo?.shownTitle(), glExample?.title?.show())
     val positionLabel = if (lab == SampleLab.Agsl && currentInfo != null) {
         "#${DemoCatalog.indexOf(currentInfo) + 1}/${DemoCatalog.size}"
     } else {
@@ -158,7 +161,7 @@ fun RedByteFxSampleApp(
                                     ) {
                                         if (lab != SampleLab.Hub) {
                                             CyberBadge(
-                                                text = "Back",
+                                                text = say("Back", "Назад"),
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(14.dp))
                                                     .clickable { retreat() },
@@ -168,7 +171,7 @@ fun RedByteFxSampleApp(
                                             )
                                         } else {
                                             CyberBadge(
-                                                text = "Live cookbook",
+                                                text = say("Live cookbook", "Живой сборник"),
                                                 accent = MaterialTheme.colorScheme.secondary,
                                                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                                                 textColor = MaterialTheme.colorScheme.onSurface
@@ -307,12 +310,28 @@ private fun sampleTitle(
     else -> appName
 }
 
+@Composable
 private fun sampleRoute(lab: SampleLab, demoName: String?, glName: String?): String = when {
-    lab == SampleLab.Agsl && demoName != null -> "demo://${demoName.lowercase()} / runtime: live"
-    lab == SampleLab.Agsl -> "agsl://cookbook / runtime shader"
-    lab == SampleLab.Gl && glName != null -> "gles://${glName.lowercase()} / es 3.0"
-    lab == SampleLab.Gl -> "gles://examples / es 3.0"
-    else -> "matrix://shader-lab / redbytefx.sample"
+    lab == SampleLab.Agsl && demoName != null -> say(
+        "demo://${demoName.lowercase()} / runtime: live",
+        "пример://${demoName.lowercase()} / показ: живой",
+    )
+    lab == SampleLab.Agsl -> say(
+        "agsl://cookbook / runtime shader",
+        "agsl://сборник / шейдер вживую",
+    )
+    lab == SampleLab.Gl && glName != null -> say(
+        "gles://${glName.lowercase()} / es 3.0",
+        "gles://${glName.lowercase()} / es 3.0",
+    )
+    lab == SampleLab.Gl -> say(
+        "gles://examples / es 3.0",
+        "gles://примеры / es 3.0",
+    )
+    else -> say(
+        "matrix://shader-lab / redbytefx.sample",
+        "matrix://лаборатория / redbytefx.sample",
+    )
 }
 
 @Composable

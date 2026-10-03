@@ -4,8 +4,44 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
+import ru.redbyte.redbytefx.sample.ui.demos.glesTriangle
 
 class GlScenesTest {
+    @Test
+    fun everySceneShowsTheDslBesideTheGlslItCompilesTo() {
+        val pairs = listOf(
+            glesTriangle().program to triangleDsl,
+            ballProgram().program to ballsDsl,
+            flagScene().program to flagDsl,
+            floorScene().program to floorDsl,
+            lampScene().program to lampDsl,
+            cityScene().program to cityDsl,
+            orbScene().program to orbDsl,
+            bandsScene().program to bandsDsl,
+            paletteScene().program to paletteDsl,
+            hedgehogScene().program to hedgehogDsl,
+            oceanScene().program to oceanDsl,
+            wireScene().program to wireDsl,
+            stormScene().program to stormDsl,
+            wordScene(floatArrayOf(0f, 0f, 0f, 1f, 0f, 1f, 0f, 1f)).program to wordDsl,
+            playfield(0.01f, 0.02f, 0.04f).program to gameDsl("tunnel"),
+            playfield(0.03f, 0.02f, 0.02f).program to gameDsl("maze"),
+            playfield(0.02f, 0.02f, 0.04f).program to gameDsl("breakout"),
+            playfield(0.01f, 0.01f, 0.03f).program to gameDsl("raid"),
+            playfield(0.02f, 0.03f, 0.06f).program to gameDsl("descent"),
+        )
+        assertEquals(GlExample.entries.size, pairs.size)
+        pairs.forEach { (program, dsl) ->
+            val glsl = glesListing(program)
+            assertTrue(dsl.contains("shader("))
+            assertTrue(glsl.contains("// vertex"))
+            assertTrue(glsl.contains("// fragment"))
+            assertTrue(glsl.contains("void main"))
+            if (dsl.contains("geometry(")) assertTrue(glsl.contains("// geometry"))
+            if (dsl.contains("tessEval(")) assertTrue(glsl.contains("// tessellation evaluation"))
+        }
+    }
+
     @Test
     fun everySceneBuildsALinkedProgram() {
         val sources = listOf(

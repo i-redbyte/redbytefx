@@ -67,5 +67,5 @@ internal fun lampScene(): TimedScene {
 @Composable
 internal fun DemoLamp() {
     val scene = remember { lampScene() }
-    GlCanvas(scene.program, scene.mesh) { frame -> frame.bind(scene) }
+    GlCanvas(scene.program, scene.mesh, dsl = lampDsl) { frame -> frame.bind(scene) }
 }

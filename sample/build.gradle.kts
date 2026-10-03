@@ -18,8 +18,8 @@ android {
         applicationId = "ru.redbyte.redbytefx.sample"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.1.0"
     }
 
     buildFeatures {

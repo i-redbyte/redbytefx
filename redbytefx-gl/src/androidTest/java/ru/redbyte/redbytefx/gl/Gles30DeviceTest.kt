@@ -24,6 +24,8 @@ import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
+import ru.redbyte.redbytefx.x
+import ru.redbyte.redbytefx.y
 
 @RunWith(AndroidJUnit4::class)
 class Gles30DeviceTest {
@@ -194,6 +196,56 @@ class Gles30DeviceTest {
             runtime.link()
             runtime.destroy()
             assertNoGlError("geometry")
+        }
+    }
+
+    @Test
+    fun driverLinksAVaryingThroughGeometry() {
+        EglPbuffer().use {
+            drainGlError()
+            val version = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+            assumeTrue(version[0] > 3 || (version[0] == 3 && version[1] >= 2))
+            val program = shader(ShaderTarget.Gles32) {
+                val gain = uniform("gain", 1f)
+                val mark = varyingVec2("mark")
+                vertex {
+                    mark.set(attributeVec2("uv"))
+                    glPosition(attributeVec4("position"))
+                }
+                geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+                    glPosition(glIn(0) + vec4(gain.expr, 0f.lit, 0f.lit, 0f.lit))
+                    emitVertex()
+                    endPrimitive()
+                }
+                fragment { vec4(mark.expr.x, mark.expr.y, gain.expr, 1f.lit) }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("varying geometry")
+
+            val triangle = shader(ShaderTarget.Gles32) {
+                val mark = varyingVec2("mark")
+                vertex {
+                    mark.set(attributeVec2("uv"))
+                    glPosition(attributeVec4("position"))
+                }
+                geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+                    glPosition(glIn(0))
+                    emitVertex()
+                    glPosition(glIn(1))
+                    emitVertex()
+                    glPosition(glIn(2))
+                    emitVertex()
+                }
+                fragment { vec4(mark.expr.x, mark.expr.y, 0f.lit, 1f.lit) }
+            }
+            val linked = GlProgramRuntime(triangle, Gles30Device())
+            linked.link()
+            linked.destroy()
+            assertNoGlError("triangle geometry")
         }
     }
 

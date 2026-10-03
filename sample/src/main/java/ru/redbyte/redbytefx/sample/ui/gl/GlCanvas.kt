@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import ru.redbyte.redbytefx.ShaderProgram
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gl.Gles30Device
@@ -57,6 +58,7 @@ internal fun GlCanvas(
     requirement: String? = null,
     pointer: PointerState? = null,
     caption: String? = null,
+    dsl: String? = null,
     onFrame: (GlFrame) -> Unit,
 ) {
     var failure by remember { mutableStateOf<String?>(null) }
@@ -94,7 +96,11 @@ internal fun GlCanvas(
         }
         if (failure != null) {
             Text(
-                text = failure ?: "",
+                text = if (failure == LINK_FALLBACK) {
+                    say(LINK_FALLBACK, "Это устройство не может собрать шейдер.")
+                } else {
+                    failure ?: ""
+                },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -110,6 +116,13 @@ internal fun GlCanvas(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 28.dp),
+            )
+        }
+        if (dsl != null) {
+            GlCodeCompare(
+                program = program,
+                dsl = dsl,
+                modifier = Modifier.align(Alignment.TopEnd),
             )
         }
     }
@@ -249,12 +262,14 @@ private class SceneRenderer(
     }
 }
 
+private const val LINK_FALLBACK = "This device cannot link the shader."
+
 private fun linkMessage(requirement: String?, error: GlException): String {
     val detail = error.message
     return when {
         requirement != null && !detail.isNullOrBlank() -> "$requirement $detail"
         requirement != null -> requirement
         !detail.isNullOrBlank() -> detail
-        else -> "This device cannot link the shader."
+        else -> LINK_FALLBACK
     }
 }

@@ -61,7 +61,7 @@ internal fun flagScene(): TimedScene {
 @Composable
 internal fun DemoFlag() {
     val scene = remember { flagScene() }
-    GlCanvas(scene.program, scene.mesh) { frame -> frame.bind(scene) }
+    GlCanvas(scene.program, scene.mesh, dsl = flagDsl) { frame -> frame.bind(scene) }
 }
 
 private fun FragmentDsl.cppMark(u: Expr<Flt<High>>, v: Expr<Flt<High>>): Expr<Flt<High>> {

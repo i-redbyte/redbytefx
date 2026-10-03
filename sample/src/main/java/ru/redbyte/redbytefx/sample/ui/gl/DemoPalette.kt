@@ -64,5 +64,5 @@ internal fun paletteScene(): TimedScene {
 @Composable
 internal fun DemoPalette() {
     val scene = remember { paletteScene() }
-    GlCanvas(scene.program, scene.mesh) { frame -> frame.bind(scene) }
+    GlCanvas(scene.program, scene.mesh, dsl = paletteDsl) { frame -> frame.bind(scene) }
 }

@@ -5,6 +5,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.IntS
+import ru.redbyte.redbytefx.Med
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.Vec2
@@ -70,6 +72,22 @@ class FxControllerRunBatchTest {
             w: Float,
         ): Boolean = false
 
+        override fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean = false
+
+        override fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean = false
+
+        override fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean = false
+
+        override fun setMedFloat4(
+            uniform: Uniform<Vec4<Flt<Med>>>,
+            x: Float,
+            y: Float,
+            z: Float,
+            w: Float,
+        ): Boolean = false
+
+        override fun setInt(uniform: Uniform<IntS>, value: Int): Boolean = false
+
         override fun setResolution(widthPx: Float, heightPx: Float): Boolean = false
 
         override fun runBatch(block: () -> Unit) {
@@ -82,6 +100,6 @@ class FxControllerRunBatchTest {
             uniform("amount", 0f)
             fragment { sample() }
         }
-        return program.uniform("u_amount")
+        return program.floatUniform("u_amount")
     }
 }
