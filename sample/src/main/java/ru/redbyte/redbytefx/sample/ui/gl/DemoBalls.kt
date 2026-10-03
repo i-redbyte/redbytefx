@@ -1,7 +1,5 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
-import android.opengl.GLES30
-import android.opengl.GLSurfaceView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,15 +14,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.atomic.AtomicInteger
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 import kotlin.math.roundToInt
+import ru.redbyte.redbytefx.gl.compose.GL_LINK_FALLBACK
+import ru.redbyte.redbytefx.gl.compose.GlLinkState
+import ru.redbyte.redbytefx.gl.compose.GlSurface
+import ru.redbyte.redbytefx.gl.compose.rememberGlController
+import ru.redbyte.redbytefx.gl.compose.screenMesh
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.BoolS
@@ -94,25 +94,67 @@ internal fun ballProgram(): BallProgram {
     return BallProgram(program, aspect, count, xs, ys, zs)
 }
 
+private class BallSimulation(
+    val balls: Array<Ball> = BallWorld.pool(),
+    var active: Int = BallWorld.INITIAL,
+    var lastNanos: Long = 0L,
+)
+
 @Composable
 fun DemoBalls() {
     val scene = remember { ballProgram() }
     val requested = remember { AtomicInteger(BallWorld.INITIAL) }
     var shown by remember { mutableIntStateOf(BallWorld.INITIAL) }
-    var failure by remember { mutableStateOf<String?>(null) }
+    val simulation = remember { BallSimulation() }
+    val mesh = remember { screenMesh(0.02f, 0.02f, 0.04f) }
+    val controller = rememberGlController(scene.program)
+    val linkState by controller.linkState
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
             key(scene.program) {
-                GlesView { slot ->
-                    BallRenderer(scene, slot, requested) { message -> slot.post { failure = message } }
-                }
+                GlSurface(
+                    controller = controller,
+                    mesh = mesh,
+                    modifier = Modifier.fillMaxSize(),
+                    onFrame = { frame ->
+                        val now = System.nanoTime()
+                        val elapsed = if (simulation.lastNanos == 0L) {
+                            0f
+                        } else {
+                            (now - simulation.lastNanos) / 1_000_000_000f
+                        }
+                        simulation.lastNanos = now
+                        val target = requested.get().coerceIn(BallWorld.MIN, BallWorld.MAX)
+                        while (simulation.active < target) {
+                            BallWorld.launch(
+                                simulation.balls[simulation.active],
+                                simulation.active,
+                                simulation.balls,
+                                simulation.active,
+                                frame.aspect,
+                            )
+                            simulation.active += 1
+                        }
+                        simulation.active = target
+                        BallWorld.step(simulation.balls, simulation.active, frame.aspect, elapsed)
+                        frame.runtime.set(scene.aspect, frame.aspect)
+                        frame.runtime.set(scene.count, simulation.active.toFloat())
+                        for (index in 0 until simulation.active) {
+                            val ball = simulation.balls[index]
+                            frame.runtime.set(scene.xs[index], ball.x)
+                            frame.runtime.set(scene.ys[index], ball.y)
+                            frame.runtime.set(scene.zs[index], ball.z)
+                        }
+                    },
+                )
             }
-            if (failure != null) {
+            if (linkState is GlLinkState.Failed) {
+                val message = (linkState as GlLinkState.Failed).message
                 Text(
-                    text = if (failure == LINK_FALLBACK) {
-                        say(LINK_FALLBACK, "Это устройство не может собрать шейдер.")
+                    text = if (message == GL_LINK_FALLBACK) {
+                        say(GL_LINK_FALLBACK, "Это устройство не может собрать шейдер.")
                     } else {
-                        failure ?: ""
+                        message
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -158,68 +200,6 @@ private fun BallCountBar(count: Int, onChange: (Int) -> Unit) {
             valueRange = BallWorld.MIN.toFloat()..BallWorld.MAX.toFloat(),
             steps = BallWorld.MAX - BallWorld.MIN - 1,
         )
-    }
-}
-
-private class BallRenderer(
-    private val scene: BallProgram,
-    private val slot: GlSlot,
-    private val requestedCount: AtomicInteger,
-    private val onLinkFailure: (String) -> Unit,
-) : GLSurfaceView.Renderer {
-    private val balls = BallWorld.pool()
-    private val vertices = floatArrayOf(-1f, -1f, 3f, -1f, -1f, 3f)
-    private var active = BallWorld.INITIAL
-    private var buffer = 0
-    private var attrib = -1
-    private var aspect = 1f
-    private var lastNanos = 0L
-
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        val runtime = slot.linkGraphics(scene.program, glEs30LinkRequirement(), onLinkFailure) ?: return
-        slot.runtime = runtime
-        runtime.use()
-        attrib = attribLocation("a_corner")
-        buffer = replaceVec2(buffer, vertices)
-        val uploaded = buffer
-        slot.releaseGl = {
-            if (buffer == uploaded) {
-                deleteBuffer(buffer)
-                buffer = 0
-            }
-        }
-        GLES30.glClearColor(0.02f, 0.02f, 0.04f, 1f)
-        lastNanos = System.nanoTime()
-    }
-
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        GLES30.glViewport(0, 0, width, height)
-        aspect = if (height > 0) width.toFloat() / height.toFloat() else 1f
-    }
-
-    override fun onDrawFrame(gl: GL10?) {
-        val runtime = slot.runtime ?: return
-        val now = System.nanoTime()
-        val elapsed = if (lastNanos == 0L) 0f else (now - lastNanos) / 1_000_000_000f
-        lastNanos = now
-        val requested = requestedCount.get().coerceIn(BallWorld.MIN, BallWorld.MAX)
-        while (active < requested) {
-            BallWorld.launch(balls[active], active, balls, active, aspect)
-            active += 1
-        }
-        active = requested
-        BallWorld.step(balls, active, aspect, elapsed)
-        runtime.set(scene.aspect, aspect)
-        runtime.set(scene.count, active.toFloat())
-        for (index in 0 until active) {
-            val ball = balls[index]
-            runtime.set(scene.xs[index], ball.x)
-            runtime.set(scene.ys[index], ball.y)
-            runtime.set(scene.zs[index], ball.z)
-        }
-        runtime.use()
-        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
-        drawVec2(buffer, attrib, 3)
     }
 }
 

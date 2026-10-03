@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import kotlin.math.cos
 import kotlin.math.sin
 import ru.redbyte.redbytefx.Flt

@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":redbytefx-compose"))
     implementation(project(":redbytefx-stdlib"))
     implementation(project(":redbytefx-gl"))
+    implementation(project(":redbytefx-gl-compose"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
