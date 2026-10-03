@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
       - support-opengl
   workflow_dispatch:
 

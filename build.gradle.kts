@@ -49,6 +49,7 @@ subprojects {
     afterEvaluate {
         extensions.findByType<DokkaExtension>()?.let { dokka ->
             dokka.moduleName.set(project.name)
+            dokka.modulePath.set(".")
             val isAndroidLibrary = plugins.hasPlugin("com.android.library")
             if (isAndroidLibrary) {
                 dependencies.add("dokkaPlugin", rootProject.libs.dokka.android.doc)
@@ -56,11 +57,16 @@ subprojects {
             val mainJava = layout.projectDirectory.dir("src/main/java")
             if (mainJava.asFile.isDirectory) {
                 val modulePath = path.removePrefix(":").replace(':', '/')
+                val docsGitRef = providers.environmentVariable("GITHUB_REF_NAME")
+                    .orElse(providers.gradleProperty("redbytefx.docsGitRef"))
+                    .orElse("master")
+                    .get()
                 dokka.dokkaSourceSets.configureEach {
                     sourceLink {
                         localDirectory.set(mainJava)
                         remoteUrl(
-                            "https://github.com/i-redbyte/redbytefx/tree/main/$modulePath/src/main/java",
+                            "https://github.com/i-redbyte/redbytefx/blob/$docsGitRef/" +
+                                "$modulePath/src/main/java",
                         )
                         remoteLineSuffix.set("#L")
                     }
@@ -94,6 +100,8 @@ subprojects {
 
 private data class DocModule(val path: String, val title: String, val blurb: String)
 
+private val sitePublishRoot = "libs/redbytefx"
+
 private val docModules = listOf(
     DocModule(":redbytefx-core", "redbytefx-core", "Shader DSL, compiler, and AGSL instance"),
     DocModule(":redbytefx-gl", "redbytefx-gl", "OpenGL ES 3.x program runtime"),
@@ -119,15 +127,20 @@ tasks.register("dokkaHtmlSite") {
         if (site.exists()) {
             site.deleteRecursively()
         }
-        site.mkdirs()
+        val publishRoot = site.resolve(sitePublishRoot)
+        publishRoot.mkdirs()
+        val docsGitRef = providers.environmentVariable("GITHUB_REF_NAME")
+            .orElse(providers.gradleProperty("redbytefx.docsGitRef"))
+            .orElse("master")
+            .get()
         val entries = docModules.map { module ->
             val projectDir = project(module.path).layout.buildDirectory.get().asFile
             val source = projectDir.resolve("dokka/html")
             val targetName = module.path.removePrefix(":")
-            val target = site.resolve(targetName)
+            val target = publishRoot.resolve(targetName)
             target.mkdirs()
             if (source.isDirectory && source.resolve("index.html").isFile) {
-                source.copyRecursively(target, overwrite = true)
+                copyDokkaHtml(source, target, targetName)
             } else {
                 val slug = module.path.removePrefix(":")
                 target.resolve("index.html").writeText(
@@ -140,7 +153,7 @@ tasks.register("dokkaHtmlSite") {
                       <h1>${module.title}</h1>
                       <p>${module.blurb}</p>
                       <p>Generated Dokka HTML for this Android module is not available yet. Browse
-                      <a href="https://github.com/i-redbyte/redbytefx/tree/main/$slug/src/main/java">sources</a>
+                      <a href="https://github.com/i-redbyte/redbytefx/blob/$docsGitRef/$slug/src/main/java">sources</a>
                       or use IDE KDoc on the Maven dependency.</p>
                     </body>
                     </html>
@@ -151,7 +164,7 @@ tasks.register("dokkaHtmlSite") {
         }
         val docsDir = rootProject.file("docs")
         if (docsDir.isDirectory) {
-            val siteDocs = site.resolve("docs")
+            val siteDocs = publishRoot.resolve("docs")
             siteDocs.mkdirs()
             docsDir.listFiles()?.filter { it.extension == "md" }?.forEach { file ->
                 file.copyTo(siteDocs.resolve(file.name), overwrite = true)
@@ -161,7 +174,7 @@ tasks.register("dokkaHtmlSite") {
             val slug = module.path.removePrefix(":")
             """        <li><a href="$slug/index.html">${module.title}</a> - ${module.blurb}</li>"""
         }
-        site.resolve("index.html").writeText(
+        publishRoot.resolve("index.html").writeText(
             """
             <!DOCTYPE html>
             <html lang="en">
@@ -186,7 +199,34 @@ tasks.register("dokkaHtmlSite") {
             </html>
             """.trimIndent(),
         )
+        site.resolve("index.html").writeText(
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="utf-8"/>
+              <meta http-equiv="refresh" content="0; url=$sitePublishRoot/index.html"/>
+              <title>RedByteFX</title>
+            </head>
+            <body>
+              <p><a href="$sitePublishRoot/index.html">RedByteFX API reference</a></p>
+            </body>
+            </html>
+            """.trimIndent(),
+        )
     }
+}
+
+private fun copyDokkaHtml(source: java.io.File, target: java.io.File, moduleName: String) {
+    val nested = source.resolve(moduleName)
+    if (nested.isDirectory) {
+        source.resolve("index.html").copyTo(target.resolve("index.html"), overwrite = true)
+        nested.listFiles()?.forEach { child ->
+            child.copyRecursively(target.resolve(child.name), overwrite = true)
+        }
+        return
+    }
+    source.copyRecursively(target, overwrite = true)
 }
 
 tasks.register("qualityCheck") {
