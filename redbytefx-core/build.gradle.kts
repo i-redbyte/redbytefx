@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.dokka)
     alias(libs.plugins.detekt)
     alias(libs.plugins.vanniktech.maven.publish.base)
 }
@@ -19,7 +20,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 33
+        minSdk = 24
     }
 
     compileOptions {
@@ -38,6 +39,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.androidx.annotation)
+    dokkaPlugin(libs.dokka.android.doc)
     testImplementation(libs.junit4)
 }
 
@@ -59,7 +62,7 @@ mavenPublishing {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = SourcesJar.Sources(),
-            javadocJar = JavadocJar.Empty()
+            javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml")
         )
     )
     coordinates(

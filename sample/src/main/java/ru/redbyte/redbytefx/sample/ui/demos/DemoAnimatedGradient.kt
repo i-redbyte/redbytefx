@@ -8,13 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import ru.redbyte.redbytefx.FxEffect
-import ru.redbyte.redbytefx.FxParam
+import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.redbytefx
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
@@ -22,9 +20,9 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 private data class AnimatedGradientSetup(
-    val effect: FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
+    val effect: ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
 )
 
 /**
@@ -47,20 +45,21 @@ fun DemoAnimatedGradient() {
     var speedUi by rememberSaveable { mutableFloatStateOf(100f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        val effect = redbytefx {
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
             val timeUniform = uniformTime(name = "u_time")
-            val speedUniform = uniformFloat(1f, "gradient_speed")
+            val speedUniform = uniform("gradient_speed", 1f)
             timeParam = timeUniform
             speedParam = speedUniform
-
-            val uv = let(fragCoord / resolution, "uv")
-            val t = let(timeUniform * speedUniform, "t")
-            val r = let(0.5f + 0.5f * sin(3f * uv.x + t * 0.7f), "r")
-            val g = let(0.5f + 0.5f * sin(3f * uv.y + t * 1.1f), "g")
-            val b = let(0.5f + 0.5f * sin(3f * (uv.x + uv.y) + t * 0.9f), "b")
-            color(float3(r, g, b), 1f)
+            fragment {
+                val uv = let(fragCoord / resolution, "uv")
+                val t = let(timeUniform.expr * speedUniform.expr, "t")
+                val r = let(0.5f + 0.5f * sin(3f * uv.x + t * 0.7f), "r")
+                val g = let(0.5f + 0.5f * sin(3f * uv.y + t * 1.1f), "g")
+                val b = let(0.5f + 0.5f * sin(3f * (uv.x + uv.y) + t * 0.9f), "b")
+                color(float3(r, g, b), 1f)
+            }
         }
         AnimatedGradientSetup(effect, timeParam!!, speedParam!!)
     }

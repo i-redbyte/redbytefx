@@ -3,6 +3,7 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
+    alias(libs.plugins.dokka)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.detekt)
@@ -20,7 +21,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 33
+        minSdk = 24
     }
 
     buildFeatures {
@@ -40,6 +41,7 @@ kotlin {
 
 dependencies {
     api(project(":redbytefx-core"))
+    implementation(libs.androidx.annotation)
 
     api(platform(libs.androidx.compose.bom))
     api(libs.androidx.compose.ui)
@@ -67,7 +69,7 @@ mavenPublishing {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = SourcesJar.Sources(),
-            javadocJar = JavadocJar.Empty()
+            javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml")
         )
     )
     coordinates(

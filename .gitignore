@@ -1,5 +1,6 @@
 *.iml
 .gradle
+.kotlin/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -57,12 +58,7 @@ buildNumber.properties
 *.exe
 *.out
 *.app
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+.vscode/
 .history/
 *.vsix
 *.ko
@@ -225,7 +221,6 @@ fabric.properties
 # Local-only markdown drafts and notes
 /CHANGELOG.md
 /CONTRIBUTING.md
-/docs/**/*.md
 /.emacs.desktop
 /.emacs.desktop.lock
 *.elc
@@ -254,7 +249,9 @@ gen
 # Maintainer-only docs (keep locally; excluded from public repository)
 CHANGELOG.md
 CONTRIBUTING.md
-docs/
+
+# Generated API site output (sources live under docs/*.md)
+build/docs/
 
 **/build/
 !src/**/build/

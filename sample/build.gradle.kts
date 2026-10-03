@@ -16,10 +16,10 @@ android {
 
     defaultConfig {
         applicationId = "ru.redbyte.redbytefx.sample"
-        minSdk = 33
+        minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.1.0"
     }
 
     buildFeatures {
@@ -36,6 +36,8 @@ android {
 dependencies {
     implementation(project(":redbytefx-compose"))
     implementation(project(":redbytefx-stdlib"))
+    implementation(project(":redbytefx-gl"))
+    implementation(project(":redbytefx-gl-compose"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -46,4 +48,6 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    testImplementation(libs.junit4)
 }

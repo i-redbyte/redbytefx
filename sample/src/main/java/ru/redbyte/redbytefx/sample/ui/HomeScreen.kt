@@ -34,6 +34,7 @@ import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoSection
+import ru.redbyte.redbytefx.sample.model.Phrase
 import ru.redbyte.redbytefx.sample.model.catalogSearchText
 import ru.redbyte.redbytefx.sample.model.canonicalFamily
 import ru.redbyte.redbytefx.sample.model.focusTags
@@ -44,37 +45,37 @@ import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.section
 
 private enum class LayerFilter(
-    val label: String,
-    val matches: (DemoInfo) -> Boolean
+    val label: Phrase,
+    val matches: (DemoInfo) -> Boolean,
 ) {
-    All("ALL", { true }),
-    Core("CORE", { it.layer == DemoLayer.Core }),
-    Stdlib("STDLIB", { it.layer == DemoLayer.Stdlib })
+    All(Phrase("ALL", "ВСЕ"), { true }),
+    Core(Phrase("CORE", "ЯДРО"), { it.layer == DemoLayer.Core }),
+    Stdlib(Phrase("STDLIB", "БИБЛИОТЕКА"), { it.layer == DemoLayer.Stdlib }),
 }
 
 private enum class MotionFilter(
-    val label: String,
-    val matches: (DemoInfo) -> Boolean
+    val label: Phrase,
+    val matches: (DemoInfo) -> Boolean,
 ) {
-    All("ALL", { true }),
-    Animated("ANIMATED", { it.isAnimated }),
-    Static("STATIC", { !it.isAnimated })
+    All(Phrase("ALL", "ВСЕ"), { true }),
+    Animated(Phrase("ANIMATED", "ЖИВЫЕ"), { it.isAnimated }),
+    Static(Phrase("STATIC", "НЕПОДВИЖНЫЕ"), { !it.isAnimated }),
 }
 
 private enum class PathFilter(
-    val label: String,
-    val matches: (DemoInfo) -> Boolean
+    val label: Phrase,
+    val matches: (DemoInfo) -> Boolean,
 ) {
-    All("ALL", { true }),
-    StartHere("START HERE", { it.isStartHere }),
-    Canonical("CANONICAL", { it.isCanonicalDemo })
+    All(Phrase("ALL", "ВСЕ"), { true }),
+    StartHere(Phrase("START HERE", "С ЧЕГО НАЧАТЬ"), { it.isStartHere }),
+    Canonical(Phrase("CANONICAL", "ОСНОВНОЙ ПУТЬ"), { it.isCanonicalDemo }),
 }
 
 private data class StarterRoute(
-    val label: String,
-    val title: String,
-    val summary: String,
-    val demoId: DemoId
+    val label: Phrase,
+    val title: Phrase,
+    val summary: Phrase,
+    val demoId: DemoId,
 )
 
 @Composable
@@ -103,46 +104,67 @@ fun HomeScreen(
     val starterRoutes = remember(demos) {
         listOf(
             StarterRoute(
-                label = "PATH 00",
-                title = "Hero: Aurora Iridescence",
-                summary = "Open the marketing-style showcase: rim light, rotating sweep, cosine palette, and chromatic polish in one shader.",
-                demoId = DemoId.Aurora
+                label = Phrase("PATH 00", "ПУТЬ 00"),
+                title = Phrase("Hero: Aurora Iridescence", "Витрина: перелив сияния"),
+                summary = Phrase(
+                    "Open the marketing-style showcase: rim light, rotating sweep, cosine palette, and chromatic polish in one shader.",
+                    "Откройте витрину: свет кромки, вращающийся проход, косинусная палитра и цветовое смещение в одном шейдере.",
+                ),
+                demoId = DemoId.Aurora,
             ),
             StarterRoute(
-                label = "PATH 01",
-                title = "Start With Raw DSL",
-                summary = "See direct coordinate math and compare it against generated AGSL without stdlib abstraction first.",
-                demoId = DemoId.Wave
+                label = Phrase("PATH 01", "ПУТЬ 01"),
+                title = Phrase("Start With Raw DSL", "Начните с прямого описания"),
+                summary = Phrase(
+                    "See direct coordinate math and compare it against generated AGSL without stdlib abstraction first.",
+                    "Посмотрите прямую математику координат и сравните её с получившимся AGSL, пока без библиотеки.",
+                ),
+                demoId = DemoId.Wave,
             ),
             StarterRoute(
-                label = "PATH 01a",
-                title = "Port A Classic AGSL Gradient",
-                summary = "RGB sin waves over UV with uniform time — no sampling, no stdlib, ideal for line-by-line AGSL ports.",
-                demoId = DemoId.AnimatedGradient
+                label = Phrase("PATH 01a", "ПУТЬ 01а"),
+                title = Phrase("Port A Classic AGSL Gradient", "Перенесите классический градиент AGSL"),
+                summary = Phrase(
+                    "RGB sin waves over UV with uniform time - no sampling, no stdlib, ideal for line-by-line AGSL ports.",
+                    "Синусы RGB по координатам и общее время: без выборки и без библиотеки, удобно сверять перенос строка за строкой.",
+                ),
+                demoId = DemoId.AnimatedGradient,
             ),
             StarterRoute(
-                label = "PATH 01b",
-                title = "Compose Touch Into Uniforms",
-                summary = "Drag on the preview: a float2 uniform tracks the pointer while animated ripples run in the shader.",
-                demoId = DemoId.TouchRipple
+                label = Phrase("PATH 01b", "ПУТЬ 01б"),
+                title = Phrase("Compose Touch Into Uniforms", "Касание Compose в параметрах"),
+                summary = Phrase(
+                    "Drag on the preview: a float2 uniform tracks the pointer while animated ripples run in the shader.",
+                    "Ведите палец по картинке: параметр float2 следит за ним, а рябь живёт в шейдере.",
+                ),
+                demoId = DemoId.TouchRipple,
             ),
             StarterRoute(
-                label = "PATH 02",
-                title = "See Stdlib Recipes",
-                summary = "Jump into reusable helpers and watch how masks, patterns, and modulation still stay readable in AGSL shape.",
-                demoId = DemoId.Signal
+                label = Phrase("PATH 02", "ПУТЬ 02"),
+                title = Phrase("See Stdlib Recipes", "Посмотрите приёмы библиотеки"),
+                summary = Phrase(
+                    "Jump into reusable helpers and watch how masks, patterns, and modulation still stay readable in AGSL shape.",
+                    "Перейдите к готовым функциям и посмотрите, как маски, узоры и модуляция остаются читаемыми в форме AGSL.",
+                ),
+                demoId = DemoId.Signal,
             ),
             StarterRoute(
-                label = "PATH 03",
-                title = "Read Masks And Compositing",
-                summary = "See the canonical mask/compositing path with helpers like maskedMix(...), alphaMask(...), and maskedScreen(...).",
-                demoId = DemoId.Composite
+                label = Phrase("PATH 03", "ПУТЬ 03"),
+                title = Phrase("Read Masks And Compositing", "Разберите маски и сборку"),
+                summary = Phrase(
+                    "See the canonical mask/compositing path with helpers like maskedMix(...), alphaMask(...), and maskedScreen(...).",
+                    "Основной путь масок и сборки: maskedMix(...), alphaMask(...) и maskedScreen(...).",
+                ),
+                demoId = DemoId.Composite,
             ),
             StarterRoute(
-                label = "PATH 04",
-                title = "Finish With A Rich Scene",
-                summary = "Open the larger board-style showcase to see how the same primitives scale into a more serious composed demo.",
-                demoId = DemoId.Circuit
+                label = Phrase("PATH 04", "ПУТЬ 04"),
+                title = Phrase("Finish With A Rich Scene", "Закончите богатой сценой"),
+                summary = Phrase(
+                    "Open the larger board-style showcase to see how the same primitives scale into a more serious composed demo.",
+                    "Откройте плату и посмотрите, как те же примитивы складываются в более серьёзный пример.",
+                ),
+                demoId = DemoId.Circuit,
             )
         ).mapNotNull { route ->
             demos.firstOrNull { it.id == route.demoId }?.let { demo -> route to demo }
@@ -217,22 +239,28 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = "AGSL // Kotlin DSL",
+                        text = say("AGSL // Kotlin DSL", "AGSL // описание на Kotlin"),
                         accent = MaterialTheme.colorScheme.primary
                     )
                     CyberBadge(
-                        text = "Android runtime",
+                        text = say("Android runtime", "Запуск на Android"),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 Text(
-                    text = "A live shader field manual for RedByteFX.",
+                    text = say(
+                        "A live shader field manual for RedByteFX.",
+                        "Живой полевой справочник шейдеров RedByteFX.",
+                    ),
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(top = 14.dp)
                 )
                 Text(
-                    text = "Browse the language by section, inspect generated AGSL, and stress-test runtime bindings against real animated previews.",
+                    text = say(
+                        "Browse the language by section, inspect generated AGSL, and stress-test runtime bindings against real animated previews.",
+                        "Смотрите язык по разделам, читайте получившийся AGSL и проверяйте живые параметры на настоящей движущейся картинке.",
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 10.dp)
@@ -243,19 +271,23 @@ fun HomeScreen(
                 ) {
                     ShowcaseMetric(
                         value = visibleDemos.size.toString(),
-                        label = if (normalizedQuery.isEmpty()) "demos" else "results",
+                        label = if (normalizedQuery.isEmpty()) {
+                            say("demos", "примеры")
+                        } else {
+                            say("results", "найдено")
+                        },
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.primary
                     )
                     ShowcaseMetric(
                         value = coreCount.toString(),
-                        label = "core",
+                        label = say("core", "ядро"),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.secondary
                     )
                     ShowcaseMetric(
                         value = canonicalCount.toString(),
-                        label = "canonical",
+                        label = say("canonical", "основной путь"),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
@@ -286,16 +318,19 @@ fun HomeScreen(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CyberBadge(
-                            text = "NO MATCHES",
+                            text = say("NO MATCHES", "НИЧЕГО НЕ НАЙДЕНО"),
                             accent = MaterialTheme.colorScheme.tertiary
                         )
                         CyberBadge(
-                            text = "TRY TITLE OR SECTION",
+                            text = say("TRY TITLE OR SECTION", "ИЩИТЕ НАЗВАНИЕ ИЛИ РАЗДЕЛ"),
                             accent = MaterialTheme.colorScheme.secondary
                         )
                     }
                     Text(
-                        text = "No demos matched \"$searchQuery\". Try a shorter term or search by helper name, section, or demo title.",
+                        text = say(
+                            "No demos matched \"$searchQuery\". Try a shorter term or search by helper name, section, or demo title.",
+                            "По запросу «$searchQuery» примеров нет. Укоротите фразу или ищите по имени функции, разделу или названию.",
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 10.dp)
@@ -354,7 +389,7 @@ private fun ShowcaseSearchPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "SEARCH",
+                text = say("SEARCH", "ПОИСК"),
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
@@ -368,7 +403,7 @@ private fun ShowcaseSearchPanel(
                 pathFilter != PathFilter.All
             ) {
                 CyberBadge(
-                    text = "CLEAR",
+                    text = say("CLEAR", "СБРОСИТЬ"),
                     modifier = Modifier.clickable { onClearAll() },
                     accent = MaterialTheme.colorScheme.primary,
                     fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
@@ -383,10 +418,10 @@ private fun ShowcaseSearchPanel(
                 .padding(top = 12.dp),
             singleLine = true,
             label = {
-                Text("Search demos")
+                Text(say("Search demos", "Искать примеры"))
             },
             placeholder = {
-                Text("Circuit, reveal, stdlib, glow...")
+                Text(say("Circuit, reveal, stdlib, glow...", "Плата, проявление, библиотека, свечение..."))
             },
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.8f),
@@ -431,19 +466,19 @@ private fun ShowcaseQuickFilters(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         FilterRow(
-            title = "LAYER",
+            title = Phrase("LAYER", "СЛОЙ"),
             options = LayerFilter.entries,
             selected = layerFilter,
             onSelect = onLayerFilterChange
         )
         FilterRow(
-            title = "MOTION",
+            title = Phrase("MOTION", "ДВИЖЕНИЕ"),
             options = MotionFilter.entries,
             selected = motionFilter,
             onSelect = onMotionFilterChange
         )
         FilterRow(
-            title = "PATH",
+            title = Phrase("PATH", "ПУТЬ"),
             options = PathFilter.entries,
             selected = pathFilter,
             onSelect = onPathFilterChange
@@ -453,22 +488,22 @@ private fun ShowcaseQuickFilters(
 
 @Composable
 private fun <T> FilterRow(
-    title: String,
+    title: Phrase,
     options: List<T>,
     selected: T,
-    onSelect: (T) -> Unit
+    onSelect: (T) -> Unit,
 ) where T : Enum<T> {
     val defaultOption = options.first()
     val selectedLabel = when (selected) {
-        is LayerFilter -> selected.label
-        is MotionFilter -> selected.label
-        is PathFilter -> selected.label
+        is LayerFilter -> selected.label.show()
+        is MotionFilter -> selected.label.show()
+        is PathFilter -> selected.label.show()
         else -> selected.name
     }
     val titleText = if (selected == defaultOption) {
-        title
+        title.show()
     } else {
-        "$title: $selectedLabel"
+        "${title.show()}: $selectedLabel"
     }
 
     FlowRow(
@@ -491,9 +526,9 @@ private fun <T> FilterRow(
         )
         options.drop(1).forEach { option ->
             val label = when (option) {
-                is LayerFilter -> option.label
-                is MotionFilter -> option.label
-                is PathFilter -> option.label
+                is LayerFilter -> option.label.show()
+                is MotionFilter -> option.label.show()
+                is PathFilter -> option.label.show()
                 else -> option.name
             }
             val isSelected = option == selected
@@ -530,11 +565,14 @@ private fun SectionJumpRow(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "SECTIONS",
+                text = say("SECTIONS", "РАЗДЕЛЫ"),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = "${anchors.size} JUMPS",
+                text = say(
+                    "${anchors.size} JUMPS",
+                    ruCount(anchors.size, "переход", "перехода", "переходов"),
+                ),
                 accent = MaterialTheme.colorScheme.secondary
             )
         }
@@ -545,7 +583,7 @@ private fun SectionJumpRow(
             DemoSection.entries.forEach { section ->
                 if (section in anchors) {
                     CyberBadge(
-                        text = section.title.uppercase(),
+                        text = section.title.showUpper(),
                         modifier = Modifier.clickable { onJumpToSection(section) },
                         accent = MaterialTheme.colorScheme.tertiary,
                         fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f)
@@ -596,16 +634,22 @@ private fun StarterRoutesPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "START HERE",
+                text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = "${routes.size} ROUTES",
+                text = say(
+                    "${routes.size} ROUTES",
+                    ruCount(routes.size, "маршрут", "маршрута", "маршрутов"),
+                ),
                 accent = MaterialTheme.colorScheme.tertiary
             )
         }
         Text(
-            text = "If you're new to RedByteFX, these routes give a faster introduction than scanning all demos at once.",
+            text = say(
+                "If you're new to RedByteFX, these routes give a faster introduction than scanning all demos at once.",
+                "Если RedByteFX для вас нов, эти маршруты вводят быстрее, чем просмотр всего каталога подряд.",
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -639,16 +683,22 @@ private fun CanonicalMapPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "CANONICAL MAP",
+                text = say("CANONICAL MAP", "КАРТА ОСНОВНОГО ПУТИ"),
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = "${guides.size} FAMILIES",
+                text = say(
+                    "${guides.size} FAMILIES",
+                    ruCount(guides.size, "семейство", "семейства", "семейств"),
+                ),
                 accent = MaterialTheme.colorScheme.secondary
             )
         }
         Text(
-            text = "These families mirror the curated helper surface in :redbytefx-stdlib, so the sample teaches the same path as the package docs instead of treating every helper equally.",
+            text = say(
+                "These families mirror the curated helper surface in :redbytefx-stdlib, so the sample teaches the same path as the package docs instead of treating every helper equally.",
+                "Эти семейства повторяют подобранную поверхность :redbytefx-stdlib, поэтому примеры ведут тем же путём, что и описание пакета, а не ставят все функции в один ряд.",
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -683,12 +733,12 @@ private fun CanonicalGuideCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = guide.label,
+                text = guide.label.show(),
                 accent = MaterialTheme.colorScheme.primary
             )
             demos.forEach { demo ->
                 CyberBadge(
-                    text = demo.title.uppercase(),
+                    text = demo.shownTitle().uppercase(),
                     modifier = Modifier.clickable { onOpen(demo.id) },
                     accent = MaterialTheme.colorScheme.tertiary,
                     fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
@@ -696,13 +746,13 @@ private fun CanonicalGuideCard(
             }
         }
         Text(
-            text = guide.title,
+            text = guide.title.show(),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 10.dp)
         )
         Text(
-            text = guide.summary,
+            text = guide.summary.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
@@ -736,38 +786,38 @@ private fun StarterRouteCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = route.label,
+                text = route.label.show(),
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = demo.title.uppercase(),
+                text = demo.shownTitle().uppercase(),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = demo.layer.label,
+                text = demo.layer.label.show(),
                 accent = MaterialTheme.colorScheme.secondary
             )
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
-                    text = family,
+                    text = shownFamily(family),
                     accent = MaterialTheme.colorScheme.primary
                 )
             }
         }
         Text(
-            text = route.title,
+            text = route.title.show(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 10.dp)
         )
         Text(
-            text = route.summary,
+            text = route.summary.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            text = demo.focus,
+            text = demo.shownFocus(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
@@ -797,16 +847,16 @@ private fun ShowcaseSectionHeader(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = section.title.uppercase(),
+                text = section.title.showUpper(),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
-                text = "$count demos",
+                text = say("$count demos", ruCount(count, "пример", "примера", "примеров")),
                 accent = MaterialTheme.colorScheme.tertiary
             )
         }
         Text(
-            text = section.subtitle,
+            text = section.subtitle.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -840,15 +890,15 @@ private fun DemoCatalogCard(
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = demo.title.uppercase(),
+                text = demo.shownTitle().uppercase(),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = demo.layer.label,
+                text = demo.layer.label.show(),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
-                text = if (demo.isAnimated) "ANIMATED" else "STATIC",
+                text = if (demo.isAnimated) say("ANIMATED", "ЖИВОЙ") else say("STATIC", "НЕПОДВИЖНЫЙ"),
                 accent = if (demo.isAnimated) {
                     MaterialTheme.colorScheme.tertiary
                 } else {
@@ -858,19 +908,19 @@ private fun DemoCatalogCard(
             )
             if (demo.isStartHere) {
                 CyberBadge(
-                    text = "START HERE",
+                    text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
                     accent = MaterialTheme.colorScheme.tertiary
                 )
             }
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
-                    text = family,
+                    text = shownFamily(family),
                     accent = MaterialTheme.colorScheme.primary
                 )
             }
         }
         Text(
-            text = demo.subtitle,
+            text = demo.shownSubtitle(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -878,7 +928,7 @@ private fun DemoCatalogCard(
             modifier = Modifier.padding(top = 12.dp)
         )
         Text(
-            text = demo.focus,
+            text = demo.shownFocus(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 3,

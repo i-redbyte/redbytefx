@@ -11,9 +11,9 @@ private const val PI: Float = 3.1415927f
  * repeatedly as [value] advances.
  */
 public fun pingPong(
-    value: FloatExpr,
-    period: FloatExpr
-): FloatExpr {
+    value: Expr<Flt<High>>,
+    period: Expr<Flt<High>>
+): Expr<Flt<High>> {
     val safePeriod = max(period, 0.0001f)
     val phase = fract(value / safePeriod)
     return 1f - abs(phase * 2f - 1f)
@@ -23,9 +23,9 @@ public fun pingPong(
  * Builds a normalized ping-pong motion using a literal [period].
  */
 public fun pingPong(
-    value: FloatExpr,
+    value: Expr<Flt<High>>,
     period: Float
-): FloatExpr = pingPong(
+): Expr<Flt<High>> = pingPong(
     value = value,
     period = float(period)
 )
@@ -35,7 +35,7 @@ public fun pingPong(
  *
  * Inputs are clamped to the `[0, 1]` range before easing.
  */
-public fun easeInOutSine(value: FloatExpr): FloatExpr {
+public fun easeInOutSine(value: Expr<Flt<High>>): Expr<Flt<High>> {
     val t = saturate(value)
     return 0.5f - 0.5f * cos(t * PI)
 }
@@ -45,7 +45,7 @@ public fun easeInOutSine(value: FloatExpr): FloatExpr {
  *
  * Inputs are clamped to the `[0, 1]` range before easing.
  */
-public fun easeInOutCubic(value: FloatExpr): FloatExpr {
+public fun easeInOutCubic(value: Expr<Flt<High>>): Expr<Flt<High>> {
     val t = saturate(value)
     return ifElse(
         t lt 0.5f,

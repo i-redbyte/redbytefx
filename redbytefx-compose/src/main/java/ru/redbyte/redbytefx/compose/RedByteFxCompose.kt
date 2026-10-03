@@ -2,13 +2,16 @@ package ru.redbyte.redbytefx.compose
 
 import android.graphics.RenderEffect as AndroidRenderEffect
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -20,23 +23,34 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
-import ru.redbyte.redbytefx.FxEffect
-import ru.redbyte.redbytefx.FxInstance
-import ru.redbyte.redbytefx.FxParam
+import kotlin.jvm.JvmName
+import ru.redbyte.redbytefx.AgslInstance
+import ru.redbyte.redbytefx.RedByteFxApis
+import ru.redbyte.redbytefx.RedByteFxPlatform
+import ru.redbyte.redbytefx.newAgslInstance
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.IntS
+import ru.redbyte.redbytefx.Med
+import ru.redbyte.redbytefx.ShaderProgram
+import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.Vec2
+import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.Vec4
 
 /**
- * Compose-friendly controller for a runtime [FxInstance].
+ * Compose-friendly controller for one AGSL [ru.redbyte.redbytefx.AgslInstance].
  *
- * A controller owns a single runtime shader instance. Use a separate controller when the same
- * compiled [FxEffect] needs to render independently in multiple places or at different sizes.
+ * A controller owns a single runtime shader control. Use a separate controller when the same
+ * compiled [ru.redbyte.redbytefx.ShaderProgram] needs to render independently in multiple places
+ * or at different sizes.
  *
- * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform params are
- * still effect-specific: bind and set only params declared by the compiled [FxEffect] that
- * created this controller. If runtime updates throw about a missing uniform, the usual cause is an
- * [FxParam] from a **different** `redbytefx { }` block or effect instance — see **`README.md`**
- * (uniform handles are effect-specific).
+ * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform handles belong
+ * to the program that created this controller. If runtime updates throw about a missing uniform,
+ * the usual cause is a [ru.redbyte.redbytefx.Uniform] from a different `shader { }` program - see
+ * **`README.md`**.
  *
- * Uniform deduplication is delegated to [FxInstance]; the controller only invalidates the host
+ * Uniform deduplication is delegated to the AGSL instance; the controller only invalidates the host
  * when the instance reports an actual change.
  *
  * In composable code, prefer [bindFloat], [bindFloat2], [bindFloat3], [bindFloat4], and
@@ -46,7 +60,7 @@ import ru.redbyte.redbytefx.FxParam
  */
 @Stable
 public class FxController internal constructor(
-    internal val instance: FxInstance
+    internal val control: ShaderControl
 ) {
     private var hostViewRef: WeakReference<View>? = null
     private var controllerBatchDepth: Int = 0
@@ -57,7 +71,7 @@ public class FxController internal constructor(
     private var cachedComposeRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
     internal val composeRenderEffect: androidx.compose.ui.graphics.RenderEffect
         get() {
-            val platformRenderEffect = instance.renderEffect()
+            val platformRenderEffect = control.renderEffect()
             if (cachedPlatformRenderEffect !== platformRenderEffect) {
                 cachedPlatformRenderEffect = platformRenderEffect
                 cachedComposeRenderEffect = platformRenderEffect.asComposeRenderEffect()
@@ -66,7 +80,7 @@ public class FxController internal constructor(
         }
 
     /**
-     * Updates a scalar float uniform and invalidates the host view when [FxInstance.setFloat]
+     * Updates a scalar float uniform and invalidates the host view when the AGSL instance
      * reports a change.
      *
      * The [param] handle must belong to the compiled effect that created this controller.
@@ -74,8 +88,13 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat] so the write happens from a side effect
      * after recomposition instead of inline during composition.
      */
-    public fun setFloat(param: FxParam.Float, value: Float) {
-        maybeInvalidateAfterUniformChange(instance.setFloat(param, value))
+    public fun setFloat(param: Uniform<Flt<High>>, value: Float) {
+        maybeInvalidateAfterUniformChange(control.setFloat(param, value))
+    }
+
+    @JvmName("setMedFloat")
+    public fun setFloat(param: Uniform<Flt<Med>>, value: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat(param, value))
     }
 
     /**
@@ -85,8 +104,13 @@ public class FxController internal constructor(
      *
      * Compose callers should usually prefer [bindFloat2].
      */
-    public fun setFloat2(param: FxParam.Float2, x: Float, y: Float) {
-        maybeInvalidateAfterUniformChange(instance.setFloat2(param, x, y))
+    public fun setFloat2(param: Uniform<Vec2<Flt<High>>>, x: Float, y: Float) {
+        maybeInvalidateAfterUniformChange(control.setFloat2(param, x, y))
+    }
+
+    @JvmName("setMedFloat2")
+    public fun setFloat2(param: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat2(param, x, y))
     }
 
     /**
@@ -96,8 +120,13 @@ public class FxController internal constructor(
      *
      * Compose callers should usually prefer [bindFloat3].
      */
-    public fun setFloat3(param: FxParam.Float3, x: Float, y: Float, z: Float) {
-        maybeInvalidateAfterUniformChange(instance.setFloat3(param, x, y, z))
+    public fun setFloat3(param: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float) {
+        maybeInvalidateAfterUniformChange(control.setFloat3(param, x, y, z))
+    }
+
+    @JvmName("setMedFloat3")
+    public fun setFloat3(param: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat3(param, x, y, z))
     }
 
     /**
@@ -107,8 +136,24 @@ public class FxController internal constructor(
      *
      * Compose callers should usually prefer [bindFloat4].
      */
-    public fun setFloat4(param: FxParam.Float4, x: Float, y: Float, z: Float, w: Float) {
-        maybeInvalidateAfterUniformChange(instance.setFloat4(param, x, y, z, w))
+    public fun setFloat4(param: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float) {
+        maybeInvalidateAfterUniformChange(control.setFloat4(param, x, y, z, w))
+    }
+
+    @JvmName("setMedFloat4")
+    public fun setFloat4(param: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat4(param, x, y, z, w))
+    }
+
+    /**
+     * Updates a scalar int uniform and invalidates the host view when the AGSL instance
+     * reports a change.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
+     * Compose callers should usually prefer [bindInt].
+     */
+    public fun setInt(param: Uniform<IntS>, value: Int) {
+        maybeInvalidateAfterUniformChange(control.setInt(param, value))
     }
 
     /**
@@ -121,7 +166,7 @@ public class FxController internal constructor(
     public fun setResolution(widthPx: Float, heightPx: Float) {
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
-        maybeInvalidateAfterUniformChange(instance.setResolution(safeWidth, safeHeight))
+        maybeInvalidateAfterUniformChange(control.setResolution(safeWidth, safeHeight))
     }
 
     /**
@@ -134,7 +179,7 @@ public class FxController internal constructor(
     public fun runBatch(block: () -> Unit) {
         controllerBatchDepth++
         try {
-            instance.runBatch(block)
+            control.runBatch(block)
         } finally {
             controllerBatchDepth--
             if (controllerBatchDepth == 0 && pendingHostInvalidate) {
@@ -154,7 +199,7 @@ public class FxController internal constructor(
         // without triggering an extra invalidation loop from inside drawing.
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
-        instance.setResolution(safeWidth, safeHeight)
+        control.setResolution(safeWidth, safeHeight)
     }
 
     private fun maybeInvalidateAfterUniformChange(changed: Boolean) {
@@ -186,11 +231,22 @@ public class FxController internal constructor(
  * When output looks wrong, inspect `effect.agslSource()` first, then verify param ownership,
  * sampling space, and controller-per-target usage before treating the issue as a Compose/runtime
  * problem.
+ *
+ * Each remembered controller owns one [AgslInstance]. Android does not expose an explicit
+ * `RuntimeShader` destroy API; when the controller leaves composition, the instance becomes
+ * unreachable and is reclaimed by the garbage collector together with its [android.graphics.RenderEffect].
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
-public fun rememberFxController(effect: FxEffect): FxController {
+public fun rememberFxController(program: ShaderProgram): FxController {
+    RedByteFxPlatform.requireAgslRuntime()
     val view = LocalView.current
-    val controller = remember(effect) { FxController(effect.newInstance()) }
+    val controller = remember(program) { FxController(AgslShaderControl(program.newAgslInstance())) }
+    DisposableEffect(controller) {
+        onDispose {
+            // No RuntimeShader.release(); dropping the controller is the supported lifecycle end.
+        }
+    }
     SideEffect {
         controller.attachHost(view)
     }
@@ -211,7 +267,7 @@ public fun rememberFxController(effect: FxEffect): FxController {
  */
 @Composable
 public fun FxController.bindTime(
-    param: FxParam.Float,
+    param: Uniform<Flt<High>>,
     isPlaying: Boolean = true,
     offsetSeconds: Float = 0f
 ) {
@@ -241,13 +297,42 @@ public fun FxController.bindTime(
  * Binds a scalar float uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed. The [param] handle must belong to the effect that created this
- * controller (same compiled [FxEffect] as [rememberFxController]); matching names from another
- * effect are not interchangeable. Outside composition, use [setFloat] directly instead.
+ * the value has actually changed. The [param] handle must belong to the program that created this
+ * controller (same compiled [ru.redbyte.redbytefx.ShaderProgram] as [rememberFxController]); matching
+ * names from another program are not interchangeable. Outside composition, use [setFloat] directly
+ * instead.
  */
 @Composable
 public fun FxController.bindFloat(
-    param: FxParam.Float,
+    param: Uniform<Flt<High>>,
+    value: Float
+) {
+    SideEffect {
+        setFloat(param, value)
+    }
+}
+
+/**
+ * Binds a scalar int uniform to Compose state.
+ *
+ * The uniform is updated after successful recomposition and only invalidates the host view when
+ * the value has actually changed. The [param] handle must belong to the program that created this
+ * controller. Outside composition, use [setInt] directly instead.
+ */
+@Composable
+public fun FxController.bindInt(
+    param: Uniform<IntS>,
+    value: Int
+) {
+    SideEffect {
+        setInt(param, value)
+    }
+}
+
+@JvmName("bindMedFloat")
+@Composable
+public fun FxController.bindFloat(
+    param: Uniform<Flt<Med>>,
     value: Float
 ) {
     SideEffect {
@@ -264,7 +349,19 @@ public fun FxController.bindFloat(
  */
 @Composable
 public fun FxController.bindFloat2(
-    param: FxParam.Float2,
+    param: Uniform<Vec2<Flt<High>>>,
+    x: Float,
+    y: Float
+) {
+    SideEffect {
+        setFloat2(param, x, y)
+    }
+}
+
+@JvmName("bindMedFloat2")
+@Composable
+public fun FxController.bindFloat2(
+    param: Uniform<Vec2<Flt<Med>>>,
     x: Float,
     y: Float
 ) {
@@ -282,7 +379,20 @@ public fun FxController.bindFloat2(
  */
 @Composable
 public fun FxController.bindFloat3(
-    param: FxParam.Float3,
+    param: Uniform<Vec3<Flt<High>>>,
+    x: Float,
+    y: Float,
+    z: Float
+) {
+    SideEffect {
+        setFloat3(param, x, y, z)
+    }
+}
+
+@JvmName("bindMedFloat3")
+@Composable
+public fun FxController.bindFloat3(
+    param: Uniform<Vec3<Flt<Med>>>,
     x: Float,
     y: Float,
     z: Float
@@ -301,7 +411,21 @@ public fun FxController.bindFloat3(
  */
 @Composable
 public fun FxController.bindFloat4(
-    param: FxParam.Float4,
+    param: Uniform<Vec4<Flt<High>>>,
+    x: Float,
+    y: Float,
+    z: Float,
+    w: Float
+) {
+    SideEffect {
+        setFloat4(param, x, y, z, w)
+    }
+}
+
+@JvmName("bindMedFloat4")
+@Composable
+public fun FxController.bindFloat4(
+    param: Uniform<Vec4<Flt<Med>>>,
     x: Float,
     y: Float,
     z: Float,
@@ -318,10 +442,10 @@ public fun FxController.bindFloat4(
  * The supplied [controller] is expected to belong to this render target so its resolution stays
  * in sync with the content size. Reusing the same controller across unrelated render targets can
  * cause the runtime resolution to flap between sizes, so independent surfaces should normally own
- * independent controllers even if they share the same compiled [FxEffect].
+ * independent controllers even if they share the same compiled [ru.redbyte.redbytefx.ShaderProgram].
  *
  * Internally this records the content into an offscreen graphics layer and applies the platform
- * render effect produced by the controller's runtime shader instance.
+ * render effect produced by the controller's runtime shader control.
  *
  * If the rendered result looks wrong, debug in this order before suspecting this modifier:
  *
@@ -330,15 +454,22 @@ public fun FxController.bindFloat4(
  * 3. verify sampling space (`sample(...)` vs `sampleUv(...)`)
  * 4. only then inspect render-target sizing or platform/runtime behavior
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
     composed {
+        RedByteFxPlatform.requireAgslRuntime()
         val layer = rememberGraphicsLayer()
+        var appliedRenderEffect by remember(controller) { mutableStateOf<androidx.compose.ui.graphics.RenderEffect?>(null) }
         drawWithCache {
             layer.compositingStrategy = CompositingStrategy.Offscreen
             onDrawWithContent {
                 controller.runtimeInvalidationTick
                 controller.syncResolution(size.width, size.height)
-                layer.renderEffect = controller.composeRenderEffect
+                val renderEffect = controller.composeRenderEffect
+                if (appliedRenderEffect !== renderEffect) {
+                    appliedRenderEffect = renderEffect
+                    layer.renderEffect = renderEffect
+                }
                 layer.record {
                     this@onDrawWithContent.drawContent()
                 }
@@ -355,3 +486,68 @@ internal class TimeBindingState {
 
 internal fun sanitizeControllerResolution(value: Float): Float =
     if (value > 0f) value else 1f
+
+internal interface MediumShaderControl {
+    fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean
+    fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean
+    fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean
+    fun setMedFloat4(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean
+}
+
+internal interface ShaderControl : MediumShaderControl {
+    fun renderEffect(): AndroidRenderEffect
+    fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean
+    fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean
+    fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean
+    fun setFloat4(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean
+    fun setInt(uniform: Uniform<IntS>, value: Int): Boolean
+    fun setResolution(widthPx: Float, heightPx: Float): Boolean
+    fun runBatch(block: () -> Unit)
+}
+
+internal class AgslShaderControl(
+    private val instance: AgslInstance,
+) : ShaderControl {
+    override fun renderEffect(): AndroidRenderEffect = instance.renderEffect()
+
+    override fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean = instance.set(uniform, value)
+
+    override fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean = instance.set(uniform, value)
+
+    override fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean =
+        instance.set(uniform, x, y)
+
+    override fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean =
+        instance.set(uniform, x, y)
+
+    override fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean =
+        instance.set(uniform, x, y, z)
+
+    override fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean =
+        instance.set(uniform, x, y, z)
+
+    override fun setFloat4(
+        uniform: Uniform<Vec4<Flt<High>>>,
+        x: Float,
+        y: Float,
+        z: Float,
+        w: Float,
+    ): Boolean = instance.set(uniform, x, y, z, w)
+
+    override fun setMedFloat4(
+        uniform: Uniform<Vec4<Flt<Med>>>,
+        x: Float,
+        y: Float,
+        z: Float,
+        w: Float,
+    ): Boolean = instance.set(uniform, x, y, z, w)
+
+    override fun setInt(uniform: Uniform<IntS>, value: Int): Boolean = instance.set(uniform, value)
+
+    override fun setResolution(widthPx: Float, heightPx: Float): Boolean =
+        instance.setResolution(widthPx, heightPx)
+
+    override fun runBatch(block: () -> Unit) {
+        instance.batch(block)
+    }
+}

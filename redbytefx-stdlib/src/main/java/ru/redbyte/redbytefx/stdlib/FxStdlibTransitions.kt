@@ -10,11 +10,11 @@ import ru.redbyte.redbytefx.*
  * reveal helpers to teach before richer transition or scene-graph-like flows.
  */
 public fun horizontalReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
-    feather: FloatExpr = float(0.05f),
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.05f),
     fromLeft: Boolean = true
-): FloatExpr {
+): Expr<Flt<High>> {
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromLeft) uv.x else 1f - uv.x
     val t = saturate(progress)
@@ -25,11 +25,11 @@ public fun horizontalReveal(
  * Builds a horizontal reveal mask using literal [progress] and [feather] values.
  */
 public fun horizontalReveal(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     progress: Float,
     feather: Float = 0.05f,
     fromLeft: Boolean = true
-): FloatExpr = horizontalReveal(
+): Expr<Flt<High>> = horizontalReveal(
     uv = uv,
     progress = float(progress),
     feather = float(feather),
@@ -40,11 +40,11 @@ public fun horizontalReveal(
  * Builds a horizontal reveal mask using an expression-driven [progress] and a literal [feather].
  */
 public fun horizontalReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
     feather: Float,
     fromLeft: Boolean = true
-): FloatExpr = horizontalReveal(
+): Expr<Flt<High>> = horizontalReveal(
     uv = uv,
     progress = progress,
     feather = float(feather),
@@ -59,11 +59,11 @@ public fun horizontalReveal(
  * to [horizontalReveal] in the same canonical reveal family.
  */
 public fun verticalReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
-    feather: FloatExpr = float(0.05f),
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.05f),
     fromTop: Boolean = true
-): FloatExpr {
+): Expr<Flt<High>> {
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromTop) uv.y else 1f - uv.y
     val t = saturate(progress)
@@ -74,11 +74,11 @@ public fun verticalReveal(
  * Builds a vertical reveal mask using literal [progress] and [feather] values.
  */
 public fun verticalReveal(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     progress: Float,
     feather: Float = 0.05f,
     fromTop: Boolean = true
-): FloatExpr = verticalReveal(
+): Expr<Flt<High>> = verticalReveal(
     uv = uv,
     progress = float(progress),
     feather = float(feather),
@@ -89,11 +89,11 @@ public fun verticalReveal(
  * Builds a vertical reveal mask using an expression-driven [progress] and a literal [feather].
  */
 public fun verticalReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
     feather: Float,
     fromTop: Boolean = true
-): FloatExpr = verticalReveal(
+): Expr<Flt<High>> = verticalReveal(
     uv = uv,
     progress = progress,
     feather = float(feather),
@@ -108,12 +108,12 @@ public fun verticalReveal(
  * focus region instead of an edge wipe.
  */
 public fun radialReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
-    center: Float2Expr = float2(0.5f, 0.5f),
-    feather: FloatExpr = float(0.08f),
-    maxRadius: FloatExpr = float(0.85f)
-): FloatExpr = circleMask(
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
+    feather: Expr<Flt<High>> = float(0.08f),
+    maxRadius: Expr<Flt<High>> = float(0.85f)
+): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = maxRadius * saturate(progress),
@@ -124,12 +124,12 @@ public fun radialReveal(
  * Builds a radial reveal mask using literal [progress], [feather], and [maxRadius] values.
  */
 public fun radialReveal(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     progress: Float,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     feather: Float = 0.08f,
     maxRadius: Float = 0.85f
-): FloatExpr = radialReveal(
+): Expr<Flt<High>> = radialReveal(
     uv = uv,
     progress = float(progress),
     center = center,
@@ -141,12 +141,12 @@ public fun radialReveal(
  * Builds a radial reveal mask using an expression-driven [progress] and literal radius settings.
  */
 public fun radialReveal(
-    uv: Float2Expr,
-    progress: FloatExpr,
-    center: Float2Expr = float2(0.5f, 0.5f),
+    uv: Expr<Vec2<Flt<High>>>,
+    progress: Expr<Flt<High>>,
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     feather: Float = 0.08f,
     maxRadius: Float = 0.85f
-): FloatExpr = radialReveal(
+): Expr<Flt<High>> = radialReveal(
     uv = uv,
     progress = progress,
     center = center,

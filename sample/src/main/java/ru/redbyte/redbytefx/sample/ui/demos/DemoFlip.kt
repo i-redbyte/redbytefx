@@ -22,19 +22,21 @@ fun DemoFlip() {
     var flipY by rememberSaveable { mutableStateOf(false) }
 
     val setup = remember {
-        var px: FxParam.Float? = null
-        var py: FxParam.Float? = null
-        val effect = redbytefx {
-            val flipXAmount = uniformFloat(0f, "flip_x")
-            val flipYAmount = uniformFloat(0f, "flip_y")
+        var px: Uniform<Flt<High>>? = null
+        var py: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val flipXAmount = uniform("flip_x", 0f)
+            val flipYAmount = uniform("flip_y", 0f)
             px = flipXAmount
             py = flipYAmount
-            sample(
-                flipY(
-                    coord = flipX(amount = flipXAmount),
-                    amount = flipYAmount
+            fragment {
+                sample(
+                    flipY(
+                        coord = flipX(amount = flipXAmount.expr),
+                        amount = flipYAmount.expr
+                    )
                 )
-            )
+            }
         }
         Triple(effect, px!!, py!!)
     }

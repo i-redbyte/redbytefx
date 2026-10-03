@@ -243,16 +243,16 @@ private fun DemoControlsPanel(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CyberBadge(
-                    text = "LIVE CONTROLS",
+                    text = say("LIVE CONTROLS", "ЖИВЫЕ НАСТРОЙКИ"),
                     accent = MaterialTheme.colorScheme.tertiary
                 )
                 CyberBadge(
-                    text = "RUNTIME BINDINGS",
+                    text = say("RUNTIME BINDINGS", "ЖИВЫЕ ПАРАМЕТРЫ"),
                     accent = MaterialTheme.colorScheme.secondary
                 )
                 if (compact && onOpenInspectionDialog != null) {
                     CyberBadge(
-                        text = "COMPARE CODE",
+                        text = say("COMPARE CODE", "СРАВНИТЬ КОД"),
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onOpenInspectionDialog() },
@@ -263,9 +263,15 @@ private fun DemoControlsPanel(
             }
             Text(
                 text = if (compact) {
-                    "Tune here. Open DSL and AGSL in a quick compare view; use COPY or SHARE on each panel."
+                    say(
+                        "Tune here. Open DSL and AGSL in a quick compare view; use COPY or SHARE on each panel.",
+                        "Настраивайте здесь. Откройте описание и AGSL рядом и копируйте или отправляйте текст с каждой панели.",
+                    )
                 } else {
-                    "Tune uniforms first, then compare the DSL and AGSL panels above against the live preview. COPY pastes locally; SHARE sends text to another app."
+                    say(
+                        "Tune uniforms first, then compare the DSL and AGSL panels above against the live preview. COPY pastes locally; SHARE sends text to another app.",
+                        "Сначала крутите параметры, потом сверьте панели описания и AGSL с живой картинкой. «Копировать» кладёт текст в буфер, «Поделиться» отправляет его в другое приложение.",
+                    )
                 },
                 style = if (compact) {
                     MaterialTheme.typography.labelSmall
@@ -300,7 +306,10 @@ private fun DemoInfoCard(
     ) {
         if (compact) {
             Text(
-                text = "sample://${demo.id.name.lowercase()} / ${demo.section.title.lowercase()}",
+                text = say(
+                    "sample://${demo.id.name.lowercase()} / ${demo.section.title.en.lowercase()}",
+                    "пример://${demo.id.name.lowercase()} / ${demo.section.title.ru.lowercase()}",
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -312,7 +321,7 @@ private fun DemoInfoCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CyberBadge(
-                    text = demo.layer.label,
+                    text = demo.layer.label.show(),
                     accent = MaterialTheme.colorScheme.secondary
                 )
                 CyberBadge(
@@ -324,24 +333,24 @@ private fun DemoInfoCard(
                     }
                 )
                 CyberBadge(
-                    text = demo.section.title.uppercase(),
+                    text = demo.section.title.showUpper(),
                     accent = MaterialTheme.colorScheme.primary
                 )
                 if (demo.isStartHere) {
                     CyberBadge(
-                        text = "START HERE",
+                        text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 demo.canonicalFamily?.let { family ->
                     CyberBadge(
-                        text = family,
+                        text = shownFamily(family),
                         accent = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
             Text(
-                text = demo.subtitle,
+                text = demo.shownSubtitle(),
                 style = subtitleStyle,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 3,
@@ -349,7 +358,7 @@ private fun DemoInfoCard(
                 modifier = Modifier.padding(top = 10.dp)
             )
             Text(
-                text = demo.focus,
+                text = demo.shownFocus(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 4,
@@ -374,7 +383,7 @@ private fun DemoInfoCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = "COMPARE CODE",
+                        text = say("COMPARE CODE", "СРАВНИТЬ КОД"),
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onOpenInspectionDialog() },
@@ -396,15 +405,18 @@ private fun DemoInfoCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CyberBadge(
-                    text = demo.title.uppercase(),
+                    text = demo.shownTitle().uppercase(),
                     accent = MaterialTheme.colorScheme.primary
                 )
                 CyberBadge(
-                    text = "sample://${demo.id.name.lowercase()}",
+                    text = say(
+                        "sample://${demo.id.name.lowercase()}",
+                        "пример://${demo.id.name.lowercase()}",
+                    ),
                     accent = MaterialTheme.colorScheme.secondary
                 )
                 CyberBadge(
-                    text = demo.section.title.uppercase(),
+                    text = demo.section.title.showUpper(),
                     accent = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -415,7 +427,7 @@ private fun DemoInfoCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = demo.layer.label,
+                text = demo.layer.label.show(),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
@@ -428,25 +440,25 @@ private fun DemoInfoCard(
             )
             if (demo.isStartHere) {
                 CyberBadge(
-                    text = "START HERE",
+                    text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
                     accent = MaterialTheme.colorScheme.tertiary
                 )
             }
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
-                    text = family,
+                    text = shownFamily(family),
                     accent = MaterialTheme.colorScheme.primary
                 )
             }
         }
         Text(
-            text = demo.subtitle,
+            text = demo.shownSubtitle(),
             style = subtitleStyle,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 10.dp)
         )
         Text(
-            text = demo.focus,
+            text = demo.shownFocus(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
@@ -463,7 +475,7 @@ private fun DemoInfoCard(
             maxVisible = 4
         )
         Text(
-            text = "Inspection flow",
+            text = say("Inspection flow", "Как смотреть пример"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 16.dp)
@@ -474,26 +486,29 @@ private fun DemoInfoCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "PREVIEW",
+                text = say("PREVIEW", "КАРТИНКА"),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = "CONTROLS",
+                text = say("CONTROLS", "НАСТРОЙКИ"),
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = "DSL",
+                text = say("DSL", "ОПИСАНИЕ"),
                 accent = MaterialTheme.colorScheme.secondary
             )
             if (generatedAgsl != null) {
                 CyberBadge(
-                    text = "AGSL",
+                    text = say("AGSL", "AGSL"),
                     accent = MaterialTheme.colorScheme.primary
                 )
             }
         }
         Text(
-            text = "Use COPY or SHARE on each code panel to compare DSL vs AGSL while iterating on live uniforms.",
+            text = say(
+                "Use COPY or SHARE on each code panel to compare DSL vs AGSL while iterating on live uniforms.",
+                "На каждой панели кода есть «Копировать» и «Поделиться»: так удобно сверять описание и AGSL, пока крутите живые параметры.",
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -547,15 +562,15 @@ private fun DemoInspectionDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = "CODE COMPARE",
+                        text = say("CODE COMPARE", "СРАВНЕНИЕ КОДА"),
                         accent = MaterialTheme.colorScheme.primary
                     )
                     CyberBadge(
-                        text = demo.title.uppercase(),
+                        text = demo.shownTitle().uppercase(),
                         accent = MaterialTheme.colorScheme.secondary
                     )
                     CyberBadge(
-                        text = "CLOSE",
+                        text = say("CLOSE", "ЗАКРЫТЬ"),
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onDismiss() },
@@ -564,7 +579,10 @@ private fun DemoInspectionDialog(
                     )
                 }
                 Text(
-                    text = "Compare the authored DSL with the generated AGSL without losing the live controls flow.",
+                    text = say(
+                        "Compare the authored DSL with the generated AGSL without losing the live controls flow.",
+                        "Сверьте написанное описание с получившимся AGSL, не теряя живые настройки.",
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 10.dp)
@@ -580,17 +598,17 @@ private fun DemoInspectionDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = "DSL",
+                        text = say("DSL", "ОПИСАНИЕ"),
                         accent = MaterialTheme.colorScheme.secondary
                     )
                     if (generatedAgsl != null) {
                         CyberBadge(
-                            text = "AGSL",
+                            text = say("AGSL", "AGSL"),
                             accent = MaterialTheme.colorScheme.primary
                         )
                     }
                     CyberBadge(
-                        text = "COPY / SHARE",
+                        text = say("COPY / SHARE", "КОПИРОВАТЬ / ПОДЕЛИТЬСЯ"),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -652,27 +670,27 @@ private fun DemoPathSignalBlock(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CyberBadge(
-                    text = "PATH SIGNAL",
+                    text = say("PATH SIGNAL", "МЕТКА ПУТИ"),
                     accent = accent
                 )
                 CyberBadge(
-                    text = signal.badge,
+                    text = signal.badge.show(),
                     accent = MaterialTheme.colorScheme.secondary
                 )
                 signal.family?.let { family ->
                     CyberBadge(
-                        text = family,
+                        text = shownFamily(family),
                         accent = MaterialTheme.colorScheme.primary
                     )
                 }
             }
             Text(
-                text = signal.title,
+                text = signal.title.show(),
                 style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = signal.body,
+                text = signal.body.show(),
                 style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (compact) 4 else Int.MAX_VALUE,
@@ -697,6 +715,7 @@ private fun ExpandableCodeBlock(
     val coroutineScope = rememberCoroutineScope()
     var expanded by rememberSaveable(stateKey) { mutableStateOf(false) }
     var copyFeedback by rememberSaveable("${stateKey}-copy") { mutableStateOf(0) }
+    val shareWord = ui("SHARE")
 
     LaunchedEffect(copyFeedback) {
         if (copyFeedback == 0) return@LaunchedEffect
@@ -716,7 +735,7 @@ private fun ExpandableCodeBlock(
                 previewShaderSource(text, collapsedLines)
             },
             maxLines = if (expanded || !canExpand) Int.MAX_VALUE else collapsedLines,
-            meta = "$totalLines lines",
+            meta = say("$totalLines lines", "$totalLines строк"),
             actions = buildList {
                 add(
                     CyberCodeAction(
@@ -738,10 +757,10 @@ private fun ExpandableCodeBlock(
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, text)
-                                putExtra(Intent.EXTRA_SUBJECT, "RedByteFX — $title")
+                                putExtra(Intent.EXTRA_SUBJECT, "RedByteFX - $title")
                             }
                             context.startActivity(
-                                Intent.createChooser(send, "Share $title")
+                                Intent.createChooser(send, "$shareWord $title")
                             )
                         }
                     )
@@ -773,7 +792,7 @@ fun DemoFocusTags(
     ) {
         tags.take(maxVisible).forEach { tag ->
             CyberBadge(
-                text = tag.uppercase(),
+                text = shownTag(tag).uppercase(),
                 accent = accent,
                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.82f),
                 textColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -799,15 +818,19 @@ private fun DebugChecklist(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "DEBUG CHECKLIST",
+                text = say("DEBUG CHECKLIST", "СПИСОК ПРОВЕРКИ"),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
-                text = if (demo.layer == DemoLayer.Stdlib) "HELPER-FIRST" else "DSL-FIRST",
+                text = if (demo.layer == DemoLayer.Stdlib) {
+                    say("HELPER-FIRST", "СНАЧАЛА ФУНКЦИИ")
+                } else {
+                    say("DSL-FIRST", "СНАЧАЛА ОПИСАНИЕ")
+                },
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = signal.badge,
+                text = signal.badge.show(),
                 accent = when (signal.kind) {
                     DemoPathKind.StartHere -> MaterialTheme.colorScheme.tertiary
                     DemoPathKind.Canonical -> MaterialTheme.colorScheme.primary
@@ -818,37 +841,58 @@ private fun DebugChecklist(
         }
         DebugStep(
             label = "1",
-            title = "Change one control at a time",
+            title = say("Change one control at a time", "Меняйте по одной настройке"),
             body = if (demo.isAnimated) {
-                "Start with speed/amount style controls so the preview change is easy to isolate before reading code."
+                say(
+                    "Start with speed/amount style controls so the preview change is easy to isolate before reading code.",
+                    "Начните со скорости и доли, чтобы изменение картинки было легко отделить, прежде чем читать код.",
+                )
             } else {
-                "Start with the strongest visible control so the preview change is obvious before reading code."
+                say(
+                    "Start with the strongest visible control so the preview change is obvious before reading code.",
+                    "Начните с самой заметной настройки, чтобы картинка изменилась явно, прежде чем читать код.",
+                )
             },
             modifier = Modifier.padding(top = 12.dp),
             compact = compact
         )
         DebugStep(
             label = "2",
-            title = "Read the authoring intent in DSL",
+            title = say("Read the authoring intent in DSL", "Прочитайте замысел в описании"),
             body = when (signal.kind) {
                 DemoPathKind.StartHere -> {
                     if (demo.layer == DemoLayer.Stdlib) {
-                        "Treat the named helpers here as the recommended starter path; this demo is meant to teach the canonical recipe before stylistic variants."
+                        say(
+                            "Treat the named helpers here as the recommended starter path; this demo is meant to teach the canonical recipe before stylistic variants.",
+                            "Именованные функции здесь - рекомендуемый старт. Пример учит основному приёму раньше украшенных вариантов.",
+                        )
                     } else {
-                        "Treat the locals, uniforms, and sample path here as the preferred first raw DSL mental model before adding higher-level helpers."
+                        say(
+                            "Treat the locals, uniforms, and sample path here as the preferred first raw DSL mental model before adding higher-level helpers.",
+                            "Локальные значения, параметры и путь выборки - первая модель голого описания, прежде чем добавлять функции уровнем выше.",
+                        )
                     }
                 }
 
                 DemoPathKind.Canonical -> {
-                    "Read the named helper family first; this demo is part of the curated surface and should stay legible before you compare the generated AGSL."
+                    say(
+                        "Read the named helper family first; this demo is part of the curated surface and should stay legible before you compare the generated AGSL.",
+                        "Сначала прочитайте семейство функций. Пример на учебной поверхности и должен оставаться понятным до сверки с AGSL.",
+                    )
                 }
 
                 DemoPathKind.Exploratory -> {
-                    "Read the named helpers, but keep mapping them back to the canonical basics they build on; this demo is intentionally past the first teaching surface."
+                    say(
+                        "Read the named helpers, but keep mapping them back to the canonical basics they build on; this demo is intentionally past the first teaching surface.",
+                        "Читайте функции и всё время сопоставляйте их с основой, на которой они стоят. Этот пример сознательно дальше первой учебной поверхности.",
+                    )
                 }
 
                 DemoPathKind.Foundation -> {
-                    "Look for direct coordinate math, locals, and uniforms first; this is close to AGSL shape even if it is not one of the primary starter demos."
+                    say(
+                        "Look for direct coordinate math, locals, and uniforms first; this is close to AGSL shape even if it is not one of the primary starter demos.",
+                        "Сначала ищите прямую математику координат, локальные значения и параметры. Это близко к форме AGSL, даже если пример не на главном старте.",
+                    )
                 }
             },
             modifier = Modifier.padding(top = 12.dp),
@@ -856,8 +900,11 @@ private fun DebugChecklist(
         )
         DebugStep(
             label = "3",
-            title = "Compare the generated AGSL shape",
-            body = "After copying or sharing a panel, verify uniforms, sample calls, and branches. If the preview feels wrong, simplify back toward `sample()` and add pieces again.",
+            title = say("Compare the generated AGSL shape", "Сверьте форму получившегося AGSL"),
+            body = say(
+                "After copying or sharing a panel, verify uniforms, sample calls, and branches. If the preview feels wrong, simplify back toward `sample()` and add pieces again.",
+                "Скопировав или отправив панель, проверьте параметры, вызовы выборки и ветки. Если картинка врёт, вернитесь к `sample()` и добавляйте куски заново.",
+            ),
             modifier = Modifier.padding(top = 12.dp),
             compact = compact
         )
@@ -878,7 +925,7 @@ private fun DebugStep(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = label,
+                    text = ui(label),
                 accent = MaterialTheme.colorScheme.primary,
                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
             )
@@ -903,7 +950,7 @@ private fun DebugStep(
             verticalAlignment = Alignment.Top
         ) {
             CyberBadge(
-                text = label,
+                    text = ui(label),
                 accent = MaterialTheme.colorScheme.primary,
                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
             )
@@ -994,16 +1041,22 @@ private fun DemoNextStepsPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = "KEEP EXPLORING",
+                text = say("KEEP EXPLORING", "СМОТРЕТЬ ДАЛЬШЕ"),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = "${followUps.size} NEXT DEMOS",
+                text = say(
+                    "${followUps.size} NEXT DEMOS",
+                    ruCount(followUps.size, "следующий пример", "следующих примера", "следующих примеров"),
+                ),
                 accent = MaterialTheme.colorScheme.tertiary
             )
         }
         Text(
-            text = "Follow the idea, not just the catalog order. These demos stay close by section, authoring layer, or shared shader concepts.",
+            text = say(
+                "Follow the idea, not just the catalog order. These demos stay close by section, authoring layer, or shared shader concepts.",
+                "Идите за мыслью, а не за порядком каталога. Эти примеры рядом по разделу, слою или общему приёму.",
+            ),
             style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 10.dp)
@@ -1042,32 +1095,32 @@ private fun DemoFollowUpCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = followUp.label,
+                text = followUp.label.show(),
                 accent = MaterialTheme.colorScheme.tertiary
             )
             CyberBadge(
-                text = demo.section.title.uppercase(),
+                text = demo.section.title.showUpper(),
                 accent = MaterialTheme.colorScheme.primary
             )
             CyberBadge(
-                text = demo.layer.label,
+                text = demo.layer.label.show(),
                 accent = MaterialTheme.colorScheme.secondary
             )
         }
         Text(
-            text = demo.title,
+            text = demo.shownTitle(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 10.dp)
         )
         Text(
-            text = followUp.description,
+            text = followUp.description.show(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            text = demo.focus,
+            text = demo.shownFocus(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
@@ -1111,22 +1164,22 @@ private fun NavigationCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = label,
+                text = ui(label),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
-                text = demo.layer.label,
+                text = demo.layer.label.show(),
                 accent = MaterialTheme.colorScheme.primary
             )
         }
         Text(
-            text = demo.title,
+            text = demo.shownTitle(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 10.dp)
         )
         Text(
-            text = demo.subtitle,
+            text = demo.shownSubtitle(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
@@ -1145,7 +1198,7 @@ fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = title,
+            text = ui(title),
             style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -1172,7 +1225,7 @@ fun SliderRow(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             CyberBadge(
-                text = title.uppercase(),
+                text = ui(title).uppercase(),
                 accent = MaterialTheme.colorScheme.secondary
             )
             CyberBadge(
@@ -1231,7 +1284,7 @@ fun RadioRow(
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             Text(
-                text = title,
+                text = ui(title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
@@ -1245,7 +1298,7 @@ fun RadioRow(
         ) {
             RadioButton(selected = selected, onClick = onClick)
             Text(
-                text = title,
+                text = ui(title),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
@@ -1387,23 +1440,26 @@ fun DemoPreviewStage(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CyberBadge(
-                        text = "SHADER PREVIEW",
+                        text = say("SHADER PREVIEW", "ПРОСМОТР ШЕЙДЕРА"),
                         accent = MaterialTheme.colorScheme.secondary
                     )
                     CyberBadge(
-                        text = "LIVE UNIFORMS",
+                        text = say("LIVE UNIFORMS", "ЖИВЫЕ ПАРАМЕТРЫ"),
                         accent = MaterialTheme.colorScheme.tertiary
                     )
                 }
                 Text(
-                    text = label,
+                    text = ui(label),
                     style = titleStyle,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(top = if (compactPreview) 4.dp else 8.dp)
                 )
                 if (!compactPreview) {
                     Text(
-                        text = "kotlin.dsl // agsl // compose.runtime",
+                        text = say(
+                            "kotlin.dsl // agsl // compose.runtime",
+                            "описание // agsl // compose",
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1412,11 +1468,11 @@ fun DemoPreviewStage(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         CyberBadge(
-                            text = "TYPE-SAFE",
+                            text = say("TYPE-SAFE", "СТРОГИЕ ТИПЫ"),
                             accent = MaterialTheme.colorScheme.primary
                         )
                         CyberBadge(
-                            text = "HOT SIGNAL",
+                            text = say("HOT SIGNAL", "ЖИВОЙ СИГНАЛ"),
                             accent = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -1488,7 +1544,7 @@ fun DemoLiquidGlassPreviewStage(
                 verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp)
             ) {
                 Text(
-                    text = "Glass surface",
+                    text = say("Glass surface", "Стеклянная поверхность"),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1510,14 +1566,17 @@ fun DemoLiquidGlassPreviewStage(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Open",
+                            text = say("Open", "Открыть"),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.94f)
                         )
                     }
                 }
                 Text(
-                    text = "Translucent fill + rim — shader adds flow and edge chroma",
+                    text = say(
+                        "Translucent fill + rim - shader adds flow and edge chroma",
+                        "Полупрозрачная заливка и кромка: шейдер добавляет течение и цвет на краю",
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                 )

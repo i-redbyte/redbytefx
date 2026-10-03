@@ -28,11 +28,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class RadarSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val radius: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val radius: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -43,80 +43,80 @@ fun DemoRadar() {
     var amountUi by rememberSaveable { mutableFloatStateOf(86f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var radiusParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.72f)
-            val radius by autoUniformFloat(0.34f)
-            val amount by autoUniformFloat(0.86f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var radiusParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.72f)
+            val radius = uniform("radius", 0.34f)
+            val amount = uniform("amount", 0.86f)
             timeParam = time
             speedParam = speed
             radiusParam = radius
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val polar = let(polarCoordinates(uv), "polar")
-            val sweepAngle = let(fract(time * speed * 0.08f), "sweep_angle")
-            val sweep = let(
-                angularSweep(
-                    uv = uv,
-                    angle = sweepAngle,
-                    width = 0.12f,
-                    feather = 0.03f
-                ),
-                "sweep"
-            )
-            val arc = let(
-                arcMask(
-                    uv = uv,
-                    radius = radius,
-                    ringWidth = 0.09f,
-                    angle = sweepAngle,
-                    arcWidth = 0.18f,
-                    feather = 0.03f
-                ),
-                "arc"
-            )
-            val outerRing = let(ringMask(uv, radius = radius, width = 0.016f, feather = 0.012f), "outer_ring")
-            val innerRing = let(
-                ringMask(
-                    uv = uv,
-                    radius = max(radius * 0.58f, 0.08f),
-                    width = 0.014f,
-                    feather = 0.012f
-                ),
-                "inner_ring"
-            )
-            val beam = let(
-                radialRamp(
-                    uv = uv,
-                    innerRadius = float(0.06f),
-                    outerRadius = radius + 0.18f
-                ),
-                "beam"
-            )
-            val mask = let(max(max(sweep * beam, arc), max(outerRing, innerRing)), "mask")
-            val tint = let(
-                color(
-                    mix(0.05f, 0.18f, polar.x * 1.4f),
-                    mix(0.24f, 1f, sweep + arc * 0.55f),
-                    mix(0.10f, 0.62f, polar.y * 0.45f + outerRing * 0.35f),
-                    base.a
-                ),
-                "tint"
-            )
-            val screened = let(maskedScreen(base, tint, mask, amount), "screened")
-
-            maskedOverlay(
-                base = screened,
-                blend = color(float3(0.82f, 1f, 0.72f), base.a),
-                mask = arc,
-                amount = amount * 0.32f
-            )
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val polar = let(polarCoordinates(uv), "polar")
+                val sweepAngle = let(fract(time.expr * speed.expr * 0.08f), "sweep_angle")
+                val sweep = let(
+                    angularSweep(
+                        uv = uv,
+                        angle = sweepAngle,
+                        width = 0.12f,
+                        feather = 0.03f
+                    ),
+                    "sweep"
+                )
+                val arc = let(
+                    arcMask(
+                        uv = uv,
+                        radius = radius.expr,
+                        ringWidth = 0.09f,
+                        angle = sweepAngle,
+                        arcWidth = 0.18f,
+                        feather = 0.03f
+                    ),
+                    "arc"
+                )
+                val outerRing = let(ringMask(uv, radius = radius.expr, width = 0.016f, feather = 0.012f), "outer_ring")
+                val innerRing = let(
+                    ringMask(
+                        uv = uv,
+                        radius = max(radius.expr * 0.58f, 0.08f),
+                        width = 0.014f,
+                        feather = 0.012f
+                    ),
+                    "inner_ring"
+                )
+                val beam = let(
+                    radialRamp(
+                        uv = uv,
+                        innerRadius = float(0.06f),
+                        outerRadius = radius.expr + 0.18f
+                    ),
+                    "beam"
+                )
+                val mask = let(max(max(sweep * beam, arc), max(outerRing, innerRing)), "mask")
+                val tint = let(
+                    color(
+                        mix(0.05f, 0.18f, polar.x * 1.4f),
+                        mix(0.24f, 1f, sweep + arc * 0.55f),
+                        mix(0.10f, 0.62f, polar.y * 0.45f + outerRing * 0.35f),
+                        base.a
+                    ),
+                    "tint"
+                )
+                val screened = let(maskedScreen(base, tint, mask, amount.expr), "screened")
+                maskedOverlay(
+                    base = screened,
+                    blend = color(float3(0.82f, 1f, 0.72f), base.a),
+                    mask = arc,
+                    amount = amount.expr * 0.32f
+                )
+            }
         }
         RadarSetup(
             effect = effect,

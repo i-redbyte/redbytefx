@@ -2,7 +2,7 @@ package ru.redbyte.redbytefx.stdlib
 
 import ru.redbyte.redbytefx.*
 
-private fun blendAmount(amount: FloatExpr): FloatExpr = saturate(amount)
+private fun blendAmount(amount: Expr<Flt<High>>): Expr<Flt<High>> = saturate(amount)
 
 /**
  * Adjusts RGB saturation while preserving alpha.
@@ -11,25 +11,25 @@ private fun blendAmount(amount: FloatExpr): FloatExpr = saturate(amount)
  * exaggerate saturation.
  */
 public fun adjustSaturation(
-    color: ColorExpr,
-    amount: FloatExpr
-): ColorExpr {
-    val luma = luminance(color)
+    color: Expr<Vec4<Flt<Med>>>,
+    amount: Expr<Flt<High>>
+): Expr<Vec4<Flt<Med>>> {
+    val luma = luminance(color).toMed()
     val rgb = mix(
         float3(luma, luma, luma),
         float3(color.r, color.g, color.b),
-        amount
+        amount,
     )
-    return ru.redbyte.redbytefx.color(rgb, color.a)
+    return color(rgb, color.a)
 }
 
 /**
  * Adjusts RGB saturation while preserving alpha using a literal [amount].
  */
 public fun adjustSaturation(
-    color: ColorExpr,
+    color: Expr<Vec4<Flt<Med>>>,
     amount: Float
-): ColorExpr = adjustSaturation(color, float(amount))
+): Expr<Vec4<Flt<Med>>> = adjustSaturation(color, float(amount))
 
 /**
  * Multiplies two colors together, then mixes the result back into [base] by [amount].
@@ -38,10 +38,10 @@ public fun adjustSaturation(
  * intensity rather than an extrapolated overshoot.
  */
 public fun blendMultiply(
-    base: ColorExpr,
-    blend: ColorExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr {
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> {
     val multiplied = ru.redbyte.redbytefx.color(
         base.r * blend.r,
         base.g * blend.g,
@@ -55,10 +55,10 @@ public fun blendMultiply(
  * Multiplies two colors together, then mixes the result back into [base] by a literal [amount].
  */
 public fun blendMultiply(
-    base: ColorExpr,
-    blend: ColorExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
     amount: Float
-): ColorExpr = blendMultiply(base, blend, float(amount))
+): Expr<Vec4<Flt<Med>>> = blendMultiply(base, blend, float(amount))
 
 /**
  * Applies screen blending and mixes the result back into [base] by [amount].
@@ -66,10 +66,10 @@ public fun blendMultiply(
  * [amount] is saturated to the `[0, 1]` range so screen intensity stays predictable.
  */
 public fun blendScreen(
-    base: ColorExpr,
-    blend: ColorExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr {
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> {
     val screened = ru.redbyte.redbytefx.color(
         1f - (1f - base.r) * (1f - blend.r),
         1f - (1f - base.g) * (1f - blend.g),
@@ -83,10 +83,10 @@ public fun blendScreen(
  * Applies screen blending and mixes the result back into [base] by a literal [amount].
  */
 public fun blendScreen(
-    base: ColorExpr,
-    blend: ColorExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
     amount: Float
-): ColorExpr = blendScreen(base, blend, float(amount))
+): Expr<Vec4<Flt<Med>>> = blendScreen(base, blend, float(amount))
 
 /**
  * Applies overlay blending and mixes the result back into [base] by [amount].
@@ -95,11 +95,11 @@ public fun blendScreen(
  * stdlib's blend-intensity convention.
  */
 public fun blendOverlay(
-    base: ColorExpr,
-    blend: ColorExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr {
-    fun overlayChannel(baseChannel: FloatExpr, blendChannel: FloatExpr): FloatExpr =
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> {
+    fun <P : Prec> overlayChannel(baseChannel: Expr<Flt<P>>, blendChannel: Expr<Flt<P>>): Expr<Flt<P>> =
         ifElse(
             baseChannel lt 0.5f,
             2f * baseChannel * blendChannel,
@@ -119,7 +119,7 @@ public fun blendOverlay(
  * Applies overlay blending and mixes the result back into [base] by a literal [amount].
  */
 public fun blendOverlay(
-    base: ColorExpr,
-    blend: ColorExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
     amount: Float
-): ColorExpr = blendOverlay(base, blend, float(amount))
+): Expr<Vec4<Flt<Med>>> = blendOverlay(base, blend, float(amount))

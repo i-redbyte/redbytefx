@@ -21,20 +21,22 @@ fun DemoRotate() {
     var angle by rememberSaveable { mutableFloatStateOf(0f) }
 
     val setup = remember {
-        var p: FxParam.Float? = null
-        val effect = redbytefx {
-            val angle = uniformFloat(0f, "angle_deg")
+        var p: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val angle = uniform("angle_deg", 0f)
             p = angle
-            val pivot = center()
-            val delta = fragCoord - pivot
-            val theta = radians(angle)
-            val s = sin(theta)
-            val c = cos(theta)
-            val rotated = pivot + float2(
-                c * delta.x - s * delta.y,
-                s * delta.x + c * delta.y
-            )
-            sample(rotated)
+            fragment {
+                val pivot = center()
+                val delta = fragCoord - pivot
+                val theta = radians(angle.expr)
+                val s = sin(theta)
+                val c = cos(theta)
+                val rotated = pivot + float2(
+                    c * delta.x - s * delta.y,
+                    s * delta.x + c * delta.y
+                )
+                sample(rotated)
+            }
         }
         Pair(effect, p!!)
     }

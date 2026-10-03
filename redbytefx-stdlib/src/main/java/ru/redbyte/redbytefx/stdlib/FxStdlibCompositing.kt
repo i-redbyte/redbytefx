@@ -11,7 +11,7 @@ import ru.redbyte.redbytefx.*
  * use [amount] to dial intensity without changing the mask shape.
  */
 
-private fun maskedAmount(mask: FloatExpr, amount: FloatExpr): FloatExpr =
+private fun maskedAmount(mask: Expr<Flt<High>>, amount: Expr<Flt<High>>): Expr<Flt<High>> =
     saturate(mask * amount)
 
 /**
@@ -21,21 +21,21 @@ private fun maskedAmount(mask: FloatExpr, amount: FloatExpr): FloatExpr =
  * helper in `stdlib`: author a readable mask first, then reveal the next layer through it.
  */
 public fun maskedMix(
-    base: ColorExpr,
-    revealed: ColorExpr,
-    mask: FloatExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr = mix(base, revealed, maskedAmount(mask, amount))
+    base: Expr<Vec4<Flt<Med>>>,
+    revealed: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> = mix(base, revealed, maskedAmount(mask, amount))
 
 /**
  * Mixes [revealed] into [base] through [mask] using a literal [amount].
  */
 public fun maskedMix(
-    base: ColorExpr,
-    revealed: ColorExpr,
-    mask: FloatExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    revealed: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
     amount: Float
-): ColorExpr = maskedMix(
+): Expr<Vec4<Flt<Med>>> = maskedMix(
     base = base,
     revealed = revealed,
     mask = mask,
@@ -50,24 +50,24 @@ public fun maskedMix(
  * [maskedScreen], [maskedOverlay], or plain [maskedMix].
  */
 public fun alphaMask(
-    color: ColorExpr,
-    mask: FloatExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr = ru.redbyte.redbytefx.color(
+    color: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> = ru.redbyte.redbytefx.color(
     r = color.r,
     g = color.g,
     b = color.b,
-    a = color.a * maskedAmount(mask, amount)
+    a = color.a * maskedAmount(mask, amount).toMed()
 )
 
 /**
  * Preserves RGB while multiplying alpha by [mask] using a literal [amount].
  */
 public fun alphaMask(
-    color: ColorExpr,
-    mask: FloatExpr,
+    color: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
     amount: Float
-): ColorExpr = alphaMask(
+): Expr<Vec4<Flt<Med>>> = alphaMask(
     color = color,
     mask = mask,
     amount = float(amount)
@@ -80,21 +80,21 @@ public fun alphaMask(
  * already a deliberate layer, not a replacement for first authoring the mask itself.
  */
 public fun maskedScreen(
-    base: ColorExpr,
-    blend: ColorExpr,
-    mask: FloatExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr = blendScreen(base, blend, maskedAmount(mask, amount))
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> = blendScreen(base, blend, maskedAmount(mask, amount))
 
 /**
  * Applies screen blending through [mask] using a literal [amount].
  */
 public fun maskedScreen(
-    base: ColorExpr,
-    blend: ColorExpr,
-    mask: FloatExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
     amount: Float
-): ColorExpr = maskedScreen(
+): Expr<Vec4<Flt<Med>>> = maskedScreen(
     base = base,
     blend = blend,
     mask = mask,
@@ -108,21 +108,21 @@ public fun maskedScreen(
  * companion to [maskedMix] rather than the first compositing helper to teach.
  */
 public fun maskedOverlay(
-    base: ColorExpr,
-    blend: ColorExpr,
-    mask: FloatExpr,
-    amount: FloatExpr = float(1f)
-): ColorExpr = blendOverlay(base, blend, maskedAmount(mask, amount))
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Expr<Flt<High>> = float(1f)
+): Expr<Vec4<Flt<Med>>> = blendOverlay(base, blend, maskedAmount(mask, amount))
 
 /**
  * Applies overlay blending through [mask] using a literal [amount].
  */
 public fun maskedOverlay(
-    base: ColorExpr,
-    blend: ColorExpr,
-    mask: FloatExpr,
+    base: Expr<Vec4<Flt<Med>>>,
+    blend: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
     amount: Float
-): ColorExpr = maskedOverlay(
+): Expr<Vec4<Flt<Med>>> = maskedOverlay(
     base = base,
     blend = blend,
     mask = mask,

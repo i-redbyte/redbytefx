@@ -1,4 +1,4 @@
-# Detekt for RedByteFX — Kotlin static analysis.
+# Detekt for RedByteFX - Kotlin static analysis.
 # Shader DSL and stdlib use many numeric literals by design; rules are tuned for signal, not noise.
 # Run: ./gradlew detekt  |  Main sources only (tests excluded via Gradle).
 

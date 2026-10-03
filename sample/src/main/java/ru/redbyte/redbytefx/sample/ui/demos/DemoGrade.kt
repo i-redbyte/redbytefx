@@ -22,10 +22,10 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 
 
 private data class GradeSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val amount: FxParam.Float,
-    val warmth: FxParam.Float,
-    val glow: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val amount: Uniform<Flt<High>>,
+    val warmth: Uniform<Flt<High>>,
+    val glow: Uniform<Flt<High>>
 )
 
 @Composable
@@ -35,35 +35,35 @@ fun DemoGrade() {
     var glowUi by rememberSaveable { mutableFloatStateOf(38f) }
 
     val setup = remember {
-        var amountParam: FxParam.Float? = null
-        var warmthParam: FxParam.Float? = null
-        var glowParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val amount by autoUniformFloat(0.82f)
-            val warmth by autoUniformFloat(0.58f)
-            val glow by autoUniformFloat(0.38f)
+        var amountParam: Uniform<Flt<High>>? = null
+        var warmthParam: Uniform<Flt<High>>? = null
+        var glowParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val amount = uniform("amount", 0.82f)
+            val warmth = uniform("warmth", 0.58f)
+            val glow = uniform("glow", 0.38f)
             amountParam = amount
             warmthParam = warmth
             glowParam = glow
-
-            val base = let(sample(), "base")
-            val saturated = let(
-                adjustSaturation(base, mix(0.9f, 1.55f, amount)),
-                "saturated"
-            )
-            val tint = let(
-                color(
-                    mix(0.26f, 0.94f, warmth),
-                    mix(0.48f, 0.72f, warmth),
-                    mix(0.92f, 0.38f, warmth),
-                    base.a
-                ),
-                "tint"
-            )
-            val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
-            val screened = let(blendScreen(multiplied, tint, glow), "screened")
-
-            blendOverlay(base, screened, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val saturated = let(
+                    adjustSaturation(base, mix(0.9f, 1.55f, amount.expr)),
+                    "saturated"
+                )
+                val tint = let(
+                    color(
+                        mix(0.26f, 0.94f, warmth.expr),
+                        mix(0.48f, 0.72f, warmth.expr),
+                        mix(0.92f, 0.38f, warmth.expr),
+                        base.a
+                    ),
+                    "tint"
+                )
+                val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
+                val screened = let(blendScreen(multiplied, tint, glow.expr), "screened")
+                blendOverlay(base, screened, amount.expr)
+            }
         }
         GradeSetup(
             effect = effect,

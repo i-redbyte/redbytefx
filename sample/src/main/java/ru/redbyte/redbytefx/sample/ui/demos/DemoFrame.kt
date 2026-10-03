@@ -27,11 +27,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class FrameSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val thickness: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val thickness: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -42,45 +42,45 @@ fun DemoFrame() {
     var amountUi by rememberSaveable { mutableFloatStateOf(82f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var thicknessParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.72f)
-            val thickness by autoUniformFloat(0.1f)
-            val amount by autoUniformFloat(0.82f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var thicknessParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.72f)
+            val thickness = uniform("thickness", 0.1f)
+            val amount = uniform("amount", 0.82f)
             timeParam = time
             speedParam = speed
             thicknessParam = thickness
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val frame = let(frameMask(uv, thickness, 0.03f), "frame")
-            val interior = let(edgeFade(uv, thickness + 0.08f), "interior")
-            val sweepCenter = let(0.12f + pingPong(time * speed * 0.2f, 1f) * 0.76f, "sweep_center")
-            val sweep = let(
-                directionalSweep(
-                    uv = uv,
-                    direction = float2(1f, -0.24f),
-                    center = sweepCenter,
-                    width = 0.2f,
-                    feather = 0.08f
-                ),
-                "sweep"
-            )
-            val shellTint = let(color(float3(0.12f, 0.96f, 0.72f), base.a), "shell_tint")
-            val innerTint = let(color(float3(0.08f, 0.24f, 0.16f), base.a), "inner_tint")
-            val screened = let(maskedScreen(base, shellTint, frame * sweep, amount), "screened")
-
-            maskedOverlay(
-                base = screened,
-                blend = innerTint,
-                mask = frame + (1f - interior) * 0.28f,
-                amount = amount * 0.45f
-            )
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val frame = let(frameMask(uv, thickness.expr, 0.03f), "frame")
+                val interior = let(edgeFade(uv, thickness.expr + 0.08f), "interior")
+                val sweepCenter = let(0.12f + pingPong(time.expr * speed.expr * 0.2f, 1f) * 0.76f, "sweep_center")
+                val sweep = let(
+                    directionalSweep(
+                        uv = uv,
+                        direction = float2(1f, -0.24f),
+                        center = sweepCenter,
+                        width = 0.2f,
+                        feather = 0.08f
+                    ),
+                    "sweep"
+                )
+                val shellTint = let(color(float3(0.12f, 0.96f, 0.72f), base.a), "shell_tint")
+                val innerTint = let(color(float3(0.08f, 0.24f, 0.16f), base.a), "inner_tint")
+                val screened = let(maskedScreen(base, shellTint, frame * sweep, amount.expr), "screened")
+                maskedOverlay(
+                    base = screened,
+                    blend = innerTint,
+                    mask = frame + (1f - interior) * 0.28f,
+                    amount = amount.expr * 0.45f
+                )
+            }
         }
         FrameSetup(
             effect = effect,

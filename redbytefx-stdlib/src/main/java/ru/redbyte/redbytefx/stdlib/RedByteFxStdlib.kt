@@ -1,9 +1,9 @@
 /**
- * Standard shader library for RedByteFX: reusable recipes built with the `redbytefx { }` DSL.
+ * Standard shader library for RedByteFX: reusable recipes built inside `shader(ShaderTarget) { fragment { ... } }`.
  *
  * **Core vs stdlib:** `ru.redbyte.redbytefx` (`:redbytefx-core`) owns the
  * language surface (types, uniforms, compiler, essential math/color). This module adds higher-level
- * helpers—mapping, noise, masks, compositing, SDF, routing—without hiding the generated AGSL.
+ * helpers-mapping, noise, masks, compositing, SDF, routing-without hiding the generated AGSL.
  *
  * Canonical parameter vocabulary in this module:
  *
@@ -21,7 +21,7 @@
  *   `FxStdlibCompositing.kt`). Author [mask] in roughly `[0, 1]`; use [amount] to scale how strong
  *   the effect is, not as a second unrelated alpha.
  * - **Mapping** (`inverseLerp`, `remap`): [inverseLerp] returns the unclamped normalized `t`
- *   between two input endpoints; [remap] is exactly `mix(outputStart, outputEnd, inverseLerp(...))` —
+ *   between two input endpoints; [remap] is exactly `mix(outputStart, outputEnd, inverseLerp(...))` -
  *   do not duplicate that math with ad-hoc helpers.
  *
  * ### Canonical (first teaching surface)
