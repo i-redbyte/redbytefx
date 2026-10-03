@@ -25,13 +25,13 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class LiquidGlassSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val refraction: FxParam.Float,
-    val speed: FxParam.Float,
-    val chromaPx: FxParam.Float,
-    val chromaMix: FxParam.Float,
-    val edgeMix: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val refraction: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val chromaPx: Uniform<Flt<High>>,
+    val chromaMix: Uniform<Flt<High>>,
+    val edgeMix: Uniform<Flt<High>>
 )
 
 @Composable
@@ -44,56 +44,56 @@ fun DemoLiquidGlass() {
     var edgeMixUi by rememberSaveable { mutableFloatStateOf(72f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var refractionParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var chromaPxParam: FxParam.Float? = null
-        var chromaMixParam: FxParam.Float? = null
-        var edgeMixParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val refraction by autoUniformFloat(0.072f)
-            val speed by autoUniformFloat(0.48f)
-            val chromaPx by autoUniformFloat(5.5f)
-            val chromaMix by autoUniformFloat(0.52f)
-            val edgeMix by autoUniformFloat(0.72f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var refractionParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var chromaPxParam: Uniform<Flt<High>>? = null
+        var chromaMixParam: Uniform<Flt<High>>? = null
+        var edgeMixParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val refraction = uniform("refraction", 0.072f)
+            val speed = uniform("speed", 0.48f)
+            val chromaPx = uniform("chromaPx", 5.5f)
+            val chromaMix = uniform("chromaMix", 0.52f)
+            val edgeMix = uniform("edgeMix", 0.72f)
             timeParam = time
             refractionParam = refraction
             speedParam = speed
             chromaPxParam = chromaPx
             chromaMixParam = chromaMix
             edgeMixParam = edgeMix
-
-            val uv = let(normalizedUv(), "uv")
-            val warp = let(domainWarp(uv * 3.2f, time * speed, refraction), "warp")
-            val warpedUv = let(
-                float2(saturate(warp.x), saturate(warp.y)),
-                "warped_uv"
-            )
-            val glass = let(sampleUv(warpedUv), "glass")
-            val px = chromaPx / max(resolution.x, 0.0001f)
-            val r = sampleUv(warpedUv - float2(px, 0f)).r
-            val g = glass.g
-            val b = sampleUv(warpedUv + float2(px, 0f)).b
-            val chromaGlass = let(color(r, g, b, glass.a), "chroma_glass")
-            val dist = length(aspectCenteredUv(uv, resolution))
-            val shell = let(1f - smoothstep(0.38f, 0.52f, dist), "shell")
-            val rim = let(
-                rimLight(
-                    uv = uv,
-                    resolution = resolution,
-                    radius = 0.4f,
-                    width = 0.068f,
-                    feather = 0.032f
-                ),
-                "rim"
-            )
-            val edge = let(saturate(max(shell, rim)), "edge")
-            val spec = let(pow(edge, 1.75f), "spec")
-            val glassBody = let(mix(glass, chromaGlass, edge * chromaMix), "glass_body")
-            val ice = color(float3(0.82f, 0.92f, 1f), 0.14f)
-
-            blendScreen(glassBody, ice, spec * edgeMix)
+            fragment {
+                val uv = let(normalizedUv(), "uv")
+                val warp = let(domainWarp(uv * 3.2f, time.expr * speed.expr, refraction.expr), "warp")
+                val warpedUv = let(
+                    float2(saturate(warp.x), saturate(warp.y)),
+                    "warped_uv"
+                )
+                val glass = let(sampleUv(warpedUv), "glass")
+                val px = chromaPx.expr / max(resolution.x, 0.0001f)
+                val r = sampleUv(warpedUv - float2(px, 0f)).r
+                val g = glass.g
+                val b = sampleUv(warpedUv + float2(px, 0f)).b
+                val chromaGlass = let(color(r, g, b, glass.a), "chroma_glass")
+                val dist = length(aspectCenteredUv(uv, resolution))
+                val shell = let(1f - smoothstep(0.38f, 0.52f, dist), "shell")
+                val rim = let(
+                    rimLight(
+                        uv = uv,
+                        resolution = resolution,
+                        radius = 0.4f,
+                        width = 0.068f,
+                        feather = 0.032f
+                    ),
+                    "rim"
+                )
+                val edge = let(saturate(max(shell, rim)), "edge")
+                val spec = let(pow(edge, 1.75f), "spec")
+                val glassBody = let(mix(glass, chromaGlass, edge * chromaMix.expr), "glass_body")
+                val ice = color(float3(0.82f, 0.92f, 1f), 0.14f)
+                blendScreen(glassBody, ice, spec * edgeMix.expr)
+            }
         }
         LiquidGlassSetup(
             effect = effect,

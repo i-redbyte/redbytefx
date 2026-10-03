@@ -11,12 +11,12 @@ import ru.redbyte.redbytefx.*
  * space for authored scenes.
  */
 public fun segmentMask(
-    point: Float2Expr,
-    start: Float2Expr,
-    end: Float2Expr,
-    thickness: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr = softStroke(
+    point: Expr<Vec2<Flt<High>>>,
+    start: Expr<Vec2<Flt<High>>>,
+    end: Expr<Vec2<Flt<High>>>,
+    thickness: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> = softStroke(
     distance = sdSegment(point = point, start = start, end = end),
     width = thickness,
     feather = feather
@@ -26,12 +26,12 @@ public fun segmentMask(
  * Creates a soft routed trace mask using literal [thickness] and [feather] values.
  */
 public fun segmentMask(
-    point: Float2Expr,
-    start: Float2Expr,
-    end: Float2Expr,
+    point: Expr<Vec2<Flt<High>>>,
+    start: Expr<Vec2<Flt<High>>>,
+    end: Expr<Vec2<Flt<High>>>,
     thickness: Float,
     feather: Float = 0.02f
-): FloatExpr = segmentMask(
+): Expr<Flt<High>> = segmentMask(
     point = point,
     start = start,
     end = end,
@@ -47,10 +47,10 @@ public fun segmentMask(
  * first before reaching for the more stylized [segmentPulse].
  */
 public fun segmentProgress(
-    point: Float2Expr,
-    start: Float2Expr,
-    end: Float2Expr
-): FloatExpr {
+    point: Expr<Vec2<Flt<High>>>,
+    start: Expr<Vec2<Flt<High>>>,
+    end: Expr<Vec2<Flt<High>>>
+): Expr<Flt<High>> {
     val local = point - start
     val segment = end - start
     return clamp(dot(local, segment) / max(dot(segment, segment), 0.0001f), 0f, 1f)
@@ -65,15 +65,15 @@ public fun segmentProgress(
  * the underlying segment space.
  */
 public fun segmentPulse(
-    point: Float2Expr,
-    start: Float2Expr,
-    end: Float2Expr,
-    phase: FloatExpr,
-    bandWidth: FloatExpr,
-    thickness: FloatExpr,
-    bandFeather: FloatExpr = float(0.08f),
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    point: Expr<Vec2<Flt<High>>>,
+    start: Expr<Vec2<Flt<High>>>,
+    end: Expr<Vec2<Flt<High>>>,
+    phase: Expr<Flt<High>>,
+    bandWidth: Expr<Flt<High>>,
+    thickness: Expr<Flt<High>>,
+    bandFeather: Expr<Flt<High>> = float(0.08f),
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val safeBandWidth = max(bandWidth, 0.0001f)
     val safeBandFeather = max(bandFeather, 0.0001f)
     val progress = segmentProgress(point = point, start = start, end = end)
@@ -96,15 +96,15 @@ public fun segmentPulse(
  * Creates a moving segment pulse using literal band and stroke values.
  */
 public fun segmentPulse(
-    point: Float2Expr,
-    start: Float2Expr,
-    end: Float2Expr,
-    phase: FloatExpr,
+    point: Expr<Vec2<Flt<High>>>,
+    start: Expr<Vec2<Flt<High>>>,
+    end: Expr<Vec2<Flt<High>>>,
+    phase: Expr<Flt<High>>,
     bandWidth: Float,
     thickness: Float,
     bandFeather: Float = 0.08f,
     feather: Float = 0.02f
-): FloatExpr = segmentPulse(
+): Expr<Flt<High>> = segmentPulse(
     point = point,
     start = start,
     end = end,

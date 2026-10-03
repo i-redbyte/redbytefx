@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
+import ru.redbyte.redbytefx.sample.ui.say
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -149,29 +150,29 @@ class PhysicsBubbleState(
 }
 
 private data class PhysicsBubbleFxSetup(
-    val effect: FxEffect,
-    val center: FxParam.Float2,
-    val radius: FxParam.Float,
-    val deformation: FxParam.Float2,
-    val popProgress: FxParam.Float,
-    val time: FxParam.Float
+    val effect: ShaderProgram,
+    val center: Uniform<Vec2<Flt<High>>>,
+    val radius: Uniform<Flt<High>>,
+    val deformation: Uniform<Vec2<Flt<High>>>,
+    val popProgress: Uniform<Flt<High>>,
+    val time: Uniform<Flt<High>>
 )
 
-private fun rgb(color: ColorExpr): Float3Expr = float3(color.r, color.g, color.b)
+private fun rgb(color: Expr<Vec4<Flt<Med>>>): Expr<Vec3<Flt<Med>>> = float3(color.r, color.g, color.b)
 
-private fun normalize2(vector: Float2Expr): Float2Expr =
+private fun normalize2(vector: Expr<Vec2<Flt<High>>>): Expr<Vec2<Flt<High>>> =
     vector / max(length(vector), 0.0001f)
 
-private fun normalize3(vector: Float3Expr): Float3Expr =
+private fun normalize3(vector: Expr<Vec3<Flt<High>>>): Expr<Vec3<Flt<High>>> =
     vector / max(length(vector), 0.0001f)
 
-private fun safeSqrt(value: FloatExpr): FloatExpr =
+private fun safeSqrt(value: Expr<Flt<High>>): Expr<Flt<High>> =
     pow(max(value, 0f), 0.5f)
 
 private fun reflect3(
-    incident: Float3Expr,
-    normal: Float3Expr
-): Float3Expr = incident - 2f * dot(normal, incident) * normal
+    incident: Expr<Vec3<Flt<High>>>,
+    normal: Expr<Vec3<Flt<High>>>
+): Expr<Vec3<Flt<High>>> = incident - 2f * dot(normal, incident) * normal
 
 @Composable
 private fun rememberBubbleState(
@@ -195,154 +196,148 @@ private fun rememberBubbleState(
 @Composable
 private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
     remember {
-        var centerParam: FxParam.Float2? = null
-        var radiusParam: FxParam.Float? = null
-        var deformationParam: FxParam.Float2? = null
-        var popParam: FxParam.Float? = null
-        var timeParam: FxParam.Float? = null
+        var centerParam: Uniform<Vec2<Flt<High>>>? = null
+        var radiusParam: Uniform<Flt<High>>? = null
+        var deformationParam: Uniform<Vec2<Flt<High>>>? = null
+        var popParam: Uniform<Flt<High>>? = null
+        var timeParam: Uniform<Flt<High>>? = null
 
-        val effect = redbytefx {
-            val bubbleCenter = uniformFloat2(0f, 0f, "bubble_center")
-            val bubbleRadius = uniformFloat(1f, "bubble_radius")
-            val bubbleDeformation = uniformFloat2(0f, 0f, "bubble_deformation")
-            val bubblePop = uniformFloat(0f, "bubble_pop")
+        val effect = shader(ShaderTarget.Agsl) {
+            val bubbleCenter = uniformVec2("bubble_center", 0f, 0f)
+            val bubbleRadius = uniform("bubble_radius", 1f)
+            val bubbleDeformation = uniformVec2("bubble_deformation", 0f, 0f)
+            val bubblePop = uniform("bubble_pop", 0f)
             val bubbleTime = uniformTime(name = "bubble_time")
             centerParam = bubbleCenter
             radiusParam = bubbleRadius
             deformationParam = bubbleDeformation
             popParam = bubblePop
             timeParam = bubbleTime
-
-            val rawBackground = let(sampleUnclamped(), "raw_background")
-            val rawUv = let(fragCoord - bubbleCenter, "raw_uv")
-            val speed = let(length(bubbleDeformation), "speed")
-            val moveDir = let(
+            fragment {
+                val rawBackground = let(sampleUnclamped(), "raw_background")
+                val rawUv = let(fragCoord - bubbleCenter.expr, "raw_uv")
+                val speed = let(length(bubbleDeformation.expr), "speed")
+                val moveDir = let(
+                    ifElse(
+                        speed gt 0.001f,
+                        normalize2(bubbleDeformation.expr),
+                        float2(0f, 1f)
+                    ),
+                    "move_dir"
+                )
+                val parallelDist = let(dot(rawUv, moveDir), "parallel_dist")
+                val perpVector = let(rawUv - moveDir * parallelDist, "perp_vector")
+                val stretch = let(1f + speed, "stretch")
+                val squash = let(1f / safeSqrt(stretch), "squash")
+                val uv = let(
+                    moveDir * (parallelDist / stretch) + perpVector / squash,
+                    "uv"
+                )
+                val dist = let(length(uv), "dist")
+                val activeRadius = let(bubbleRadius.expr * (1f + bubblePop.expr * 1.5f), "active_radius")
+                val nUv = let(uv / max(activeRadius, 0.0001f), "n_uv")
+                val distSq = let(dot(nUv, nUv), "dist_sq")
+                val z = let(safeSqrt(1f - distSq), "z")
+                val normal = let(normalize3(float3(nUv, z)), "normal")
+                val viewDir = let(float3(0f, 0f, 1f), "view_dir")
+                val nDotV = let(max(dot(normal, viewDir), 0f), "n_dot_v")
+                val magnification = 0.45f
+                val lensDeform = let((1f - z) * magnification * (1f - bubblePop.expr), "lens_deform")
+                val refractScale = let(nUv * activeRadius * lensDeform, "refract_scale")
+                val refUvR = let(fragCoord - refractScale * 0.88f, "ref_uv_r")
+                val refUvG = let(fragCoord - refractScale, "ref_uv_g")
+                val refUvB = let(fragCoord - refractScale * 1.12f, "ref_uv_b")
+                val bgColor = let(
+                    float3(
+                        sampleUnclamped(refUvR).r,
+                        sampleUnclamped(refUvG).g,
+                        sampleUnclamped(refUvB).b
+                    ),
+                    "bg_color"
+                )
+                val reflectionDir = let(reflect3(-viewDir, normal), "reflection_dir")
+                val lightDir1 = let(normalize3(float3(0.6f, 0.7f, 0.8f)), "light_dir_1")
+                val lightDir2 = let(normalize3(float3(-0.5f, -0.4f, 0.6f)), "light_dir_2")
+                val lightAlign1 = let(max(dot(reflectionDir, lightDir1), 0f), "light_align_1")
+                val lightAlign2 = let(max(dot(reflectionDir, lightDir2), 0f), "light_align_2")
+                val nFilm = 1.33f
+                val r0 = let(float(0.02005931f), "r0")
+                val fresnel = let(
+                    r0 + (1f - r0) * pow(1f - nDotV, 5f),
+                    "fresnel"
+                )
+                val sinThetaI = let(safeSqrt(1f - nDotV * nDotV), "sin_theta_i")
+                val sinThetaT = let(sinThetaI / nFilm, "sin_theta_t")
+                val cosThetaT = let(safeSqrt(1f - sinThetaT * sinThetaT), "cos_theta_t")
+                val swirl = let(
+                    valueNoise(nUv * 3f + float2(bubbleTime.expr * 0.12f, bubbleTime.expr * 0.12f)),
+                    "swirl"
+                )
+                val thicknessNoise = let(
+                    valueNoise(nUv * 5f - float2(bubbleTime.expr * 0.08f, bubbleTime.expr * 0.08f)),
+                    "thickness_noise"
+                )
+                val thickness = let(
+                    clamp(
+                        300f + nUv.y * 120f + swirl * 100f + thicknessNoise * 40f,
+                        80f,
+                        900f
+                    ),
+                    "thickness"
+                )
+                val opd = let(2f * nFilm * thickness * cosThetaT, "opd")
+                val phase = let(6.2831855f * opd, "phase")
+                val oscR = let(0.5f + 0.5f * cos(phase / 650f), "osc_r")
+                val oscG = let(0.5f + 0.5f * cos(phase / 532f), "osc_g")
+                val oscB = let(0.5f + 0.5f * cos(phase / 450f), "osc_b")
+                val interferenceColor = let(float3(oscR, oscG, oscB), "interference_color")
+                val interferenceStrength = let(
+                    smoothstep(0f, 0.20f, nDotV),
+                    "interference_strength"
+                )
+                val filmReflection = let(interferenceColor * fresnel * 2f, "film_reflection")
+                val whiteReflection = let(float3(fresnel, fresnel, fresnel), "white_reflection")
+                val thinFilmColor = let(
+                    mix(whiteReflection, filmReflection, interferenceStrength),
+                    "thin_film_color"
+                )
+                val spec1 = let(pow(lightAlign1, 250f) * 2.5f, "spec_1")
+                val spec2 = let(pow(lightAlign2, 60f) * 0.5f, "spec_2")
+                val highlights = let(
+                    float3(spec1 + spec2, spec1 + spec2, spec1 + spec2),
+                    "highlights"
+                )
+                val reflectOffset = let(float2(normal.x, normal.y) * 50f, "reflect_offset")
+                val envCenter = let(fragCoord + reflectOffset, "env_center")
+                val blurStep = 20f
+                val envSample = let(
+                    rgb(sampleUnclamped(envCenter)) * 0.4f +
+                        rgb(sampleUnclamped(envCenter + float2(blurStep, 0f))) * 0.15f +
+                        rgb(sampleUnclamped(envCenter - float2(blurStep, 0f))) * 0.15f +
+                        rgb(sampleUnclamped(envCenter + float2(0f, blurStep))) * 0.15f +
+                        rgb(sampleUnclamped(envCenter - float2(0f, blurStep))) * 0.15f,
+                    "env_sample"
+                )
+                val envReflection = let(envSample * fresnel * 0.4f, "env_reflection")
+                val rimShadow = let(smoothstep(0.92f, 1f, safeSqrt(distSq)), "rim_shadow")
+                val shadedBg = let(bgColor * (1f - rimShadow * 0.25f), "shaded_bg")
+                val fresnelRgb = let(float3(fresnel, fresnel, fresnel), "fresnel_rgb")
+                val finalColor = let(
+                    shadedBg * (float3(1f, 1f, 1f) - fresnelRgb) +
+                        thinFilmColor +
+                        envReflection +
+                        highlights,
+                    "final_color"
+                )
+                val fadeOut = let(1f - safeSqrt(bubblePop.expr), "fade_out")
+                val mixedRgb = let(mix(rgb(rawBackground), finalColor, fadeOut), "mixed_rgb")
+                val outsideBubble = let((bubblePop.expr gte 1f) or (dist gte activeRadius), "outside_bubble")
                 ifElse(
-                    speed gt 0.001f,
-                    normalize2(bubbleDeformation),
-                    float2(0f, 1f)
-                ),
-                "move_dir"
-            )
-            val parallelDist = let(dot(rawUv, moveDir), "parallel_dist")
-            val perpVector = let(rawUv - moveDir * parallelDist, "perp_vector")
-            val stretch = let(1f + speed, "stretch")
-            val squash = let(1f / safeSqrt(stretch), "squash")
-            val uv = let(
-                moveDir * (parallelDist / stretch) + perpVector / squash,
-                "uv"
-            )
-            val dist = let(length(uv), "dist")
-            val activeRadius = let(bubbleRadius * (1f + bubblePop * 1.5f), "active_radius")
-            val nUv = let(uv / max(activeRadius, 0.0001f), "n_uv")
-            val distSq = let(dot(nUv, nUv), "dist_sq")
-            val z = let(safeSqrt(1f - distSq), "z")
-            val normal = let(normalize3(float3(nUv, z)), "normal")
-            val viewDir = let(float3(0f, 0f, 1f), "view_dir")
-            val nDotV = let(max(dot(normal, viewDir), 0f), "n_dot_v")
-
-            val magnification = 0.45f
-            val lensDeform = let((1f - z) * magnification * (1f - bubblePop), "lens_deform")
-            val refractScale = let(nUv * activeRadius * lensDeform, "refract_scale")
-            val refUvR = let(fragCoord - refractScale * 0.88f, "ref_uv_r")
-            val refUvG = let(fragCoord - refractScale, "ref_uv_g")
-            val refUvB = let(fragCoord - refractScale * 1.12f, "ref_uv_b")
-            val bgColor = let(
-                float3(
-                    sampleUnclamped(refUvR).r,
-                    sampleUnclamped(refUvG).g,
-                    sampleUnclamped(refUvB).b
-                ),
-                "bg_color"
-            )
-
-            val reflectionDir = let(reflect3(-viewDir, normal), "reflection_dir")
-            val lightDir1 = let(normalize3(float3(0.6f, 0.7f, 0.8f)), "light_dir_1")
-            val lightDir2 = let(normalize3(float3(-0.5f, -0.4f, 0.6f)), "light_dir_2")
-            val lightAlign1 = let(max(dot(reflectionDir, lightDir1), 0f), "light_align_1")
-            val lightAlign2 = let(max(dot(reflectionDir, lightDir2), 0f), "light_align_2")
-
-            val nFilm = 1.33f
-            val r0 = let(float(0.02005931f), "r0")
-            val fresnel = let(
-                r0 + (1f - r0) * pow(1f - nDotV, 5f),
-                "fresnel"
-            )
-            val sinThetaI = let(safeSqrt(1f - nDotV * nDotV), "sin_theta_i")
-            val sinThetaT = let(sinThetaI / nFilm, "sin_theta_t")
-            val cosThetaT = let(safeSqrt(1f - sinThetaT * sinThetaT), "cos_theta_t")
-
-            val swirl = let(
-                valueNoise(nUv * 3f + float2(bubbleTime * 0.12f, bubbleTime * 0.12f)),
-                "swirl"
-            )
-            val thicknessNoise = let(
-                valueNoise(nUv * 5f - float2(bubbleTime * 0.08f, bubbleTime * 0.08f)),
-                "thickness_noise"
-            )
-            val thickness = let(
-                clamp(
-                    300f + nUv.y * 120f + swirl * 100f + thicknessNoise * 40f,
-                    80f,
-                    900f
-                ),
-                "thickness"
-            )
-            val opd = let(2f * nFilm * thickness * cosThetaT, "opd")
-            val phase = let(6.2831855f * opd, "phase")
-            val oscR = let(0.5f + 0.5f * cos(phase / 650f), "osc_r")
-            val oscG = let(0.5f + 0.5f * cos(phase / 532f), "osc_g")
-            val oscB = let(0.5f + 0.5f * cos(phase / 450f), "osc_b")
-            val interferenceColor = let(float3(oscR, oscG, oscB), "interference_color")
-            val interferenceStrength = let(
-                smoothstep(0f, 0.20f, nDotV),
-                "interference_strength"
-            )
-            val filmReflection = let(interferenceColor * fresnel * 2f, "film_reflection")
-            val whiteReflection = let(float3(fresnel, fresnel, fresnel), "white_reflection")
-            val thinFilmColor = let(
-                mix(whiteReflection, filmReflection, interferenceStrength),
-                "thin_film_color"
-            )
-
-            val spec1 = let(pow(lightAlign1, 250f) * 2.5f, "spec_1")
-            val spec2 = let(pow(lightAlign2, 60f) * 0.5f, "spec_2")
-            val highlights = let(
-                float3(spec1 + spec2, spec1 + spec2, spec1 + spec2),
-                "highlights"
-            )
-
-            val reflectOffset = let(float2(normal.x, normal.y) * 50f, "reflect_offset")
-            val envCenter = let(fragCoord + reflectOffset, "env_center")
-            val blurStep = 20f
-            val envSample = let(
-                rgb(sampleUnclamped(envCenter)) * 0.4f +
-                    rgb(sampleUnclamped(envCenter + float2(blurStep, 0f))) * 0.15f +
-                    rgb(sampleUnclamped(envCenter - float2(blurStep, 0f))) * 0.15f +
-                    rgb(sampleUnclamped(envCenter + float2(0f, blurStep))) * 0.15f +
-                    rgb(sampleUnclamped(envCenter - float2(0f, blurStep))) * 0.15f,
-                "env_sample"
-            )
-            val envReflection = let(envSample * fresnel * 0.4f, "env_reflection")
-            val rimShadow = let(smoothstep(0.92f, 1f, safeSqrt(distSq)), "rim_shadow")
-            val shadedBg = let(bgColor * (1f - rimShadow * 0.25f), "shaded_bg")
-            val fresnelRgb = let(float3(fresnel, fresnel, fresnel), "fresnel_rgb")
-            val finalColor = let(
-                shadedBg * (float3(1f, 1f, 1f) - fresnelRgb) +
-                    thinFilmColor +
-                    envReflection +
-                    highlights,
-                "final_color"
-            )
-            val fadeOut = let(1f - safeSqrt(bubblePop), "fade_out")
-            val mixedRgb = let(mix(rgb(rawBackground), finalColor, fadeOut), "mixed_rgb")
-            val outsideBubble = let((bubblePop gte 1f) or (dist gte activeRadius), "outside_bubble")
-
-            ifElse(
-                outsideBubble,
-                rawBackground,
-                color(mixedRgb, rawBackground.a)
-            )
+                    outsideBubble,
+                    rawBackground,
+                    color(mixedRgb, rawBackground.a)
+                )
+            }
         }
 
         PhysicsBubbleFxSetup(
@@ -497,7 +492,7 @@ private fun PhysicsBubbleContent(
         )
 
         Text(
-            text = "Pixels are now\nphysical.",
+            text = say("Pixels are now\nphysical.", "Пиксели стали\nвеществом."),
             fontSize = 32.sp,
             fontWeight = FontWeight.Medium,
             lineHeight = 40.sp,
@@ -524,14 +519,17 @@ private fun PhysicsBubbleContent(
                 }
             ) {
                 Text(
-                    text = "RedByteFX Bubble",
+                    text = say("RedByteFX Bubble", "Пузырь RedByteFX"),
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,
                     color = titleColor
                 )
                 Text(
-                    text = "Thin-film interference\ndriven by RedByteFX.",
+                    text = say(
+                        "Thin-film interference\ndriven by RedByteFX.",
+                        "Интерференция тонкой плёнки\nна RedByteFX.",
+                    ),
                     fontSize = 24.sp,
                     lineHeight = 26.sp,
                     textAlign = TextAlign.Center,

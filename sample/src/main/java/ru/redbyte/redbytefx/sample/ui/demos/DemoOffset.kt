@@ -22,11 +22,13 @@ fun DemoOffset() {
     var dy by rememberSaveable { mutableFloatStateOf(0f) }
 
     val setup = remember {
-        var p: FxParam.Float2? = null
-        val effect = redbytefx {
-            val delta = uniformFloat2(0f, 0f, "offset")
+        var p: Uniform<Vec2<Flt<High>>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val delta = uniformVec2("offset", 0f, 0f)
             p = delta
-            sample(offset(delta = delta))
+            fragment {
+                sample(offset(delta = delta.expr))
+            }
         }
         Pair(effect, p!!)
     }

@@ -9,7 +9,7 @@ import ru.redbyte.redbytefx.*
  * This is useful for custom panel, frame, and border math built on top of normalized UV space.
  * It is a lower-level decorative building block, not a first starter helper.
  */
-public fun edgeDistance(uv: Float2Expr): FloatExpr = min(
+public fun edgeDistance(uv: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> = min(
     min(uv.x, 1f - uv.x),
     min(uv.y, 1f - uv.y)
 )
@@ -22,17 +22,17 @@ public fun edgeDistance(uv: Float2Expr): FloatExpr = min(
  * masking helpers.
  */
 public fun edgeFade(
-    uv: Float2Expr,
-    feather: FloatExpr
-): FloatExpr = smoothstep(0f, max(feather, 0.0001f), edgeDistance(uv))
+    uv: Expr<Vec2<Flt<High>>>,
+    feather: Expr<Flt<High>>
+): Expr<Flt<High>> = smoothstep(0f, max(feather, 0.0001f), edgeDistance(uv))
 
 /**
  * Creates a normalized inner fade using a literal [feather] value.
  */
 public fun edgeFade(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     feather: Float
-): FloatExpr = edgeFade(
+): Expr<Flt<High>> = edgeFade(
     uv = uv,
     feather = float(feather)
 )
@@ -45,10 +45,10 @@ public fun edgeFade(
  * canonical starter masks such as [rectMask].
  */
 public fun frameMask(
-    uv: Float2Expr,
-    thickness: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    thickness: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val safeThickness = max(thickness, 0f)
     val safeFeather = max(feather, 0.0001f)
     return 1f - smoothstep(safeThickness, safeThickness + safeFeather, edgeDistance(uv))
@@ -58,10 +58,10 @@ public fun frameMask(
  * Builds a normalized rectangular frame mask using literal [thickness] and [feather] values.
  */
 public fun frameMask(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     thickness: Float,
     feather: Float = 0.02f
-): FloatExpr = frameMask(
+): Expr<Flt<High>> = frameMask(
     uv = uv,
     thickness = float(thickness),
     feather = float(feather)
@@ -72,10 +72,10 @@ public fun frameMask(
  * literal [feather].
  */
 public fun frameMask(
-    uv: Float2Expr,
-    thickness: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    thickness: Expr<Flt<High>>,
     feather: Float
-): FloatExpr = frameMask(
+): Expr<Flt<High>> = frameMask(
     uv = uv,
     thickness = thickness,
     feather = float(feather)
@@ -90,11 +90,11 @@ public fun frameMask(
  * vocabulary is already understood.
  */
 public fun cornerMask(
-    uv: Float2Expr,
-    size: FloatExpr,
-    thickness: FloatExpr,
-    feather: FloatExpr = float(0.02f)
-): FloatExpr {
+    uv: Expr<Vec2<Flt<High>>>,
+    size: Expr<Flt<High>>,
+    thickness: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.02f)
+): Expr<Flt<High>> {
     val safeSize = max(size, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
     val frame = frameMask(uv, thickness, feather)
@@ -113,11 +113,11 @@ public fun cornerMask(
  * Builds a normalized corner-accent mask using literal [size], [thickness], and [feather] values.
  */
 public fun cornerMask(
-    uv: Float2Expr,
+    uv: Expr<Vec2<Flt<High>>>,
     size: Float,
     thickness: Float,
     feather: Float = 0.02f
-): FloatExpr = cornerMask(
+): Expr<Flt<High>> = cornerMask(
     uv = uv,
     size = float(size),
     thickness = float(thickness),
@@ -129,11 +129,11 @@ public fun cornerMask(
  * a literal [feather].
  */
 public fun cornerMask(
-    uv: Float2Expr,
-    size: FloatExpr,
-    thickness: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    size: Expr<Flt<High>>,
+    thickness: Expr<Flt<High>>,
     feather: Float
-): FloatExpr = cornerMask(
+): Expr<Flt<High>> = cornerMask(
     uv = uv,
     size = size,
     thickness = thickness,

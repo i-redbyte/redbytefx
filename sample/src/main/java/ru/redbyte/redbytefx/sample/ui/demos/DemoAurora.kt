@@ -27,12 +27,12 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 
 private data class AuroraSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val amount: FxParam.Float,
-    val chromaPx: FxParam.Float,
-    val spectral: FxParam.Float,
-    val speed: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>,
+    val chromaPx: Uniform<Flt<High>>,
+    val spectral: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>
 )
 
 @Composable
@@ -44,64 +44,64 @@ fun DemoAurora() {
     var speedUi by rememberSaveable { mutableFloatStateOf(42f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        var chromaParam: FxParam.Float? = null
-        var spectralParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val amount by autoUniformFloat(0.78f)
-            val chromaPx by autoUniformFloat(11f)
-            val spectral by autoUniformFloat(0.44f)
-            val speed by autoUniformFloat(0.42f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        var chromaParam: Uniform<Flt<High>>? = null
+        var spectralParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val amount = uniform("amount", 0.78f)
+            val chromaPx = uniform("chromaPx", 11f)
+            val spectral = uniform("spectral", 0.44f)
+            val speed = uniform("speed", 0.42f)
             timeParam = time
             amountParam = amount
             chromaParam = chromaPx
             spectralParam = spectral
             speedParam = speed
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val phase = let(fract(time * speed), "phase")
-            val sweep = let(
-                angularSweep(
-                    uv = uv,
-                    center = float2(0.5f, 0.5f),
-                    angle = phase,
-                    width = 0.26f,
-                    feather = 0.09f
-                ),
-                "sweep"
-            )
-            val rim = let(
-                rimLight(
-                    uv = uv,
-                    resolution = resolution,
-                    radius = 0.42f,
-                    width = 0.085f,
-                    feather = 0.03f
-                ),
-                "rim"
-            )
-            val mask = let(saturate(max(rim, sweep * 0.72f)), "mask")
-            val luma = let(luminance(base), "luma")
-            val pal = let(
-                cosinePalette(luma + uv.x * spectral + phase * 0.55f - rim * 0.12f),
-                "pal"
-            )
-            val tint = let(color(pal, base.a), "tint")
-            val split = let(
-                chromaticOffset(
-                    offset = chromaPx,
-                    direction = float2(1f, -0.25f),
-                    amount = amount
-                ),
-                "split"
-            )
-            val irid = let(blendScreen(base, tint, mask * amount), "irid")
-
-            maskedMix(split, irid, mask, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val phase = let(fract(time.expr * speed.expr), "phase")
+                val sweep = let(
+                    angularSweep(
+                        uv = uv,
+                        center = float2(0.5f, 0.5f),
+                        angle = phase,
+                        width = 0.26f,
+                        feather = 0.09f
+                    ),
+                    "sweep"
+                )
+                val rim = let(
+                    rimLight(
+                        uv = uv,
+                        resolution = resolution,
+                        radius = 0.42f,
+                        width = 0.085f,
+                        feather = 0.03f
+                    ),
+                    "rim"
+                )
+                val mask = let(saturate(max(rim, sweep * 0.72f)), "mask")
+                val luma = let(luminance(base), "luma")
+                val pal = let(
+                    cosinePalette(luma + uv.x * spectral.expr + phase * 0.55f - rim * 0.12f),
+                    "pal"
+                )
+                val tint = let(color(pal, base.a), "tint")
+                val split = let(
+                    chromaticOffset(
+                        offset = chromaPx.expr,
+                        direction = float2(1f, -0.25f),
+                        amount = amount.expr
+                    ),
+                    "split"
+                )
+                val irid = let(blendScreen(base, tint, mask * amount.expr), "irid")
+                maskedMix(split, irid, mask, amount.expr)
+            }
         }
         AuroraSetup(
             effect = effect,

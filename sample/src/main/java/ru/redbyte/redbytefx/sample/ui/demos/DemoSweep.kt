@@ -26,11 +26,11 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 private data class SweepSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val time: FxParam.Float,
-    val speed: FxParam.Float,
-    val width: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val time: Uniform<Flt<High>>,
+    val speed: Uniform<Flt<High>>,
+    val width: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -41,52 +41,52 @@ fun DemoSweep() {
     var amountUi by rememberSaveable { mutableFloatStateOf(84f) }
 
     val setup = remember {
-        var timeParam: FxParam.Float? = null
-        var speedParam: FxParam.Float? = null
-        var widthParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val time by autoUniformTime()
-            val speed by autoUniformFloat(0.74f)
-            val width by autoUniformFloat(0.22f)
-            val amount by autoUniformFloat(0.84f)
+        var timeParam: Uniform<Flt<High>>? = null
+        var speedParam: Uniform<Flt<High>>? = null
+        var widthParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val time = uniformTime(name = "time")
+            val speed = uniform("speed", 0.74f)
+            val width = uniform("width", 0.22f)
+            val amount = uniform("amount", 0.84f)
             timeParam = time
             speedParam = speed
             widthParam = width
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val uv = let(fragCoord / resolution, "uv")
-            val center = let(0.16f + pingPong(time * speed * 0.22f, 1f) * 0.68f, "center")
-            val ramp = let(linearRamp(uv, direction = float2(1f, -0.35f), start = 0.08f, end = 0.92f), "ramp")
-            val sweep = let(
-                directionalSweep(
-                    uv = uv,
-                    direction = float2(1f, -0.35f),
-                    center = center,
-                    width = width,
-                    feather = 0.08f
-                ),
-                "sweep"
-            )
-            val radial = let(radialRamp(uv, innerRadius = 0.12f, outerRadius = 0.68f), "radial")
-            val tint = let(
-                color(
-                    mix(0.06f, 0.28f, ramp),
-                    mix(0.24f, 1f, sweep),
-                    mix(0.18f, 0.62f, ramp + sweep * 0.4f),
-                    base.a
-                ),
-                "tint"
-            )
-            val screened = let(maskedScreen(base, tint, sweep * radial, amount), "screened")
-
-            maskedOverlay(
-                base = screened,
-                blend = color(float3(0.92f, 1f, 0.78f), base.a),
-                mask = sweep,
-                amount = amount * 0.34f
-            )
+            fragment {
+                val base = let(sample(), "base")
+                val uv = let(fragCoord / resolution, "uv")
+                val center = let(0.16f + pingPong(time.expr * speed.expr * 0.22f, 1f) * 0.68f, "center")
+                val ramp = let(linearRamp(uv, direction = float2(1f, -0.35f), start = 0.08f, end = 0.92f), "ramp")
+                val sweep = let(
+                    directionalSweep(
+                        uv = uv,
+                        direction = float2(1f, -0.35f),
+                        center = center,
+                        width = width.expr,
+                        feather = 0.08f
+                    ),
+                    "sweep"
+                )
+                val radial = let(radialRamp(uv, innerRadius = 0.12f, outerRadius = 0.68f), "radial")
+                val tint = let(
+                    color(
+                        mix(0.06f, 0.28f, ramp),
+                        mix(0.24f, 1f, sweep),
+                        mix(0.18f, 0.62f, ramp + sweep * 0.4f),
+                        base.a
+                    ),
+                    "tint"
+                )
+                val screened = let(maskedScreen(base, tint, sweep * radial, amount.expr), "screened")
+                maskedOverlay(
+                    base = screened,
+                    blend = color(float3(0.92f, 1f, 0.78f), base.a),
+                    mask = sweep,
+                    amount = amount.expr * 0.34f
+                )
+            }
         }
         SweepSetup(
             effect = effect,

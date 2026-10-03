@@ -11,11 +11,11 @@ import ru.redbyte.redbytefx.*
  * patterns.
  */
 public fun bandMask(
-    position: FloatExpr,
-    center: FloatExpr,
-    width: FloatExpr,
-    feather: FloatExpr = float(0.05f)
-): FloatExpr {
+    position: Expr<Flt<High>>,
+    center: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
+    feather: Expr<Flt<High>> = float(0.05f)
+): Expr<Flt<High>> {
     val safeWidth = max(width, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
     val halfWidth = safeWidth * 0.5f
@@ -27,11 +27,11 @@ public fun bandMask(
  * Creates a soft one-dimensional band around [center] using literal width and feather values.
  */
 public fun bandMask(
-    position: FloatExpr,
-    center: FloatExpr,
+    position: Expr<Flt<High>>,
+    center: Expr<Flt<High>>,
     width: Float,
     feather: Float = 0.05f
-): FloatExpr = bandMask(
+): Expr<Flt<High>> = bandMask(
     position = position,
     center = center,
     width = float(width),
@@ -42,11 +42,11 @@ public fun bandMask(
  * Creates a soft one-dimensional band around a literal [center].
  */
 public fun bandMask(
-    position: FloatExpr,
+    position: Expr<Flt<High>>,
     center: Float,
     width: Float,
     feather: Float = 0.05f
-): FloatExpr = bandMask(
+): Expr<Flt<High>> = bandMask(
     position = position,
     center = float(center),
     width = float(width),
@@ -62,12 +62,12 @@ public fun bandMask(
  * simpler band itself.
  */
 public fun signalBars(
-    position: FloatExpr,
-    density: FloatExpr,
-    width: FloatExpr = float(0.18f),
-    phase: FloatExpr = float(0f),
-    feather: FloatExpr = float(0.05f)
-): FloatExpr {
+    position: Expr<Flt<High>>,
+    density: Expr<Flt<High>>,
+    width: Expr<Flt<High>> = float(0.18f),
+    phase: Expr<Flt<High>> = float(0f),
+    feather: Expr<Flt<High>> = float(0.05f)
+): Expr<Flt<High>> {
     val safeDensity = max(density, 1f)
     val local = fract(position * safeDensity + phase)
     return bandMask(
@@ -82,12 +82,12 @@ public fun signalBars(
  * Creates repeated soft bars using literal density, width, phase, and feather values.
  */
 public fun signalBars(
-    position: FloatExpr,
+    position: Expr<Flt<High>>,
     density: Float,
     width: Float = 0.18f,
     phase: Float = 0f,
     feather: Float = 0.05f
-): FloatExpr = signalBars(
+): Expr<Flt<High>> = signalBars(
     position = position,
     density = float(density),
     width = float(width),
@@ -99,12 +99,12 @@ public fun signalBars(
  * Creates repeated soft bars using an expression [density] and literal width/feather values.
  */
 public fun signalBars(
-    position: FloatExpr,
-    density: FloatExpr,
+    position: Expr<Flt<High>>,
+    density: Expr<Flt<High>>,
     width: Float = 0.18f,
-    phase: FloatExpr = float(0f),
+    phase: Expr<Flt<High>> = float(0f),
     feather: Float = 0.05f
-): FloatExpr = signalBars(
+): Expr<Flt<High>> = signalBars(
     position = position,
     density = density,
     width = float(width),
@@ -121,13 +121,13 @@ public fun signalBars(
  * already explicit and readable.
  */
 public fun scanWarp(
-    uv: Float2Expr,
-    time: FloatExpr = float(0f),
-    amplitude: FloatExpr = float(0.03f),
-    density: FloatExpr = float(10f),
-    speed: FloatExpr = float(1f),
-    noiseAmount: FloatExpr = float(0.35f)
-): Float2Expr {
+    uv: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>> = float(0f),
+    amplitude: Expr<Flt<High>> = float(0.03f),
+    density: Expr<Flt<High>> = float(10f),
+    speed: Expr<Flt<High>> = float(1f),
+    noiseAmount: Expr<Flt<High>> = float(0.35f)
+): Expr<Vec2<Flt<High>>> {
     val safeAmplitude = max(amplitude, 0f)
     val safeDensity = max(density, 1f)
     val phase = uv.y * safeDensity * 6.2831855f + time * speed
@@ -147,13 +147,13 @@ public fun scanWarp(
  * and noise amount values.
  */
 public fun scanWarp(
-    uv: Float2Expr,
-    time: FloatExpr = float(0f),
+    uv: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>> = float(0f),
     amplitude: Float = 0.03f,
     density: Float = 10f,
     speed: Float = 1f,
     noiseAmount: Float = 0.35f
-): Float2Expr = scanWarp(
+): Expr<Vec2<Flt<High>>> = scanWarp(
     uv = uv,
     time = time,
     amplitude = float(amplitude),
@@ -167,13 +167,13 @@ public fun scanWarp(
  * with literal speed and noise amount values.
  */
 public fun scanWarp(
-    uv: Float2Expr,
-    time: FloatExpr = float(0f),
-    amplitude: FloatExpr,
-    density: FloatExpr,
+    uv: Expr<Vec2<Flt<High>>>,
+    time: Expr<Flt<High>> = float(0f),
+    amplitude: Expr<Flt<High>>,
+    density: Expr<Flt<High>>,
     speed: Float = 1f,
     noiseAmount: Float = 0.35f
-): Float2Expr = scanWarp(
+): Expr<Vec2<Flt<High>>> = scanWarp(
     uv = uv,
     time = time,
     amplitude = amplitude,

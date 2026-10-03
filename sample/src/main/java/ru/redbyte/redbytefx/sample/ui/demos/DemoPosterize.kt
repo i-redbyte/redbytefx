@@ -19,9 +19,9 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 
 
 private data class PosterizeSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val levels: FxParam.Float,
-    val amount: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val levels: Uniform<Flt<High>>,
+    val amount: Uniform<Flt<High>>
 )
 
 @Composable
@@ -30,17 +30,18 @@ fun DemoPosterize() {
     var amountUi by rememberSaveable { mutableFloatStateOf(85f) }
 
     val setup = remember {
-        var levelsParam: FxParam.Float? = null
-        var amountParam: FxParam.Float? = null
-        val effect = redbytefx {
-            val levels by autoUniformFloat(5f)
-            val amount by autoUniformFloat(0.85f)
+        var levelsParam: Uniform<Flt<High>>? = null
+        var amountParam: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val levels = uniform("levels", 5f)
+            val amount = uniform("amount", 0.85f)
             levelsParam = levels
             amountParam = amount
-
-            val base = let(sample(), "base")
-            val quantized = let(posterize(base, levels), "quantized")
-            mix(base, quantized, amount)
+            fragment {
+                val base = let(sample(), "base")
+                val quantized = let(posterize(base, levels.expr), "quantized")
+                mix(base, quantized, amount.expr)
+            }
         }
         PosterizeSetup(effect, levelsParam!!, amountParam!!)
     }

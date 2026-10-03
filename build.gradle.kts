@@ -1,7 +1,9 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
+import org.jetbrains.dokka.gradle.DokkaExtension
 
 plugins {
+    alias(libs.plugins.dokka) apply false
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.compose.compiler) apply false
@@ -9,7 +11,7 @@ plugins {
     alias(libs.plugins.vanniktech.maven.publish.base) apply false
 }
 
-version = providers.gradleProperty("redbytefx.version").orElse("1.0.0").get()
+version = providers.gradleProperty("redbytefx.version").orElse("1.1.0").get()
 group = "io.github.i-redbyte"
 
 val hasMavenCentralCredentials =
@@ -45,6 +47,32 @@ subprojects {
     }
 
     afterEvaluate {
+        extensions.findByType<DokkaExtension>()?.let { dokka ->
+            dokka.moduleName.set(project.name)
+            dokka.modulePath.set(".")
+            val isAndroidLibrary = plugins.hasPlugin("com.android.library")
+            if (isAndroidLibrary) {
+                dependencies.add("dokkaPlugin", rootProject.libs.dokka.android.doc)
+            }
+            val mainJava = layout.projectDirectory.dir("src/main/java")
+            if (mainJava.asFile.isDirectory) {
+                val modulePath = path.removePrefix(":").replace(':', '/')
+                val docsGitRef = providers.environmentVariable("GITHUB_REF_NAME")
+                    .orElse(providers.gradleProperty("redbytefx.docsGitRef"))
+                    .orElse("master")
+                    .get()
+                dokka.dokkaSourceSets.configureEach {
+                    sourceLink {
+                        localDirectory.set(mainJava)
+                        remoteUrl(
+                            "https://github.com/i-redbyte/redbytefx/blob/$docsGitRef/" +
+                                "$modulePath/src/main/java",
+                        )
+                        remoteLineSuffix.set("#L")
+                    }
+                }
+            }
+        }
         tasks.withType<Detekt>().configureEach {
             val mainRoots = listOf("src/main/java", "src/main/kotlin")
                 .map { project.layout.projectDirectory.file(it).asFile }
@@ -70,15 +98,132 @@ subprojects {
     }
 }
 
+private data class DocModule(val path: String, val title: String, val blurb: String)
+
+private val docModules = listOf(
+    DocModule(":redbytefx-core", "redbytefx-core", "Shader DSL, compiler, and AGSL instance"),
+    DocModule(":redbytefx-gl", "redbytefx-gl", "OpenGL ES 3.x program runtime"),
+    DocModule(":redbytefx-gl-compose", "redbytefx-gl-compose", "Compose GlSurface and GlController"),
+    DocModule(":redbytefx-compose", "redbytefx-compose", "AGSL FxController and redbyteFx"),
+    DocModule(":redbytefx-stdlib", "redbytefx-stdlib", "Fragment helpers and SDF recipes"),
+)
+
+tasks.register("dokkaHtmlAll") {
+    group = "documentation"
+    description = "Generate HTML API reference for all library modules."
+    dependsOn(docModules.map { "${it.path}:dokkaGeneratePublicationHtml" })
+}
+
+tasks.register("dokkaHtmlSite") {
+    group = "documentation"
+    description = "Assemble a GitHub Pages site with an index and per-module Dokka output."
+    dependsOn("dokkaHtmlAll")
+    val siteDir = layout.buildDirectory.dir("docs/site")
+    outputs.dir(siteDir)
+    doLast {
+        val site = siteDir.get().asFile
+        if (site.exists()) {
+            site.deleteRecursively()
+        }
+        site.mkdirs()
+        val docsGitRef = providers.environmentVariable("GITHUB_REF_NAME")
+            .orElse(providers.gradleProperty("redbytefx.docsGitRef"))
+            .orElse("master")
+            .get()
+        val entries = docModules.map { module ->
+            val projectDir = project(module.path).layout.buildDirectory.get().asFile
+            val source = projectDir.resolve("dokka/html")
+            val targetName = module.path.removePrefix(":")
+            val target = site.resolve(targetName)
+            target.mkdirs()
+            if (source.isDirectory && source.resolve("index.html").isFile) {
+                copyDokkaHtml(source, target, targetName)
+            } else {
+                val slug = module.path.removePrefix(":")
+                target.resolve("index.html").writeText(
+                    """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head><meta charset="utf-8"/><title>${module.title}</title></head>
+                    <body>
+                      <p><a href="../index.html">RedByteFX</a></p>
+                      <h1>${module.title}</h1>
+                      <p>${module.blurb}</p>
+                      <p>Generated Dokka HTML for this Android module is not available yet. Browse
+                      <a href="https://github.com/i-redbyte/redbytefx/blob/$docsGitRef/$slug/src/main/java">sources</a>
+                      or use IDE KDoc on the Maven dependency.</p>
+                    </body>
+                    </html>
+                    """.trimIndent(),
+                )
+            }
+            module
+        }
+        val docsDir = rootProject.file("docs")
+        if (docsDir.isDirectory) {
+            val siteDocs = site.resolve("docs")
+            siteDocs.mkdirs()
+            docsDir.listFiles()?.filter { it.extension == "md" }?.forEach { file ->
+                file.copyTo(siteDocs.resolve(file.name), overwrite = true)
+            }
+        }
+        val links = entries.joinToString("\n") { module ->
+            val slug = module.path.removePrefix(":")
+            """        <li><a href="$slug/index.html">${module.title}</a> - ${module.blurb}</li>"""
+        }
+        site.resolve("index.html").writeText(
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="utf-8"/>
+              <title>RedByteFX API reference</title>
+              <style>
+                body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+                a { color: #0b57d0; }
+              </style>
+            </head>
+            <body>
+              <h1>RedByteFX</h1>
+              <p>Typed Kotlin shader DSL for Android AGSL and OpenGL ES 3.x.</p>
+              <ul>
+            $links
+              </ul>
+              <p><a href="docs/language-reference.md">Language reference</a> |
+              <a href="docs/error-codes.md">Error codes</a></p>
+              <p>Platform: library minSdk 24; AGSL requires API 31+.</p>
+            </body>
+            </html>
+            """.trimIndent(),
+        )
+    }
+}
+
+private fun copyDokkaHtml(source: java.io.File, target: java.io.File, moduleName: String) {
+    val nested = source.resolve(moduleName)
+    if (nested.isDirectory) {
+        source.resolve("index.html").copyTo(target.resolve("index.html"), overwrite = true)
+        nested.listFiles()?.forEach { child ->
+            child.copyRecursively(target.resolve(child.name), overwrite = true)
+        }
+        return
+    }
+    source.copyRecursively(target, overwrite = true)
+}
+
 tasks.register("qualityCheck") {
     group = "verification"
     description = "Unit tests, sample compilation, and Detekt on main sources."
     dependsOn(
         ":redbytefx-core:testDebugUnitTest",
+        ":redbytefx-gl:testDebugUnitTest",
+        ":redbytefx-gl-compose:testDebugUnitTest",
         ":redbytefx-compose:testDebugUnitTest",
         ":redbytefx-stdlib:testDebugUnitTest",
         ":sample:compileDebugKotlin",
         ":redbytefx-core:detekt",
+        ":redbytefx-gl:detekt",
+        ":redbytefx-gl-compose:detekt",
         ":redbytefx-compose:detekt",
         ":redbytefx-stdlib:detekt",
         ":sample:detekt"

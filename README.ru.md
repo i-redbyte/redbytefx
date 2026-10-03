@@ -2,359 +2,176 @@
 
 # RedByteFX
 
-**RedByteFX** — это DSL для Android AGSL, ориентированный на Kotlin, который позволяет писать шейдерную логику как обычный Kotlin-код, а не как длинные строковые литералы с AGSL.
+**RedByteFX** - это Kotlin DSL, который компилирует одну типизированную алгебру шейдера в Android AGSL, OpenGL ES 3.0, compute OpenGL ES 3.1 и geometry с tessellation OpenGL ES 3.2.
 
-AGSL сам по себе мощный, но из Kotlin он часто ощущается неудобно:
+Пишется Kotlin, а не строка шейдера. Компилятор выпускает текст, который реально исполняет платформа:
 
-- код шейдера живёт внутри строк
-- `uniform`-ы приходится объявлять вручную, и в них легко ошибиться
-- даже небольшие эффекты быстро обрастают boilerplate
-- для Compose обычно требуется дополнительная runtime-обвязка
-- отладка часто начинается с вопроса: «в какой строке я сейчас всё сломал?»
+`shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0, compute-программа GLES 3.1 или программа GLES 3.2`
 
-RedByteFX сохраняет реальный Android-пайплайн без замены рантайма:
+**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) требует **API 31+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose` (`GlSurface`). GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
-`Kotlin DSL -> сгенерированный AGSL -> RuntimeShader / RenderEffect`
+## Что вы пишете
 
-То есть исполнение остаётся нативным и предсказуемым, а сам процесс написания становится намного удобнее: типизированные выражения, понятные локальные переменные через `let(...)`, переиспользуемые функции через `fn(...)`, uniform-handles, привязки к Compose и возможность посмотреть итоговый AGSL через `agslSource()`.
+Один носитель значения, `Expr<T>`. Ранг именной (`Vec2`, `Vec3`, `Vec4` и матрицы). Точность - параметр: `Flt<High>` это highp float, `Flt<Med>` это mediump float. Цвет - `Vec4` из mediump-чисел, его даёт `color(...)`. Отдельного типа цвета нет. Частые случаи пишутся как `HighFloat`, `HighVec2`, `HighVec3`, `HighVec4`, `MedFloat`, `MedVec2`, `MedVec3` и `MedVec4`. Рукояти этих форм - `HighFloatUniform`, `HighVec2Uniform`, `HighVec3Uniform` и `HighVec4Uniform`.
 
-**Требование по платформе:** библиотека работает только на **Android API 33+**. RedByteFX опирается на современный стек AGSL / `RuntimeShader` / `RenderEffect` и не предназначен для более низких API.
-
-## 🎯 Зачем нужна эта библиотека
-
-RedByteFX нужен для типичной ситуации, когда raw AGSL технически подходит идеально, но писать и поддерживать шейдер на чистом AGSL из Kotlin оказывается слишком неудобно.
-
-Библиотека помогает, если вам нужны:
-
-- шейдеры, которые ощущаются нативно для Kotlin
-- типизированные uniform-ы и выражения вместо строковой «магии»
-- удобный перенос AGSL или Shadertoy-подобной математики в Kotlin
-- прозрачный переход от DSL к реальному AGSL через `agslSource()`
-- интеграция с Compose без отдельного рендер-движка
-- удобство без потери производительности и гибкости
-
-## ⚖️ Чистый AGSL vs RedByteFX
-
-Одна и та же идея, одна и та же математика, но совершенно разный опыт разработки.
-
-### 📝 AGSL вручную
-
-```glsl
-uniform shader content;
-uniform float wave_amplitude;
-uniform float wave_frequency;
-
-half4 main(float2 fragCoord) {
-  float2 offset = float2(0.0, sin(fragCoord.x * wave_frequency) * wave_amplitude);
-  return content.eval(fragCoord + offset);
-}
-```
-
-### ✨ То же самое на RedByteFX
+`Uniform<T>` - рукоять одной программы `ShaderProgram`. Внутри стадии читается `uniform.expr`. Саму рукоять пишут Compose и GLES-рантайм. Рукоять одной программы недействительна для другой.
 
 ```kotlin
-val wave = redbytefx {
-    val amplitude = uniformFloat(0f, "wave_amplitude")
-    val frequency = uniformFloat(0.08f, "wave_frequency")
-    val offset = float2(0f, sin(fragCoord.x * frequency) * amplitude)
-    sample(fragCoord + offset)
-}
-```
-
-Шейдер остаётся таким же явным, но теперь это уже нормальный Kotlin-код: типы, автодополнение IDE, безопасный рефакторинг и runtime-параметры без ручного управления сырыми AGSL-строками.
-
-## 🎬 Пример из sample-приложения
-
-Ниже реальный фрагмент эффекта из demo-приложения. На чистом AGSL такие вещи быстро становятся шумными, а в RedByteFX остаются читаемыми за счёт typed expressions, локальных переменных и готовых compositing-хелперов:
-
-```kotlin
-val effect = redbytefx {
-    val amount by autoUniformFloat(0.82f)
-    val warmth by autoUniformFloat(0.58f)
-    val glow by autoUniformFloat(0.38f)
-
-    val base = let(sample(), "base")
-    val saturated = let(
-        adjustSaturation(base, mix(0.9f, 1.55f, amount)),
-        "saturated"
-    )
-    val tint = let(
-        color(
-            mix(0.26f, 0.94f, warmth),
-            mix(0.48f, 0.72f, warmth),
-            mix(0.92f, 0.38f, warmth),
-            base.a
-        ),
-        "tint"
-    )
-    val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
-    val screened = let(blendScreen(multiplied, tint, glow), "screened")
-
-    blendOverlay(base, screened, amount)
-}
-```
-
-## 📦 Подключение
-
-RedByteFX публикуется в **Maven Central**, поэтому для потребителя достаточно обычного набора репозиториев:
-
-```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-```
-
-Подключите нужные модули:
-
-```kotlin
-dependencies {
-    implementation("io.github.i-redbyte:redbytefx-core:1.0.0")
-    implementation("io.github.i-redbyte:redbytefx-compose:1.0.0")
-    implementation("io.github.i-redbyte:redbytefx-stdlib:1.0.0")
-}
-```
-
-### 🗂️ Version Catalog / TOML
-
-`gradle/libs.versions.toml`:
-
-```toml
-[versions]
-redbytefx = "1.0.0"
-
-[libraries]
-redbytefx-core = { module = "io.github.i-redbyte:redbytefx-core", version.ref = "redbytefx" }
-redbytefx-compose = { module = "io.github.i-redbyte:redbytefx-compose", version.ref = "redbytefx" }
-redbytefx-stdlib = { module = "io.github.i-redbyte:redbytefx-stdlib", version.ref = "redbytefx" }
-```
-
-`build.gradle.kts` модуля:
-
-```kotlin
-dependencies {
-    implementation(libs.redbytefx.core)
-    implementation(libs.redbytefx.compose)
-    implementation(libs.redbytefx.stdlib)
-}
-```
-
-## 🧩 Модули
-
-| Артефакт | Что даёт |
-|----------|----------|
-| `redbytefx-core` | DSL для написания эффектов, компилятор, uniform-ы, мост к рантайму, `redbytefx { }` |
-| `redbytefx-compose` | `FxController`, `rememberFxController`, `Modifier.redbyteFx`, привязки к Compose |
-| `redbytefx-stdlib` | высокоуровневые shader-хелперы для координат, масок, compositing, routing, lighting, SDF и другого |
-
-## 🚀 Быстрый старт
-
-```kotlin
-val waveEffect = run {
-    var amplitude: FxParam.Float? = null
-    var frequency: FxParam.Float? = null
-    val effect = redbytefx {
-        val amp = uniformFloat(0f, "wave_amplitude")
-        val freq = uniformFloat(0.08f, "wave_frequency")
-        amplitude = amp
-        frequency = freq
-        val offset = float2(0f, sin(fragCoord.x * freq) * amp)
+val wave = shader(ShaderTarget.Agsl) {
+    val amplitude = uniform("wave_amplitude", 0f)
+    val frequency = uniform("wave_frequency", 0.08f)
+    fragment {
+        val offset = float2(0f, sin(fragCoord.x * frequency.expr) * amplitude.expr)
         sample(fragCoord + offset)
     }
-    Triple(effect, amplitude!!, frequency!!)
+}
+```
+
+AGSL - только фрагмент. Сгенерированный вход остаётся `half4 main(float2 fragCoord)`: этого требует `RuntimeShader`. Смотреть текст: `wave.agslSource()`.
+
+OpenGL ES 3.0 требует обе стадии. Varying, записанный в вершине, читается во фрагменте. Тексты: `vertexSource()` и `fragmentSource()`.
+
+```kotlin
+val pulse = shader(ShaderTarget.Gles30) {
+    val time = uniformTime()
+    vertex {
+        val position = attributeVec2("position")
+        glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
+    }
+    fragment {
+        val wave = sin(time.expr)
+        vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
+    }
+}
+```
+
+OpenGL ES 3.1 - это compute-программа. В ней нет вершины и фрагмента. Один `storageBlock` использует std430, а `compute(localSizeX)` пишет его поля. `compute(localSizeX, localSizeY, localSizeZ)` задаёт все три размера группы; `compute(n)` по-прежнему пишет только `local_size_x`. Текст: `computeSource()`. EGL-контекст этой программы - OpenGL ES 3.1. В compute `globalId`, `localId` и `workGroupId` - это `ivec3`, в тексте `ivec3(gl_GlobalInvocationID)`, `ivec3(gl_LocalInvocationID)` и `ivec3(gl_WorkGroupID)`. В storage-блоке есть `floatArray`, `vec2Array`, `vec3Array` и `vec4Array`. Массив с числом сохраняет размер. Последнее поле может быть без числа и пишется как `type name[]`; неразмерное поле не в конце блока отвергается при закрытии блока. Элемент индексируется выражением `int`, например `values[globalId.x]`, и пишется через `store`. `packStd430` принимает логические компоненты: у `vec3` три числа, а дырку до шага 16 байт нулями дописывает packer. `GlProgramRuntime.dispatch(x, y, z)` запускает уже слинкованную compute-программу. `shared`-массивы и `barrier()` законны только в compute. `uniformBlock` можно читать из compute; AGSL по-прежнему отвергает uniform-блок.
+
+```kotlin
+val cells = shader(ShaderTarget.Gles31) {
+    storageBlock("cells") {
+        val value = vec4("value")
+        compute(64) { value.store(value) }
+    }
+}
+```
+
+OpenGL ES 3.2 сохраняет вершину и фрагмент и добавляет необязательные geometry и tessellation. Tessellation - это вместе control и evaluation. EGL-контекст этой программы - OpenGL ES 3.2. Дополнительные тексты: `geometrySource()`, `tessControlSource()` и `tessEvalSource()`.
+
+```kotlin
+val patch = shader(ShaderTarget.Gles32) {
+    vertex { glPosition(attributeVec4("position")) }
+    tessControl(3) {
+        tessLevelOuter(0, 1f.lit)
+        tessLevelOuter(1, 1f.lit)
+        tessLevelOuter(2, 1f.lit)
+        tessLevelInner(0, 1f.lit)
+        passPosition()
+    }
+    tessEval(TessPrimitive.Triangles) { glPosition(glIn(0)) }
+    geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+        glPosition(glIn(0))
+        emitVertex()
+        endPrimitive()
+    }
+    fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
+}
+```
+
+Varying, который пишет вершина и читает фрагмент, объявляется на каждой стадии между ними: вершина, tessellation control, tessellation evaluation, geometry, затем фрагмент. Отсутствующие стадии пропускаются. На каждой границе `out` предыдущей стадии совпадает с `in` следующей по имени, типу и precision. Если в программе есть geometry или tessellation, эти объявления - члены одного блока `rb_pipe`. На всех стадиях программы один и тот же набор: varying, которые записала вершина и которые читает фрагмент или промежуточная стадия, в порядке объявления. Объявленный и нигде не записанный varying в блок не входит. Tessellation control копирует `tc_in[gl_InvocationID]` в `tc_out[gl_InvocationID]`. Geometry берёт индекс той входной вершины, которую только что записали в `gl_Position`: один `gl_in[k]`, в том числе индекс `repeat`, становится `gs_in[k]` непосредственно перед этим `EmitVertex`. Та же прокидка работает, когда этот `gl_Position` записан до `repeat` или `whenTrue`, который эмитит, и не используется повторно после emit, который её уже забрал. Несколько индексов или позиция без `gl_in`, пока varying ещё не записан, - ошибка, и текст просит явный `varying.set` перед этим emit. `varying.set` между этим `gl_Position` и emit заменяет прокидку только этого varying и только этого emit. Tessellation evaluation интерполирует `gl_TessCoord`, если стадия этот varying не писала. Одна входная вершина копируется из `te_in[0]`. Triangles взвешивают три вершины патча через `gl_TessCoord`. Isolines делают `mix` двух вершин по `gl_TessCoord.x`. Quads делают билинейный `mix` углов `(0,0)`, `(1,0)`, `(1,1)` и `(0,1)` по `gl_TessCoord.xy`. Явная запись заменяет эту интерполяцию. Стадия, у которой есть `rb_pipe` и которая пишет `gl_Position`, переобъявляет `gl_PerVertex` только с `vec4 gl_Position` до пользовательского блока. Uniform, прочитанный в geometry или tessellation, объявляется в исходнике этой стадии. `glIn(index)` и `varying.at(index)` допускают динамический `int`; проверка границ патча на этапе компиляции есть только для константных индексов.
+
+Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. В списке есть треугольник, экранные сферы, красный флаг, освещённое тело, один std140-блок камеры, сравнения векторов, радужная арка общей функцией, шипы и каркас geometry-стадии, океан на tessellation, звёздное небо с молниями, объёмная надпись и пять небольших игр: туннель, лабиринт, арканоид, налёт и спуск. Интерфейс примеров остаётся английским, пока язык устройства не русский. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
+
+## Установка
+
+```kotlin
+dependencies {
+    implementation("io.github.i-redbyte:redbytefx-core:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-gl:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-compose:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.0")
+}
+```
+
+| Артефакт | Роль |
+|----------|------|
+| `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00, compute GLSL ES 3.10 и GLSL ES 3.20 |
+| `redbytefx-gl` | Линковка GLES 3.0, 3.1 и 3.2, запись uniform и матриц, привязка 2D и куба, compute `dispatch` и загрузка storage на потоке EGL |
+| `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` для AGSL |
+| `redbytefx-stdlib` | Координаты, маски, композитинг, SDF и родственные помощники поверх того же DSL |
+
+## Compose
+
+Uniform объявляется на программе и привязывается той же рукоятью.
+
+```kotlin
+val program = shader(ShaderTarget.Agsl) {
+    val amplitude = uniform("wave_amplitude", 0f)
+    val frequency = uniform("wave_frequency", 0.08f)
+    fragment {
+        val offset = float2(0f, sin(fragCoord.x * frequency.expr) * amplitude.expr)
+        sample(fragCoord + offset)
+    }
 }
 
 @Composable
-fun WaveLabel(amp: Float, freq: Float) {
-    val fx = rememberFxController(waveEffect.first)
-    fx.bindFloat(waveEffect.second, amp)
-    fx.bindFloat(waveEffect.third, freq)
+fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: HighFloatUniform) {
+    val fx = rememberFxController(program)
+    fx.bindFloat(amplitude, 12f)
+    fx.bindFloat(frequency, 0.08f)
     Text("RedByteFX", modifier = Modifier.redbyteFx(fx))
 }
 ```
 
-Типовой рабочий цикл:
+`rememberFxController` владеет одним AGSL-рантаймом. На каждую поверхность рисования нужен свой контроллер. `redbyteFx` пишет resolution из размера отрисовки. `RuntimeShader` трогается только с UI-потока.
 
-1. Один раз компилируете эффект через `redbytefx { ... }`.
-2. Если нужно проверить форму реального шейдера, смотрите `effect.agslSource()`.
-3. Сохраняете `FxParam` handles для runtime-привязки.
-4. Создаёте `FxInstance` или `FxController`.
-5. Привязываете значения и применяете эффект.
+## Авторство
 
-## 📚 Минимально-полная документация по DSL
+Стадии - небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут `fragment { }` и `vertex { }`. `vertex` есть у `ShaderTarget.Gles30` и `ShaderTarget.Gles32`. `geometry`, `tessControl` и `tessEval` есть у `ShaderTarget.Gles32`. `compute` есть у `ShaderTarget.Gles31`.
 
-### 📍 Координаты и sampling
-
-- `fragCoord` — текущая координата фрагмента в пиксельном пространстве.
-- `resolution` — текущий размер области рендера в пикселях.
-- `sample()` читает входной контент в пиксельном пространстве и по умолчанию использует `fragCoord`.
-- `sample(coord)` читает вход в другой точке пиксельного пространства.
-- `sampleUnclamped(...)` читает без ограничения координат и нужен в основном для осознанных экспериментов на границах.
-- В `stdlib` функция `normalizedUv()` переводит координаты из пиксельного пространства в нормализованный UV `[0, 1]²`.
-- В `stdlib` функция `sampleUv(uv)` делает обратное: превращает UV в реальный sampled read.
-- В `stdlib` функции `centeredUv(...)` и `aspectCenteredUv(...)` удобно использовать как стартовую точку для масок, lighting, SDF и локальной scene-математики.
-
-### 🎛️ Uniform-ы и runtime handles
-
-- `uniformFloat`, `uniformFloat2`, `uniformFloat3`, `uniformFloat4` объявляют uniform-ы эффекта.
-- `uniformTime()` — это специализированный float-uniform для времени.
-- `autoUniformFloat`, `autoUniformTime`, `autoUniformFloat2/3/4` автоматически выводят читаемое имя из имени delegated property в Kotlin.
-- Возвращаемые `FxParam.*` — это одновременно и выражения внутри DSL, и handles для runtime-привязки.
-- Uniform-handle всегда привязан к конкретному эффекту: параметр из одного `redbytefx { ... }` нельзя безопасно использовать с другим эффектом.
-
-Пример:
+- `fragCoord` и `resolution` - входы AGSL-фрагмента, в пикселях.
+- `sample()` читает дочерний шейдер. Это законно только в AGSL-фрагменте и не внутри `fn`.
+- `texture(sampler, uv)` законен только в GLES-фрагменте.
+- `attributeVec2`, `attributeVec3`, `attributeVec4` и `glPosition` законны в GLES-вершине. `glPosition` также законен в geometry и tessellation evaluation.
+- `varyingFloat`, `varyingVec2`, `varyingVec3` и `varyingVec4` имеют precision highp. Фрагмент читает varying только если его писала вершина.
+- `let(expr, "name")` даёт локальной переменной имя в сгенерированном шейдере.
+- `local(initializer, "name")` объявляет float, float-вектор или int до команд стадии, а присваивание пишет оператором. `set` обновляет её, в том числе внутри `repeat` и `whenTrue`. `local` внутри `repeat` отвергается. Значение можно вернуть из фрагмента или записать в `gl_Position`.
+- `whenTrue(condition) { }` ставит команды в `if (condition)`. Ветки `else` нет.
+- `repeat(count) { i -> ... }` - цикл со счётчиком, `for (int i = 0; i < count; ++i)`, где `count` от 1 до 64. В теле можно вложить ещё один `repeat`.
+- `discard()` и `discard(condition)` законны только во фрагменте, в том числе внутри фрагментной `fn`. Условная форма - `if (condition) discard`. `dFdx`, `dFdy` и `fwidth` тоже только во фрагменте.
+- `fn` принимает от 0 до 8 аргументов. Свидетель задаёт стёртую форму: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Параметры называются `p0`…`p7`. Функции не вкладываются, не объявляют uniform, и рекурсия отвергается. Те же правила действуют в compute, geometry и tessellation. Вызов из чужой стадии отвергается.
+- `uniformInt` - скалярный int и на AGSL (`setIntUniform`), и на GLES (`uniform1i`). `uniformBool`, `uniformMat2`, `uniformMat3` и `uniformMat4` есть только на GLES; AGSL их отвергает. Матрицы заливаются column-major с `transpose` false, а дефолт на link - единичная. `samplerCube` и `textureCube` законны только в GLES-фрагменте.
 
 ```kotlin
-val effect = redbytefx {
-    val amount by autoUniformFloat(0.5f)
-    val shift = uniformFloat2(0f, 0f, "shift")
-    sample(fragCoord + shift * amount)
+shader(ShaderTarget.Agsl) {
+    fragment {
+        val gain = fn(0f.lit, "gain") { p0 -> saturate(p0) }
+        val tone = gain(sample().r.toHigh()).toMed()
+        color(tone, tone, tone, sample().a)
+    }
 }
 ```
 
-### 🔤 Типы выражений
+Скалярные float одной точности поддерживают `+`, `-`, `*`, `/`. Векторы поддерживают вектор-вектор и вектор-скаляр той же точности. Сравнения: `gt`, `lt`, `ge`, `le`, `eq`, `ne`. `gte` - другое написание `ge`. `ifElse(condition, ifTrue, ifFalse)` - это тернарный выбор. Булевы скаляры поддерживают `and`, `or` и `not`.
 
-- `FloatExpr` — скалярное float-выражение.
-- `BoolExpr` — логическое выражение.
-- `Float2Expr`, `Float3Expr`, `Float4Expr` — векторные выражения.
-- `ColorExpr` — цветовой результат, который маппится в AGSL `half4`.
-- Это не runtime-значения, а типизированные узлы выражений, которые компилятор превращает в AGSL.
+Математика с одним и тем же вызовом в обоих языках: `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`. `sqrt` - это вызов GLSL, отрицательный аргумент не заменяется.
 
-### 🧱 Конструкторы значений
+`redbytefx-stdlib` добавляет рецепты координат и композитинга на том же receiver `fragment`: `normalizedUv`, `sampleUv`, `centeredUv`, маски, reveal, смешивание и SDF вроде `sdCircle` и `softFill`. У `softFill` и `stroke` ширина пера по-прежнему аргумент вызывающего. `softFillScreen(distance)` и `strokeScreen(distance, width)` берут ширину края из `fwidth(distance)` и законны только во фрагменте.
 
-- `float(...)` — явное scalar-выражение.
-- `float2(...)`, `float3(...)`, `float4(...)` — конструкторы векторов.
-- `color(r, g, b, a)` и `color(rgb, a)` — конструкторы цветового результата.
+## Рантайм
 
-Пример:
+`ShaderProgram` неизменяем и читается с любого потока. Граф выражений и сгенерированные строки существуют на компиляции.
 
-```kotlin
-val uv = fragCoord / resolution
-val tint = color(0.2f, 0.8f, 1f, 1f)
-val offset = float2(0f, sin(uv.x * 12f) * 6f)
-sample(fragCoord + offset) * tint.a
-```
+Воспроизведение AGSL - `program.newAgslInstance()`. Неизменившийся uniform не идёт на GPU. `set` пишет float и векторы highp и mediump, а `uniformInt` уходит через `setIntUniform`. Воспроизведение GLES - `GlProgramRuntime` в `redbytefx-gl`: создавать, линковать и уничтожать его на потоке EGL-контекста. `destroy` отвязывает программу до удаления. `set` пишет эти float, `uniform1i` для `uniformInt` и для `uniformBool` как 0 или 1, и column-major `uniformMatrix*fv` для `mat2`, `mat3` и `mat4` с transpose false. При линковке заливаются дефолты, в том числе единичная матрица, если свою не передали, а то же значение не вызывает `glUniform` повторно. `bind` для `sampler2D` использует `GL_TEXTURE_2D`, для `samplerCube` - `GL_TEXTURE_CUBE_MAP`. Оба делят `GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS`. `dispatch(x, y, z)` запускает слинкованную программу GLES 3.1 и затем вызывает `glMemoryBarrier` с `GL_SHADER_STORAGE_BARRIER_BIT`. `runtime.set(storageBlock, floats)` упаковывает логические значения std430 и пропускает загрузку, когда эти байты не изменились. Если размер упакованного буфера изменился, буфер выделяется заново. `StorageBlock.byteSize` - это размер std430 полностью размерного блока. Блок с неразмерным массивом сообщает размер через `byteSize(valueCount)`, и этот размер совпадает с `packStd430`. `uniformMedium`, `uniformMediumVec2`, `uniformMediumVec3` и `uniformMediumVec4` объявляют формы mediump; на AGSL они по-прежнему идут через `setFloatUniform`. `FxController` привязывает float-uniform и `uniformInt` для Compose.
 
-### ➕ Операторы и условия
+## Чего в этой версии нет
 
-- Для scalar-выражений доступны `+`, `-`, `*`, `/`.
-- Для векторов доступны вектор-вектор и вектор-скаляр операции там, где это имеет смысл.
-- Целые литералы вроде `1 - amount` и `2 * uv` поддерживаются специально для удобного переноса AGSL-стиля в Kotlin.
-- Сравнения выполняются через `lt`, `lte`, `gt`, `gte`, `eq`, `neq`.
-- `ifElse(condition, ifTrue, ifFalse)` выбирает между выражениями внутри шейдера.
-- Для `BoolExpr` есть `and`, `or` и `!`.
+Компилятор не выпускает GLES 2.0 и desktop GL. Он не выпускает `while`, рекурсию, вложенные функции и границу цикла, которая не константа от 1 до 64. `uniformBool`, `uniformMat2`, `uniformMat3`, `uniformMat4` и `samplerCube` на AGSL отвергаются.
 
-Пример:
+## Участие
 
-```kotlin
-val mask = ifElse(amount gt 0.5f, 1f, 0f)
-```
+Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt. Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
 
-### 🧮 Базовые math/color builtins
+## Лицензия
 
-В `core` уже есть привычные базовые блоки, близкие по смыслу к AGSL:
-
-- `mix`, `clamp`, `smoothstep`, `step`, `saturate`
-- `sin`, `cos`, `atan`, `pow`, `sqrt`, `abs`, `floor`, `ceil`, `fract`
-- `min`, `max`, `mod`
-- `dot`, `length`, `distance`, `normalize`
-- `luminance`, `grayscale`
-
-Идея в том, чтобы сохранять близость к AGSL-лексике, но при этом получить типизированные и более удобные Kotlin-вызовы.
-
-### 📌 Локальные переменные через `let(...)`
-
-- `let(...)` сохраняет выражение в локальную переменную внутри сгенерированного AGSL.
-- Это один из главных инструментов, чтобы большие эффекты оставались читаемыми.
-- Если передать имя, RedByteFX нормализует его в безопасный AGSL identifier.
-
-Пример:
-
-```kotlin
-val base = let(sample(), "base")
-val luma = let(luminance(base), "luma")
-val mono = let(grayscale(base), "mono")
-mix(base, mono, luma)
-```
-
-### 🛠️ Переиспользуемые функции через `fn(...)` и `fnN(...)`
-
-- `fn(...)` создаёт переиспользуемые AGSL helper-функции с arity от 0 до 4.
-- `fnN(...)` покрывает кейсы с пятью и более параметрами.
-- Это удобно, когда вы хотите, чтобы в итоговом AGSL сохранялась граница функции, а не всё сливалось в одно большое дерево выражений.
-
-Пример:
-
-```kotlin
-val palette = fn(
-    name = "palette_rgb",
-    arg1 = FloatType,
-    arg2 = FloatType,
-    returns = Float3Type
-) { tone, warmth ->
-    val phase = let(tone * 6.2831855f, "phase")
-    float3(
-        0.24f + 0.45f * sin(phase + warmth * 0.90f + 0.10f),
-        0.30f + 0.42f * sin(phase + warmth * 1.50f + 2.10f),
-        0.42f + 0.36f * sin(phase + warmth * 2.10f + 4.20f)
-    )
-}
-```
-
-### 🔄 Трансформации в `core`
-
-Даже в `core` уже есть полезные хелперы для написания эффектов, которые остаются близкими к исходной AGSL-модели:
-
-- `flipX`, `flipY`
-- `mirrorX`, `mirrorY`
-- базовые преобразования координат для прямого переноса логики из raw AGSL
-
-Когда задача — буквально перевести существующий AGSL в Kotlin DSL, лучше начинать именно отсюда.
-
-### 🧰 Высокоуровневые хелперы в `stdlib`
-
-`redbytefx-stdlib` добавляет готовые рецепты поверх базового DSL. Полезные стартовые группы:
-
-- координаты: `normalizedUv`, `sampleUv`, `centeredUv`, `aspectCenteredUv`
-- маски и reveal: `circleMask`, `rectMask`, `ringMask`, `horizontalReveal`, `verticalReveal`, `radialReveal`
-- compositing: `maskedMix`, `alphaMask`, `maskedScreen`, `maskedOverlay`, `blendMultiply`, `blendScreen`, `blendOverlay`
-- lighting и shaping: `rimLight`, `centerGlow`, SDF-хелперы, routing-хелперы, noise и warp-хелперы
-
-Хорошее практическое правило:
-
-1. Оставайтесь в `core`, если переносите raw AGSL почти один в один.
-2. Переходите в `stdlib`, когда в шейдере начинают повторяться coordinate-, mask-, compositing- или shaping-паттерны.
-
-### 🧪 Runtime API
-
-- `FxEffect` — неизменяемое описание уже скомпилированного эффекта.
-- `FxEffect.agslSource()` возвращает сгенерированный AGSL для отладки, тестов и документации.
-- `FxInstance` — низкоуровневый изменяемый runtime API для императивных хостов.
-- `FxController` из `redbytefx-compose` — Compose-friendly обёртка над одним runtime instance с удобной логикой привязки значений и инвалидирования.
-- На один render target нужен один controller или один runtime instance.
-
-## 🤝 Участие в проекте
-
-Проект открыт для внешнего контрибьюта.
-
-Пожалуйста, по возможности сохраняйте существующую стилистику проекта:
-
-- поддерживайте Kotlin-first характер DSL
-- не жертвуйте читаемостью ради «хитрых» сокращений
-- сохраняйте понятную структуру generated AGSL
-- придерживайтесь текущих принципов именования, документации и примеров из sample
-
-### 🔀 Как сделать PR
-
-1. Сделайте fork и создайте отдельную ветку под одно конкретное изменение.
-2. Постарайтесь держать PR небольшим, но завершённым по смыслу.
-3. Прогоните `./gradlew qualityCheck` и нужные тесты модулей.
-4. Если меняется публичный API или поведение, обновите документацию и при необходимости sample.
-5. В описании PR коротко укажите: какая была проблема, что изменено и как вы это проверили.
-
-## 📄 Лицензия
-
-Проект распространяется по лицензии [MIT](LICENSE).
+[MIT](LICENSE)

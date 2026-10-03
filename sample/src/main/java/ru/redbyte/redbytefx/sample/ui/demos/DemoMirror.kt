@@ -19,6 +19,7 @@ import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
 
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.RadioRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
@@ -26,11 +27,11 @@ import ru.redbyte.redbytefx.sample.ui.SwitchRow
 private enum class Axis { X, Y }
 
 private data class MirrorSetup(
-    val effect: ru.redbyte.redbytefx.FxEffect,
-    val xEnabled: FxParam.Float,
-    val xFrom: FxParam.Float,
-    val yEnabled: FxParam.Float,
-    val yFrom: FxParam.Float
+    val effect: ru.redbyte.redbytefx.ShaderProgram,
+    val xEnabled: Uniform<Flt<High>>,
+    val xFrom: Uniform<Flt<High>>,
+    val yEnabled: Uniform<Flt<High>>,
+    val yFrom: Uniform<Flt<High>>
 )
 
 
@@ -43,29 +44,31 @@ fun DemoMirror() {
     var fromY by rememberSaveable { mutableStateOf(MirrorYFrom.Bottom) }
 
     val setup = remember {
-        var xEnabled: FxParam.Float? = null
-        var xFrom: FxParam.Float? = null
-        var yEnabled: FxParam.Float? = null
-        var yFrom: FxParam.Float? = null
-        val effect = redbytefx {
-            val mirrorXEnabled = uniformFloat(0f, "mirror_x_enabled")
-            val mirrorXFrom = uniformFloat(MirrorXFrom.Right.shaderValue, "mirror_x_from")
-            val mirrorYEnabled = uniformFloat(0f, "mirror_y_enabled")
-            val mirrorYFrom = uniformFloat(MirrorYFrom.Bottom.shaderValue, "mirror_y_from")
+        var xEnabled: Uniform<Flt<High>>? = null
+        var xFrom: Uniform<Flt<High>>? = null
+        var yEnabled: Uniform<Flt<High>>? = null
+        var yFrom: Uniform<Flt<High>>? = null
+        val effect = shader(ShaderTarget.Agsl) {
+            val mirrorXEnabled = uniform("mirror_x_enabled", 0f)
+            val mirrorXFrom = uniform("mirror_x_from", MirrorXFrom.Right.shaderValue)
+            val mirrorYEnabled = uniform("mirror_y_enabled", 0f)
+            val mirrorYFrom = uniform("mirror_y_from", MirrorYFrom.Bottom.shaderValue)
             xEnabled = mirrorXEnabled
             xFrom = mirrorXFrom
             yEnabled = mirrorYEnabled
             yFrom = mirrorYFrom
-            sample(
-                mirrorY(
-                    coord = mirrorX(
-                        amount = mirrorXEnabled,
-                        from = mirrorXFrom
-                    ),
-                    amount = mirrorYEnabled,
-                    from = mirrorYFrom
+            fragment {
+                sample(
+                    mirrorY(
+                        coord = mirrorX(
+                            amount = mirrorXEnabled.expr,
+                            from = mirrorXFrom.expr
+                        ),
+                        amount = mirrorYEnabled.expr,
+                        from = mirrorYFrom.expr
+                    )
                 )
-            )
+            }
         }
         MirrorSetup(effect, xEnabled!!, xFrom!!, yEnabled!!, yFrom!!)
     }
@@ -87,7 +90,7 @@ fun DemoMirror() {
                 enabled = it
             }
 
-            Text(text = "Axis", style = MaterialTheme.typography.titleMedium)
+            Text(text = ui("Axis"), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -101,7 +104,7 @@ fun DemoMirror() {
             }
 
             if (axis == Axis.X) {
-                Text(text = "From", style = MaterialTheme.typography.titleMedium)
+                Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -114,7 +117,7 @@ fun DemoMirror() {
                     }
                 }
             } else {
-                Text(text = "From", style = MaterialTheme.typography.titleMedium)
+                Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
