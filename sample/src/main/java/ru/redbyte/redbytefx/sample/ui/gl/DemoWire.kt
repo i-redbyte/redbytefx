@@ -2,7 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.GeometryDsl
 import ru.redbyte.redbytefx.GeometryInput
@@ -67,10 +66,7 @@ internal fun DemoWire() {
     GlCanvas(
         scene.program,
         scene.mesh,
-        requirement = say(
-            "OpenGL ES 3.2 is required for the wireframe.",
-            "Для «Каркаса» нужен OpenGL ES 3.2.",
-        ),
+        requirement = glEs32LinkRequirement(),
         dsl = wireDsl,
     ) { frame ->
         frame.runtime.set(scene.time, frame.seconds)

@@ -2,7 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
@@ -69,10 +68,7 @@ internal fun DemoOcean() {
     GlCanvas(
         scene.program,
         scene.mesh,
-        requirement = say(
-            "OpenGL ES 3.2 is required for the ocean.",
-            "Для «Океана» нужен OpenGL ES 3.2.",
-        ),
+        requirement = glEs32LinkRequirement(),
         dsl = oceanDsl,
     ) { frame ->
         frame.runtime.set(scene.time, frame.seconds)
