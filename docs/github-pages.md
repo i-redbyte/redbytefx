@@ -5,22 +5,24 @@ The workflow [`.github/workflows/docs.yml`](../.github/workflows/docs.yml) build
 ## One-time repository setup
 
 1. Open **Settings → Pages**.
-2. Under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”).
-3. After the first successful workflow run, the site URL appears on the Pages settings screen.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. After a successful workflow run, open the published URL from the Pages settings.
 
-## Published URL layout
+## URL layout (this repository)
 
-This repository is a **project site**, so GitHub always adds the repository name after the host:
+This is a **project** site. GitHub serves it under the repository name:
 
-`https://<user>.github.io/<repo>/libs/redbytefx/<module>/…`
+| What | URL |
+|------|-----|
+| Index | `https://i-redbyte.github.io/redbytefx/` |
+| Module API | `https://i-redbyte.github.io/redbytefx/redbytefx-core/…` |
+| Guides | `https://i-redbyte.github.io/redbytefx/docs/language-reference.md` |
 
-Example (this repo):
+You cannot get `https://i-redbyte.github.io/libs/redbytefx/…` (without `/redbytefx/` in the path) from this repo’s Pages alone. That layout needs a **user/org** site repository named `<user>.github.io`, with content under `libs/redbytefx/` and a deploy step that pushes there (separate from this project workflow).
 
-`https://i-redbyte.github.io/redbytefx/libs/redbytefx/redbytefx-core/ru.redbyte.redbytefx/…`
+## Source links in Dokka
 
-A path like `https://i-redbyte.github.io/libs/redbytefx/…` (without `/redbytefx/` in the middle) would require publishing from a **user/org** Pages repository (`<user>.github.io`), not from the `redbytefx` project alone.
-
-Dokka **(source)** links use `blob/<branch>/…` on GitHub. CI sets the branch from `GITHUB_REF_NAME`; locally override with `-Predbytefx.docsGitRef=support-opengl` in `gradle.properties`.
+Dokka **(source)** links use `https://github.com/i-redbyte/redbytefx/blob/<branch>/…`. CI uses `GITHUB_REF_NAME`; locally set `redbytefx.docsGitRef` in `gradle.properties` (default in repo: `support-opengl` until docs track `master`).
 
 ## Local preview
 
@@ -28,9 +30,4 @@ Dokka **(source)** links use `blob/<branch>/…` on GitHub. CI sets the branch f
 ./gradlew dokkaHtmlSite
 ```
 
-Open `build/docs/site/libs/redbytefx/index.html` (or the root redirect at `build/docs/site/index.html`).
-
-## Contents
-
-- Per-module Dokka HTML under `libs/redbytefx/redbytefx-core/`, `libs/redbytefx/redbytefx-gl/`, and related paths.
-- Markdown guides at `libs/redbytefx/docs/` (`language-reference.md`, `error-codes.md`).
+Open `build/docs/site/index.html`.

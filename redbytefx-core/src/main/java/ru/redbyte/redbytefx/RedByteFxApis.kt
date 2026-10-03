@@ -23,5 +23,5 @@ public object RedByteFxApis {
     public const val AGSL_MIN_SDK: Int = 31
 
     /** Published API reference and platform matrix. */
-    public const val DOCS_BASE_URL: String = "https://i-redbyte.github.io/redbytefx/libs/redbytefx/"
+    public const val DOCS_BASE_URL: String = "https://i-redbyte.github.io/redbytefx/"
 }
