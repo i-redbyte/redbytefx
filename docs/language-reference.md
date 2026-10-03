@@ -25,6 +25,12 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/main/REA
 - `fn(witness..., "name") { p0, ... -> expr }` - no nesting, no recursion.
 - `discard()` / `discard(cond)` - fragment only.
 
+## Swizzles
+
+Vector expressions use GLSL-style property names: `.xy`, `.rgb`, `.rgba`, and single-letter lanes
+`.x` / `.r`, `.a` (alpha on `vec4`), and so on. Names match generated shader masks; see KDoc on
+[SwizzleAccess.kt](https://github.com/i-redbyte/redbytefx/blob/support-opengl/redbytefx-core/src/main/java/ru/redbyte/redbytefx/SwizzleAccess.kt).
+
 ## Math (portable)
 
 `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`, `normalize`, `distance`, `cross`, `dFdx`, `dFdy`, `fwidth` (derivatives: fragment only).
