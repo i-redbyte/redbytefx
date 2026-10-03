@@ -31,7 +31,9 @@ internal fun GlSlot.linkGraphics(
     onFailure: ((String) -> Unit)? = null,
 ): GlProgramRuntime? {
     runtime?.destroy()
+    runtime = null
     releaseGl?.invoke()
+    releaseGl = null
     val linked = GlProgramRuntime(program, Gles30Device(), strictUniformLocations = strictUniformLocations)
     return try {
         linked.link()

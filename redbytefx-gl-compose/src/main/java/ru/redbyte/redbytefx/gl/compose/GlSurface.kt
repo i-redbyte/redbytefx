@@ -32,6 +32,7 @@ import javax.microedition.khronos.opengles.GL10
  * uniforms and [GlFrame.runtime] for direct [ru.redbyte.redbytefx.gl.GlProgramRuntime] calls.
  *
  * Rendering follows the host [androidx.lifecycle.Lifecycle] (`onResume` / `onPause` on the surface).
+ * The EGL context is OpenGL ES 3.x, with a minor version matching [controller]'s program (3.2, 3.1, or 3.0).
  */
 @Composable
 public fun GlSurface(
@@ -57,11 +58,14 @@ public fun GlSurface(
                     val slot = GlSlot()
                     val surfaceView = GLSurfaceView(context).apply {
                         setEGLContextClientVersion(3)
+                        setEGLContextFactory(Es3ContextFactory(eglClientMinor(controller.program)))
                         if (mesh.depth) {
                             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
                         }
                         slot.post = { block -> post { block() } }
-                        controller.glQueue = { block -> post { block() } }
+                        tag = slot
+                        controller.glQueue = { block -> queueEvent(block) }
+                        controller.scheduleDrain()
                         setRenderer(
                             SceneRenderer(
                                 controller = controller,
@@ -71,20 +75,23 @@ public fun GlSurface(
                                 onFrame = onFrame,
                             ),
                         )
-                        tag = this
                     }
                     glSurfaceView = surfaceView
                     surfaceView
                 },
                 onRelease = { view ->
                     glSurfaceView = null
-                    val surface = view as GLSurfaceView
-                    surface.onPause()
-                    surface.queueEvent {
-                        controller.runtime?.destroy()
+                    controller.linkStateValue = GlLinkState.Pending
+                    val held = view.tag as? GlSlot
+                    view.queueEvent {
+                        held?.releaseGl?.invoke()
+                        held?.releaseGl = null
+                        held?.runtime?.destroy()
+                        held?.runtime = null
                         controller.runtime = null
                         controller.glQueue = null
                     }
+                    view.onPause()
                 },
             )
         }
@@ -141,6 +148,7 @@ private class SceneRenderer(
     private val onFrame: (GlFrame) -> Unit,
 ) : GLSurfaceView.Renderer {
     private var buffer = 0
+    private var array = 0
     private var vertexCount = 0
     private var locations = IntArray(0)
     private var scratch: FloatBuffer? = null
@@ -150,7 +158,7 @@ private class SceneRenderer(
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         reported = false
-        controller.linkStateValue = GlLinkState.Pending
+        publish(GlLinkState.Pending)
         val runtime = slot.linkGraphics(
             program = controller.program,
             strictUniformLocations = controller.config.strictUniformLocations,
@@ -158,24 +166,35 @@ private class SceneRenderer(
             onFailure = { message ->
                 if (!reported) {
                     reported = true
-                    controller.linkStateValue = GlLinkState.Failed(message)
+                    publish(GlLinkState.Failed(message))
                 }
             },
-        ) ?: return
+        )
+        if (runtime == null) {
+            controller.runtime = null
+            return
+        }
         slot.runtime = runtime
         controller.runtime = runtime
-        controller.linkStateValue = GlLinkState.Linked
+        publish(GlLinkState.Linked)
+        controller.drainPending()
         runtime.use()
         locations = IntArray(mesh.attribs.size) { index ->
             GlBuffer.attribLocation(mesh.attribs[index].name)
         }
         buffer = upload(mesh.vertices)
+        array = createVertexArray()
         vertexCount = mesh.vertices.size / mesh.stride
         val uploaded = buffer
+        val createdArray = array
         slot.releaseGl = {
             if (buffer == uploaded) {
                 GlBuffer.deleteBuffer(buffer)
                 buffer = 0
+            }
+            if (array == createdArray && array != 0) {
+                GLES30.glDeleteVertexArrays(1, intArrayOf(array), 0)
+                array = 0
             }
         }
         GLES30.glClearColor(mesh.clearR, mesh.clearG, mesh.clearB, 1f)
@@ -219,6 +238,17 @@ private class SceneRenderer(
         vertexCount = vertices.size / mesh.stride
     }
 
+    private fun publish(state: GlLinkState) {
+        slot.post { controller.linkStateValue = state }
+    }
+
+    private fun createVertexArray(): Int {
+        val ids = IntArray(1)
+        GLES30.glGenVertexArrays(1, ids, 0)
+        GLES30.glBindVertexArray(ids[0])
+        return ids[0]
+    }
+
     private fun upload(vertices: FloatArray): Int {
         val ids = IntArray(1)
         GLES30.glGenBuffers(1, ids, 0)
@@ -249,6 +279,9 @@ private class SceneRenderer(
 
     private fun draw(buffer: Int, count: Int) {
         if (buffer == 0 || count <= 0) return
+        if (array != 0) {
+            GLES30.glBindVertexArray(array)
+        }
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, buffer)
         val strideBytes = mesh.stride * Float.SIZE_BYTES
         mesh.attribs.forEachIndexed { index, attrib ->

@@ -178,8 +178,26 @@ public class Gles30Device : GlDevice() {
 
 private const val LOG_TAG = "RedByteFX"
 
-private fun ByteArray.asNativeBuffer(): ByteBuffer =
-    ByteBuffer.wrap(this).order(ByteOrder.nativeOrder())
+private val directScratch = ThreadLocal<ByteBuffer>()
+
+/**
+ * `glBufferData` reads a direct buffer. A heap [ByteBuffer.wrap] does not qualify and is rejected
+ * by the Android GLES bindings.
+ */
+private fun ByteArray.asNativeBuffer(): ByteBuffer {
+    val existing = directScratch.get()
+    val buffer = if (existing != null && existing.capacity() >= size) {
+        existing
+    } else {
+        ByteBuffer.allocateDirect(size).also { directScratch.set(it) }
+    }
+    buffer.order(ByteOrder.nativeOrder())
+    buffer.clear()
+    buffer.limit(size)
+    buffer.put(this)
+    buffer.position(0)
+    return buffer
+}
 
 private fun stageEnum(stage: GlStage): Int = when (stage) {
     GlStage.Vertex -> GLES30.GL_VERTEX_SHADER
