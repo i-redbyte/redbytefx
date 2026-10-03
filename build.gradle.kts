@@ -137,7 +137,16 @@ tasks.register("dokkaHtmlSite") {
                     "The Android library plugin must be applied before Dokka so source sets are registered."
             }
             source.copyRecursively(target, overwrite = true)
-            module
+            // Dokka's cover page only names the package. Declarations, including functions,
+            // live on the package page and the Functions tab is hidden until clicked.
+            target.resolve("styles/style.css").appendText(
+                "\n.tabs-section-body > [data-togglable] { display: block !important; }\n",
+            )
+            val packagePage = dokkaPackagePage(target.resolve("index.html"))
+            if (packagePage != null) {
+                target.resolve("index.html").writeText(dokkaEntryRedirect(module.title, packagePage))
+            }
+            module to (packagePage ?: "index.html")
         }
         val docsDir = rootProject.file("docs")
         if (docsDir.isDirectory) {
@@ -147,9 +156,9 @@ tasks.register("dokkaHtmlSite") {
                 file.copyTo(siteDocs.resolve(file.name), overwrite = true)
             }
         }
-        val links = entries.joinToString("\n") { module ->
+        val links = entries.joinToString("\n") { (module, page) ->
             val slug = module.path.removePrefix(":")
-            """        <li><a href="$slug/index.html">${module.title}</a> - ${module.blurb}</li>"""
+            """        <li><a href="$slug/$page">${module.title}</a> - ${module.blurb}</li>"""
         }
         site.resolve("index.html").writeText(
             """
@@ -178,6 +187,33 @@ tasks.register("dokkaHtmlSite") {
         )
     }
 }
+
+private val dokkaPackageLink = Regex("""href="([^"]+/index\.html)"""")
+
+private fun dokkaPackagePage(cover: java.io.File): String? {
+    val pages = dokkaPackageLink.findAll(cover.readText())
+        .map { it.groupValues[1] }
+        .filter { !it.startsWith("http") && it != "index.html" }
+        .distinct()
+        .toList()
+    return pages.singleOrNull()
+}
+
+private fun dokkaEntryRedirect(title: String, page: String): String = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8"/>
+      <meta http-equiv="refresh" content="0; url=$page"/>
+      <link rel="canonical" href="$page"/>
+      <title>$title</title>
+      <script>location.replace("$page")</script>
+    </head>
+    <body>
+      <p><a href="$page">$title API reference</a></p>
+    </body>
+    </html>
+""".trimIndent()
 
 tasks.register("qualityCheck") {
     group = "verification"
