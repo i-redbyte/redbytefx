@@ -44,10 +44,6 @@ dependencies {
     testImplementation(libs.junit4)
 }
 
-tasks.named<org.jetbrains.dokka.gradle.DokkaTask>("dokkaHtml") {
-    dependsOn(tasks.named("compileDebugKotlin"))
-}
-
 val hasSigningConfiguration =
     providers.gradleProperty("signingInMemoryKey").isPresent ||
         providers.environmentVariable("ORG_GRADLE_PROJECT_signingInMemoryKey").isPresent ||
@@ -66,7 +62,7 @@ mavenPublishing {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = SourcesJar.Sources(),
-            javadocJar = JavadocJar.Dokka("dokkaHtml")
+            javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml")
         )
     )
     coordinates(
