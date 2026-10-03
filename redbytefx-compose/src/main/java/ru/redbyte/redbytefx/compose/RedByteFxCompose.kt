@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.compose
 
 import android.graphics.RenderEffect as AndroidRenderEffect
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +25,8 @@ import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
 import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.AgslInstance
+import ru.redbyte.redbytefx.RedByteFxApis
+import ru.redbyte.redbytefx.RedByteFxPlatform
 import ru.redbyte.redbytefx.newAgslInstance
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
@@ -233,8 +236,10 @@ public class FxController internal constructor(
  * `RuntimeShader` destroy API; when the controller leaves composition, the instance becomes
  * unreachable and is reclaimed by the garbage collector together with its [android.graphics.RenderEffect].
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 public fun rememberFxController(program: ShaderProgram): FxController {
+    RedByteFxPlatform.requireAgslRuntime()
     val view = LocalView.current
     val controller = remember(program) { FxController(AgslShaderControl(program.newAgslInstance())) }
     DisposableEffect(controller) {
@@ -449,8 +454,10 @@ public fun FxController.bindFloat4(
  * 3. verify sampling space (`sample(...)` vs `sampleUv(...)`)
  * 4. only then inspect render-target sizing or platform/runtime behavior
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
     composed {
+        RedByteFxPlatform.requireAgslRuntime()
         val layer = rememberGraphicsLayer()
         var appliedRenderEffect by remember(controller) { mutableStateOf<androidx.compose.ui.graphics.RenderEffect?>(null) }
         drawWithCache {

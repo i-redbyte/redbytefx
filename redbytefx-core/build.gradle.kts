@@ -19,7 +19,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 33
+        minSdk = 24
     }
 
     compileOptions {
@@ -38,6 +38,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.androidx.annotation)
     testImplementation(libs.junit4)
 }
 

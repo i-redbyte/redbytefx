@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx
 
+import androidx.annotation.RequiresApi
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 
@@ -13,6 +14,10 @@ import android.graphics.RuntimeShader
 public class AgslInstance internal constructor(
     program: ShaderProgram,
 ) {
+    init {
+        RedByteFxPlatform.requireAgslRuntime()
+    }
+
     private val shader = RuntimeShader(program.agslSource())
     private lateinit var renderEffect: RenderEffect
     private val runtime = ShaderRuntime(
@@ -83,7 +88,9 @@ public class AgslInstance internal constructor(
     }
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 public fun ShaderProgram.newAgslInstance(): AgslInstance {
     check(target == ShaderTarget.Agsl) { "GLES programs are not executed as AGSL" }
+    RedByteFxPlatform.requireAgslRuntime()
     return AgslInstance(this)
 }

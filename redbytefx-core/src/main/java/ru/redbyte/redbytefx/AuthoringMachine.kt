@@ -1,6 +1,9 @@
 package ru.redbyte.redbytefx
 
+import androidx.annotation.RequiresApi
+
 public enum class ShaderTarget {
+    @RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
     Agsl,
     Gles30,
     Gles31,
