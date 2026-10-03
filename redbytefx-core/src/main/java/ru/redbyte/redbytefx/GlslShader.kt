@@ -907,9 +907,17 @@ private fun pipeInterface(
     append(";\n")
 }
 
-internal fun spellStageStatements(commands: List<PrimitiveCommand>, emitter: CodeEmitter): List<String> {
+internal fun spellStageStatements(
+    commands: List<PrimitiveCommand>,
+    emitter: CodeEmitter,
+    varyingNames: Map<Varying<*>, String> = emptyMap(),
+): List<String> {
     bindLocalSlots(commands, emitter)
-    return spellCommands(commands, emitter, varyingOut = { varying -> varying.name })
+    return spellCommands(
+        commands,
+        emitter,
+        varyingOut = { varying -> varyingNames[varying] ?: varying.name },
+    )
 }
 
 internal fun bindLocalSlots(commands: List<PrimitiveCommand>, emitter: CodeEmitter) {
