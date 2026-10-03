@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.gl
 
+import android.util.Log
 import android.opengl.GLES30
 import android.opengl.GLES31
 import android.opengl.GLES32
@@ -165,7 +166,17 @@ public class Gles30Device : GlDevice() {
     override fun bindShaderStorageBase(buffer: Int, binding: Int) {
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, binding, buffer)
     }
+
+    override fun flushGlErrors(context: String) {
+        var error = GLES30.glGetError()
+        while (error != GLES30.GL_NO_ERROR) {
+            Log.w(LOG_TAG, "OpenGL error 0x${Integer.toHexString(error)} after $context")
+            error = GLES30.glGetError()
+        }
+    }
 }
+
+private const val LOG_TAG = "RedByteFX"
 
 private fun ByteArray.asNativeBuffer(): ByteBuffer =
     ByteBuffer.wrap(this).order(ByteOrder.nativeOrder())
