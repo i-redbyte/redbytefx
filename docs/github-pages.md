@@ -1,12 +1,14 @@
 # GitHub Pages (API site)
 
-The workflow [`.github/workflows/docs.yml`](../.github/workflows/docs.yml) builds `./gradlew dokkaHtmlSite` and deploys `build/docs/site` to GitHub Pages on push to `main`, `master`, or `support-opengl`.
+The workflow [`.github/workflows/docs.yml`](../.github/workflows/docs.yml) always runs `qualityCheck` and `dokkaHtmlSite` on push to `main`, `master`, or `support-opengl`. **Publishing** to GitHub Pages runs only on **`main` or `master`** (the `github-pages` environment usually allows those branches only).
+
+To refresh the live site from `support-opengl`, merge into `master` (or temporarily add `support-opengl` under **Settings → Environments → github-pages → Deployment branches**).
 
 ## One-time repository setup
 
 1. Open **Settings → Pages**.
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
-3. After a successful workflow run, open the published URL from the Pages settings.
+3. After a deploy job succeeds on `master`/`main`, open the published URL from the Pages settings.
 
 ## URL layout (this repository)
 
