@@ -126,37 +126,17 @@ tasks.register("dokkaHtmlSite") {
             site.deleteRecursively()
         }
         site.mkdirs()
-        val docsGitRef = providers.environmentVariable("GITHUB_REF_NAME")
-            .orElse(providers.gradleProperty("redbytefx.docsGitRef"))
-            .orElse("master")
-            .get()
         val entries = docModules.map { module ->
             val projectDir = project(module.path).layout.buildDirectory.get().asFile
             val source = projectDir.resolve("dokka/html")
             val targetName = module.path.removePrefix(":")
             val target = site.resolve(targetName)
             target.mkdirs()
-            if (source.isDirectory && source.resolve("index.html").isFile) {
-                copyDokkaHtml(source, target, targetName)
-            } else {
-                val slug = module.path.removePrefix(":")
-                target.resolve("index.html").writeText(
-                    """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head><meta charset="utf-8"/><title>${module.title}</title></head>
-                    <body>
-                      <p><a href="../index.html">RedByteFX</a></p>
-                      <h1>${module.title}</h1>
-                      <p>${module.blurb}</p>
-                      <p>Generated Dokka HTML for this Android module is not available yet. Browse
-                      <a href="https://github.com/i-redbyte/redbytefx/blob/$docsGitRef/$slug/src/main/java">sources</a>
-                      or use IDE KDoc on the Maven dependency.</p>
-                    </body>
-                    </html>
-                    """.trimIndent(),
-                )
+            check(source.resolve("index.html").isFile && source.resolve("styles/style.css").isFile) {
+                "Dokka HTML for ${module.path} is missing at ${source}. " +
+                    "The Android library plugin must be applied before Dokka so source sets are registered."
             }
+            source.copyRecursively(target, overwrite = true)
             module
         }
         val docsDir = rootProject.file("docs")
@@ -197,18 +177,6 @@ tasks.register("dokkaHtmlSite") {
             """.trimIndent(),
         )
     }
-}
-
-private fun copyDokkaHtml(source: java.io.File, target: java.io.File, moduleName: String) {
-    val nested = source.resolve(moduleName)
-    if (nested.isDirectory) {
-        source.resolve("index.html").copyTo(target.resolve("index.html"), overwrite = true)
-        nested.listFiles()?.forEach { child ->
-            child.copyRecursively(target.resolve(child.name), overwrite = true)
-        }
-        return
-    }
-    source.copyRecursively(target, overwrite = true)
 }
 
 tasks.register("qualityCheck") {

@@ -3,8 +3,8 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
-    alias(libs.plugins.dokka)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.dokka)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.detekt)
     alias(libs.plugins.vanniktech.maven.publish.base)
