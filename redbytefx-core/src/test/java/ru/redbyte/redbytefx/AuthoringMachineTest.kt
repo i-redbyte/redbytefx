@@ -85,7 +85,8 @@ class AuthoringMachineTest {
         assertAccepted(glesFragment, AuthoringAction.FragmentOut, glesFragment)
         assertRejected(agslFragment, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOnAgsl)
         assertRejected(glesVertex, AuthoringAction.FragmentOut, AuthoringCode.FragmentOutOutsideFragment)
-        assertRejected(gles31Program, AuthoringAction.DeclareUniformBlock, AuthoringCode.UniformBlockOutsideProgram)
+        assertAccepted(gles31Program, AuthoringAction.DeclareUniformBlock, gles31Program)
+        assertAccepted(gles32Program, AuthoringAction.DeclareUniformBlock, gles32Program)
         assertRejected(agslProgram, AuthoringAction.Let, AuthoringCode.LetOutsideStage)
         assertRejected(agslProgram, AuthoringAction.Return, AuthoringCode.ReturnOutsideStage)
     }
@@ -104,7 +105,11 @@ class AuthoringMachineTest {
         assertRejected(glesProgram, AuthoringAction.DeclareStorage, AuthoringCode.StorageOutsideGles31)
         assertRejected(gles31Compute, AuthoringAction.DeclareStorage, AuthoringCode.StorageOutsideProgram)
         assertRejected(gles31Program, AuthoringAction.StorageWrite, AuthoringCode.StorageWriteOutsideCompute)
-        assertRejected(gles31Compute, AuthoringAction.EnterFunction, AuthoringCode.FunctionOutsideStage)
+        assertAccepted(
+            gles31Compute,
+            AuthoringAction.EnterFunction,
+            authoringState(ShaderTarget.Gles31, AuthoringPlace.Function, AuthoringPlace.Compute),
+        )
         assertAccepted(gles32Program, AuthoringAction.EnterVertex, gles32Vertex)
         assertAccepted(gles32Program, AuthoringAction.EnterGeometry, gles32Geometry)
         assertAccepted(gles32Program, AuthoringAction.EnterTessControl, gles32TessControl)
@@ -114,7 +119,11 @@ class AuthoringMachineTest {
         assertRejected(glesProgram, AuthoringAction.EnterGeometry, AuthoringCode.GeometryOutsideGles32)
         assertRejected(glesProgram, AuthoringAction.EnterTessControl, AuthoringCode.TessControlOutsideGles32)
         assertRejected(gles32Vertex, AuthoringAction.EmitVertex, AuthoringCode.EmitVertexOutsideGeometry)
-        assertRejected(gles32Geometry, AuthoringAction.EnterFunction, AuthoringCode.FunctionOutsideStage)
+        assertAccepted(
+            gles32Geometry,
+            AuthoringAction.EnterFunction,
+            authoringState(ShaderTarget.Gles32, AuthoringPlace.Function, AuthoringPlace.Geometry),
+        )
     }
 
     private fun assertAccepted(

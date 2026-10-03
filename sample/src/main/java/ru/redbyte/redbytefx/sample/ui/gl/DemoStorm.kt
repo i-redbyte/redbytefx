@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlin.random.Random
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
@@ -128,7 +129,8 @@ internal fun DemoStorm() {
         program = scene.program,
         mesh = scene.mesh,
         pointer = pointer,
-        caption = "Touch the sky",
+        caption = say("Touch the sky", "Коснитесь неба"),
+        dsl = stormDsl,
     ) { frame ->
         clock.publish(scene, pointer, frame)
     }

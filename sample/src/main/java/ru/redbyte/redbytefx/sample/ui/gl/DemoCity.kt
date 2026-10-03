@@ -83,7 +83,7 @@ internal fun cityScene(): CityScene {
 @Composable
 internal fun DemoCity() {
     val scene = remember { cityScene() }
-    GlCanvas(scene.program, scene.mesh) { frame ->
+    GlCanvas(scene.program, scene.mesh, dsl = cityDsl) { frame ->
         val angle = frame.seconds * 0.35f
         val eyeX = sin(angle) * 3.1f
         val eyeZ = cos(angle) * 3.1f

@@ -279,7 +279,7 @@ fun CyberCodeBlock(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CyberBadge(
-                    text = title.uppercase(),
+                    text = ui(title).uppercase(),
                     accent = NeonMint,
                     fill = SurfaceOne.copy(alpha = 0.92f),
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -294,7 +294,7 @@ fun CyberCodeBlock(
                 }
                 actions.forEach { action ->
                     CyberBadge(
-                        text = action.label,
+                        text = ui(action.label),
                         modifier = Modifier.clickable(onClick = action.onClick),
                         accent = MaterialTheme.colorScheme.tertiary,
                         fill = SurfaceOne.copy(alpha = 0.94f),

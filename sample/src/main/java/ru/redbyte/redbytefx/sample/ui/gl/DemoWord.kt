@@ -78,7 +78,7 @@ internal fun DemoWord() {
         WordModel().also { it.pose(0f) }
     }
     val scene = remember { wordScene(model.posed) }
-    GlCanvas(scene.program, scene.mesh) { frame ->
+    GlCanvas(scene.program, scene.mesh, dsl = wordDsl) { frame ->
         model.pose(frame.seconds)
         frame.replace(model.posed)
         frame.runtime.set(scene.time, frame.seconds)

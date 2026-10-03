@@ -7,6 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.Med
+import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.GeometryInput
 import ru.redbyte.redbytefx.GeometryOutput
@@ -17,8 +19,13 @@ import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.med
+import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.shader
+import ru.redbyte.redbytefx.toHigh
 import ru.redbyte.redbytefx.vec4
+import ru.redbyte.redbytefx.x
+import ru.redbyte.redbytefx.y
+import ru.redbyte.redbytefx.z
 
 class GlProgramRuntimeTest {
 
@@ -49,6 +56,29 @@ class GlProgramRuntimeTest {
         assertTrue(link.livePrograms.isEmpty())
         val stillOpen = assertThrows(GlException::class.java) { compileRuntime.use() }
         assertEquals(GlCode.NotLinked, stillOpen.code)
+    }
+
+    @Test
+    fun dispatchReachesTheDeviceOnceWithTheGroupCounts() {
+        val device = RecordingGlDevice()
+        val program = shader(ShaderTarget.Gles31) {
+            compute(1) { }
+        }
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        runtime.use()
+        runtime.dispatch(8, 2, 1)
+        assertEquals(1, device.dispatchCalls)
+        assertEquals(1, device.barrierCalls)
+        assertEquals(listOf(8, 2, 1), device.dispatchGroups)
+        runtime.dispatch(8, 2, 1)
+        assertEquals(2, device.dispatchCalls)
+        assertEquals(2, device.barrierCalls)
+        assertThrows(IllegalArgumentException::class.java) { runtime.dispatch(0, 1, 1) }
+        val graphics = GlProgramRuntime(passthrough(), RecordingGlDevice())
+        graphics.link()
+        val wrong = assertThrows(GlException::class.java) { graphics.dispatch(1, 1, 1) }
+        assertEquals(GlCode.WrongTarget, wrong.code)
     }
 
     @Test
@@ -124,6 +154,50 @@ class GlProgramRuntimeTest {
             fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
         }
         assertThrows(IllegalArgumentException::class.java) { runtime.set(foreign, 1f) }
+    }
+
+    @Test
+    fun linkUploadsVectorAndMediumpDefaultsAndSkipsAnUnchangedWrite() {
+        val device = RecordingGlDevice()
+        lateinit var tint: Uniform<Vec3<Flt<High>>>
+        lateinit var gain: Uniform<Flt<Med>>
+        val program = shader(ShaderTarget.Gles30) {
+            tint = uniformVec3("tint", 1f, 2f, 3f)
+            gain = uniformMedium("gain", 0.5f)
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(tint.expr.x, tint.expr.y, tint.expr.z, gain.expr.toHigh()) }
+        }
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        assertEquals(1, device.uniform3fCalls)
+        assertEquals(listOf(1f, 2f, 3f), device.uniform3fValues)
+        assertEquals(1, device.uniform1fCalls)
+        assertFalse(runtime.set(tint, 1f, 2f, 3f))
+        assertEquals(1, device.uniform3fCalls)
+        assertTrue(runtime.set(gain, 0.25f))
+        assertEquals(2, device.uniform1fCalls)
+    }
+
+    @Test
+    fun aTexturePastTheCombinedUnitLimitIsRejected() {
+        val device = RecordingGlDevice(textureUnitLimit = 1)
+        lateinit var first: Uniform<Sampler2D>
+        lateinit var second: Uniform<Sampler2D>
+        val program = shader(ShaderTarget.Gles30) {
+            val uv = varyingVec2("uv")
+            first = sampler2D("first")
+            second = sampler2D("second")
+            vertex {
+                uv.set(attributeVec2("uv"))
+                glPosition(attributeVec4("position"))
+            }
+            fragment { texture(first, uv.expr) + texture(second, uv.expr) }
+        }
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        assertTrue(runtime.bind(first, 3))
+        val error = assertThrows(GlException::class.java) { runtime.bind(second, 4) }
+        assertEquals(GlCode.TextureUnitLimit, error.code)
     }
 
     @Test
@@ -245,6 +319,31 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aLongerUnsizedTailAllocatesTheStorageBufferAgain() {
+        val device = RecordingGlDevice()
+        lateinit var tail: StorageBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles31) {
+                tail = storageBlock("tail") {
+                    float("head")
+                    floatArray("rest")
+                }
+                compute(1) { }
+            },
+            device,
+        )
+        runtime.link()
+        assertTrue(runtime.set(tail, floatArrayOf(1f, 2f)))
+        assertEquals(1, device.storageDataCalls)
+        assertTrue(runtime.set(tail, floatArrayOf(1f, 2f, 3f, 4f)))
+        assertEquals(2, device.storageDataCalls)
+        assertEquals(0, device.storageSubDataCalls)
+        assertTrue(runtime.set(tail, floatArrayOf(9f, 2f, 3f, 4f)))
+        assertEquals(2, device.storageDataCalls)
+        assertEquals(1, device.storageSubDataCalls)
+    }
+
+    @Test
     fun gles32LinksVertexTessellationGeometryAndFragment() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(
@@ -286,6 +385,7 @@ private class RecordingGlDevice(
     private val failFragmentCompile: Boolean = false,
     private val failLink: Boolean = false,
     private val missing: Set<String> = emptySet(),
+    private val textureUnitLimit: Int = 8,
 ) : GlDevice() {
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
@@ -298,6 +398,7 @@ private class RecordingGlDevice(
     var uniform1iCalls = 0
     var deleteProgramCalls = 0
     val writes = mutableListOf<String>()
+    val intValues = mutableListOf<Int>()
     private var nextId = 1
     private val stages = mutableMapOf<Int, GlStage>()
 
@@ -347,9 +448,38 @@ private class RecordingGlDevice(
         uniform1fCalls += 1
     }
 
+    var uniform3fCalls = 0
+    val uniform3fValues = mutableListOf<Float>()
+
+    override fun uniform2f(location: Int, x: Float, y: Float) = Unit
+
+    override fun uniform3f(location: Int, x: Float, y: Float, z: Float) {
+        uniform3fCalls += 1
+        uniform3fValues += x
+        uniform3fValues += y
+        uniform3fValues += z
+    }
+
+    override fun uniform4f(location: Int, x: Float, y: Float, z: Float, w: Float) = Unit
+
     override fun uniform1i(location: Int, value: Int) {
         writes += "uniform1i"
         uniform1iCalls += 1
+        intValues += value
+    }
+
+    val matrixValues = mutableListOf<FloatArray>()
+
+    override fun uniformMatrix2fv(location: Int, values: FloatArray) {
+        matrixValues += values.copyOf()
+    }
+
+    override fun uniformMatrix3fv(location: Int, values: FloatArray) {
+        matrixValues += values.copyOf()
+    }
+
+    override fun uniformMatrix4fv(location: Int, values: FloatArray) {
+        matrixValues += values.copyOf()
     }
 
     override fun useProgram(program: Int) {
@@ -362,6 +492,28 @@ private class RecordingGlDevice(
 
     override fun bindTexture2D(texture: Int) {
         boundTextures += texture
+    }
+
+    val cubeTextures = mutableListOf<Int>()
+
+    override fun bindTextureCube(texture: Int) {
+        cubeTextures += texture
+    }
+
+    var dispatchCalls = 0
+    val dispatchGroups = mutableListOf<Int>()
+
+    override fun dispatchCompute(x: Int, y: Int, z: Int) {
+        dispatchCalls += 1
+        dispatchGroups += x
+        dispatchGroups += y
+        dispatchGroups += z
+    }
+
+    var barrierCalls = 0
+
+    override fun shaderStorageBarrier() {
+        barrierCalls += 1
     }
 
     var bufferDataCalls = 0
@@ -411,4 +563,6 @@ private class RecordingGlDevice(
     override fun bindShaderStorageBase(buffer: Int, binding: Int) {
         writes += "bindStorage"
     }
+
+    override fun maxCombinedTextureImageUnits(): Int = textureUnitLimit
 }

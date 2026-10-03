@@ -20,10 +20,13 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
+import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.AgslInstance
 import ru.redbyte.redbytefx.newAgslInstance
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.IntS
+import ru.redbyte.redbytefx.Med
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.Vec2
@@ -39,7 +42,7 @@ import ru.redbyte.redbytefx.Vec4
  *
  * Use it to update uniforms from Compose state and pass it to [redbyteFx]. Uniform handles belong
  * to the program that created this controller. If runtime updates throw about a missing uniform,
- * the usual cause is a [ru.redbyte.redbytefx.Uniform] from a different `shader { }` program — see
+ * the usual cause is a [ru.redbyte.redbytefx.Uniform] from a different `shader { }` program - see
  * **`README.md`**.
  *
  * Uniform deduplication is delegated to the AGSL instance; the controller only invalidates the host
@@ -84,6 +87,11 @@ public class FxController internal constructor(
         maybeInvalidateAfterUniformChange(control.setFloat(param, value))
     }
 
+    @JvmName("setMedFloat")
+    public fun setFloat(param: Uniform<Flt<Med>>, value: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat(param, value))
+    }
+
     /**
      * Updates a `float2` uniform and invalidates the host view when the instance reports a change.
      *
@@ -93,6 +101,11 @@ public class FxController internal constructor(
      */
     public fun setFloat2(param: Uniform<Vec2<Flt<High>>>, x: Float, y: Float) {
         maybeInvalidateAfterUniformChange(control.setFloat2(param, x, y))
+    }
+
+    @JvmName("setMedFloat2")
+    public fun setFloat2(param: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat2(param, x, y))
     }
 
     /**
@@ -106,6 +119,11 @@ public class FxController internal constructor(
         maybeInvalidateAfterUniformChange(control.setFloat3(param, x, y, z))
     }
 
+    @JvmName("setMedFloat3")
+    public fun setFloat3(param: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat3(param, x, y, z))
+    }
+
     /**
      * Updates a `float4` uniform and invalidates the host view when the instance reports a change.
      *
@@ -115,6 +133,22 @@ public class FxController internal constructor(
      */
     public fun setFloat4(param: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float) {
         maybeInvalidateAfterUniformChange(control.setFloat4(param, x, y, z, w))
+    }
+
+    @JvmName("setMedFloat4")
+    public fun setFloat4(param: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float) {
+        maybeInvalidateAfterUniformChange(control.setMedFloat4(param, x, y, z, w))
+    }
+
+    /**
+     * Updates a scalar int uniform and invalidates the host view when the AGSL instance
+     * reports a change.
+     *
+     * The [param] handle must belong to the compiled effect that created this controller.
+     * Compose callers should usually prefer [bindInt].
+     */
+    public fun setInt(param: Uniform<IntS>, value: Int) {
+        maybeInvalidateAfterUniformChange(control.setInt(param, value))
     }
 
     /**
@@ -247,7 +281,7 @@ public fun FxController.bindTime(
  * Binds a scalar float uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
-     * the value has actually changed. The [param] handle must belong to the program that created this
+ * the value has actually changed. The [param] handle must belong to the program that created this
  * controller (same compiled [ru.redbyte.redbytefx.ShaderProgram] as [rememberFxController]); matching
  * names from another program are not interchangeable. Outside composition, use [setFloat] directly
  * instead.
@@ -255,6 +289,34 @@ public fun FxController.bindTime(
 @Composable
 public fun FxController.bindFloat(
     param: Uniform<Flt<High>>,
+    value: Float
+) {
+    SideEffect {
+        setFloat(param, value)
+    }
+}
+
+/**
+ * Binds a scalar int uniform to Compose state.
+ *
+ * The uniform is updated after successful recomposition and only invalidates the host view when
+ * the value has actually changed. The [param] handle must belong to the program that created this
+ * controller. Outside composition, use [setInt] directly instead.
+ */
+@Composable
+public fun FxController.bindInt(
+    param: Uniform<IntS>,
+    value: Int
+) {
+    SideEffect {
+        setInt(param, value)
+    }
+}
+
+@JvmName("bindMedFloat")
+@Composable
+public fun FxController.bindFloat(
+    param: Uniform<Flt<Med>>,
     value: Float
 ) {
     SideEffect {
@@ -272,6 +334,18 @@ public fun FxController.bindFloat(
 @Composable
 public fun FxController.bindFloat2(
     param: Uniform<Vec2<Flt<High>>>,
+    x: Float,
+    y: Float
+) {
+    SideEffect {
+        setFloat2(param, x, y)
+    }
+}
+
+@JvmName("bindMedFloat2")
+@Composable
+public fun FxController.bindFloat2(
+    param: Uniform<Vec2<Flt<Med>>>,
     x: Float,
     y: Float
 ) {
@@ -299,6 +373,19 @@ public fun FxController.bindFloat3(
     }
 }
 
+@JvmName("bindMedFloat3")
+@Composable
+public fun FxController.bindFloat3(
+    param: Uniform<Vec3<Flt<Med>>>,
+    x: Float,
+    y: Float,
+    z: Float
+) {
+    SideEffect {
+        setFloat3(param, x, y, z)
+    }
+}
+
 /**
  * Binds a `float4` uniform to Compose state.
  *
@@ -309,6 +396,20 @@ public fun FxController.bindFloat3(
 @Composable
 public fun FxController.bindFloat4(
     param: Uniform<Vec4<Flt<High>>>,
+    x: Float,
+    y: Float,
+    z: Float,
+    w: Float
+) {
+    SideEffect {
+        setFloat4(param, x, y, z, w)
+    }
+}
+
+@JvmName("bindMedFloat4")
+@Composable
+public fun FxController.bindFloat4(
+    param: Uniform<Vec4<Flt<Med>>>,
     x: Float,
     y: Float,
     z: Float,
@@ -363,12 +464,20 @@ internal class TimeBindingState {
 internal fun sanitizeControllerResolution(value: Float): Float =
     if (value > 0f) value else 1f
 
-internal interface ShaderControl {
+internal interface MediumShaderControl {
+    fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean
+    fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean
+    fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean
+    fun setMedFloat4(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean
+}
+
+internal interface ShaderControl : MediumShaderControl {
     fun renderEffect(): AndroidRenderEffect
     fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean
     fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean
     fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean
     fun setFloat4(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean
+    fun setInt(uniform: Uniform<IntS>, value: Int): Boolean
     fun setResolution(widthPx: Float, heightPx: Float): Boolean
     fun runBatch(block: () -> Unit)
 }
@@ -380,10 +489,18 @@ internal class AgslShaderControl(
 
     override fun setFloat(uniform: Uniform<Flt<High>>, value: Float): Boolean = instance.set(uniform, value)
 
+    override fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean = instance.set(uniform, value)
+
     override fun setFloat2(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean =
         instance.set(uniform, x, y)
 
+    override fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean =
+        instance.set(uniform, x, y)
+
     override fun setFloat3(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean =
+        instance.set(uniform, x, y, z)
+
+    override fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean =
         instance.set(uniform, x, y, z)
 
     override fun setFloat4(
@@ -393,6 +510,16 @@ internal class AgslShaderControl(
         z: Float,
         w: Float,
     ): Boolean = instance.set(uniform, x, y, z, w)
+
+    override fun setMedFloat4(
+        uniform: Uniform<Vec4<Flt<Med>>>,
+        x: Float,
+        y: Float,
+        z: Float,
+        w: Float,
+    ): Boolean = instance.set(uniform, x, y, z, w)
+
+    override fun setInt(uniform: Uniform<IntS>, value: Int): Boolean = instance.set(uniform, value)
 
     override fun setResolution(widthPx: Float, heightPx: Float): Boolean =
         instance.setResolution(widthPx, heightPx)

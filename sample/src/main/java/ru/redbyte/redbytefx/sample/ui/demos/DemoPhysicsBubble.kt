@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
+import ru.redbyte.redbytefx.sample.ui.say
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -491,7 +492,7 @@ private fun PhysicsBubbleContent(
         )
 
         Text(
-            text = "Pixels are now\nphysical.",
+            text = say("Pixels are now\nphysical.", "Пиксели стали\nвеществом."),
             fontSize = 32.sp,
             fontWeight = FontWeight.Medium,
             lineHeight = 40.sp,
@@ -518,14 +519,17 @@ private fun PhysicsBubbleContent(
                 }
             ) {
                 Text(
-                    text = "RedByteFX Bubble",
+                    text = say("RedByteFX Bubble", "Пузырь RedByteFX"),
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,
                     color = titleColor
                 )
                 Text(
-                    text = "Thin-film interference\ndriven by RedByteFX.",
+                    text = say(
+                        "Thin-film interference\ndriven by RedByteFX.",
+                        "Интерференция тонкой плёнки\nна RedByteFX.",
+                    ),
                     fontSize = 24.sp,
                     lineHeight = 26.sp,
                     textAlign = TextAlign.Center,

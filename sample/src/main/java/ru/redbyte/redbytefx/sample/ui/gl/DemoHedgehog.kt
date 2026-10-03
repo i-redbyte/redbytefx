@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.GeometryInput
 import ru.redbyte.redbytefx.GeometryOutput
@@ -81,7 +82,15 @@ internal fun hedgehogScene(): HedgehogScene {
 @Composable
 internal fun DemoHedgehog() {
     val scene = remember { hedgehogScene() }
-    GlCanvas(scene.program, scene.mesh, requirement = "OpenGL ES 3.2 is required for the hedgehog.") { frame ->
+    GlCanvas(
+        scene.program,
+        scene.mesh,
+        requirement = say(
+            "OpenGL ES 3.2 is required for the hedgehog.",
+            "Для «Ежа» нужен OpenGL ES 3.2.",
+        ),
+        dsl = hedgehogDsl,
+    ) { frame ->
         frame.runtime.set(scene.time, frame.seconds)
     }
 }

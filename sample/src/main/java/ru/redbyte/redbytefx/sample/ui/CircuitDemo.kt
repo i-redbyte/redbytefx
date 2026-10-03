@@ -1008,7 +1008,7 @@ fun DemoCircuit() {
                 playing = it
             }
             Text(
-                text = if (compact) "Node" else "Active Node",
+                text = if (compact) ui("Node") else ui("Active Node"),
                 style = if (compact) {
                     MaterialTheme.typography.labelLarge
                 } else {

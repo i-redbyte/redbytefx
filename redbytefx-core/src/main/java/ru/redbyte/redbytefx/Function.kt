@@ -14,6 +14,7 @@ internal class UserFunction(
 ) {
     var body: Expr<*> = body
     var result: Shape = result
+    var statements: List<PrimitiveCommand> = emptyList()
 }
 
 public class Fn0<R : ShType> internal constructor(
@@ -78,11 +79,123 @@ public class Fn4<A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> int
     }
 }
 
+public class Fn5<A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, R : ShType> internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+    ): Expr<R> {
+        requireArgument(function, 0, first)
+        requireArgument(function, 1, second)
+        requireArgument(function, 2, third)
+        requireArgument(function, 3, fourth)
+        requireArgument(function, 4, fifth)
+        return Expr(function.result, ExprNode.UserCall(function, listOf(first, second, third, fourth, fifth)))
+    }
+}
+
+public class Fn6<
+    A : ShType,
+    B : ShType,
+    C : ShType,
+    D : ShType,
+    E : ShType,
+    F : ShType,
+    R : ShType,
+    > internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+    ): Expr<R> {
+        requireArgument(function, 0, first)
+        requireArgument(function, 1, second)
+        requireArgument(function, 2, third)
+        requireArgument(function, 3, fourth)
+        requireArgument(function, 4, fifth)
+        requireArgument(function, 5, sixth)
+        return Expr(
+            function.result,
+            ExprNode.UserCall(function, listOf(first, second, third, fourth, fifth, sixth)),
+        )
+    }
+}
+
+public class Fn7<
+    A : ShType,
+    B : ShType,
+    C : ShType,
+    D : ShType,
+    E : ShType,
+    F : ShType,
+    G : ShType,
+    R : ShType,
+    > internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+        seventh: Expr<G>,
+    ): Expr<R> {
+        for (index in 0..6) {
+            requireArgument(function, index, listOf(first, second, third, fourth, fifth, sixth, seventh)[index])
+        }
+        return Expr(
+            function.result,
+            ExprNode.UserCall(function, listOf(first, second, third, fourth, fifth, sixth, seventh)),
+        )
+    }
+}
+
+public class Fn8<
+    A : ShType,
+    B : ShType,
+    C : ShType,
+    D : ShType,
+    E : ShType,
+    F : ShType,
+    G : ShType,
+    H : ShType,
+    R : ShType,
+    > internal constructor(
+    private val function: UserFunction,
+) {
+    public operator fun invoke(
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+        seventh: Expr<G>,
+        eighth: Expr<H>,
+    ): Expr<R> {
+        val args = listOf(first, second, third, fourth, fifth, sixth, seventh, eighth)
+        args.forEachIndexed { index, arg -> requireArgument(function, index, arg) }
+        return Expr(function.result, ExprNode.UserCall(function, args))
+    }
+}
+
 internal class StageFunctions(
     private val advance: (AuthoringAction) -> Unit,
     private val parent: () -> AuthoringPlace,
     private val names: IdentifierAllocator,
     private val register: (UserFunction) -> Unit,
+    private val sink: StatementSink,
 ) {
     private var index = 0
     private var defining: UserFunction? = null
@@ -164,6 +277,114 @@ internal class StageFunctions(
         )
     }
 
+    fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, R : ShType> fn5(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        body: (Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
+    ): Fn5<A, B, C, D, E, R> {
+        val formals = formals(first, second, third, fourth, fifth)
+        return Fn5(
+            define(name, formals) {
+                body(param(formals[0]), param(formals[1]), param(formals[2]), param(formals[3]), param(formals[4]))
+            },
+        )
+    }
+
+    fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, R : ShType> fn6(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+        body: (Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
+    ): Fn6<A, B, C, D, E, F, R> {
+        val formals = formals(first, second, third, fourth, fifth, sixth)
+        return Fn6(
+            define(name, formals) {
+                body(
+                    param(formals[0]),
+                    param(formals[1]),
+                    param(formals[2]),
+                    param(formals[3]),
+                    param(formals[4]),
+                    param(formals[5]),
+                )
+            },
+        )
+    }
+
+    fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, G : ShType, R : ShType> fn7(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+        seventh: Expr<G>,
+        body: (Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
+    ): Fn7<A, B, C, D, E, F, G, R> {
+        val formals = formals(first, second, third, fourth, fifth, sixth, seventh)
+        return Fn7(
+            define(name, formals) {
+                body(
+                    param(formals[0]),
+                    param(formals[1]),
+                    param(formals[2]),
+                    param(formals[3]),
+                    param(formals[4]),
+                    param(formals[5]),
+                    param(formals[6]),
+                )
+            },
+        )
+    }
+
+    fun <
+        A : ShType,
+        B : ShType,
+        C : ShType,
+        D : ShType,
+        E : ShType,
+        F : ShType,
+        G : ShType,
+        H : ShType,
+        R : ShType,
+        > fn8(
+        name: String?,
+        first: Expr<A>,
+        second: Expr<B>,
+        third: Expr<C>,
+        fourth: Expr<D>,
+        fifth: Expr<E>,
+        sixth: Expr<F>,
+        seventh: Expr<G>,
+        eighth: Expr<H>,
+        body: (Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
+    ): Fn8<A, B, C, D, E, F, G, H, R> {
+        val formals = formals(first, second, third, fourth, fifth, sixth, seventh, eighth)
+        return Fn8(
+            define(name, formals) {
+                body(
+                    param(formals[0]),
+                    param(formals[1]),
+                    param(formals[2]),
+                    param(formals[3]),
+                    param(formals[4]),
+                    param(formals[5]),
+                    param(formals[6]),
+                    param(formals[7]),
+                )
+            },
+        )
+    }
+
     private fun <R : ShType> define(
         name: String?,
         parameters: List<Formal>,
@@ -183,14 +404,15 @@ internal class StageFunctions(
             index += 1
             val previous = defining
             defining = function
-            val result = try {
-                body()
+            val isolated = try {
+                sink.isolate(body)
             } finally {
                 defining = previous
             }
             advance(AuthoringAction.Return)
-            function.body = result
-            function.result = result.shape
+            function.statements = isolated.first
+            function.body = isolated.second
+            function.result = isolated.second.shape
             register(function)
             return function
         } finally {
@@ -198,6 +420,9 @@ internal class StageFunctions(
         }
     }
 }
+
+private fun formals(vararg witnesses: Expr<*>): List<Formal> =
+    witnesses.mapIndexed { index, witness -> Formal("p$index", witness.shape) }
 
 private fun <T : ShType> param(formal: Formal): Expr<T> = Expr(formal.shape, ExprNode.Param(formal.name))
 

@@ -54,8 +54,37 @@ public class Gles30Device : GlDevice() {
         GLES30.glUniform1f(location, value)
     }
 
+    override fun uniform2f(location: Int, x: Float, y: Float) {
+        GLES30.glUniform2f(location, x, y)
+    }
+
+    override fun uniform3f(location: Int, x: Float, y: Float, z: Float) {
+        GLES30.glUniform3f(location, x, y, z)
+    }
+
+    override fun uniform4f(location: Int, x: Float, y: Float, z: Float, w: Float) {
+        GLES30.glUniform4f(location, x, y, z, w)
+    }
+
     override fun uniform1i(location: Int, value: Int) {
         GLES30.glUniform1i(location, value)
+    }
+
+    override fun uniformMatrix2fv(location: Int, values: FloatArray) {
+        GLES30.glUniformMatrix2fv(location, 1, false, values, 0)
+    }
+
+    override fun uniformMatrix3fv(location: Int, values: FloatArray) {
+        GLES30.glUniformMatrix3fv(location, 1, false, values, 0)
+    }
+
+    override fun uniformMatrix4fv(location: Int, values: FloatArray) {
+        GLES30.glUniformMatrix4fv(location, 1, false, values, 0)
+    }
+
+    override fun maxCombinedTextureImageUnits(): Int {
+        GLES30.glGetIntegerv(GLES30.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, statusSlot, 0)
+        return statusSlot[0]
     }
 
     override fun useProgram(program: Int) {
@@ -68,6 +97,18 @@ public class Gles30Device : GlDevice() {
 
     override fun bindTexture2D(texture: Int) {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+    }
+
+    override fun bindTextureCube(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, texture)
+    }
+
+    override fun dispatchCompute(x: Int, y: Int, z: Int) {
+        GLES31.glDispatchCompute(x, y, z)
+    }
+
+    override fun shaderStorageBarrier() {
+        GLES31.glMemoryBarrier(GLES31.GL_SHADER_STORAGE_BARRIER_BIT)
     }
 
     override fun createBuffer(): Int {

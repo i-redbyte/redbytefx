@@ -4,11 +4,13 @@
  * This is the runtime-facing "apply and drive it" surface:
  *
  * - create one controller per render target with [rememberFxController]
- * - bind Compose state or time through [FxController.bindFloat], [FxController.bindFloat2],
- *   [FxController.bindFloat3], [FxController.bindFloat4], and [FxController.bindTime]
+ * - bind Compose state or time through [FxController.bindFloat], [FxController.bindInt],
+ *   [FxController.bindFloat2], [FxController.bindFloat3], [FxController.bindFloat4], and
+ *   [FxController.bindTime]
  * - apply the effect with [redbyteFx]
- * - reserve [FxController.setFloat], [FxController.setFloat2], [FxController.setFloat3],
- *   [FxController.setFloat4], and [FxController.setResolution] for imperative hosts, tests, or
+ * - reserve [FxController.setFloat], [FxController.setInt], [FxController.setFloat2],
+ *   [FxController.setFloat3], [FxController.setFloat4], and [FxController.setResolution] for
+ *   imperative hosts, tests, or
  *   tooling flows that sit outside ordinary Compose recomposition; use [FxController.runBatch] when
  *   several imperative setters run together
  *

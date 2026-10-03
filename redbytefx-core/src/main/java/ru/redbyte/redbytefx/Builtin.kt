@@ -19,6 +19,14 @@ public fun <T : ShType> ceil(value: Expr<T>): Expr<T> = unaryFloat("ceil", value
 
 public fun <T : ShType> fract(value: Expr<T>): Expr<T> = unaryFloat("fract", value)
 
+public fun <T : ShType> sqrt(value: Expr<T>): Expr<T> = unaryFloat("sqrt", value)
+
+public fun <T : ShType> dFdx(value: Expr<T>): Expr<T> = derivative("dFdx", value)
+
+public fun <T : ShType> dFdy(value: Expr<T>): Expr<T> = derivative("dFdy", value)
+
+public fun <T : ShType> fwidth(value: Expr<T>): Expr<T> = derivative("fwidth", value)
+
 public fun <T : ShType> radians(value: Expr<T>): Expr<T> = unaryFloat("radians", value)
 
 public fun <T : ShType> atan(value: Expr<T>): Expr<T> = unaryFloat("atan", value)
@@ -89,6 +97,11 @@ public fun <P : Prec> dot(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): 
 
 @JvmName("dotVec4")
 public fun <P : Prec> dot(left: Expr<Vec4<Flt<P>>>, right: Expr<Vec4<Flt<P>>>): Expr<Flt<P>> = dotOf(left, right)
+
+private fun <T : ShType> derivative(function: String, value: Expr<T>): Expr<T> {
+    requireAuthoring(AuthoringAction.Derivative)
+    return unaryFloat(function, value)
+}
 
 private fun <T : ShType> unaryFloat(function: String, value: Expr<T>): Expr<T> {
     require(isFloatValue(value.shape)) { "$function requires a float value, was ${value.shape}" }

@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.vanniktech.maven.publish.base) apply false
 }
 
-version = providers.gradleProperty("redbytefx.version").orElse("1.0.0").get()
+version = providers.gradleProperty("redbytefx.version").orElse("1.1.0").get()
 group = "io.github.i-redbyte"
 
 val hasMavenCentralCredentials =

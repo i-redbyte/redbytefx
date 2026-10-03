@@ -21,6 +21,9 @@ internal class BlockMember(
     val instanceName: String,
     val memberName: String,
     val shape: Shape,
+    val arraySize: Int = 0,
+    val shared: Boolean = false,
+    val unsized: Boolean = false,
 )
 
 public class UniformBlockBuilder internal constructor(
@@ -100,6 +103,31 @@ public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
 }
 
 private fun vector(lanes: Int): Shape = Shape.Vector(ScalarKind.Float, Precision.High, lanes)
+
+internal fun std430ArrayStride(shape: Shape): Int = roundUp(std140Size(shape), std140Alignment(shape))
+
+internal fun logicalLanes(member: BlockMember): Int = when {
+    member.unsized -> laneCount(member.shape)
+    member.arraySize == 0 -> laneCount(member.shape)
+    else -> member.arraySize * laneCount(member.shape)
+}
+
+internal fun std430Layout(members: List<BlockMember>): Std140Layout {
+    val offsets = IntArray(members.size)
+    var cursor = 0
+    var alignment = 1
+    members.forEachIndexed { index, member ->
+        val arrayLike = member.arraySize > 0 || member.unsized
+        val memberAlignment = if (arrayLike) std430ArrayStride(member.shape) else std140Alignment(member.shape)
+        if (memberAlignment > alignment) alignment = memberAlignment
+        cursor = roundUp(cursor, memberAlignment)
+        offsets[index] = cursor
+        val count = if (member.unsized) 0 else member.arraySize
+        val size = if (arrayLike) std430ArrayStride(member.shape) * count else std140Size(member.shape)
+        cursor += size
+    }
+    return Std140Layout(offsets, roundUp(cursor, alignment))
+}
 
 internal fun laneCount(shape: Shape): Int = when (shape) {
     is Shape.Scalar -> 1

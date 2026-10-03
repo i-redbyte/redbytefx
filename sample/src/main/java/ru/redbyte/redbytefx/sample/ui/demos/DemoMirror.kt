@@ -19,6 +19,7 @@ import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
 
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.RadioRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
@@ -89,7 +90,7 @@ fun DemoMirror() {
                 enabled = it
             }
 
-            Text(text = "Axis", style = MaterialTheme.typography.titleMedium)
+            Text(text = ui("Axis"), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -103,7 +104,7 @@ fun DemoMirror() {
             }
 
             if (axis == Axis.X) {
-                Text(text = "From", style = MaterialTheme.typography.titleMedium)
+                Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -116,7 +117,7 @@ fun DemoMirror() {
                     }
                 }
             } else {
-                Text(text = "From", style = MaterialTheme.typography.titleMedium)
+                Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)

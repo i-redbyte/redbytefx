@@ -59,7 +59,7 @@ private fun <T : ShType> integralUnary(op: UnaryOp, arg: Expr<*>): Expr<T> =
 private fun isIntValue(shape: Shape): Boolean = when (shape) {
     is Shape.Scalar -> shape.kind == ScalarKind.Int
     is Shape.Vector -> shape.kind == ScalarKind.Int
-    is Shape.Matrix, Shape.Sampler2D, Shape.ChildShader -> false
+    is Shape.Matrix, Shape.Sampler2D, Shape.SamplerCube, Shape.ChildShader -> false
 }
 
 private fun isIntScalar(shape: Shape): Boolean =

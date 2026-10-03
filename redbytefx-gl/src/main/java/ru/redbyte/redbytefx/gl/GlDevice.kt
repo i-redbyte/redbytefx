@@ -39,13 +39,33 @@ public abstract class GlDevice {
 
     public abstract fun uniform1f(location: Int, value: Float)
 
+    public abstract fun uniform2f(location: Int, x: Float, y: Float)
+
+    public abstract fun uniform3f(location: Int, x: Float, y: Float, z: Float)
+
+    public abstract fun uniform4f(location: Int, x: Float, y: Float, z: Float, w: Float)
+
     public abstract fun uniform1i(location: Int, value: Int)
+
+    public abstract fun uniformMatrix2fv(location: Int, values: FloatArray)
+
+    public abstract fun uniformMatrix3fv(location: Int, values: FloatArray)
+
+    public abstract fun uniformMatrix4fv(location: Int, values: FloatArray)
+
+    public abstract fun maxCombinedTextureImageUnits(): Int
 
     public abstract fun useProgram(program: Int)
 
     public abstract fun activeTexture(unit: Int)
 
     public abstract fun bindTexture2D(texture: Int)
+
+    public abstract fun bindTextureCube(texture: Int)
+
+    public abstract fun dispatchCompute(x: Int, y: Int, z: Int)
+
+    public abstract fun shaderStorageBarrier()
 
     public abstract fun createBuffer(): Int
 

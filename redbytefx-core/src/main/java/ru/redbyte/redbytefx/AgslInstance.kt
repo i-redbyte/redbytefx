@@ -33,6 +33,10 @@ public class AgslInstance internal constructor(
             override fun setFloat4(name: String, x: Float, y: Float, z: Float, w: Float) {
                 shader.setFloatUniform(name, x, y, z, w)
             }
+
+            override fun setInt(name: String, value: Int) {
+                shader.setIntUniform(name, value)
+            }
         },
         onChanged = ::refresh,
     )
@@ -41,14 +45,31 @@ public class AgslInstance internal constructor(
 
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = runtime.set(uniform, value)
 
+    @JvmName("setMedFloat")
+    public fun set(uniform: Uniform<Flt<Med>>, value: Float): Boolean = runtime.set(uniform, value)
+
     public fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean =
+        runtime.set(uniform, x, y)
+
+    @JvmName("setMedVec2")
+    public fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean =
         runtime.set(uniform, x, y)
 
     public fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean =
         runtime.set(uniform, x, y, z)
 
+    @JvmName("setMedVec3")
+    public fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean =
+        runtime.set(uniform, x, y, z)
+
     public fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean =
         runtime.set(uniform, x, y, z, w)
+
+    @JvmName("setMedVec4")
+    public fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean =
+        runtime.set(uniform, x, y, z, w)
+
+    public fun set(uniform: Uniform<IntS>, value: Int): Boolean = runtime.set(uniform, value)
 
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean =
         runtime.setResolution(widthPx, heightPx)

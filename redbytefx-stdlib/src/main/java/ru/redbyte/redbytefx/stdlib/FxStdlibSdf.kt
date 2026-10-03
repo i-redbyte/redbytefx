@@ -130,6 +130,23 @@ public fun stroke(
 ): Expr<Flt<High>> = stroke(distance, float(width))
 
 /**
+ * Fills an SDF shape using the screen-space width of [distance].
+ */
+public fun softFillScreen(distance: Expr<Flt<High>>): Expr<Flt<High>> =
+    1f - smoothstep(0f, fwidth(distance), distance)
+
+/**
+ * Strokes an SDF contour and softens the edge by the screen-space width of [distance].
+ */
+public fun strokeScreen(
+    distance: Expr<Flt<High>>,
+    width: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val half = width * 0.5f
+    return 1f - smoothstep(half, half + fwidth(distance), abs(distance))
+}
+
+/**
  * Builds a soft stroke around an SDF contour.
  *
  * This is the stroke-oriented companion to [softFill] and is a canonical way to turn SDF distance

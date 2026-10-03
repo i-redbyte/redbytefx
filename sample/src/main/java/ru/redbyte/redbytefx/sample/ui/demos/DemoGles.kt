@@ -2,8 +2,12 @@ package ru.redbyte.redbytefx.sample.ui.demos
 
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import ru.redbyte.redbytefx.Flt
@@ -21,19 +25,21 @@ import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
+import ru.redbyte.redbytefx.sample.ui.gl.GlCodeCompare
 import ru.redbyte.redbytefx.sample.ui.gl.GlSlot
 import ru.redbyte.redbytefx.sample.ui.gl.GlesView
+import ru.redbyte.redbytefx.sample.ui.gl.triangleDsl
 import ru.redbyte.redbytefx.sample.ui.gl.attribLocation
 import ru.redbyte.redbytefx.sample.ui.gl.deleteBuffer
 import ru.redbyte.redbytefx.sample.ui.gl.drawVec2
 import ru.redbyte.redbytefx.sample.ui.gl.replaceVec2
 
-private class GlesTriangle(
+internal class GlesTriangle(
     val program: ShaderProgram,
     val time: Uniform<Flt<High>>,
 )
 
-private fun glesTriangle(): GlesTriangle {
+internal fun glesTriangle(): GlesTriangle {
     lateinit var time: Uniform<Flt<High>>
     val program = shader(ShaderTarget.Gles30) {
         time = uniformTime()
@@ -52,7 +58,14 @@ private fun glesTriangle(): GlesTriangle {
 @Composable
 fun DemoGles() {
     val triangle = remember { glesTriangle() }
-    GlesView { slot -> TriangleRenderer(triangle, slot) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        GlesView { slot -> TriangleRenderer(triangle, slot) }
+        GlCodeCompare(
+            program = triangle.program,
+            dsl = triangleDsl,
+            modifier = Modifier.align(Alignment.TopEnd),
+        )
+    }
 }
 
 private class TriangleRenderer(

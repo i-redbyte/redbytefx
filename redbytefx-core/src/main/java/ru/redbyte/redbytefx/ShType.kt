@@ -55,5 +55,8 @@ public interface Mat4 : ShType
 /** GLES `sampler2D`. */
 public interface Sampler2D : ShType
 
+/** GLES `samplerCube`. */
+public interface SamplerCube : ShType
+
 /** AGSL child shader input. This is not a GLES sampler. */
 public interface ChildShader : ShType

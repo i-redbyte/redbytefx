@@ -9,15 +9,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.IntS
+import ru.redbyte.redbytefx.Med
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
 
 /**
- * Ensures [FxController.composeRenderEffect] tracks [FxInstance.renderEffect] identity changes.
- * [FxInstanceImpl] recreates the platform effect after runtime updates; the controller must not
- * keep a stale Compose wrapper.
+ * Ensures [FxController.composeRenderEffect] tracks [ShaderControl.renderEffect] identity changes.
+ * The controller must not keep a stale Compose wrapper after the platform effect is replaced.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -68,6 +69,22 @@ class FxControllerComposeRenderEffectCacheTest {
             z: Float,
             w: Float,
         ): Boolean = false
+
+        override fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean = false
+
+        override fun setMedFloat2(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean = false
+
+        override fun setMedFloat3(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean = false
+
+        override fun setMedFloat4(
+            uniform: Uniform<Vec4<Flt<Med>>>,
+            x: Float,
+            y: Float,
+            z: Float,
+            w: Float,
+        ): Boolean = false
+
+        override fun setInt(uniform: Uniform<IntS>, value: Int): Boolean = false
 
         override fun setResolution(widthPx: Float, heightPx: Float): Boolean = false
 

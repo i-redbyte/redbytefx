@@ -29,6 +29,7 @@ import ru.redbyte.redbytefx.stdlib.radialReveal
 import ru.redbyte.redbytefx.stdlib.verticalReveal
 
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.RadioRow
 import ru.redbyte.redbytefx.sample.ui.SliderRow
@@ -122,7 +123,7 @@ fun DemoReveal() {
             SwitchRow("Play", playing) {
                 playing = it
             }
-            Text(text = "Mode", style = MaterialTheme.typography.titleMedium)
+            Text(text = ui("Mode"), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)

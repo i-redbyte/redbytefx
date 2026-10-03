@@ -50,7 +50,7 @@ class AgslShaderTest {
         assertTrue(agsl.contains("float2 shifted = (fragCoord + float2(u_amount, 0.0));"))
         assertEquals(1, agsl.split("half4 base").size - 1)
         assertTrue(agsl.contains("return (base + base);"))
-        assertSame(amount, program.uniform<Flt<High>>("u_amount"))
+        assertSame(amount, program.floatUniform("u_amount"))
     }
 
     @Test
@@ -148,6 +148,12 @@ internal class RecordingUniformWriter : UniformWriter {
     override fun setFloat3(name: String, x: Float, y: Float, z: Float) = Unit
 
     override fun setFloat4(name: String, x: Float, y: Float, z: Float, w: Float) = Unit
+
+    override fun setInt(name: String, value: Int) {
+        ints += name to value
+    }
+
+    val ints = mutableListOf<Pair<String, Int>>()
 
     fun floatValues(name: String): List<Float> = floats.filter { it.first == name }.map { it.second }
 

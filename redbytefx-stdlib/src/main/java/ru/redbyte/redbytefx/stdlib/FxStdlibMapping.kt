@@ -27,7 +27,7 @@ public fun inverseLerp(
 /**
  * Remaps [value] from `[inputStart, inputEnd]` into `[outputStart, outputEnd]`.
  *
- * **Formula:** `mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))` — the only
+ * **Formula:** `mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))` - the only
  * canonical remapping path; literal overloads delegate here without a second formula.
  *
  * The interpolation amount is not clamped. Use [saturate] on the result when the output should

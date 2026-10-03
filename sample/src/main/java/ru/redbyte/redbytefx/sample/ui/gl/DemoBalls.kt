@@ -2,11 +2,13 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -22,6 +24,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.roundToInt
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.BoolS
 import ru.redbyte.redbytefx.Expr
 import ru.redbyte.redbytefx.Flt
@@ -97,8 +100,15 @@ fun DemoBalls() {
     val requested = remember { AtomicInteger(BallWorld.INITIAL) }
     var shown by remember { mutableIntStateOf(BallWorld.INITIAL) }
     Column(modifier = Modifier.fillMaxSize()) {
-        GlesView(modifier = Modifier.weight(1f)) { slot ->
-            BallRenderer(scene, slot, requested)
+        Box(modifier = Modifier.weight(1f)) {
+            GlesView { slot ->
+                BallRenderer(scene, slot, requested)
+            }
+            GlCodeCompare(
+                program = scene.program,
+                dsl = ballsDsl,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
         }
         BallCountBar(
             count = shown,
@@ -119,7 +129,7 @@ private fun BallCountBar(count: Int, onChange: (Int) -> Unit) {
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Text(
-            text = "Balls $count",
+            text = say("Balls $count", "Шаров: $count"),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )

@@ -29,6 +29,12 @@ internal enum class ProgramCode {
     FragmentOutNotWritten,
     MissingCompute,
     TessStageMissing,
+    ForeignUniform,
+    EmitVertexWithoutPosition,
+    VaryingForward,
+    TessInterpolation,
+    LocalInsideRepeat,
+    UnsizedStorageNotLast,
 }
 
 internal class ProgramException(

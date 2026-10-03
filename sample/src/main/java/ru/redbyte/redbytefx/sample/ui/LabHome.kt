@@ -25,22 +25,31 @@ fun LabHome(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = "Two runtimes, one algebra.",
+            text = say(
+                "Two runtimes, one algebra.",
+                "Два способа запуска, одна алгебра.",
+            ),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         LabCard(
             modifier = Modifier.weight(1f),
             badge = "AGSL",
-            title = "AGSL examples",
-            summary = "The cookbook as it is now: transforms, motion, color, compositing, and procedural effects on RuntimeShader.",
+            title = say("AGSL examples", "Примеры AGSL"),
+            summary = say(
+                "The cookbook as it is now: transforms, motion, color, compositing, and procedural effects on RuntimeShader.",
+                "Сборник как он есть: преобразования, движение, цвет, сборка и процедурные эффекты на RuntimeShader.",
+            ),
             onClick = onAgsl,
         )
         LabCard(
             modifier = Modifier.weight(1f),
             badge = "OPENGL ES 3.0",
-            title = "OpenGL examples",
-            summary = "A triangle, then colored spheres that stay round, bounce off the screen, and change course on impact. A slider adds or removes them.",
+            title = say("OpenGL examples", "Примеры OpenGL"),
+            summary = say(
+                "Meshes, light, and five small games. The code chip opens the description beside the GLSL that OpenGL ES compiles.",
+                "Сетки, свет и пять небольших игр. Кнопка кода открывает описание рядом с GLSL, который собирает OpenGL ES.",
+            ),
             onClick = onGl,
         )
     }

@@ -62,5 +62,5 @@ internal fun bandsScene(): TimedScene {
 @Composable
 internal fun DemoBands() {
     val scene = remember { bandsScene() }
-    GlCanvas(scene.program, scene.mesh) { frame -> frame.bind(scene) }
+    GlCanvas(scene.program, scene.mesh, dsl = bandsDsl) { frame -> frame.bind(scene) }
 }

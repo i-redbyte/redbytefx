@@ -265,7 +265,7 @@ private fun <T : ShType> unary(op: UnaryOp, arg: Expr<*>): Expr<T> =
 internal fun isFloatValue(shape: Shape): Boolean = when (shape) {
     is Shape.Scalar -> shape.kind == ScalarKind.Float
     is Shape.Vector -> shape.kind == ScalarKind.Float
-    is Shape.Matrix, Shape.Sampler2D, Shape.ChildShader -> false
+    is Shape.Matrix, Shape.Sampler2D, Shape.SamplerCube, Shape.ChildShader -> false
 }
 
 internal fun isFloatScalar(shape: Shape): Boolean =
@@ -277,7 +277,7 @@ internal fun isFloatVector(shape: Shape): Boolean =
 internal fun precisionOf(shape: Shape): Precision? = when (shape) {
     is Shape.Scalar -> shape.precision
     is Shape.Vector -> shape.precision
-    is Shape.Matrix, Shape.Sampler2D, Shape.ChildShader -> null
+    is Shape.Matrix, Shape.Sampler2D, Shape.SamplerCube, Shape.ChildShader -> null
 }
 
 private fun arithMessage(op: ArithOp, left: Shape, right: Shape): String =
