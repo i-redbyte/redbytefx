@@ -53,6 +53,19 @@ subprojects {
             if (isAndroidLibrary) {
                 dependencies.add("dokkaPlugin", rootProject.libs.dokka.android.doc)
             }
+            val mainJava = layout.projectDirectory.dir("src/main/java")
+            if (mainJava.asFile.isDirectory) {
+                val modulePath = path.removePrefix(":").replace(':', '/')
+                dokka.dokkaSourceSets.configureEach {
+                    sourceLink {
+                        localDirectory.set(mainJava)
+                        remoteUrl(
+                            "https://github.com/i-redbyte/redbytefx/tree/main/$modulePath/src/main/java",
+                        )
+                        remoteLineSuffix.set("#L")
+                    }
+                }
+            }
         }
         tasks.withType<Detekt>().configureEach {
             val mainRoots = listOf("src/main/java", "src/main/kotlin")
