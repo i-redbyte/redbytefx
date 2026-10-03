@@ -26,9 +26,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.sample.ui.say
-import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
-import ru.redbyte.redbytefx.gl.Gles30Device
 
 internal class PointerState {
     @Volatile var x: Float = 0f
@@ -145,20 +143,13 @@ private class SceneRenderer(
     private var reported = false
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        slot.runtime?.destroy()
-        slot.releaseGl?.invoke()
-        val runtime = GlProgramRuntime(program, Gles30Device())
-        try {
-            runtime.link()
-        } catch (error: GlException) {
-            runtime.destroy()
-            slot.runtime = null
+        reported = false
+        val runtime = slot.linkGraphics(program, requirement) { message ->
             if (!reported) {
                 reported = true
-                onFailure(linkMessage(requirement, error))
+                onFailure(message)
             }
-            return
-        }
+        } ?: return
         slot.runtime = runtime
         runtime.use()
         locations = IntArray(mesh.attribs.size) { index -> attribLocation(mesh.attribs[index].name) }
@@ -173,7 +164,6 @@ private class SceneRenderer(
         }
         GLES30.glClearColor(mesh.clearR, mesh.clearG, mesh.clearB, 1f)
         startedNanos = System.nanoTime()
-        reported = true
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -262,14 +252,3 @@ private class SceneRenderer(
     }
 }
 
-private const val LINK_FALLBACK = "This device cannot link the shader."
-
-private fun linkMessage(requirement: String?, error: GlException): String {
-    val detail = error.message
-    return when {
-        requirement != null && !detail.isNullOrBlank() -> "$requirement $detail"
-        requirement != null -> requirement
-        !detail.isNullOrBlank() -> detail
-        else -> LINK_FALLBACK
-    }
-}
