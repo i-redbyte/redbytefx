@@ -57,10 +57,9 @@ import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.DemoScreen
 import ru.redbyte.redbytefx.sample.ui.HomeScreen
 import ru.redbyte.redbytefx.sample.ui.LabHome
-import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
-import ru.redbyte.redbytefx.sample.ui.gl.DemoBalls
 import ru.redbyte.redbytefx.sample.ui.gl.GlExample
 import ru.redbyte.redbytefx.sample.ui.gl.GlExampleList
+import ru.redbyte.redbytefx.sample.ui.gl.GlExampleScreen
 
 @Composable
 fun RedByteFxSampleApp(
@@ -339,10 +338,7 @@ private fun SampleDestination(
             if (example == null) {
                 GlExampleList(onOpen = onOpenGlExample)
             } else {
-                when (example) {
-                    GlExample.Triangle -> DemoGles()
-                    GlExample.Balls -> DemoBalls()
-                }
+                GlExampleScreen(example)
             }
         }
     }

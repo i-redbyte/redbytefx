@@ -78,7 +78,7 @@ val patch = shader(ShaderTarget.Gles32) {
 }
 ```
 
-`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. The OpenGL list includes a triangle and the Spheres scene, which draws on its own `GLSurfaceView`.
+`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The list includes a triangle, screen-space spheres, a red flag, a lit solid, one std140 camera block, vector comparisons, a rainbow arch painted by a shared function, geometry spikes and a wireframe, a tessellated ocean, a starfield with lightning, and a 3D word. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
 
 ## Install
 
@@ -132,7 +132,7 @@ Stages are a small state machine. Uniforms, samplers, and varyings are declared 
 - `texture(sampler, uv)` is legal only in a GLES fragment.
 - `attributeVec2` and `glPosition` are legal only in a GLES vertex.
 - `let(expr, "name")` names a local in the generated shader.
-- `fn` takes 0, 1, or 2 arguments. A witness value supplies the erased shape: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Parameters are `p0` and `p1`. Functions do not nest, and they cannot declare uniforms.
+- `fn` takes 0, 1, 2, 3, or 4 arguments. A witness value supplies the erased shape: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Parameters are `p0`, `p1`, `p2`, and `p3`. Functions do not nest, they cannot declare uniforms, and recursion is rejected.
 
 ```kotlin
 shader(ShaderTarget.Agsl) {

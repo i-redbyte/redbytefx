@@ -13,11 +13,13 @@ import ru.redbyte.redbytefx.gl.GlProgramRuntime
 internal class GlSlot {
     var runtime: GlProgramRuntime? = null
     var releaseGl: (() -> Unit)? = null
+    var post: (() -> Unit) -> Unit = {}
 }
 
 @Composable
 internal fun GlesView(
     modifier: Modifier = Modifier,
+    depth: Boolean = false,
     renderer: (GlSlot) -> GLSurfaceView.Renderer,
 ) {
     AndroidView(
@@ -26,6 +28,8 @@ internal fun GlesView(
             val slot = GlSlot()
             GLSurfaceView(context).apply {
                 setEGLContextClientVersion(3)
+                if (depth) setEGLConfigChooser(8, 8, 8, 8, 16, 0)
+                slot.post = { block -> post { block() } }
                 setRenderer(renderer(slot))
                 tag = slot
             }
@@ -81,3 +85,34 @@ internal fun deleteBuffer(id: Int) {
     if (id == 0) return
     GLES30.glDeleteBuffers(1, intArrayOf(id), 0)
 }
+
+internal class GlAttrib(
+    val name: String,
+    val size: Int,
+    val offset: Int,
+)
+
+internal class GlMesh(
+    val vertices: FloatArray,
+    val stride: Int,
+    val attribs: List<GlAttrib>,
+    val mode: Int = GLES30.GL_TRIANGLES,
+    val patchVertices: Int = 0,
+    val depth: Boolean = false,
+    val clearR: Float = 0.02f,
+    val clearG: Float = 0.025f,
+    val clearB: Float = 0.045f,
+)
+
+internal fun screenMesh(
+    clearR: Float = 0.02f,
+    clearG: Float = 0.025f,
+    clearB: Float = 0.045f,
+): GlMesh = GlMesh(
+    vertices = floatArrayOf(-1f, -1f, 3f, -1f, -1f, 3f),
+    stride = 2,
+    attribs = listOf(GlAttrib("a_corner", 2, 0)),
+    clearR = clearR,
+    clearG = clearG,
+    clearB = clearB,
+)
