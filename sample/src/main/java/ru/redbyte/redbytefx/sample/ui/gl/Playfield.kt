@@ -1,5 +1,7 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
+import ru.redbyte.redbytefx.gl.compose.GlAttrib
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

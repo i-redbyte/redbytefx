@@ -1,5 +1,7 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
+import ru.redbyte.redbytefx.gl.compose.GlFrame
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram

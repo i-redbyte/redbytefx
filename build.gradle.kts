@@ -76,11 +76,13 @@ tasks.register("qualityCheck") {
     dependsOn(
         ":redbytefx-core:testDebugUnitTest",
         ":redbytefx-gl:testDebugUnitTest",
+        ":redbytefx-gl-compose:testDebugUnitTest",
         ":redbytefx-compose:testDebugUnitTest",
         ":redbytefx-stdlib:testDebugUnitTest",
         ":sample:compileDebugKotlin",
         ":redbytefx-core:detekt",
         ":redbytefx-gl:detekt",
+        ":redbytefx-gl-compose:detekt",
         ":redbytefx-compose:detekt",
         ":redbytefx-stdlib:detekt",
         ":sample:detekt"

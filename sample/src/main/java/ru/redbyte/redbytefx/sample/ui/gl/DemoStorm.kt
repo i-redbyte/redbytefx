@@ -2,6 +2,9 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.gl.compose.GlFrame
+import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.screenMesh
 import kotlin.random.Random
 import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt

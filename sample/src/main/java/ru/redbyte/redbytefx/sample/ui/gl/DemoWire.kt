@@ -2,6 +2,8 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.glEs32LinkRequirement
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.GeometryDsl
 import ru.redbyte.redbytefx.GeometryInput

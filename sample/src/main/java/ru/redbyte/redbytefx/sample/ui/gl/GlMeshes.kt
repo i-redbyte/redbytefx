@@ -1,6 +1,8 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
 import android.opengl.GLES32
+import ru.redbyte.redbytefx.gl.compose.GlAttrib
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
