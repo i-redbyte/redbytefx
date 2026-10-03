@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.compose
 import android.graphics.RenderEffect as AndroidRenderEffect
 import android.view.View
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
@@ -227,11 +228,20 @@ public class FxController internal constructor(
  * When output looks wrong, inspect `effect.agslSource()` first, then verify param ownership,
  * sampling space, and controller-per-target usage before treating the issue as a Compose/runtime
  * problem.
+ *
+ * Each remembered controller owns one [AgslInstance]. Android does not expose an explicit
+ * `RuntimeShader` destroy API; when the controller leaves composition, the instance becomes
+ * unreachable and is reclaimed by the garbage collector together with its [android.graphics.RenderEffect].
  */
 @Composable
 public fun rememberFxController(program: ShaderProgram): FxController {
     val view = LocalView.current
     val controller = remember(program) { FxController(AgslShaderControl(program.newAgslInstance())) }
+    DisposableEffect(controller) {
+        onDispose {
+            // No RuntimeShader.release(); dropping the controller is the supported lifecycle end.
+        }
+    }
     SideEffect {
         controller.attachHost(view)
     }
