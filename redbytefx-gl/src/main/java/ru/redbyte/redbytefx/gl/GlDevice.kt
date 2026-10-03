@@ -86,4 +86,9 @@ public abstract class GlDevice {
     public abstract fun shaderStorageSubData(buffer: Int, data: ByteArray)
 
     public abstract fun bindShaderStorageBase(buffer: Int, binding: Int)
+
+    /**
+     * Drains pending `glGetError` values. The default port ignores errors; [Gles30Device] logs them.
+     */
+    public open fun flushGlErrors(context: String): Unit = Unit
 }

@@ -35,6 +35,7 @@ public enum class GlCode {
     LinkFailed,
     TextureUnitLimit,
     UniformBlockNotBound,
+    MissingUniformLocation,
 }
 
 public class GlException(
@@ -52,6 +53,7 @@ public class GlProgramRuntime(
     private val program: ShaderProgram,
     private val device: GlDevice,
     private val contextThread: Thread = Thread.currentThread(),
+    private val strictUniformLocations: Boolean = false,
 ) {
     private val locations = IdentityHashMap<Uniform<*>, Int>()
     private val floatValues = IdentityHashMap<Uniform<*>, Float>()
@@ -83,7 +85,15 @@ public class GlProgramRuntime(
         for (slot in program.spelledUniforms()) {
             val location = device.uniformLocation(id, slot.name)
             locations[slot.uniform] = location
-            if (location < 0) continue
+            if (location < 0) {
+                if (strictUniformLocations) {
+                    reject(
+                        GlCode.MissingUniformLocation,
+                        "Uniform \"${slot.name}\" is not active in the linked program",
+                    )
+                }
+                continue
+            }
             val default = slot.uniform.default
             if (default != null && isGlFloatScalar(slot.uniform.shape)) {
                 writeFloat(slot.uniform, location, default)
@@ -105,6 +115,9 @@ public class GlProgramRuntime(
             }
         }
         linked = true
+        if (strictUniformLocations) {
+            device.flushGlErrors("link")
+        }
     }
 
     private fun linkGraphicsProgram(): Int {

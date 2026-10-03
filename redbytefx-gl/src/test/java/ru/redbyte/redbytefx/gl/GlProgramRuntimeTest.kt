@@ -137,6 +137,21 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun strictUniformLocationsFailLinkWhenASpelledUniformIsInactive() {
+        val device = RecordingGlDevice(missing = setOf("u_amount"))
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 1f)
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val runtime = GlProgramRuntime(program, device, strictUniformLocations = true)
+        val error = assertThrows(GlException::class.java) { runtime.link() }
+        assertEquals(GlCode.MissingUniformLocation, error.code)
+        assertTrue(error.message!!.contains("u_amount"))
+    }
+
+    @Test
     fun missingLocationAndForeignHandleDoNotWrite() {
         val device = RecordingGlDevice(missing = setOf("u_amount"))
         lateinit var amount: Uniform<Flt<High>>
