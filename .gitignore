@@ -221,7 +221,6 @@ fabric.properties
 # Local-only markdown drafts and notes
 /CHANGELOG.md
 /CONTRIBUTING.md
-/docs/**/*.md
 /.emacs.desktop
 /.emacs.desktop.lock
 *.elc
@@ -250,7 +249,9 @@ gen
 # Maintainer-only docs (keep locally; excluded from public repository)
 CHANGELOG.md
 CONTRIBUTING.md
-docs/
+
+# Generated API site output (sources live under docs/*.md)
+build/docs/
 
 **/build/
 !src/**/build/
