@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 
 internal class GlSlot {
@@ -36,6 +37,7 @@ internal fun GlesView(
         },
         onRelease = { view ->
             val slot = view.tag as GlSlot
+            view.onPause()
             view.queueEvent {
                 slot.releaseGl?.invoke()
                 slot.runtime?.destroy()
@@ -50,13 +52,18 @@ internal fun replaceVec2(current: Int, vertices: FloatArray): Int {
     return uploadVec2(vertices)
 }
 
+private val vec2UploadScratch: ThreadLocal<FloatBuffer> = ThreadLocal.withInitial {
+    ByteBuffer.allocateDirect(6 * Float.SIZE_BYTES)
+        .order(ByteOrder.nativeOrder())
+        .asFloatBuffer()
+}
+
 internal fun uploadVec2(vertices: FloatArray): Int {
     val ids = IntArray(1)
     GLES30.glGenBuffers(1, ids, 0)
     GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, ids[0])
-    val data = ByteBuffer.allocateDirect(vertices.size * Float.SIZE_BYTES)
-        .order(ByteOrder.nativeOrder())
-        .asFloatBuffer()
+    val data = checkNotNull(vec2UploadScratch.get())
+    data.clear()
     data.put(vertices).position(0)
     GLES30.glBufferData(
         GLES30.GL_ARRAY_BUFFER,

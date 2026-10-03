@@ -39,8 +39,6 @@ import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.and
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.dot
-import ru.redbyte.redbytefx.gl.Gles30Device
-import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gt
 import ru.redbyte.redbytefx.ifElse
 import ru.redbyte.redbytefx.length
@@ -158,9 +156,7 @@ private class BallRenderer(
     private var lastNanos = 0L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        slot.runtime?.destroy()
-        val runtime = GlProgramRuntime(scene.program, Gles30Device())
-        runtime.link()
+        val runtime = slot.linkGraphics(scene.program) ?: return
         slot.runtime = runtime
         runtime.use()
         attrib = attribLocation("a_corner")

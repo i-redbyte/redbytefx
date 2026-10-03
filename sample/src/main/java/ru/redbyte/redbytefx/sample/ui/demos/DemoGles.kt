@@ -15,8 +15,6 @@ import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
-import ru.redbyte.redbytefx.gl.Gles30Device
-import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.shader
@@ -28,6 +26,7 @@ import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.sample.ui.gl.GlCodeCompare
 import ru.redbyte.redbytefx.sample.ui.gl.GlSlot
 import ru.redbyte.redbytefx.sample.ui.gl.GlesView
+import ru.redbyte.redbytefx.sample.ui.gl.linkGraphics
 import ru.redbyte.redbytefx.sample.ui.gl.triangleDsl
 import ru.redbyte.redbytefx.sample.ui.gl.attribLocation
 import ru.redbyte.redbytefx.sample.ui.gl.deleteBuffer
@@ -78,9 +77,7 @@ private class TriangleRenderer(
     private var startedNanos = 0L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        slot.runtime?.destroy()
-        val runtime = GlProgramRuntime(triangle.program, Gles30Device())
-        runtime.link()
+        val runtime = slot.linkGraphics(triangle.program) ?: return
         slot.runtime = runtime
         runtime.use()
         attrib = attribLocation("a_position")
