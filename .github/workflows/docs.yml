@@ -28,8 +28,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Generate API site
-        run: ./gradlew dokkaHtmlSite
+      - name: Verify and generate API site
+        run: ./gradlew qualityCheck dokkaHtmlSite
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
