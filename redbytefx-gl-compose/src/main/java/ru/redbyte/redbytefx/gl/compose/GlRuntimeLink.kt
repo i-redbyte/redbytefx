@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.gl.compose
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
+import ru.redbyte.redbytefx.gl.GlTextureUnits
 import ru.redbyte.redbytefx.gl.Gles30Device
 
 /** Shown when link fails and no other detail is available. */
@@ -18,29 +19,31 @@ internal fun linkMessage(requirement: String?, error: GlException): String {
     }
 }
 
+/** State shared by a surface view and its renderer. GL members are touched on the GL thread only. */
 internal class GlSlot {
     var runtime: GlProgramRuntime? = null
     var releaseGl: (() -> Unit)? = null
     var post: (() -> Unit) -> Unit = {}
+    var queue: (() -> Unit) -> Unit = {}
 }
 
-internal fun GlSlot.linkGraphics(
+/** Links [program] on the calling EGL thread. A failed link deletes its names and rethrows. */
+internal fun linkProgram(
     program: ShaderProgram,
     strictUniformLocations: Boolean,
-    requirement: String?,
-    onFailure: ((String) -> Unit)? = null,
-): GlProgramRuntime? {
-    runtime?.destroy()
-    runtime = null
-    releaseGl?.invoke()
-    releaseGl = null
-    val linked = GlProgramRuntime(program, Gles30Device(), strictUniformLocations = strictUniformLocations)
-    return try {
+    textureUnits: GlTextureUnits,
+): GlProgramRuntime {
+    val linked = GlProgramRuntime(
+        program,
+        Gles30Device(),
+        strictUniformLocations = strictUniformLocations,
+        textureUnits = textureUnits,
+    )
+    try {
         linked.link()
-        linked
     } catch (error: GlException) {
         linked.destroy()
-        onFailure?.invoke(linkMessage(requirement, error))
-        null
+        throw error
     }
+    return linked
 }

@@ -44,6 +44,8 @@ internal fun GlCanvas(
     pointer: PointerState? = null,
     caption: String? = null,
     dsl: String? = null,
+    present: ShaderProgram? = null,
+    renderToTexture: Boolean = false,
     onFrame: (GlFrame) -> Unit,
 ) {
     val controller = rememberGlController(
@@ -64,6 +66,8 @@ internal fun GlCanvas(
                 mesh = mesh,
                 modifier = baseModifier,
                 requirement = requirement,
+                present = present,
+                renderToTexture = renderToTexture,
                 onFrame = onFrame,
                 overlay = { state ->
                     if (state is GlLinkState.Failed) {

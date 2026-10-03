@@ -77,8 +77,8 @@ shader(ShaderTarget.Gles30) {
     val normalXy = varyingVec2("normalXy")
     val normalZ = varyingVec2("normalZ")
     vertex {
-        val position = attributeVec4("position")
-        val normal = attributeVec4("normal")
+        val position = attributeVec3("position")
+        val normal = attributeVec3("normal")
         val angle = time.expr * 0.65f.lit
         val turn = cos(angle)
         val lift = sin(angle)
@@ -108,7 +108,11 @@ shader(ShaderTarget.Gles30) {
 internal val cityDsl = """
 shader(ShaderTarget.Gles30) {
     aspect = uniform("aspect", 1f)
-    val mark = varyingVec2("mark")
+    facade = sampler2D("facade")
+    ground = sampler2D("ground")
+    val uv = varyingVec2("uv")
+    val facing = varyingVec3("normal")
+    val height = varyingFloat("height")
     frame = uniformBlock("frame") {
         val time = float("time")
         val eyeX = float("eyeX")
@@ -119,21 +123,107 @@ shader(ShaderTarget.Gles30) {
         val forwardX = float("forwardX")
         val forwardZ = float("forwardZ")
         vertex {
-            val position = attributeVec4("position")
-            val viewX = (position.x - eyeX) * rightX + (position.z - eyeZ) * rightZ
-            val viewZ = (position.x - eyeX) * forwardX + (position.z - eyeZ) * forwardZ
-            mark.set(vec2(position.w, position.y))
-            glPosition(vec4(viewX / aspect.expr, position.y - eyeY, viewZ * 0.2f.lit - 0.5f.lit, viewZ))
+            val position = attributeVec3("position")
+            val normal = attributeVec3("normal")
+            val texcoord = attributeVec2("uv")
+            val dx = position.x - eyeX
+            val dy = position.y - eyeY
+            val dz = position.z - eyeZ
+            uv.set(texcoord)
+            facing.set(normal)
+            height.set(position.y)
+            glPosition(vec4((dx * rightX + dz * rightZ) / aspect.expr, dy, (dx * forwardX + dz * forwardZ) * 0.2f.lit - 0.5f.lit, dx * forwardX + dz * forwardZ))
         }
         fragment {
-            val facade = vec3(
-                0.28f.lit + 0.55f.lit * abs(sin(mark.expr.x * 1.3f.lit)),
-                0.32f.lit + 0.4f.lit * abs(sin(mark.expr.x * 2.1f.lit + 1f.lit)),
-                0.5f.lit + 0.35f.lit * abs(sin(mark.expr.x * 0.8f.lit + 2f.lit)),
-            ) * (0.4f.lit + saturate(mark.expr.y * 0.7f.lit + 0.25f.lit) * 0.75f.lit)
-            val rgb = ifElse(mark.expr.x gt 4.5f.lit, vec3(0.04f.lit, 0.05f.lit, 0.07f.lit), facade)
-            vec4(rgb.x, rgb.y, rgb.z, 1f.lit)
+            val street = (height.expr lt 0.02f.lit) and (facing.expr.y gt 0.85f.lit)
+            val texel = ifElse(street, texture(ground, uv.expr * float2(4f, 4f)), texture(facade, uv.expr * float2(2f, 3f)))
+            val light = saturate(facing.expr.y * 0.35f.lit + facing.expr.z * 0.2f.lit + 0.55f.lit) * (0.94f.lit + 0.06f.lit * abs(sin(time * 1.4f.lit)))
+            vec4(texel.x * light, texel.y * light, texel.z * light, 1f.lit)
         }
+    }
+}
+""".trimIndent()
+
+internal val crateDsl = """
+shader(ShaderTarget.Gles30) {
+    view = uniformMat4("view")
+    projection = uniformMat4("projection")
+    light = uniformVec3("light", 0.35f, 0.85f, 0.4f)
+    facade = sampler2D("facade")
+    ground = sampler2D("ground")
+    val uv = varyingVec2("uv")
+    val facing = varyingVec3("normal")
+    val height = varyingFloat("height")
+    vertex {
+        val position = attributeVec3("position")
+        val normal = attributeVec3("normal")
+        val texcoord = attributeVec2("uv")
+        uv.set(texcoord)
+        facing.set(normal)
+        height.set(position.y)
+        glPosition(projection.expr * (view.expr * vec4(position.x, position.y, position.z, 1f.lit)))
+    }
+    fragment {
+        val street = (height.expr lt 0.02f.lit) and (facing.expr.y gt 0.85f.lit)
+        val texel = ifElse(street, texture(ground, uv.expr * float2(4f, 4f)), texture(facade, uv.expr))
+        val shade = lambert(facing.expr, light.expr)
+        vec4(texel.x * shade, texel.y * shade, texel.z * shade, 1f.lit)
+    }
+}
+""".trimIndent()
+
+internal val planetDsl = """
+shader(ShaderTarget.Gles30) {
+    view = uniformMat4("view")
+    projection = uniformMat4("projection")
+    light = uniformVec3("light", 0.4f, 0.8f, 0.5f)
+    heat = uniform("heat", 0.1f)
+    mode = uniform("mode", 0f)
+    albedo = sampler2D("albedo")
+    val uv = varyingVec2("uv")
+    val facing = varyingVec3("normal")
+    val kind = varyingFloat("kind")
+    val place = varyingVec3("place")
+    vertex {
+        val position = attributeVec3("position")
+        val normal = attributeVec3("normal")
+        val texcoord = attributeVec2("uv")
+        val column0 = attributeVec4("model0")
+        val column1 = attributeVec4("model1")
+        val column2 = attributeVec4("model2")
+        val column3 = attributeVec4("model3")
+        uv.set(texcoord)
+        facing.set(normal)
+        kind.set(column0.w)
+        place.set(vec3(column3.x, column3.y, column3.z))
+        val axis = vec4(column0.x, column0.y, column0.z, 0f.lit)
+        val world = axis * position.x + column1 * position.y + column2 * position.z + column3
+        glPosition(projection.expr * (view.expr * world))
+    }
+    fragment {
+        val ring = kind.expr gt 1.5f
+        val moon = kind.expr gt 0.5f
+        val solid = vec3(0.18f.lit, 0.42f.lit, 0.82f.lit)
+        val land = vec3(0.16f.lit, 0.46f.lit, 0.28f.lit)
+        val ice = vec3(0.75f.lit, 0.88f.lit, 0.96f.lit)
+        val gradient = mix(land, ice, uv.expr.y)
+        val texel = texture(albedo, uv.expr)
+        val photo = vec3(texel.x, texel.y, texel.z)
+        val chosen = ifElse(mode.expr gt 1.5f, photo, ifElse(mode.expr gt 0.5f, gradient, solid))
+        val moonColor = vec3(
+            saturate(0.55f.lit + place.expr.y * 0.2f.lit),
+            saturate(0.6f.lit + place.expr.z * 0.1f.lit),
+            saturate(0.72f.lit + place.expr.x * 0.12f.lit),
+        )
+        val hot = vec3(1f.lit, 0.36f.lit, 0.06f.lit)
+        val warmth = ifElse(moon, 0.04f.lit, heat.expr)
+        val surface = mix(ifElse(moon, moonColor, chosen), hot, warmth)
+        val shade = lambert(facing.expr, light.expr)
+        val lift = shade + 0.18f.lit + ifElse(moon, 0f.lit, heat.expr * 0.28f.lit)
+        val lit = vec3(surface.x * lift, surface.y * lift, surface.z * lift)
+        val ringColor = vec3(0.45f.lit, 0.62f.lit, 0.78f.lit) * (0.55f.lit + shade * 0.35f.lit)
+        val rgb = ifElse(ring, ringColor, lit)
+        vec4(rgb.x, rgb.y, rgb.z, 1f.lit)
     }
 }
 """.trimIndent()
@@ -218,11 +308,13 @@ shader(ShaderTarget.Gles30) {
             val blue = saturate(2f.lit - abs(hue * 6f.lit - 4f.lit))
             vec3(red, green, blue) * (0.28f.lit + shade * 0.72f.lit)
         }
-        val position = attributeVec4("position")
-        val tint = attributeVec4("tint")
-        val color = ink(tint.y, tint.x, time.expr, 0f.lit)
-        paint.set(vec2(tint.x, tint.y))
-        glPosition(vec4(position.x / aspect.expr, position.y, position.z, 1f.lit))
+        val position = attributeVec3("position")
+        val normal = attributeVec3("normal")
+        val uv = attributeVec2("uv")
+        val shade = saturate(normal.y * 0.5f.lit + 0.5f.lit)
+        val color = ink(uv.x, shade, time.expr, 0f.lit)
+        paint.set(vec2(shade, uv.x))
+        glPosition(vec4(position.x / aspect.expr, position.z, position.y, 1f.lit))
     }
     fragment {
         val color = ink(paint.expr.y, paint.expr.x, time.expr, 0f.lit)
@@ -235,7 +327,7 @@ internal val hedgehogDsl = """
 shader(ShaderTarget.Gles32) {
     time = uniformTime()
     vertex {
-        val position = attributeVec4("position")
+        val position = attributeVec3("position")
         val turn = cos(time.expr * 0.55f.lit)
         val lift = sin(time.expr * 0.55f.lit)
         glPosition(vec4(position.x * turn + position.z * lift, position.y, position.z * turn - position.x * lift + 1.55f.lit, 1f.lit))
@@ -292,7 +384,7 @@ internal val wireDsl = """
 shader(ShaderTarget.Gles32) {
     time = uniformTime()
     vertex {
-        val position = attributeVec4("position")
+        val position = attributeVec3("position")
         val turn = cos(time.expr * 0.45f.lit)
         val lift = sin(time.expr * 0.45f.lit)
         glPosition(vec4(position.x * turn + position.z * lift, position.y, position.z * turn - position.x * lift + 1.55f.lit, 1f.lit))

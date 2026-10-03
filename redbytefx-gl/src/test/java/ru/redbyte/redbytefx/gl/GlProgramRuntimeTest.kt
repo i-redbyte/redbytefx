@@ -219,6 +219,67 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun twoProgramsOnOneContextTakeDifferentTextureUnits() {
+        val units = GlTextureUnits()
+        val firstDevice = RecordingGlDevice()
+        val secondDevice = RecordingGlDevice()
+        lateinit var firstImage: Uniform<Sampler2D>
+        lateinit var secondImage: Uniform<Sampler2D>
+        val first = GlProgramRuntime(imageProgram { firstImage = it }, firstDevice, textureUnits = units)
+        val second = GlProgramRuntime(imageProgram { secondImage = it }, secondDevice, textureUnits = units)
+        first.link()
+        second.link()
+        assertTrue(first.bind(firstImage, 5))
+        assertTrue(second.bind(secondImage, 6))
+        assertEquals(listOf(0), firstDevice.textureUnits)
+        assertEquals(listOf(1), secondDevice.textureUnits)
+    }
+
+    @Test
+    fun anUploadOnTheActiveUnitForcesTheNextBind() {
+        val device = RecordingGlDevice()
+        lateinit var image: Uniform<Sampler2D>
+        val runtime = GlProgramRuntime(imageProgram { image = it }, device)
+        runtime.link()
+        assertTrue(runtime.bind(image, 7))
+        assertFalse(runtime.bind(image, 7))
+        runtime.uploadRgba(1, 1, ByteArray(4))
+        assertTrue(runtime.bind(image, 7))
+        runtime.deleteTexture(7)
+        assertTrue(runtime.bind(image, 7))
+        assertEquals(listOf(7, 7, 7), device.boundTextures)
+    }
+
+    @Test
+    fun aSecondProgramSeesTheUnitTheFirstProgramReplaced() {
+        val units = GlTextureUnits()
+        val device = RecordingGlDevice()
+        lateinit var first: Uniform<Sampler2D>
+        lateinit var second: Uniform<Sampler2D>
+        val one = GlProgramRuntime(imageProgram { first = it }, device, textureUnits = units)
+        val two = GlProgramRuntime(imageProgram { second = it }, device, textureUnits = units)
+        one.link()
+        two.link()
+        assertTrue(one.bind(first, 3))
+        assertTrue(two.bind(second, 4))
+        val target = one.createColorTarget(2, 2)
+        assertTrue(two.bind(second, target.colorTexture))
+        one.deleteColorTarget(target)
+        assertTrue(two.bind(second, target.colorTexture))
+    }
+
+    @Test
+    fun anElementUploadUnbindsTheVertexArrayFirst() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        assertEquals(IndexElementKind.UnsignedShort, runtime.elementBufferData(runtime.createBuffer(), intArrayOf(0, 1, 2)))
+        val unbind = device.writes.indexOf("unbindVao")
+        val upload = device.writes.indexOf("elementData")
+        assertTrue(unbind >= 0 && unbind < upload)
+    }
+
+    @Test
     fun destroyReleasesTheProgramAndRejectsLaterUse() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)
@@ -281,6 +342,14 @@ class GlProgramRuntimeTest {
             runtime.set(foreign, floatArrayOf(1f))
         }
         assertEquals(1, device.bufferDataCalls)
+
+        device.writes.clear()
+        runtime.use()
+        assertEquals(listOf("use", "bindBuffer"), device.writes)
+
+        assertEquals(2, runtime.attribLocation("a_position"))
+        assertEquals(2, runtime.attribLocation("a_position"))
+        assertEquals(1, device.locationQueries["a_position"])
 
         runtime.destroy()
         assertEquals(1, device.deleteBufferCalls)
@@ -399,7 +468,14 @@ class GlProgramRuntimeTest {
             runtime.set(block, floatArrayOf(1f))
         }
         assertEquals(GlCode.UniformBlockNotBound, error.code)
-        assertEquals(1, device.bufferDataCalls)
+        assertEquals(0, device.bufferDataCalls)
+        val again = assertThrows(GlException::class.java) {
+            runtime.set(block, floatArrayOf(1f))
+        }
+        assertEquals(GlCode.UniformBlockNotBound, again.code)
+        device.writes.clear()
+        runtime.use()
+        assertEquals(listOf("use"), device.writes)
     }
 
     @Test
@@ -412,6 +488,194 @@ class GlProgramRuntimeTest {
         assertEquals(GlCode.WrongTarget, error.code)
         assertEquals(0, device.createShaderCalls)
     }
+
+    @Test
+    fun uploadRgbaCopiesPixelsOnTheContextThread() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        val tooEarly = assertThrows(GlException::class.java) {
+            runtime.uploadRgba(1, 1, byteArrayOf(1, 2, 3, 4))
+        }
+        assertEquals(GlCode.NotLinked, tooEarly.code)
+
+        runtime.link()
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.uploadRgba(2, 2, ByteArray(4))
+        }
+        val pixels = ByteArray(8) { index -> index.toByte() }
+        val name = runtime.uploadRgba(1, 2, pixels)
+        assertEquals(1, device.createdTextures)
+        assertEquals(listOf(name), device.linearRepeat)
+        assertEquals(1, device.uploadedWidths.single())
+        assertEquals(2, device.uploadedHeights.single())
+        assertTrue(device.uploadedBytes.single().contentEquals(pixels))
+
+        runtime.destroy()
+        assertEquals(listOf(name), device.deletedTextures)
+        assertEquals(0, device.mipmapCalls)
+    }
+
+    @Test
+    fun uploadRgbaStaysOnTheContextThread() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device, contextThread = Thread())
+        val error = assertThrows(GlException::class.java) {
+            runtime.uploadRgba(1, 1, byteArrayOf(0, 0, 0, 0))
+        }
+        assertEquals(GlCode.WrongThread, error.code)
+        assertEquals(0, device.createdTextures)
+    }
+
+    @Test
+    fun sameSizeReplaceDoesNotCallBufferData() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val buffer = runtime.createBuffer()
+        runtime.replaceArrayBuffer(buffer, previousCount = 0, data = floatArrayOf(1f, 2f))
+        assertEquals(1, device.arrayDataCalls)
+        assertEquals(0, device.arraySubDataCalls)
+        runtime.replaceArrayBuffer(buffer, previousCount = 2, data = floatArrayOf(3f, 4f))
+        assertEquals(1, device.arrayDataCalls)
+        assertEquals(1, device.arraySubDataCalls)
+    }
+
+    @Test
+    fun drawElementsUsesUnsignedIntPastTheShortLimit() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val buffer = runtime.createBuffer()
+        val short = runtime.elementBufferData(buffer, intArrayOf(0, 1, 2))
+        runtime.drawRange(4, 3, 0, 3, short, null)
+        assertEquals(DrawKind.Elements, device.draws.single())
+        assertFalse(device.lastUnsignedInt)
+        device.draws.clear()
+        val wide = runtime.elementBufferData(buffer, intArrayOf(0, 1, INDEX_SHORT_LIMIT + 1))
+        assertEquals(IndexElementKind.UnsignedInt, wide)
+        runtime.drawRange(4, 3, 0, 3, wide, null)
+        assertEquals(DrawKind.Elements, device.draws.single())
+        assertTrue(device.lastUnsignedInt)
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.elementBufferData(buffer, intArrayOf())
+        }
+    }
+
+    @Test
+    fun aZeroVertexCountIssuesNoDraw() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        runtime.drawRange(4, 0, 0, 0, null, null)
+        runtime.drawRange(4, 3, 0, 3, null, 0)
+        assertTrue(device.draws.isEmpty())
+        runtime.drawRange(4, 3, 0, 3, null, 1)
+        assertEquals(DrawKind.ArraysInstanced, device.draws.single())
+    }
+
+    @Test
+    fun drawRangeRejectsTheWrongThread() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val error = assertThrows(GlException::class.java) {
+            GlProgramRuntime(passthrough(), device, contextThread = Thread()).drawRange(4, 3, 0, 3, null, null)
+        }
+        assertEquals(GlCode.WrongThread, error.code)
+        assertTrue(device.draws.isEmpty())
+    }
+
+    @Test
+    fun texSubImageRejectsARectangleOutsideTheTexture() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.texSubImage2DRgba(1, 4, 4, 2, 0, 4, 1, ByteArray(16))
+        }
+        assertEquals(0, device.subImageCalls)
+    }
+
+    @Test
+    fun cubeUploadWritesOneFace() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        runtime.uploadCubeFace(7, CubeFace.PositiveY, 1, 1, byteArrayOf(1, 2, 3, 4))
+        assertEquals(listOf(CubeFace.PositiveY), device.cubeFaces)
+    }
+
+    @Test
+    fun anIncompleteFramebufferIsReportedAndDeleted() {
+        val device = RecordingGlDevice().also { it.framebufferOk = false }
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val error = assertThrows(GlException::class.java) { runtime.createColorTarget(8, 8) }
+        assertEquals(GlCode.FramebufferIncomplete, error.code)
+        assertEquals(1, device.deletedTextures.size)
+        assertEquals(1, device.deletedFramebuffers.size)
+        assertTrue(device.boundFramebuffers.contains(0))
+    }
+
+    @Test
+    fun samplingTheBoundColorTargetIsRejected() {
+        val device = RecordingGlDevice()
+        lateinit var image: Uniform<Sampler2D>
+        val program = shader(ShaderTarget.Gles30) {
+            val uv = varyingVec2("uv")
+            image = sampler2D("image")
+            vertex {
+                uv.set(attributeVec2("corner"))
+                glPosition(attributeVec4("position"))
+            }
+            fragment { texture(image, uv.expr) }
+        }
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        val target = runtime.createColorTarget(4, 4)
+        runtime.bindFramebuffer(target.framebuffer)
+        val whileBound = assertThrows(GlException::class.java) { runtime.bind(image, target.colorTexture) }
+        assertEquals(GlCode.FeedbackLoop, whileBound.code)
+        runtime.bindFramebuffer(0)
+        assertTrue(runtime.bind(image, target.colorTexture))
+        val whileSampling = assertThrows(GlException::class.java) { runtime.bindFramebuffer(target.framebuffer) }
+        assertEquals(GlCode.FeedbackLoop, whileSampling.code)
+        assertEquals(1, device.boundFramebuffers.count { it == target.framebuffer })
+    }
+
+    @Test
+    fun createTextureIsDeletedWithTheProgramAndMipFilterIsASeparateCall() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val name = runtime.createTexture()
+        runtime.filterMipmap2D(name)
+        assertEquals(1, device.mipFilters)
+        runtime.destroy()
+        assertTrue(device.deletedTextures.contains(name))
+    }
+
+    @Test
+    fun destroyDoesNotDeleteAColorTarget() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val target = runtime.createColorTarget(4, 4)
+        runtime.destroy()
+        assertFalse(device.deletedTextures.contains(target.colorTexture))
+        assertTrue(device.boundFramebuffers.contains(0))
+    }
+}
+
+private fun imageProgram(image: (Uniform<Sampler2D>) -> Unit) = shader(ShaderTarget.Gles30) {
+    val uv = varyingVec2("uv")
+    val sampler = sampler2D("image")
+    image(sampler)
+    vertex {
+        uv.set(attributeVec2("uv"))
+        glPosition(attributeVec4("position"))
+    }
+    fragment { texture(sampler, uv.expr) }
 }
 
 private fun passthrough() = shader(ShaderTarget.Gles30) {
@@ -482,6 +746,11 @@ private class RecordingGlDevice(
         return if (name in missing) -1 else 3
     }
 
+    override fun attribLocation(program: Int, name: String): Int {
+        locationQueries[name] = (locationQueries[name] ?: 0) + 1
+        return if (name in missing) -1 else 2
+    }
+
     override fun uniform1f(location: Int, value: Float) {
         writes += "uniform1f"
         uniform1fCalls += 1
@@ -537,6 +806,33 @@ private class RecordingGlDevice(
 
     override fun bindTextureCube(texture: Int) {
         cubeTextures += texture
+    }
+
+    var createdTextures = 0
+    val linearRepeat = mutableListOf<Int>()
+    val uploadedWidths = mutableListOf<Int>()
+    val uploadedHeights = mutableListOf<Int>()
+    val uploadedBytes = mutableListOf<ByteArray>()
+    val deletedTextures = mutableListOf<Int>()
+    private var nextTexture = 40
+
+    override fun createTexture(): Int {
+        createdTextures += 1
+        return nextTexture++
+    }
+
+    override fun deleteTexture(texture: Int) {
+        deletedTextures += texture
+    }
+
+    override fun texture2DLinearRepeat(texture: Int) {
+        linearRepeat += texture
+    }
+
+    override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) {
+        uploadedWidths += width
+        uploadedHeights += height
+        uploadedBytes += rgba.copyOf()
     }
 
     var dispatchCalls = 0
@@ -604,4 +900,121 @@ private class RecordingGlDevice(
     }
 
     override fun maxCombinedTextureImageUnits(): Int = textureUnitLimit
+
+    val draws = mutableListOf<DrawKind>()
+    var lastUnsignedInt = false
+    var arrayDataCalls = 0
+    var arraySubDataCalls = 0
+    var elementUploads = 0
+    var lastElementUnsignedInt = false
+    var subImageCalls = 0
+    val cubeFaces = mutableListOf<CubeFace>()
+    var mipmapCalls = 0
+    var allocCalls = 0
+    val boundFramebuffers = mutableListOf<Int>()
+    val deletedFramebuffers = mutableListOf<Int>()
+    var framebufferOk = true
+    private var nextFramebuffer = 80
+    private var nextRenderbuffer = 90
+
+    override fun drawArrays(mode: Int, first: Int, count: Int) {
+        draws += DrawKind.Arrays
+    }
+
+    override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) {
+        draws += DrawKind.Elements
+        lastUnsignedInt = unsignedInt
+    }
+
+    override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) {
+        draws += DrawKind.ArraysInstanced
+    }
+
+    override fun drawElementsInstanced(
+        mode: Int,
+        count: Int,
+        unsignedInt: Boolean,
+        instances: Int,
+        indexOffset: Int,
+    ) {
+        draws += DrawKind.ElementsInstanced
+        lastUnsignedInt = unsignedInt
+    }
+
+    override fun arrayBufferData(buffer: Int, data: FloatArray) {
+        arrayDataCalls += 1
+    }
+
+    override fun arrayBufferSubData(buffer: Int, data: FloatArray) {
+        arraySubDataCalls += 1
+    }
+
+    override fun unbindVertexArray() {
+        writes += "unbindVao"
+    }
+
+    override fun elementBufferData(buffer: Int, indices: IntArray, unsignedInt: Boolean) {
+        writes += "elementData"
+        elementUploads += 1
+        lastElementUnsignedInt = unsignedInt
+    }
+
+    override fun texSubImage2DRgba(
+        texture: Int,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        rgba: ByteArray,
+    ) {
+        subImageCalls += 1
+    }
+
+    override fun texImageCubeFace(texture: Int, face: CubeFace, width: Int, height: Int, rgba: ByteArray) {
+        cubeFaces += face
+    }
+
+    override fun textureCubeLinearClamp(texture: Int) = Unit
+
+    override fun texture2DLinearClamp(texture: Int) = Unit
+
+    override fun generateMipmap2D(texture: Int) {
+        mipmapCalls += 1
+    }
+
+    var mipFilters: Int = 0
+
+    override fun filterMipmap2D(texture: Int) {
+        mipFilters += 1
+    }
+
+    override fun texImage2DRgbaAlloc(texture: Int, width: Int, height: Int) {
+        allocCalls += 1
+    }
+
+    override fun createFramebuffer(): Int = nextFramebuffer++
+
+    override fun deleteFramebuffer(framebuffer: Int) {
+        deletedFramebuffers += framebuffer
+    }
+
+    override fun bindFramebuffer(framebuffer: Int) {
+        boundFramebuffers += framebuffer
+    }
+
+    override fun createRenderbuffer(): Int = nextRenderbuffer++
+
+    override fun deleteRenderbuffer(renderbuffer: Int) = Unit
+
+    override fun framebufferColor(framebuffer: Int, texture: Int) = Unit
+
+    override fun framebufferDepth(framebuffer: Int, renderbuffer: Int, width: Int, height: Int) = Unit
+
+    override fun framebufferComplete(framebuffer: Int): Boolean = framebufferOk
+
+    override fun vertexAttribDivisor(location: Int, divisor: Int) = Unit
+
+    override fun disableVertexAttribArray(location: Int) = Unit
+
+    override fun vertexAttribFloat(location: Int, size: Int, strideFloats: Int, offsetFloats: Int) = Unit
 }

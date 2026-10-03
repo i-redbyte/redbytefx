@@ -21,14 +21,20 @@ import ru.redbyte.redbytefx.Vec4
 import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import java.util.IdentityHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val MAX_QUEUED_GL_TASKS = 128
+
+private typealias UniformWrite = (GlProgramRuntime) -> Unit
 
 /**
  * GLES uniform writer for one [ShaderProgram] rendered by [GlSurface].
  *
  * [set] keeps the latest value per uniform and runs it on the GL thread. Writes that happen
- * before the surface has linked are applied after link, not dropped.
+ * before the surface has linked are applied after link, not dropped. When the EGL context is
+ * recreated, the latest value of every [set] uniform is written to the new program. A texture
+ * name from [bind] belongs to one context, so it is not replayed: bind again after re-uploading.
+ * [runOnGl] blocks run once.
  */
 @Stable
 public class GlController internal constructor(
@@ -42,13 +48,24 @@ public class GlController internal constructor(
         set(value) {
             linkStateHolder.value = value
         }
+
     @Volatile
-    internal var glQueue: ((() -> Unit) -> Unit)? = null
+    private var glQueue: ((() -> Unit) -> Unit)? = null
+
     @Volatile
     internal var runtime: GlProgramRuntime? = null
+        private set
     private val lock = Any()
-    private val uniformWrites = IdentityHashMap<Uniform<*>, () -> Unit>()
+    private val latest = IdentityHashMap<Uniform<*>, UniformWrite>()
+    private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val tasks = ArrayDeque<() -> Unit>()
+    private val drainQueued = AtomicBoolean(false)
+    private val drainTask: () -> Unit = {
+        drainQueued.set(false)
+        drainPending()
+    }
+    private val writeBatch = ArrayList<UniformWrite>()
+    private val taskBatch = ArrayList<() -> Unit>()
 
     /**
      * Runs [block] on the GL thread.
@@ -66,159 +83,160 @@ public class GlController internal constructor(
         scheduleDrain()
     }
 
-    internal fun scheduleDrain() {
-        glQueue?.invoke { drainPending() }
+    /**
+     * Called on the UI thread when a GL view starts; schedules writes made before it existed.
+     * The new view has its own GL thread, so a program linked by an older view is dropped here:
+     * writing through it from the new thread would fail the runtime's thread check.
+     */
+    internal fun attachQueue(queue: (() -> Unit) -> Unit) {
+        synchronized(lock) {
+            glQueue = queue
+            runtime = null
+            drainQueued.set(false)
+        }
+        scheduleDrain()
     }
 
-    /** Applies queued uniform writes and [runOnGl] blocks. Must run on the GL thread. */
-    internal fun drainPending() {
-        while (true) {
-            val batch = synchronized(lock) {
-                if (runtime == null || (uniformWrites.isEmpty() && tasks.isEmpty())) {
-                    return
-                }
-                val ready = ArrayList<() -> Unit>(uniformWrites.size + tasks.size)
-                ready.addAll(uniformWrites.values)
-                ready.addAll(tasks)
-                uniformWrites.clear()
-                tasks.clear()
-                ready
+    /**
+     * Called when the GL view that attached [queue] goes away. A newer view may already have
+     * attached its own queue; that one stays. A drain the old view never ran must not block it.
+     * Returns whether [queue] was the current one.
+     */
+    internal fun detachQueue(queue: (() -> Unit) -> Unit): Boolean = synchronized(lock) {
+        if (glQueue !== queue) return false
+        glQueue = null
+        runtime = null
+        drainQueued.set(false)
+        true
+    }
+
+    /**
+     * GL thread of the view that attached [queue]. Makes [linked] current, writes every retained
+     * value to it, then drains. A view whose queue was replaced keeps its program to itself.
+     */
+    internal fun attachRuntime(queue: (() -> Unit) -> Unit, linked: GlProgramRuntime) {
+        synchronized(lock) {
+            if (glQueue !== queue) return
+            runtime = linked
+            for (entry in latest) {
+                if (!pending.containsKey(entry.key)) pending[entry.key] = entry.value
             }
-            batch.forEach { it() }
+        }
+        drainPending()
+    }
+
+    /** Whether [queue] belongs to the view this controller currently drives. */
+    internal fun ownsQueue(queue: (() -> Unit) -> Unit): Boolean = glQueue === queue
+
+    /** GL thread. [linked] is gone or about to be; writes wait for the next link. */
+    internal fun detachRuntime(linked: GlProgramRuntime) {
+        synchronized(lock) {
+            if (runtime === linked) runtime = null
         }
     }
 
-    private fun enqueueUniform(uniform: Uniform<*>, block: () -> Unit) {
+    private fun scheduleDrain() {
+        val queue = glQueue ?: return
+        if (drainQueued.compareAndSet(false, true)) queue(drainTask)
+    }
+
+    /** Applies queued uniform writes and [runOnGl] blocks. Must run on the GL thread. */
+    private fun drainPending() {
+        while (true) {
+            val active = synchronized(lock) {
+                val linked = runtime
+                if (linked == null || (pending.isEmpty() && tasks.isEmpty())) return
+                writeBatch.addAll(pending.values)
+                taskBatch.addAll(tasks)
+                pending.clear()
+                tasks.clear()
+                linked
+            }
+            try {
+                for (index in writeBatch.indices) writeBatch[index](active)
+                for (index in taskBatch.indices) taskBatch[index]()
+            } finally {
+                writeBatch.clear()
+                taskBatch.clear()
+            }
+        }
+    }
+
+    private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {
         synchronized(lock) {
-            uniformWrites[uniform] = block
+            pending[uniform] = write
+            if (retained) latest[uniform] = write else latest.remove(uniform)
         }
         scheduleDrain()
     }
 
     @JvmName("setHighFloat")
     public fun set(uniform: Uniform<Flt<High>>, value: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, value)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, value) }
     }
 
     @JvmName("setMedFloat")
     public fun set(uniform: Uniform<Flt<Med>>, value: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, value)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, value) }
     }
 
     public fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y) }
     }
 
     @JvmName("setMedVec2")
     public fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y) }
     }
 
     public fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y, z)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y, z) }
     }
 
     @JvmName("setMedVec3")
     public fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y, z)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y, z) }
     }
 
     public fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y, z, w)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y, z, w) }
     }
 
     @JvmName("setMedVec4")
     public fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, x, y, z, w)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, x, y, z, w) }
     }
 
     public fun set(uniform: Uniform<IntS>, value: Int) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, value)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, value) }
     }
 
     public fun set(uniform: Uniform<BoolS>, value: Boolean) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, value)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, value) }
     }
 
     @JvmName("bindSampler2D")
     public fun bind(uniform: Uniform<Sampler2D>, texture: Int) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.bind(uniform, texture)
-        }
+        enqueue(uniform, retained = false) { it.bind(uniform, texture) }
     }
 
     @JvmName("bindSamplerCube")
     public fun bind(uniform: Uniform<SamplerCube>, texture: Int) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.bind(uniform, texture)
-        }
+        enqueue(uniform, retained = false) { it.bind(uniform, texture) }
     }
 
+    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
     public fun setMat2(uniform: Uniform<Mat2>, values: FloatArray) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, values)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, values) }
     }
 
+    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
     public fun setMat3(uniform: Uniform<Mat3>, values: FloatArray) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, values)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, values) }
     }
 
+    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
-        enqueueUniform(uniform) {
-            val active = runtime ?: return@enqueueUniform
-            active.use()
-            active.set(uniform, values)
-        }
+        enqueue(uniform, retained = true) { it.set(uniform, values) }
     }
 }

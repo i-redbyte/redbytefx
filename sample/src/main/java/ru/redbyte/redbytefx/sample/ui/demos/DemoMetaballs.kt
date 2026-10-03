@@ -20,19 +20,8 @@ import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.stdlib.sdCircle
+import ru.redbyte.redbytefx.stdlib.smoothMin
 import ru.redbyte.redbytefx.stdlib.softFill
-
-/**
- * Polynomial smooth-min (standard IQ-style) for merging circle SDFs into metaballs.
- */
-private fun FragmentDsl.sminPoly(a: Expr<Flt<High>>, b: Expr<Flt<High>>, k: Expr<Flt<High>>): Expr<Flt<High>> {
-    val safeK = max(k, 0.0001f)
-    val h = max(safeK - abs(a - b), 0f) / safeK
-    return min(a, b) - h * h * safeK * 0.25f
-}
-
-private fun FragmentDsl.sminPoly(a: Expr<Flt<High>>, b: Expr<Flt<High>>, k: Float): Expr<Flt<High>> =
-    sminPoly(a, b, float(k))
 
 private data class MetaballsSetup(
     val effect: ShaderProgram,
@@ -80,8 +69,8 @@ fun DemoMetaballs() {
                 val d1 = let(sdCircle(uv - c1, r), "d1")
                 val d2 = let(sdCircle(uv - c2, r * 1.05f), "d2")
                 val d3 = let(sdCircle(uv - c3, r * 0.95f), "d3")
-                val m12 = let(sminPoly(d1, d2, 0.085f), "m12")
-                val field = let(sminPoly(m12, d3, blendK.expr), "field")
+                val m12 = let(smoothMin(d1, d2, 0.085f), "m12")
+                val field = let(smoothMin(m12, d3, blendK.expr), "field")
                 val blob = softFill(field, feather = 0.035f)
                 val bg = color(float3(0.03f, 0.04f, 0.07f), 1f)
                 val fill = color(float3(0.15f, 0.95f, 0.82f), 1f)

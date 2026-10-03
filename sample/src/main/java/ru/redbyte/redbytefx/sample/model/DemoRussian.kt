@@ -119,7 +119,7 @@ object DemoRussian {
         DemoId.AnimatedGradient to "Без выборки и без библиотеки: только fragCoord, resolution, uniformTime и sin. Ориентир, когда Shadertoy или рукописный AGSL переносят в RedByteFX.",
         DemoId.PhysicsBubble to "Пружина и жест остаются в Compose, а оптика пузыря переезжает в RedByteFX: преломление, Френель, расщепление каналов, толщина плёнки от шума и отражение среды.",
         DemoId.TouchRipple to "Касание Compose и нормализованные координаты попадают в параметр float2, и кольца в шейдере не отстают от пальца. Только ядро: length, sin, mix.",
-        DemoId.Metaballs to "На sdCircle(...) и softFill(...) лежит полиномиальный smin, и слияние капель остаётся читаемым в получившемся AGSL.",
+        DemoId.Metaballs to "На sdCircle(...) и softFill(...) лежит smoothMin(...), и слияние капель остаётся читаемым в получившемся AGSL.",
         DemoId.CrtTerminal to "Обработка поверх sampleUv(...): сдвиг каналов от маски края, scanlines(...) и vignette. Узнаваемый старый экран на пути выборки библиотеки.",
     )
 

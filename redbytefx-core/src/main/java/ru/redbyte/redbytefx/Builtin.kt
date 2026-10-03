@@ -100,6 +100,15 @@ public fun <P : Prec> dot(left: Expr<Vec4<Flt<P>>>, right: Expr<Vec4<Flt<P>>>): 
 
 public fun <T : ShType> normalize(value: Expr<T>): Expr<T> = unaryFloatValue("normalize", value)
 
+/**
+ * Shade. Lambert weight of a surface: the clamped cosine between [normal] and [light].
+ * Both vectors are normalized inside the call. The expression is legal in an AGSL effect and in a GLES scene.
+ */
+public fun lambert(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+): Expr<Flt<High>> = max(dot(normalize(normal), normalize(light)), float(0f))
+
 @JvmName("distanceVec3")
 public fun <P : Prec> distance(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Flt<P>> =
     distanceOf(left, right)

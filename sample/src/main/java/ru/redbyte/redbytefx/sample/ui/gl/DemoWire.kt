@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.sphere
 import ru.redbyte.redbytefx.gl.compose.glEs32LinkRequirement
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.GeometryDsl
@@ -41,7 +42,7 @@ internal fun wireScene(): WireScene {
     val program = shader(ShaderTarget.Gles32) {
         time = uniformTime()
         vertex {
-            val position = attributeVec4("position")
+            val position = attributeVec3("position")
             val angle = time.expr * 0.45f.lit
             val turn = cos(angle)
             val lift = sin(angle)
@@ -59,7 +60,7 @@ internal fun wireScene(): WireScene {
             vec4(0.15f.lit, 0.82f.lit * pulse, 0.95f.lit, 1f.lit)
         }
     }
-    return WireScene(program, solidPositions(0.68f), time)
+    return WireScene(program, sphere(0.68f), time)
 }
 
 @Composable

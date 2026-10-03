@@ -3,6 +3,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.sphere
 import ru.redbyte.redbytefx.gl.compose.glEs32LinkRequirement
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.GeometryInput
@@ -39,7 +40,7 @@ internal fun hedgehogScene(): HedgehogScene {
     val program = shader(ShaderTarget.Gles32) {
         time = uniformTime()
         vertex {
-            val position = attributeVec4("position")
+            val position = attributeVec3("position")
             val angle = time.expr * 0.55f.lit
             val turn = cos(angle)
             val lift = sin(angle)
@@ -77,7 +78,7 @@ internal fun hedgehogScene(): HedgehogScene {
             vec4(0.95f.lit, 0.32f.lit + pulse * 0.35f.lit, 0.12f.lit, 1f.lit)
         }
     }
-    return HedgehogScene(program, solidPositions(0.62f), time)
+    return HedgehogScene(program, sphere(0.62f), time)
 }
 
 @Composable

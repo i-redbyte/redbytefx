@@ -861,11 +861,11 @@ val DemoCatalog: List<DemoInfo> = listOf(
         id = DemoId.Metaballs,
         title = "Metaballs",
         subtitle = "Three moving circles merged with smooth-min into soft blobs.",
-        focus = "Builds on sdCircle(...) and softFill(...) with a polynomial smin between fields so " +
+        focus = "Builds on sdCircle(...) and softFill(...) with smoothMin(...) between fields so " +
             "metaball-style merging stays readable in generated AGSL.",
         snippet = """
-            val m12 = sminPoly(d1, d2, 0.085f)
-            val field = sminPoly(m12, d3, blendK)
+            val m12 = smoothMin(d1, d2, 0.085f)
+            val field = smoothMin(m12, d3, blendK)
             val blob = softFill(field, feather = 0.035f)
             mix(bg, shaded, blob)
         """.trimIndent()

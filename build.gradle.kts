@@ -101,11 +101,12 @@ subprojects {
 private data class DocModule(val path: String, val title: String, val blurb: String)
 
 private val docModules = listOf(
-    DocModule(":redbytefx-core", "redbytefx-core", "Shader DSL, compiler, and AGSL instance"),
-    DocModule(":redbytefx-gl", "redbytefx-gl", "OpenGL ES 3.x program runtime"),
-    DocModule(":redbytefx-gl-compose", "redbytefx-gl-compose", "Compose GlSurface and GlController"),
-    DocModule(":redbytefx-compose", "redbytefx-compose", "AGSL FxController and redbyteFx"),
-    DocModule(":redbytefx-stdlib", "redbytefx-stdlib", "Fragment helpers and SDF recipes"),
+    DocModule(":redbytefx-core", "redbytefx-core", "Shader language"),
+    DocModule(":redbytefx-gl", "redbytefx-gl", "GLES resources and draws"),
+    DocModule(":redbytefx-gl-compose", "redbytefx-gl-compose", "Compose host for a GLES scene"),
+    DocModule(":redbytefx-compose", "redbytefx-compose", "AGSL"),
+    DocModule(":redbytefx-stdlib", "redbytefx-stdlib", "Effect recipes"),
+    DocModule(":redbytefx-3d", "redbytefx-3d", "CPU scene data, no driver"),
 )
 
 tasks.register("dokkaHtmlAll") {
@@ -224,12 +225,14 @@ tasks.register("qualityCheck") {
         ":redbytefx-gl-compose:testDebugUnitTest",
         ":redbytefx-compose:testDebugUnitTest",
         ":redbytefx-stdlib:testDebugUnitTest",
+        ":redbytefx-3d:testDebugUnitTest",
         ":sample:compileDebugKotlin",
         ":redbytefx-core:detekt",
         ":redbytefx-gl:detekt",
         ":redbytefx-gl-compose:detekt",
         ":redbytefx-compose:detekt",
         ":redbytefx-stdlib:detekt",
+        ":redbytefx-3d:detekt",
         ":sample:detekt"
     )
 }
