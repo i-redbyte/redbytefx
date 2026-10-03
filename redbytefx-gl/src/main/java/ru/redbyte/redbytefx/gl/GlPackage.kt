@@ -6,6 +6,6 @@
  * created it. Compose apps typically use [ru.redbyte.redbytefx.gl.compose.GlSurface] instead of
  * calling the runtime directly.
  *
- * Failures throw [GlException] with a [GlCode]; see [docs/error-codes.md](https://github.com/i-redbyte/redbytefx/blob/main/docs/error-codes.md).
+ * Failures throw [GlException] with a [GlCode]; see [docs/error-codes.md](https://github.com/i-redbyte/redbytefx/blob/master/docs/error-codes.md).
  */
 package ru.redbyte.redbytefx.gl

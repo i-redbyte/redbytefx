@@ -1,10 +1,10 @@
 # Language reference (summary)
 
-Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/main/README.md).
+Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/README.md).
 
 ## Entry
 
-- `shader(ShaderTarget, block)` returns [ShaderProgram](https://github.com/i-redbyte/redbytefx/blob/main/redbytefx-core/src/main/java/ru/redbyte/redbytefx/ShaderDsl.kt).
+- `shader(ShaderTarget, block)` returns [ShaderProgram](https://github.com/i-redbyte/redbytefx/blob/master/redbytefx-core/src/main/java/ru/redbyte/redbytefx/ShaderDsl.kt).
 - AGSL: API 31+, `newAgslInstance()`, Compose `rememberFxController` / `redbyteFx`.
 - GLES: API 24+, `GlProgramRuntime` or `GlSurface` in `redbytefx-gl-compose`.
 
@@ -43,7 +43,7 @@ Infix `gt`, `lt`, `ge`, `le`, `eq`, `ne` on floats; `gte` alias in `Sugar.kt`. V
 
 Vector expressions use GLSL-style property names: `.xy`, `.rgb`, `.rgba`, and single-letter lanes
 `.x` / `.r`, `.a` (alpha on `vec4`), and so on. Names match generated shader masks; see KDoc on
-[SwizzleAccess.kt](https://github.com/i-redbyte/redbytefx/blob/support-opengl/redbytefx-core/src/main/java/ru/redbyte/redbytefx/SwizzleAccess.kt).
+[SwizzleAccess.kt](https://github.com/i-redbyte/redbytefx/blob/master/redbytefx-core/src/main/java/ru/redbyte/redbytefx/SwizzleAccess.kt).
 
 ## Math (portable)
 
