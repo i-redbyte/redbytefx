@@ -78,7 +78,7 @@ val patch = shader(ShaderTarget.Gles32) {
 }
 ```
 
-`Modifier.redbyteFx` накладывает AGSL `RenderEffect`. Программу GLES он не запускает. Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. В списке OpenGL есть треугольник и сцена Spheres на своём `GLSurfaceView`.
+Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена — это `GLSurfaceView`, который линкует `ShaderProgram`. В списке есть треугольник, экранные сферы, красный флаг, освещённое тело, один std140-блок камеры, сравнения векторов, радужная арка общей функцией, шипы и каркас geometry-стадии, океан на tessellation, звёздное небо с молниями и объёмная надпись. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
 
 ## Установка
 
@@ -132,7 +132,7 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 - `texture(sampler, uv)` законен только в GLES-фрагменте.
 - `attributeVec2` и `glPosition` законны только в GLES-вершине.
 - `let(expr, "name")` даёт локальной переменной имя в сгенерированном шейдере.
-- `fn` принимает 0, 1 или 2 аргумента. Свидетель задаёт стёртую форму: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Параметры называются `p0` и `p1`. Функции не вкладываются и не объявляют uniform.
+- `fn` принимает 0, 1, 2, 3 или 4 аргумента. Свидетель задаёт стёртую форму: `fn(0f.lit, 0f.lit, "name") { p0, p1 -> ... }`. Параметры называются `p0`, `p1`, `p2` и `p3`. Функции не вкладываются, не объявляют uniform, и рекурсия отвергается.
 
 ```kotlin
 shader(ShaderTarget.Agsl) {
