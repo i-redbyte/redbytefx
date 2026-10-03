@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,15 +62,17 @@ internal fun GlCanvas(
 ) {
     var failure by remember { mutableStateOf<String?>(null) }
     Box(modifier = Modifier.fillMaxSize()) {
-        GlesView(depth = mesh.depth) { slot ->
-            SceneRenderer(
-                program = program,
-                mesh = mesh,
-                requirement = requirement,
-                slot = slot,
-                onFrame = onFrame,
-                onFailure = { message -> slot.post { failure = message } },
-            )
+        key(program) {
+            GlesView(depth = mesh.depth) { slot ->
+                SceneRenderer(
+                    program = program,
+                    mesh = mesh,
+                    requirement = requirement,
+                    slot = slot,
+                    onFrame = onFrame,
+                    onFailure = { message -> slot.post { failure = message } },
+                )
+            }
         }
         if (pointer != null) {
             Box(

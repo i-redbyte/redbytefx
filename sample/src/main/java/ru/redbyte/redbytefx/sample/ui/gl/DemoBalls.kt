@@ -14,7 +14,9 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -97,10 +99,27 @@ fun DemoBalls() {
     val scene = remember { ballProgram() }
     val requested = remember { AtomicInteger(BallWorld.INITIAL) }
     var shown by remember { mutableIntStateOf(BallWorld.INITIAL) }
+    var failure by remember { mutableStateOf<String?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
-            GlesView { slot ->
-                BallRenderer(scene, slot, requested)
+            key(scene.program) {
+                GlesView { slot ->
+                    BallRenderer(scene, slot, requested) { message -> slot.post { failure = message } }
+                }
+            }
+            if (failure != null) {
+                Text(
+                    text = if (failure == LINK_FALLBACK) {
+                        say(LINK_FALLBACK, "Это устройство не может собрать шейдер.")
+                    } else {
+                        failure ?: ""
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                )
             }
             GlCodeCompare(
                 program = scene.program,
@@ -146,6 +165,7 @@ private class BallRenderer(
     private val scene: BallProgram,
     private val slot: GlSlot,
     private val requestedCount: AtomicInteger,
+    private val onLinkFailure: (String) -> Unit,
 ) : GLSurfaceView.Renderer {
     private val balls = BallWorld.pool()
     private val vertices = floatArrayOf(-1f, -1f, 3f, -1f, -1f, 3f)
@@ -156,7 +176,7 @@ private class BallRenderer(
     private var lastNanos = 0L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        val runtime = slot.linkGraphics(scene.program) ?: return
+        val runtime = slot.linkGraphics(scene.program, glEs30LinkRequirement(), onLinkFailure) ?: return
         slot.runtime = runtime
         runtime.use()
         attrib = attribLocation("a_corner")
