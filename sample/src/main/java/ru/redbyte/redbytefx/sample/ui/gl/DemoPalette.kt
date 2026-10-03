@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.gl.compose.torus
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.Fn4
 import ru.redbyte.redbytefx.High
@@ -42,23 +43,27 @@ internal fun paletteScene(): TimedScene {
                 val blue = saturate(2f.lit - abs(hue * 6f.lit - 4f.lit))
                 vec3(red, green, blue) * (0.28f.lit + shade * 0.72f.lit)
             }
-            val position = attributeVec4("position")
-            val tint = attributeVec4("tint")
+            val position = attributeVec3("position")
+            val normal = attributeVec3("normal")
+            val uv = attributeVec2("uv")
+            val shade = saturate(normal.y * 0.5f.lit + 0.5f.lit)
+            val down = uv.x
             val angle = time.expr * 0.2f.lit
             val turn = cos(angle)
             val lift = sin(angle)
-            val x = position.x * turn + position.z * lift
-            val z = position.z * turn - position.x * lift + 2.15f.lit
-            val color = ink(tint.y, tint.x, time.expr, 0f.lit)
-            paint.set(vec2(tint.x, tint.y))
-            glPosition(vec4((x + color.x * 0.02f.lit) / aspect.expr, position.y, z * 0.22f.lit - 0.3f.lit, z))
+            val x = position.x * turn + position.y * lift
+            val y = position.z
+            val z = position.y * turn - position.x * lift + 2.15f.lit
+            val color = ink(down, shade, time.expr, 0f.lit)
+            paint.set(vec2(shade, down))
+            glPosition(vec4((x + color.x * 0.02f.lit) / aspect.expr, y, z * 0.22f.lit - 0.3f.lit, z))
         }
         fragment {
             val color = ink(paint.expr.y, paint.expr.x, time.expr, 0f.lit)
             vec4(color.x, color.y, color.z, 1f.lit)
         }
     }
-    return TimedScene(program, rainbowArch(), time, aspect)
+    return TimedScene(program, torus(0.85f, 0.22f), time, aspect)
 }
 
 @Composable

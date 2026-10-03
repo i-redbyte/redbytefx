@@ -88,8 +88,85 @@ enum class GlExample(
             "Город",
         ),
         summary = Phrase(
-            "Colored blocks and a moving camera live in one std140 block, written once per frame.",
-            "Цветные блоки и движущаяся камера лежат в одном блоке std140 и записываются один раз за кадр.",
+            "Textured blocks and a moving camera live in one std140 block, written once per frame.",
+            "Текстурированные блоки и движущаяся камера лежат в одном блоке std140 и записываются один раз за кадр.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Crate(
+        title = Phrase(
+            "Lit crate",
+            "Освещённый ящик",
+        ),
+        summary = Phrase(
+            "lookAt and perspective, one indexed mesh, a facade texture and a ground texture, lit by lambert.",
+            "lookAt и perspective, один индексированный меш, текстура фасада и текстура земли, свет по lambert.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Planet(
+        title = Phrase(
+            "Planet",
+            "Планета",
+        ),
+        summary = Phrase(
+            "Drag to heat the planet and move the light. Tap it for a color, a gradient, or a gallery photo. A slider sets up to five moons.",
+            "Вращение пальцем греет планету и двигает свет. Нажатие задаёт цвет, градиент или фото из галереи. Ползунок ставит до пяти спутников.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Slice(
+        title = Phrase(
+            "Slice",
+            "Срез",
+        ),
+        summary = Phrase(
+            "One indexed mesh. The slider draws the first quads and leaves the rest out of the call.",
+            "Один индексированный меш. Ползунок рисует первые квадраты и не включает остальные в вызов.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Stamp(
+        title = Phrase(
+            "Stamp",
+            "Штамп",
+        ),
+        summary = Phrase(
+            "A finger paints a rectangle into a texture that is already on the quad.",
+            "Палец вписывает прямоугольник в текстуру, которая уже лежит на квадрате.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Sky(
+        title = Phrase(
+            "Sky",
+            "Небо",
+        ),
+        summary = Phrase(
+            "Six cube faces, each a flat color, sampled on a turning sphere.",
+            "Шесть граней куба, каждая своим цветом, на вращающейся сфере.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Mirror(
+        title = Phrase(
+            "Mirror",
+            "Зеркало",
+        ),
+        summary = Phrase(
+            "A triangle is drawn into a texture by one program and shown on a quad by another.",
+            "Треугольник рисуется в текстуру одной программой и показывается на квадрате другой.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Mips(
+        title = Phrase(
+            "Mips",
+            "Мипы",
+        ),
+        summary = Phrase(
+            "The same checker, once from level 0 and once through a mip chain.",
+            "Одна и та же клетка: слева только уровень 0, справа через цепочку мип-уровней.",
         ),
         api = "OpenGL ES 3.0",
     ),
@@ -289,6 +366,13 @@ internal fun GlExampleScreen(example: GlExample) {
         GlExample.Floor -> DemoFloor()
         GlExample.Lamp -> DemoLamp()
         GlExample.City -> DemoCity()
+        GlExample.Crate -> DemoCrate()
+        GlExample.Planet -> DemoPlanet()
+        GlExample.Slice -> DemoSlice()
+        GlExample.Stamp -> DemoStamp()
+        GlExample.Sky -> DemoSky()
+        GlExample.Mirror -> DemoMirror()
+        GlExample.Mips -> DemoMips()
         GlExample.Orb -> DemoOrb()
         GlExample.Bands -> DemoBands()
         GlExample.Palette -> DemoPalette()

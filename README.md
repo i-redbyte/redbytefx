@@ -2,7 +2,7 @@
 
 # RedByteFX
 
-**RedByteFX** is a Kotlin DSL that compiles one typed shader algebra to Android AGSL, OpenGL ES 3.0, OpenGL ES 3.1 compute, and OpenGL ES 3.2 geometry and tessellation.
+**RedByteFX** is a Kotlin DSL with two surfaces on one typed shader algebra. An **effect** is a fragment shader: Android AGSL on API 31+, the short path through `redbyteFx`. A **scene** is a mesh on OpenGL ES from API 24: vertex and fragment stages, buffers, textures, and draws. The same algebra also compiles to OpenGL ES 3.1 compute and OpenGL ES 3.2 geometry and tessellation.
 
 Authoring is Kotlin, not a shader string. The compiler emits the text the platform actually runs:
 
@@ -28,6 +28,23 @@ val wave = shader(ShaderTarget.Agsl) {
 ```
 
 AGSL is fragment-only. The generated entry stays `half4 main(float2 fragCoord)`, which `RuntimeShader` requires. Inspect it with `wave.agslSource()`.
+
+A scene is the other surface. This lit box is OpenGL ES only: `shader(ShaderTarget.Agsl)` rejects `uniformMat4`, so AGSL cannot compile it.
+
+```kotlin
+val crate = shader(ShaderTarget.Gles30) {
+    val view = uniformMat4("view")
+    val projection = uniformMat4("projection")
+    vertex {
+        val position = attributeVec3("position")
+        val clip = projection.expr * (view.expr * vec4(position.x, position.y, position.z, 1f.lit))
+        glPosition(clip)
+    }
+    fragment {
+        vec4(0.85f.lit, 0.45f.lit, 0.2f.lit, 1f.lit)
+    }
+}
+```
 
 OpenGL ES 3.0 needs both stages. Varyings written in the vertex stage are read in the fragment stage. Inspect them with `vertexSource()` and `fragmentSource()`.
 
@@ -90,6 +107,7 @@ dependencies {
     implementation("io.github.i-redbyte:redbytefx-gl:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-compose:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-3d:1.1.0")
 }
 ```
 
@@ -98,7 +116,8 @@ dependencies {
 | `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, GLSL ES 3.10 compute, and GLSL ES 3.20 spelling |
 | `redbytefx-gl` | GLES 3.0, 3.1, and 3.2 link, uniform and matrix writes, cube and 2D binds, compute `dispatch`, and storage uploads, bound to the EGL thread |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
-| `redbytefx-stdlib` | Coordinates, masks, compositing, SDF, and related helpers on top of the same DSL |
+| `redbytefx-stdlib` | Effect recipes: coordinates, masks, compositing, SDF, and `lambert` |
+| `redbytefx-3d` | CPU scene data for meshes and cameras. No OpenGL driver |
 
 ## Compose
 

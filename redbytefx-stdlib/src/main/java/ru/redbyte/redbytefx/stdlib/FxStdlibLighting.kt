@@ -215,3 +215,12 @@ public fun rimLight(
     width = float(width),
     feather = float(feather)
 )
+
+/**
+ * Shade. Lambert weight of a surface. The formula is [ru.redbyte.redbytefx.lambert],
+ * so an AGSL effect and a GLES scene share one expression.
+ */
+public fun lambert(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+): Expr<Flt<High>> = ru.redbyte.redbytefx.lambert(normal, light)

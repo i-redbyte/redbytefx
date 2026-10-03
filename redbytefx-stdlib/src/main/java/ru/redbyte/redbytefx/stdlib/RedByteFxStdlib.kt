@@ -52,6 +52,9 @@
  * Prefer these **after** the canonical path is comfortable: distortion and noise
  * (`fbm`, `domainWarp`, `chromaticOffset`), frame/crop masks (`frameMask`, `cornerMask`),
  * procedural detail, palette remixing, and similar “extra visual” helpers.
+ * Analytic 3D distances ([sdSphere], [sdBox3], [sdTorus], [sdCapsule], [sdTriangle]) and [rayMarch]
+ * live here as expressions. Distances and [rayMarch] are the effect. A mesh does not belong in this module.
+ * [sdBox] stays the 2D box; the 3D box is [sdBox3]. [sdTriangle] is unsigned.
  *
  * ### Supporting utilities (not the teaching spine)
  *

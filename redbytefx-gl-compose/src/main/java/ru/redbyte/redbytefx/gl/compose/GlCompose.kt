@@ -14,8 +14,8 @@ import ru.redbyte.redbytefx.Uniform
 /**
  * Remembers a [GlController] for [program].
  *
- * Use one controller per [GlSurface]. Changing [config] recreates the controller; changing
- * [program] identity should use a new `remember` key (for example `key(program)` around [GlSurface]).
+ * Use one controller per [GlSurface]. A new [program] or [config] creates a new controller,
+ * which does not carry over values set on the previous one.
  */
 @Composable
 public fun rememberGlController(
@@ -60,14 +60,14 @@ public fun GlController.bindTime(
     val state = remember(this, param) { GlTimeBindingState() }
     LaunchedEffect(this, param, isPlaying, offsetSeconds) {
         if (!isPlaying) {
-            state.lastFrameNanos = null
+            state.lastFrameNanos = NO_FRAME
             set(param, offsetSeconds + state.elapsedSeconds)
             return@LaunchedEffect
         }
         while (true) {
             withFrameNanos { frameNanos ->
                 val lastFrameNanos = state.lastFrameNanos
-                if (lastFrameNanos != null) {
+                if (lastFrameNanos != NO_FRAME) {
                     state.elapsedSeconds += (frameNanos - lastFrameNanos) / 1_000_000_000f
                 }
                 state.lastFrameNanos = frameNanos
@@ -77,7 +77,9 @@ public fun GlController.bindTime(
     }
 }
 
+private const val NO_FRAME = Long.MIN_VALUE
+
 private class GlTimeBindingState {
     var elapsedSeconds: Float = 0f
-    var lastFrameNanos: Long? = null
+    var lastFrameNanos: Long = NO_FRAME
 }

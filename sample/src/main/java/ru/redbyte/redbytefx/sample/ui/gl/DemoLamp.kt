@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import ru.redbyte.redbytefx.gl.compose.sphere
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderTarget
@@ -34,8 +35,8 @@ internal fun lampScene(): TimedScene {
         val normalXy = varyingVec2("normalXy")
         val normalZ = varyingVec2("normalZ")
         vertex {
-            val position = attributeVec4("position")
-            val normal = attributeVec4("normal")
+            val position = attributeVec3("position")
+            val normal = attributeVec3("normal")
             val angle = time.expr * 0.65f.lit
             val turn = cos(angle)
             val lift = sin(angle)
@@ -61,7 +62,7 @@ internal fun lampScene(): TimedScene {
             vec4(rgb.x, rgb.y, rgb.z, 1f.lit)
         }
     }
-    return TimedScene(program, solidShaded(0.72f), time, aspect)
+    return TimedScene(program, sphere(0.72f), time, aspect)
 }
 
 @Composable

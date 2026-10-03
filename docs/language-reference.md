@@ -8,6 +8,12 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 - AGSL: API 31+, `newAgslInstance()`, Compose `rememberFxController` / `redbyteFx`.
 - GLES: API 24+, `GlProgramRuntime` or `GlSurface` in `redbytefx-gl-compose`.
 
+## Две поверхности
+
+**Эффект.** `shader(ShaderTarget.Agsl)`, только фрагмент, рецепты `redbytefx-stdlib`, `redbyteFx`. Поток UI, API 31+. Трёхмерность здесь — это `sdSphere` и `rayMarch`: луч считается во фрагменте, сетки нет.
+
+**Сцена.** Вершина и фрагмент, буфер, текстура, draw. OpenGL ES, поток EGL, API 24+. Трёхмерность здесь — это меш. AGSL эту программу не собирает: `uniformMat4` на эффекте отвергается.
+
 ## Stages
 
 | Stage | Targets |
@@ -53,8 +59,13 @@ Vector expressions use GLSL-style property names: `.xy`, `.rgb`, `.rgba`, and si
 
 | Artifact | Role |
 |----------|------|
-| redbytefx-core | DSL + compiler |
-| redbytefx-gl | GLES runtime |
-| redbytefx-gl-compose | Compose GLES |
-| redbytefx-compose | AGSL Compose |
-| redbytefx-stdlib | Fragment recipes |
+| redbytefx-core | Shader language |
+| redbytefx-gl | GLES resources and draws |
+| redbytefx-gl-compose | Compose host for a GLES scene |
+| redbytefx-compose | AGSL |
+| redbytefx-stdlib | Effect recipes, including 3D signed distances |
+| redbytefx-3d | CPU scene data, no driver |
+
+Mesh primitives (`triangle`, `quad`, `box`, `sphere`, `torus`) are CPU data in `redbytefx-3d`. `redbytefx-gl-compose` adapts them to `GlMesh` with the same names and indices. The layout is `a_position` (vec3), `a_normal` (vec3), and `a_uv` (vec2, 0..1 on each face), spelled by `attributeVec3("position")`, `attributeVec3("normal")`, and `attributeVec2("uv")`. `lookAt` and `perspective` return a column-major `FloatArray(16)` in the same order as `glUniformMatrix4fv` with transpose false. Clip z is the OpenGL ES range −1..1.
+
+`GlProgramRuntime.uploadRgba` creates an RGBA8 texture on the GLES context thread (linear filter, repeat wrap, no mip chain). Bind the returned name with `bind` on a `sampler2D`. The City sample uploads a window grid and an asphalt image from that callback.

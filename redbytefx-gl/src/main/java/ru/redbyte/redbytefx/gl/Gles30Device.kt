@@ -51,6 +51,8 @@ public class Gles30Device : GlDevice() {
 
     override fun uniformLocation(program: Int, name: String): Int = GLES30.glGetUniformLocation(program, name)
 
+    override fun attribLocation(program: Int, name: String): Int = GLES30.glGetAttribLocation(program, name)
+
     override fun uniform1f(location: Int, value: Float) {
         GLES30.glUniform1f(location, value)
     }
@@ -102,6 +104,45 @@ public class Gles30Device : GlDevice() {
 
     override fun bindTextureCube(texture: Int) {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, texture)
+    }
+
+    override fun createTexture(): Int {
+        GLES30.glGenTextures(1, statusSlot, 0)
+        return statusSlot[0]
+    }
+
+    override fun deleteTexture(texture: Int) {
+        statusSlot[0] = texture
+        GLES30.glDeleteTextures(1, statusSlot, 0)
+    }
+
+    override fun texture2DLinearRepeat(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_REPEAT)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_REPEAT)
+    }
+
+    override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) {
+        require(width > 0 && height > 0) { "Texture size must be positive, was ${width}x$height" }
+        require(rgba.size == width * height * 4) {
+            "RGBA texture needs ${width * height * 4} bytes, was ${rgba.size}"
+        }
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1)
+        GLES30.glTexImage2D(
+            GLES30.GL_TEXTURE_2D,
+            0,
+            GLES30.GL_RGBA,
+            width,
+            height,
+            0,
+            GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,
+            ByteBuffer.wrap(rgba),
+        )
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 4)
     }
 
     override fun dispatchCompute(x: Int, y: Int, z: Int) {
@@ -167,6 +208,209 @@ public class Gles30Device : GlDevice() {
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, binding, buffer)
     }
 
+    override fun drawArrays(mode: Int, first: Int, count: Int) {
+        GLES30.glDrawArrays(mode, first, count)
+    }
+
+    override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) {
+        val type = if (unsignedInt) GLES30.GL_UNSIGNED_INT else GLES30.GL_UNSIGNED_SHORT
+        val width = if (unsignedInt) Int.SIZE_BYTES else Short.SIZE_BYTES
+        GLES30.glDrawElements(mode, count, type, indexOffset * width)
+    }
+
+    override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) {
+        GLES30.glDrawArraysInstanced(mode, first, count, instances)
+    }
+
+    override fun drawElementsInstanced(
+        mode: Int,
+        count: Int,
+        unsignedInt: Boolean,
+        instances: Int,
+        indexOffset: Int,
+    ) {
+        val type = if (unsignedInt) GLES30.GL_UNSIGNED_INT else GLES30.GL_UNSIGNED_SHORT
+        val width = if (unsignedInt) Int.SIZE_BYTES else Short.SIZE_BYTES
+        GLES30.glDrawElementsInstanced(mode, count, type, indexOffset * width, instances)
+    }
+
+    override fun arrayBufferData(buffer: Int, data: FloatArray) {
+        val bytes = data.asNativeBuffer()
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, buffer)
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, bytes.remaining(), bytes, GLES30.GL_DYNAMIC_DRAW)
+    }
+
+    override fun arrayBufferSubData(buffer: Int, data: FloatArray) {
+        val bytes = data.asNativeBuffer()
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, buffer)
+        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, 0, bytes.remaining(), bytes)
+    }
+
+    override fun unbindVertexArray() {
+        GLES30.glBindVertexArray(0)
+    }
+
+    override fun elementBufferData(buffer: Int, indices: IntArray, unsignedInt: Boolean) {
+        val bytes = if (unsignedInt) indices.asNativeIntBuffer() else indices.asNativeShortBuffer()
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
+        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, bytes.remaining(), bytes, GLES30.GL_DYNAMIC_DRAW)
+    }
+
+    override fun texSubImage2DRgba(
+        texture: Int,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        rgba: ByteArray,
+    ) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1)
+        GLES30.glTexSubImage2D(
+            GLES30.GL_TEXTURE_2D,
+            0,
+            x,
+            y,
+            width,
+            height,
+            GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,
+            ByteBuffer.wrap(rgba),
+        )
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 4)
+    }
+
+    override fun texImageCubeFace(texture: Int, face: CubeFace, width: Int, height: Int, rgba: ByteArray) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, texture)
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1)
+        GLES30.glTexImage2D(
+            cubeTarget(face),
+            0,
+            GLES30.GL_RGBA,
+            width,
+            height,
+            0,
+            GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,
+            ByteBuffer.wrap(rgba),
+        )
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 4)
+    }
+
+    override fun textureCubeLinearClamp(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, texture)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_WRAP_R, GLES30.GL_CLAMP_TO_EDGE)
+    }
+
+    override fun texture2DLinearClamp(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+    }
+
+    override fun generateMipmap2D(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
+    }
+
+    override fun filterMipmap2D(texture: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR)
+    }
+
+    override fun texImage2DRgbaAlloc(texture: Int, width: Int, height: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
+        GLES30.glTexImage2D(
+            GLES30.GL_TEXTURE_2D,
+            0,
+            GLES30.GL_RGBA,
+            width,
+            height,
+            0,
+            GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,
+            null,
+        )
+    }
+
+    override fun createFramebuffer(): Int {
+        GLES30.glGenFramebuffers(1, statusSlot, 0)
+        return statusSlot[0]
+    }
+
+    override fun deleteFramebuffer(framebuffer: Int) {
+        statusSlot[0] = framebuffer
+        GLES30.glDeleteFramebuffers(1, statusSlot, 0)
+    }
+
+    override fun bindFramebuffer(framebuffer: Int) {
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
+    }
+
+    override fun createRenderbuffer(): Int {
+        GLES30.glGenRenderbuffers(1, statusSlot, 0)
+        return statusSlot[0]
+    }
+
+    override fun deleteRenderbuffer(renderbuffer: Int) {
+        statusSlot[0] = renderbuffer
+        GLES30.glDeleteRenderbuffers(1, statusSlot, 0)
+    }
+
+    override fun framebufferColor(framebuffer: Int, texture: Int) {
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
+        GLES30.glFramebufferTexture2D(
+            GLES30.GL_FRAMEBUFFER,
+            GLES30.GL_COLOR_ATTACHMENT0,
+            GLES30.GL_TEXTURE_2D,
+            texture,
+            0,
+        )
+    }
+
+    override fun framebufferDepth(framebuffer: Int, renderbuffer: Int, width: Int, height: Int) {
+        GLES30.glBindRenderbuffer(GLES30.GL_RENDERBUFFER, renderbuffer)
+        GLES30.glRenderbufferStorage(GLES30.GL_RENDERBUFFER, GLES30.GL_DEPTH_COMPONENT16, width, height)
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
+        GLES30.glFramebufferRenderbuffer(
+            GLES30.GL_FRAMEBUFFER,
+            GLES30.GL_DEPTH_ATTACHMENT,
+            GLES30.GL_RENDERBUFFER,
+            renderbuffer,
+        )
+    }
+
+    override fun framebufferComplete(framebuffer: Int): Boolean {
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
+        return GLES30.glCheckFramebufferStatus(GLES30.GL_FRAMEBUFFER) == GLES30.GL_FRAMEBUFFER_COMPLETE
+    }
+
+    override fun vertexAttribDivisor(location: Int, divisor: Int) {
+        GLES30.glVertexAttribDivisor(location, divisor)
+    }
+
+    override fun disableVertexAttribArray(location: Int) {
+        GLES30.glDisableVertexAttribArray(location)
+    }
+
+    override fun vertexAttribFloat(location: Int, size: Int, strideFloats: Int, offsetFloats: Int) {
+        GLES30.glEnableVertexAttribArray(location)
+        GLES30.glVertexAttribPointer(
+            location,
+            size,
+            GLES30.GL_FLOAT,
+            false,
+            strideFloats * Float.SIZE_BYTES,
+            offsetFloats * Float.SIZE_BYTES,
+        )
+    }
+
     override fun flushGlErrors(context: String) {
         var error = GLES30.glGetError()
         while (error != GLES30.GL_NO_ERROR) {
@@ -182,21 +426,66 @@ private val directScratch = ThreadLocal<ByteBuffer>()
 
 /**
  * `glBufferData` reads a direct buffer. A heap [ByteBuffer.wrap] does not qualify and is rejected
- * by the Android GLES bindings.
+ * by the Android GLES bindings. Texture uploads accept a heap buffer, so pixels skip this scratch:
+ * it is kept per thread and would otherwise hold the largest image for the life of the GL thread.
  */
-private fun ByteArray.asNativeBuffer(): ByteBuffer {
+private fun scratch(bytes: Int): ByteBuffer {
     val existing = directScratch.get()
-    val buffer = if (existing != null && existing.capacity() >= size) {
+    val buffer = if (existing != null && existing.capacity() >= bytes) {
         existing
     } else {
-        ByteBuffer.allocateDirect(size).also { directScratch.set(it) }
+        ByteBuffer.allocateDirect(bytes).also { directScratch.set(it) }
     }
     buffer.order(ByteOrder.nativeOrder())
     buffer.clear()
+    return buffer
+}
+
+private fun ByteArray.asNativeBuffer(): ByteBuffer {
+    val buffer = scratch(size)
     buffer.limit(size)
     buffer.put(this)
     buffer.position(0)
     return buffer
+}
+
+private fun FloatArray.asNativeBuffer(): ByteBuffer {
+    val bytes = size * Float.SIZE_BYTES
+    val buffer = scratch(bytes)
+    buffer.limit(bytes)
+    buffer.asFloatBuffer().put(this)
+    buffer.position(0)
+    return buffer
+}
+
+private fun IntArray.asNativeIntBuffer(): ByteBuffer {
+    val bytes = size * Int.SIZE_BYTES
+    val buffer = scratch(bytes)
+    buffer.limit(bytes)
+    buffer.asIntBuffer().put(this)
+    buffer.position(0)
+    return buffer
+}
+
+private fun IntArray.asNativeShortBuffer(): ByteBuffer {
+    val bytes = size * Short.SIZE_BYTES
+    val buffer = scratch(bytes)
+    buffer.limit(bytes)
+    val view = buffer.asShortBuffer()
+    for (value in this) {
+        view.put(value.toShort())
+    }
+    buffer.position(0)
+    return buffer
+}
+
+private fun cubeTarget(face: CubeFace): Int = when (face) {
+    CubeFace.PositiveX -> GLES30.GL_TEXTURE_CUBE_MAP_POSITIVE_X
+    CubeFace.NegativeX -> GLES30.GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+    CubeFace.PositiveY -> GLES30.GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+    CubeFace.NegativeY -> GLES30.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+    CubeFace.PositiveZ -> GLES30.GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+    CubeFace.NegativeZ -> GLES30.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 }
 
 private fun stageEnum(stage: GlStage): Int = when (stage) {

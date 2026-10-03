@@ -4,6 +4,10 @@ import android.opengl.GLES30
 
 /**
  * Vertex layout uploaded on the GL thread when a [GlSurface] is created.
+ *
+ * Scene. [stride] and every [GlAttrib] count floats. Each attribute must fit inside one stride,
+ * and every index must address a vertex. The host uploads [vertices] and [indices] once per EGL
+ * context, so do not change those arrays afterward; use [GlFrame.replace] for the surface mesh.
  */
 public class GlMesh(
     public val vertices: FloatArray,
@@ -15,8 +19,28 @@ public class GlMesh(
     public val clearR: Float = 0.02f,
     public val clearG: Float = 0.025f,
     public val clearB: Float = 0.045f,
-)
+    public val indices: IntArray? = null,
+) {
+    init {
+        require(stride > 0) { "Stride must be positive, was $stride" }
+        require(vertices.size % stride == 0) {
+            "Vertex buffer size ${vertices.size} is not a multiple of stride $stride"
+        }
+        for (index in attribs.indices) {
+            val attrib = attribs[index]
+            require(attrib.size in 1..MAX_ATTRIB_SIZE) { "Attribute ${attrib.name} size must be 1..4" }
+            require(attrib.offset >= 0 && attrib.offset + attrib.size <= stride) {
+                "Attribute ${attrib.name} does not fit in stride $stride"
+            }
+        }
+        require(patchVertices >= 0) { "Patch vertices must be non-negative, was $patchVertices" }
+        if (indices != null) requireIndexRange(indices, vertices.size / stride)
+    }
+}
 
+private const val MAX_ATTRIB_SIZE = 4
+
+/** Scene. One float attribute: [size] floats at [offset] floats into each vertex. */
 public class GlAttrib(
     public val name: String,
     public val size: Int,

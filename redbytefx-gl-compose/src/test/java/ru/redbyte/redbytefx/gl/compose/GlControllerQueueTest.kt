@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.Sampler2D
+import ru.redbyte.redbytefx.float2
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.gl.GlCompileStatus
@@ -14,6 +16,7 @@ import ru.redbyte.redbytefx.gl.GlStage
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.vec4
+import ru.redbyte.redbytefx.x
 
 class GlControllerQueueTest {
     @Test
@@ -36,17 +39,117 @@ class GlControllerQueueTest {
         assertEquals(afterLink, device.floatCalls)
         assertFalse(taskRan)
 
-        controller.runtime = runtime
-        controller.glQueue = { block -> block() }
-        controller.drainPending()
+        val queue: (() -> Unit) -> Unit = { block -> block() }
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, runtime)
 
         assertEquals(afterLink + 1, device.floatCalls)
         assertEquals(0.8f, device.lastFloat)
         assertEquals(true, taskRan)
     }
+
+    @Test
+    fun aNewContextReceivesTheLatestValuesButNotOneShotTasksOrTextureNames() {
+        lateinit var amount: Uniform<Flt<High>>
+        lateinit var image: Uniform<Sampler2D>
+        val program = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 0f)
+            image = sampler2D("image")
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment {
+                val texel = texture(image, float2(0f, 0f))
+                vec4(amount.expr, texel.x, 0f.lit, 1f.lit)
+            }
+        }
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = mutableListOf<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { block -> queued += block }
+        controller.attachQueue(queue)
+        val first = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, first).also { it.link() })
+        var tasks = 0
+        controller.set(amount, 0.6f)
+        controller.bind(image, 7)
+        controller.runOnGl { tasks += 1 }
+        assertEquals(1, queued.size)
+        queued.removeAt(0).invoke()
+        assertEquals(0.6f, first.lastFloat)
+        assertEquals(1, first.textureBinds)
+        assertEquals(1, tasks)
+
+        controller.detachRuntime(GlProgramRuntime(program, FloatDevice()))
+        assertEquals(true, controller.runtime != null)
+        controller.detachRuntime(requireNotNull(controller.runtime))
+        val second = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, second).also { it.link() })
+        assertEquals(0.6f, second.lastFloat)
+        assertEquals(0, second.textureBinds)
+        assertEquals(1, tasks)
+    }
+
+    @Test
+    fun aDetachedQueueDoesNotBlockTheNextSurface() {
+        val (program, amount) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val lost = mutableListOf<() -> Unit>()
+        val oldQueue: (() -> Unit) -> Unit = { block -> lost += block }
+        controller.attachQueue(oldQueue)
+        controller.set(amount, 0.3f)
+        assertEquals(false, controller.detachQueue { })
+        controller.set(amount, 0.4f)
+        assertEquals(1, lost.size)
+        assertEquals(true, controller.detachQueue(oldQueue))
+        val queued = mutableListOf<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { block -> queued += block }
+        controller.attachQueue(queue)
+        val device = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, device).also { it.link() })
+        assertEquals(0.4f, device.lastFloat)
+        controller.set(amount, 0.9f)
+        assertEquals(1, queued.size)
+        queued.forEach { it() }
+        assertEquals(0.9f, device.lastFloat)
+    }
+
+    @Test
+    fun aNewSurfaceNeverWritesThroughTheProgramOfTheOldOne() {
+        val (program, amount) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val oldQueue: (() -> Unit) -> Unit = { }
+        controller.attachQueue(oldQueue)
+        val oldDevice = FloatDevice()
+        controller.attachRuntime(oldQueue, GlProgramRuntime(program, oldDevice).also { it.link() })
+        val oldWrites = oldDevice.floatCalls
+
+        val queued = mutableListOf<() -> Unit>()
+        val newQueue: (() -> Unit) -> Unit = { block -> queued += block }
+        controller.attachQueue(newQueue)
+        controller.set(amount, 0.5f)
+        queued.toList().forEach { it() }
+        assertEquals(oldWrites, oldDevice.floatCalls)
+
+        controller.attachRuntime(oldQueue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        controller.set(amount, 0.7f)
+        queued.toList().forEach { it() }
+        assertEquals(oldWrites, oldDevice.floatCalls)
+
+        val newDevice = FloatDevice()
+        controller.attachRuntime(newQueue, GlProgramRuntime(program, newDevice).also { it.link() })
+        assertEquals(0.7f, newDevice.lastFloat)
+    }
+
+    private fun amountProgram(): Pair<ru.redbyte.redbytefx.ShaderProgram, Uniform<Flt<High>>> {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 0f)
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(amount.expr, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        return program to amount
+    }
 }
 
-private class FloatDevice : GlDevice() {
+internal class FloatDevice : GlDevice() {
     var floatCalls: Int = 0
     var lastFloat: Float = Float.NaN
 
@@ -59,6 +162,7 @@ private class FloatDevice : GlDevice() {
     override fun linkProgram(program: Int): GlCompileStatus = GlCompileStatus(true, "")
     override fun deleteProgram(program: Int) = Unit
     override fun uniformLocation(program: Int, name: String): Int = 1
+    override fun attribLocation(program: Int, name: String): Int = 0
     override fun uniform1f(location: Int, value: Float) {
         floatCalls += 1
         lastFloat = value
@@ -73,8 +177,15 @@ private class FloatDevice : GlDevice() {
     override fun maxCombinedTextureImageUnits(): Int = 8
     override fun useProgram(program: Int) = Unit
     override fun activeTexture(unit: Int) = Unit
-    override fun bindTexture2D(texture: Int) = Unit
+    var textureBinds: Int = 0
+    override fun bindTexture2D(texture: Int) {
+        textureBinds += 1
+    }
     override fun bindTextureCube(texture: Int) = Unit
+    override fun createTexture(): Int = 1
+    override fun deleteTexture(texture: Int) = Unit
+    override fun texture2DLinearRepeat(texture: Int) = Unit
+    override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) = Unit
     override fun dispatchCompute(x: Int, y: Int, z: Int) = Unit
     override fun shaderStorageBarrier() = Unit
     override fun createBuffer(): Int = 1
@@ -87,4 +198,43 @@ private class FloatDevice : GlDevice() {
     override fun shaderStorageData(buffer: Int, data: ByteArray) = Unit
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) = Unit
     override fun bindShaderStorageBase(buffer: Int, binding: Int) = Unit
+    override fun drawArrays(mode: Int, first: Int, count: Int) = Unit
+    override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) = Unit
+    override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) = Unit
+    override fun drawElementsInstanced(
+        mode: Int,
+        count: Int,
+        unsignedInt: Boolean,
+        instances: Int,
+        indexOffset: Int,
+    ) = Unit
+    override fun arrayBufferData(buffer: Int, data: FloatArray) = Unit
+    override fun arrayBufferSubData(buffer: Int, data: FloatArray) = Unit
+    override fun unbindVertexArray() = Unit
+    override fun elementBufferData(buffer: Int, indices: IntArray, unsignedInt: Boolean) = Unit
+    override fun texSubImage2DRgba(
+        texture: Int,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        rgba: ByteArray,
+    ) = Unit
+    override fun texImageCubeFace(texture: Int, face: ru.redbyte.redbytefx.gl.CubeFace, width: Int, height: Int, rgba: ByteArray) = Unit
+    override fun textureCubeLinearClamp(texture: Int) = Unit
+    override fun texture2DLinearClamp(texture: Int) = Unit
+    override fun generateMipmap2D(texture: Int) = Unit
+    override fun filterMipmap2D(texture: Int) = Unit
+    override fun texImage2DRgbaAlloc(texture: Int, width: Int, height: Int) = Unit
+    override fun createFramebuffer(): Int = 1
+    override fun deleteFramebuffer(framebuffer: Int) = Unit
+    override fun bindFramebuffer(framebuffer: Int) = Unit
+    override fun createRenderbuffer(): Int = 1
+    override fun deleteRenderbuffer(renderbuffer: Int) = Unit
+    override fun framebufferColor(framebuffer: Int, texture: Int) = Unit
+    override fun framebufferDepth(framebuffer: Int, renderbuffer: Int, width: Int, height: Int) = Unit
+    override fun framebufferComplete(framebuffer: Int): Boolean = true
+    override fun vertexAttribDivisor(location: Int, divisor: Int) = Unit
+    override fun disableVertexAttribArray(location: Int) = Unit
+    override fun vertexAttribFloat(location: Int, size: Int, strideFloats: Int, offsetFloats: Int) = Unit
 }
