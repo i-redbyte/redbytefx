@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.compose
 
 import android.graphics.RenderEffect as AndroidRenderEffect
 import android.view.View
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -11,16 +12,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.layer.CompositingStrategy
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.node.requireGraphicsContext
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalView
 import java.lang.ref.WeakReference
 import kotlin.jvm.JvmName
@@ -57,6 +61,9 @@ import ru.redbyte.redbytefx.Vec4
  * [bindTime] so updates happen after successful recomposition. The lower-level [setFloat],
  * [setFloat2], [setFloat3], [setFloat4], and [setResolution] calls remain useful for previews,
  * tests, or imperative runtime hosts.
+ *
+ * Call setters and [runBatch] from the UI thread. The batch depth and pending
+ * invalidation flag are plain fields, not synchronized.
  */
 @Stable
 public class FxController internal constructor(
@@ -173,9 +180,13 @@ public class FxController internal constructor(
      * Runs [block] while coalescing backing [RenderEffect] rebuilds and host invalidation so that
      * multiple imperative uniform updates can produce a single refresh instead of one per setter.
      *
+     * UI thread only. The batch depth and the pending host-invalidation flag are not
+     * `@Volatile` and are not locked. Do not call this from a background dispatcher.
+     *
      * Prefer [bindFloat] / [bindTime] from Composable code; this is for imperative multi-write
      * sequences (for example from a `LaunchedEffect` that updates several uniforms together).
      */
+    @MainThread
     public fun runBatch(block: () -> Unit) {
         controllerBatchDepth++
         try {
@@ -445,7 +456,8 @@ public fun FxController.bindFloat4(
  * independent controllers even if they share the same compiled [ru.redbyte.redbytefx.ShaderProgram].
  *
  * Internally this records the content into an offscreen graphics layer and applies the platform
- * render effect produced by the controller's runtime shader control.
+ * render effect produced by the controller's runtime shader control. The modifier is a
+ * `Modifier.Node`, so Compose can reuse the node across recompositions.
  *
  * If the rendered result looks wrong, debug in this order before suspecting this modifier:
  *
@@ -456,27 +468,77 @@ public fun FxController.bindFloat4(
  */
 @RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 public fun Modifier.redbyteFx(controller: FxController): Modifier =
-    composed {
+    this then RedByteFxElement(controller)
+
+private class RedByteFxElement(
+    private val controller: FxController,
+) : ModifierNodeElement<RedByteFxNode>() {
+    override fun create(): RedByteFxNode {
         RedByteFxPlatform.requireAgslRuntime()
-        val layer = rememberGraphicsLayer()
-        var appliedRenderEffect by remember(controller) { mutableStateOf<androidx.compose.ui.graphics.RenderEffect?>(null) }
-        drawWithCache {
-            layer.compositingStrategy = CompositingStrategy.Offscreen
-            onDrawWithContent {
-                controller.runtimeInvalidationTick
-                controller.syncResolution(size.width, size.height)
-                val renderEffect = controller.composeRenderEffect
-                if (appliedRenderEffect !== renderEffect) {
-                    appliedRenderEffect = renderEffect
-                    layer.renderEffect = renderEffect
-                }
-                layer.record {
-                    this@onDrawWithContent.drawContent()
-                }
-                drawLayer(layer)
-            }
-        }
+        return RedByteFxNode(controller)
     }
+
+    override fun update(node: RedByteFxNode) {
+        node.updateController(controller)
+    }
+
+    override fun equals(other: Any?): Boolean =
+        other is RedByteFxElement && controller === other.controller
+
+    override fun hashCode(): Int = System.identityHashCode(controller)
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "redbyteFx"
+        properties["controller"] = controller
+    }
+}
+
+private class RedByteFxNode(
+    private var controller: FxController,
+) : Modifier.Node(), DrawModifierNode {
+    private var layer: GraphicsLayer? = null
+    private var appliedRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
+
+    override fun onAttach() {
+        val graphicsLayer = requireGraphicsContext().createGraphicsLayer()
+        graphicsLayer.compositingStrategy = CompositingStrategy.Offscreen
+        graphicsLayer.renderEffect = null
+        layer = graphicsLayer
+        appliedRenderEffect = null
+    }
+
+    override fun onDetach() {
+        layer?.let { requireGraphicsContext().releaseGraphicsLayer(it) }
+        layer = null
+        appliedRenderEffect = null
+    }
+
+    fun updateController(next: FxController) {
+        if (controller === next) return
+        controller = next
+        appliedRenderEffect = null
+        invalidateDraw()
+    }
+
+    override fun ContentDrawScope.draw() {
+        val graphicsLayer = layer
+        if (graphicsLayer == null) {
+            drawContent()
+            return
+        }
+        controller.runtimeInvalidationTick
+        controller.syncResolution(size.width, size.height)
+        val renderEffect = controller.composeRenderEffect
+        if (appliedRenderEffect !== renderEffect) {
+            appliedRenderEffect = renderEffect
+            graphicsLayer.renderEffect = renderEffect
+        }
+        graphicsLayer.record {
+            this@draw.drawContent()
+        }
+        drawLayer(graphicsLayer)
+    }
+}
 
 @Stable
 internal class TimeBindingState {

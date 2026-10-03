@@ -76,6 +76,7 @@ public class ShaderProgram internal constructor(
         val found = bindings.firstOrNull { it.agslName == name || it.uniform.name == name }?.uniform
             ?: throw IllegalArgumentException("Shader has no uniform named $name")
         require(found.shape == shape) { "Uniform \"$name\" has shape ${found.shape}, was $shape" }
+        // T is a phantom of [shape]. The shape check is the runtime witness; the type argument is erased.
         @Suppress("UNCHECKED_CAST")
         return found as Uniform<T>
     }
@@ -109,6 +110,7 @@ public fun shader(target: ShaderTarget, block: ShaderDsl.() -> Unit): ShaderProg
  * Call [fragment], [vertex], [compute], [geometry], [tessControl], and [tessEval] as required by
  * [ShaderTarget]. Uniforms are declared here, not inside [FragmentDsl.fn].
  */
+@RedByteFxDsl
 public class ShaderDsl internal constructor(
     private val target: ShaderTarget,
 ) {
@@ -646,40 +648,48 @@ public class ShaderDsl internal constructor(
         )
     }
 
+    @RedByteFxDsl
     public inner class VertexDsl {
+        private val program = this@ShaderDsl
+        private val fnScope = FnDsl(
+            { action -> program.advance(action) },
+            program.stageFunctions,
+            program.sink,
+        )
+
         public fun <T : ShType> Varying<T>.set(value: Expr<T>) {
-            require(ownsVarying(this)) { "Varying \"${this.name}\" does not belong to this shader" }
+            require(program.ownsVarying(this)) { "Varying \"${this.name}\" does not belong to this shader" }
             require(value.shape == shape) {
                 "Varying \"${this.name}\" expects $shape, was ${value.shape}"
             }
-            if (sink.capturing()) sink.add(PrimitiveCommand.VaryingSet(this, value))
-            else varyingWrites += VaryingWrite(this, value)
+            if (program.sink.capturing()) program.sink.add(PrimitiveCommand.VaryingSet(this, value))
+            else program.varyingWrites += VaryingWrite(this, value)
         }
 
         public fun glPosition(value: Expr<Vec4<Flt<High>>>) {
-            advance(AuthoringAction.GlPosition)
-            if (sink.capturing()) {
-                sink.add(PrimitiveCommand.Position(value))
+            program.advance(AuthoringAction.GlPosition)
+            if (program.sink.capturing()) {
+                program.sink.add(PrimitiveCommand.Position(value))
                 return
             }
-            check(vertexPosition == null) { "gl_Position is already assigned" }
-            vertexPosition = value
+            check(program.vertexPosition == null) { "gl_Position is already assigned" }
+            program.vertexPosition = value
         }
 
         public fun repeat(count: Int, body: (Expr<IntS>) -> Unit) {
-            advance(AuthoringAction.Repeat)
-            sink.repeat(count, body)
+            program.advance(AuthoringAction.Repeat)
+            program.sink.repeat(count, body)
         }
 
         public fun <T : ShType> local(initializer: Expr<T>, name: String? = null): LocalVar<T> =
-            sink.declareLocal(initializer, name)
+            program.sink.declareLocal(initializer, name)
 
         public fun whenTrue(condition: Expr<BoolS>, body: () -> Unit) {
-            sink.whenTrue(condition, body)
+            program.sink.whenTrue(condition, body)
         }
 
         public fun discard() {
-            advance(AuthoringAction.Discard)
+            program.advance(AuthoringAction.Discard)
         }
 
         public fun attributeVec2(name: String): Expr<Vec2<Flt<High>>> = attribute(
@@ -697,30 +707,30 @@ public class ShaderDsl internal constructor(
             Shape.Vector(ScalarKind.Float, Precision.High, 4),
         )
 
-        public fun <R : ShType> fn(name: String? = null, block: VertexDsl.() -> Expr<R>): Fn0<R> =
-            stageFunctions.fn0(name) { block() }
+        public fun <R : ShType> fn(name: String? = null, block: FnDsl.() -> Expr<R>): Fn0<R> =
+            program.stageFunctions.fn0(name) { fnScope.block() }
 
         public fun <A : ShType, R : ShType> fn(
             witness: Expr<A>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>) -> Expr<R>,
-        ): Fn1<A, R> = stageFunctions.fn1(name, witness) { block(it) }
+            block: FnDsl.(Expr<A>) -> Expr<R>,
+        ): Fn1<A, R> = program.stageFunctions.fn1(name, witness) { fnScope.block(it) }
 
         public fun <A : ShType, B : ShType, R : ShType> fn(
             first: Expr<A>,
             second: Expr<B>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>) -> Expr<R>,
-        ): Fn2<A, B, R> = stageFunctions.fn2(name, first, second) { left, right -> block(left, right) }
+            block: FnDsl.(Expr<A>, Expr<B>) -> Expr<R>,
+        ): Fn2<A, B, R> = program.stageFunctions.fn2(name, first, second) { left, right -> fnScope.block(left, right) }
 
         public fun <A : ShType, B : ShType, C : ShType, R : ShType> fn(
             first: Expr<A>,
             second: Expr<B>,
             third: Expr<C>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
-        ): Fn3<A, B, C, R> = stageFunctions.fn3(name, first, second, third) { left, mid, right ->
-            block(left, mid, right)
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+        ): Fn3<A, B, C, R> = program.stageFunctions.fn3(name, first, second, third) { left, mid, right ->
+            fnScope.block(left, mid, right)
         }
 
         public fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn(
@@ -729,12 +739,12 @@ public class ShaderDsl internal constructor(
             third: Expr<C>,
             fourth: Expr<D>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
-        ): Fn4<A, B, C, D, R> = stageFunctions.fn4(name, first, second, third, fourth) { a, b, c, d ->
-            block(a, b, c, d)
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+        ): Fn4<A, B, C, D, R> = program.stageFunctions.fn4(name, first, second, third, fourth) { a, b, c, d ->
+            fnScope.block(a, b, c, d)
         }
 
-        public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = stageFunctions.recur(arg)
+        public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = program.stageFunctions.recur(arg)
 
         public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, R : ShType> fn(
             first: Expr<A>,
@@ -743,9 +753,9 @@ public class ShaderDsl internal constructor(
             fourth: Expr<D>,
             fifth: Expr<E>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
-        ): Fn5<A, B, C, D, E, R> = stageFunctions.fn5(name, first, second, third, fourth, fifth) { a, b, c, d, e ->
-            block(a, b, c, d, e)
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
+        ): Fn5<A, B, C, D, E, R> = program.stageFunctions.fn5(name, first, second, third, fourth, fifth) { a, b, c, d, e ->
+            fnScope.block(a, b, c, d, e)
         }
 
         public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, R : ShType> fn(
@@ -756,10 +766,10 @@ public class ShaderDsl internal constructor(
             fifth: Expr<E>,
             sixth: Expr<F>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
         ): Fn6<A, B, C, D, E, F, R> =
-            stageFunctions.fn6(name, first, second, third, fourth, fifth, sixth) { a, b, c, d, e, f ->
-                block(a, b, c, d, e, f)
+            program.stageFunctions.fn6(name, first, second, third, fourth, fifth, sixth) { a, b, c, d, e, f ->
+                fnScope.block(a, b, c, d, e, f)
             }
 
         public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, G : ShType, R : ShType> fn(
@@ -771,10 +781,10 @@ public class ShaderDsl internal constructor(
             sixth: Expr<F>,
             seventh: Expr<G>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
         ): Fn7<A, B, C, D, E, F, G, R> =
-            stageFunctions.fn7(name, first, second, third, fourth, fifth, sixth, seventh) { a, b, c, d, e, f, g ->
-                block(a, b, c, d, e, f, g)
+            program.stageFunctions.fn7(name, first, second, third, fourth, fifth, sixth, seventh) { a, b, c, d, e, f, g ->
+                fnScope.block(a, b, c, d, e, f, g)
             }
 
         public fun <
@@ -797,18 +807,18 @@ public class ShaderDsl internal constructor(
             seventh: Expr<G>,
             eighth: Expr<H>,
             name: String? = null,
-            block: VertexDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
+            block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
         ): Fn8<A, B, C, D, E, F, G, H, R> =
-            stageFunctions.fn8(
+            program.stageFunctions.fn8(
                 name, first, second, third, fourth, fifth, sixth, seventh, eighth,
             ) { a, b, c, d, e, f, g, h ->
-                block(a, b, c, d, e, f, g, h)
+                fnScope.block(a, b, c, d, e, f, g, h)
             }
 
         private fun <T : ShType> attribute(name: String, shape: Shape): Expr<T> {
-            advance(AuthoringAction.Attribute)
+            program.advance(AuthoringAction.Attribute)
             val handle = AttributeHandle(name, shape)
-            attributes += handle
+            program.attributes += handle
             return Expr(shape, ExprNode.AttributeRef(handle))
         }
     }
@@ -847,8 +857,10 @@ private fun isMedVec4(shape: Shape): Boolean =
  * Fragment stage DSL.
  *
  * [fragCoord] and [resolution] are in pixels. [sample] reads the child shader on AGSL only.
- * [texture] samples a [Sampler2D] on GLES only.
+ * [texture] samples a [Sampler2D] on GLES only. `fn` bodies use [FnDsl] and do not see those
+ * stage members implicitly.
  */
+@RedByteFxDsl
 public class FragmentDsl internal constructor(
     private val advance: (AuthoringAction) -> Unit,
     private val functions: StageFunctions,
@@ -856,6 +868,8 @@ public class FragmentDsl internal constructor(
     private val writeOut: (FragmentOutput, Expr<*>) -> Unit,
     private val sink: StatementSink,
 ) {
+    private val fnScope = FnDsl(advance, functions, sink)
+
     /** Fragment position in pixels (AGSL and GLES). */
     public val fragCoord: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
@@ -950,30 +964,30 @@ public class FragmentDsl internal constructor(
         )
     }
 
-    public fun <R : ShType> fn(name: String? = null, block: FragmentDsl.() -> Expr<R>): Fn0<R> =
-        functions.fn0(name) { block() }
+    public fun <R : ShType> fn(name: String? = null, block: FnDsl.() -> Expr<R>): Fn0<R> =
+        functions.fn0(name) { fnScope.block() }
 
     public fun <A : ShType, R : ShType> fn(
         witness: Expr<A>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>) -> Expr<R>,
-    ): Fn1<A, R> = functions.fn1(name, witness) { block(it) }
+        block: FnDsl.(Expr<A>) -> Expr<R>,
+    ): Fn1<A, R> = functions.fn1(name, witness) { fnScope.block(it) }
 
     public fun <A : ShType, B : ShType, R : ShType> fn(
         first: Expr<A>,
         second: Expr<B>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>) -> Expr<R>,
-    ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> block(left, right) }
+        block: FnDsl.(Expr<A>, Expr<B>) -> Expr<R>,
+    ): Fn2<A, B, R> = functions.fn2(name, first, second) { left, right -> fnScope.block(left, right) }
 
     public fun <A : ShType, B : ShType, C : ShType, R : ShType> fn(
         first: Expr<A>,
         second: Expr<B>,
         third: Expr<C>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>) -> Expr<R>,
     ): Fn3<A, B, C, R> = functions.fn3(name, first, second, third) { left, mid, right ->
-        block(left, mid, right)
+        fnScope.block(left, mid, right)
     }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, R : ShType> fn(
@@ -982,9 +996,9 @@ public class FragmentDsl internal constructor(
         third: Expr<C>,
         fourth: Expr<D>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>) -> Expr<R>,
     ): Fn4<A, B, C, D, R> = functions.fn4(name, first, second, third, fourth) { a, b, c, d ->
-        block(a, b, c, d)
+        fnScope.block(a, b, c, d)
     }
 
     public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = functions.recur(arg)
@@ -996,9 +1010,9 @@ public class FragmentDsl internal constructor(
         fourth: Expr<D>,
         fifth: Expr<E>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>) -> Expr<R>,
     ): Fn5<A, B, C, D, E, R> = functions.fn5(name, first, second, third, fourth, fifth) { a, b, c, d, e ->
-        block(a, b, c, d, e)
+        fnScope.block(a, b, c, d, e)
     }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, R : ShType> fn(
@@ -1009,10 +1023,10 @@ public class FragmentDsl internal constructor(
         fifth: Expr<E>,
         sixth: Expr<F>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>) -> Expr<R>,
     ): Fn6<A, B, C, D, E, F, R> =
         functions.fn6(name, first, second, third, fourth, fifth, sixth) { a, b, c, d, e, f ->
-            block(a, b, c, d, e, f)
+            fnScope.block(a, b, c, d, e, f)
         }
 
     public fun <A : ShType, B : ShType, C : ShType, D : ShType, E : ShType, F : ShType, G : ShType, R : ShType> fn(
@@ -1024,10 +1038,10 @@ public class FragmentDsl internal constructor(
         sixth: Expr<F>,
         seventh: Expr<G>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>) -> Expr<R>,
     ): Fn7<A, B, C, D, E, F, G, R> =
         functions.fn7(name, first, second, third, fourth, fifth, sixth, seventh) { a, b, c, d, e, f, g ->
-            block(a, b, c, d, e, f, g)
+            fnScope.block(a, b, c, d, e, f, g)
         }
 
     public fun <
@@ -1050,10 +1064,10 @@ public class FragmentDsl internal constructor(
         seventh: Expr<G>,
         eighth: Expr<H>,
         name: String? = null,
-        block: FragmentDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
+        block: FnDsl.(Expr<A>, Expr<B>, Expr<C>, Expr<D>, Expr<E>, Expr<F>, Expr<G>, Expr<H>) -> Expr<R>,
     ): Fn8<A, B, C, D, E, F, G, H, R> =
         functions.fn8(name, first, second, third, fourth, fifth, sixth, seventh, eighth) { a, b, c, d, e, f, g, h ->
-            block(a, b, c, d, e, f, g, h)
+            fnScope.block(a, b, c, d, e, f, g, h)
         }
 
     @JvmName("letValue")

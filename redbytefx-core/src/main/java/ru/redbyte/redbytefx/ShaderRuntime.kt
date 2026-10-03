@@ -96,9 +96,16 @@ internal class ShaderRuntime(
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         val width = sanitizeResolution(widthPx)
         val height = sanitizeResolution(heightPx)
-        val sameWidth = resolutionWidth?.let { sameFloatUniformValue(it, width) } == true
-        val sameHeight = resolutionHeight?.let { sameFloatUniformValue(it, height) } == true
-        if (sameWidth && sameHeight) return false
+        val previousWidth = resolutionWidth
+        val previousHeight = resolutionHeight
+        if (
+            previousWidth != null &&
+            previousHeight != null &&
+            sameFloatUniformValue(previousWidth, width) &&
+            sameFloatUniformValue(previousHeight, height)
+        ) {
+            return false
+        }
         resolutionWidth = width
         resolutionHeight = height
         writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)

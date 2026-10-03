@@ -33,7 +33,7 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 
 ## User functions (`fn`)
 
-Stage DSLs expose `fn { … }` and `fn(witness) { p -> … }`. The return type is `Fn0` … `Fn8` (parameter count). Call with `invoke()` or `fnHandle(arg)` to emit a user function in shader source. No nesting, recursion, or cross-stage calls.
+Stage DSLs expose `fn { … }` and `fn(witness) { p -> … }`. The return type is `Fn0` … `Fn8` (parameter count). Call with `invoke()` or `fnHandle(arg)` to emit a user function in shader source. No nesting, recursion, or cross-stage calls. The body receiver is `FnDsl`: `sample()`, `fragCoord`, and `resolution` are not in scope. Qualify the stage (`this@fragment.sample()`) only when that capture is intentional.
 
 ## Comparisons
 

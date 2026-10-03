@@ -8,6 +8,7 @@ package ru.redbyte.redbytefx
  * parameter type at compile time. Call the handle with [invoke] to emit `name(args…)` in AGSL/GLSL.
  *
  * Functions cannot nest, recurse, or call across stages; see the language reference.
+ * The body receiver is [FnDsl], not the surrounding stage, so stage builtins are not implicit.
  */
 internal class Formal(
     val name: String,
@@ -214,6 +215,43 @@ public class Fn8<
         val args = listOf(first, second, third, fourth, fifth, sixth, seventh, eighth)
         args.forEachIndexed { index, arg -> requireArgument(function, index, arg) }
         return Expr(function.result, ExprNode.UserCall(function, args))
+    }
+}
+
+/**
+ * Body of `fn { … }`.
+ *
+ * [let], [local], [whenTrue], [repeat], and [recur] are available here. Stage builtins
+ * ([FragmentDsl.sample], [FragmentDsl.fragCoord], [FragmentDsl.resolution], attributes,
+ * `gl_Position`) are not. Qualify the stage (`this@fragment.sample()`) when that capture
+ * is intentional.
+ */
+@RedByteFxDsl
+public class FnDsl internal constructor(
+    private val advance: (AuthoringAction) -> Unit,
+    private val functions: StageFunctions,
+    private val sink: StatementSink,
+) {
+    public fun <T : ShType> local(initializer: Expr<T>, name: String? = null): LocalVar<T> =
+        sink.declareLocal(initializer, name)
+
+    public fun whenTrue(condition: Expr<BoolS>, body: () -> Unit) {
+        sink.whenTrue(condition, body)
+    }
+
+    public fun repeat(count: Int, body: (Expr<IntS>) -> Unit) {
+        advance(AuthoringAction.Repeat)
+        sink.repeat(count, body)
+    }
+
+    public fun <T : ShType> recur(arg: Expr<T>): Expr<T> = functions.recur(arg)
+
+    @JvmName("letValue")
+    public fun <T : ShType> let(value: Expr<T>, name: String? = null): Expr<T> = value.let(name)
+
+    public fun <T : ShType> Expr<T>.let(name: String? = null): Expr<T> {
+        advance(AuthoringAction.Let)
+        return Expr(shape, ExprNode.Local(name, this))
     }
 }
 

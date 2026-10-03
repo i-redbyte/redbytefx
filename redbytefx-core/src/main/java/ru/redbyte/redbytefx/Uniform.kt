@@ -3,8 +3,11 @@ package ru.redbyte.redbytefx
 /**
  * Effect-owned uniform handle.
  *
+ * Equality is referential on purpose. Runtimes key these handles with [java.util.IdentityHashMap]
+ * and `===`, and this class does not override [equals] or [hashCode]. Two handles with the same
+ * [name] from different programs are not interchangeable.
+ *
  * [expr] is the shader value. The handle itself is what runtime code passes to [ShaderRuntime.set].
- * Two handles with the same debug name from different shaders are not interchangeable.
  */
 public class Uniform<T : ShType> internal constructor(
     public val name: String?,

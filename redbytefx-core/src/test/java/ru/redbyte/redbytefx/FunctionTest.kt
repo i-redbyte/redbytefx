@@ -146,7 +146,7 @@ class FunctionTest {
             shader(ShaderTarget.Agsl) {
                 fragment {
                     fn {
-                        fn { 1f.lit }
+                        this@fragment.fn { 1f.lit }
                         1f.lit
                     }
                     vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
@@ -159,7 +159,7 @@ class FunctionTest {
             shader(ShaderTarget.Agsl) {
                 fragment {
                     fn {
-                        uniform("inside", 1f)
+                        this@shader.uniform("inside", 1f)
                         1f.lit
                     }
                     vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
@@ -171,7 +171,7 @@ class FunctionTest {
         val sample = assertThrows(AuthoringException::class.java) {
             shader(ShaderTarget.Agsl) {
                 fragment {
-                    fn { sample() }
+                    fn { this@fragment.sample() }
                     vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
                 }
             }
