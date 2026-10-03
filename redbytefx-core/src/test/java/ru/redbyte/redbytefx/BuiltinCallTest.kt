@@ -32,6 +32,23 @@ class BuiltinCallTest {
     }
 
     @Test
+    fun normalizeDistanceAndCrossSpellInGlsl() {
+        val program = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val unit = normalize(vec3(0f.lit, 3f.lit, 4f.lit))
+                val span = distance(vec3(0f.lit, 0f.lit, 0f.lit), unit)
+                val axis = cross(vec3(1f.lit, 0f.lit, 0f.lit), unit)
+                vec4(span, axis.x, axis.y, 1f.lit)
+            }
+        }
+        val source = program.fragmentSource()
+        assertTrue(source.contains("normalize("))
+        assertTrue(source.contains("distance("))
+        assertTrue(source.contains("cross("))
+    }
+
+    @Test
     fun lengthAndDotReduceAVectorToAScalar() {
         val program = shader(ShaderTarget.Gles30) {
             vertex { glPosition(attributeVec4("position")) }

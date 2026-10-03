@@ -8,7 +8,7 @@ Authoring is Kotlin, not a shader string. The compiler emits the text the platfo
 
 `shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, a GLES 3.0 program, a GLES 3.1 compute program, or a GLES 3.2 program`
 
-**Platform:** Android API 33+. AGSL needs `RuntimeShader`. OpenGL ES output is GLSL ES 3.00 vertex and fragment, GLSL ES 3.10 compute, or GLSL ES 3.20 with geometry and tessellation.
+**Platform:** library `minSdk` is **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) needs **API 31+** (`RuntimeShader`); below that, runtime calls throw `AgslNotSupportedException` and Android Studio warns via `@RequiresApi`. **OpenGL ES** scenes work from API 24 through `redbytefx-gl` and `redbytefx-gl-compose` (`GlSurface`). GLES output is GLSL ES 3.00, 3.10 compute, or 3.20 with geometry and tessellation. API reference: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
 ## What you write
 
