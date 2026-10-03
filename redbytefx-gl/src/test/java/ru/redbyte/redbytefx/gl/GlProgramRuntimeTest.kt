@@ -71,8 +71,11 @@ class GlProgramRuntimeTest {
         assertEquals(1, device.dispatchCalls)
         assertEquals(1, device.barrierCalls)
         assertEquals(listOf(8, 2, 1), device.dispatchGroups)
-        runtime.dispatch(8, 2, 1)
+        runtime.dispatch(4, 1, 1, memoryBarrier = false)
         assertEquals(2, device.dispatchCalls)
+        assertEquals(1, device.barrierCalls)
+        runtime.dispatch(8, 2, 1)
+        assertEquals(3, device.dispatchCalls)
         assertEquals(2, device.barrierCalls)
         assertThrows(IllegalArgumentException::class.java) { runtime.dispatch(0, 1, 1) }
         val graphics = GlProgramRuntime(passthrough(), RecordingGlDevice())
@@ -365,6 +368,26 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun missingUniformBlockIndexFailsOnFirstUpload() {
+        val device = RecordingGlDevice(uniformBlockIndex = -1)
+        lateinit var block: UniformBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles30) {
+                block = uniformBlock("frame") { float("time") }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+            device,
+        )
+        runtime.link()
+        val error = assertThrows(GlException::class.java) {
+            runtime.set(block, floatArrayOf(1f))
+        }
+        assertEquals(GlCode.UniformBlockNotBound, error.code)
+        assertEquals(1, device.bufferDataCalls)
+    }
+
+    @Test
     fun agslProgramIsRejectedBeforeAnyDriverCall() {
         val device = RecordingGlDevice()
         val program = shader(ShaderTarget.Agsl) {
@@ -386,6 +409,7 @@ private class RecordingGlDevice(
     private val failLink: Boolean = false,
     private val missing: Set<String> = emptySet(),
     private val textureUnitLimit: Int = 8,
+    private val uniformBlockIndex: Int = 0,
 ) : GlDevice() {
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
@@ -541,7 +565,7 @@ private class RecordingGlDevice(
         writes += "bindBuffer"
     }
 
-    override fun uniformBlockIndex(program: Int, name: String): Int = 0
+    override fun uniformBlockIndex(program: Int, name: String): Int = uniformBlockIndex
 
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
         writes += "blockBinding"

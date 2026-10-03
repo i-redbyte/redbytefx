@@ -34,6 +34,7 @@ public enum class GlCode {
     CompileFailed,
     LinkFailed,
     TextureUnitLimit,
+    UniformBlockNotBound,
 }
 
 public class GlException(
@@ -64,8 +65,10 @@ public class GlProgramRuntime(
     private var destroyed = false
     private var bufferId = 0
     private var blockBytes: ByteArray? = null
+    private var blockFloats: FloatArray? = null
     private var storageBufferId = 0
     private var storageBytes: ByteArray? = null
+    private var storageFloats: FloatArray? = null
 
     public fun link() {
         checkThread()
@@ -204,7 +207,7 @@ public class GlProgramRuntime(
     @JvmName("setMat4")
     public fun set(uniform: Uniform<Mat4>, values: FloatArray): Boolean = writeMatrixUniform(uniform, values, 16)
 
-    public fun dispatch(x: Int, y: Int = 1, z: Int = 1) {
+    public fun dispatch(x: Int, y: Int = 1, z: Int = 1, memoryBarrier: Boolean = true) {
         require(x >= 1 && y >= 1 && z >= 1) {
             "Compute dispatch size must be at least 1, was $x, $y, $z"
         }
@@ -214,7 +217,9 @@ public class GlProgramRuntime(
         }
         device.useProgram(programId)
         device.dispatchCompute(x, y, z)
-        device.shaderStorageBarrier()
+        if (memoryBarrier) {
+            device.shaderStorageBarrier()
+        }
     }
 
     private fun bindSampler(
@@ -239,9 +244,14 @@ public class GlProgramRuntime(
     public fun set(block: UniformBlock, values: FloatArray): Boolean {
         checkReady()
         require(block === program.uniformBlock) { "Uniform block does not belong to this shader" }
+        val previousFloats = blockFloats
+        if (previousFloats != null && previousFloats.contentEquals(values)) return false
         val packed = packStd140(block, values)
         val previous = blockBytes
-        if (previous != null && previous.contentEquals(packed)) return false
+        if (previous != null && previous.contentEquals(packed)) {
+            blockFloats = values.copyOf()
+            return false
+        }
         if (bufferId == 0) {
             val created = device.createBuffer()
             require(created != 0) { "Driver returned no buffer name" }
@@ -249,12 +259,19 @@ public class GlProgramRuntime(
             device.uniformBufferData(bufferId, packed)
             device.useProgram(programId)
             val index = device.uniformBlockIndex(programId, block.typeName)
-            if (index >= 0) device.uniformBlockBinding(programId, index, 0)
+            if (index < 0) {
+                reject(
+                    GlCode.UniformBlockNotBound,
+                    "Uniform block \"${block.typeName}\" is not active in this program",
+                )
+            }
+            device.uniformBlockBinding(programId, index, 0)
             device.bindUniformBufferBase(bufferId, 0)
         } else {
             device.uniformBufferSubData(bufferId, packed)
         }
         blockBytes = packed.copyOf()
+        blockFloats = values.copyOf()
         return true
     }
 
@@ -262,9 +279,14 @@ public class GlProgramRuntime(
     public fun set(block: StorageBlock, values: FloatArray): Boolean {
         checkReady()
         require(block === program.storageBlock) { "Storage block does not belong to this shader" }
+        val previousFloats = storageFloats
+        if (previousFloats != null && previousFloats.contentEquals(values)) return false
         val packed = packStd430(block, values)
         val previous = storageBytes
-        if (previous != null && previous.contentEquals(packed)) return false
+        if (previous != null && previous.contentEquals(packed)) {
+            storageFloats = values.copyOf()
+            return false
+        }
         if (storageBufferId == 0) {
             val created = device.createBuffer()
             require(created != 0) { "Driver returned no buffer name" }
@@ -278,6 +300,7 @@ public class GlProgramRuntime(
             device.shaderStorageSubData(storageBufferId, packed)
         }
         storageBytes = packed.copyOf()
+        storageFloats = values.copyOf()
         return true
     }
 
@@ -291,18 +314,27 @@ public class GlProgramRuntime(
             bufferId = 0
         }
         blockBytes = null
+        blockFloats = null
         if (storageBufferId != 0) {
             device.bindShaderStorageBase(0, 0)
             device.deleteBuffer(storageBufferId)
             storageBufferId = 0
         }
         storageBytes = null
+        storageFloats = null
         if (programId != 0) {
             device.useProgram(0)
             device.deleteProgram(programId)
             programId = 0
         }
         linked = false
+        locations.clear()
+        floatValues.clear()
+        vectorValues.clear()
+        intValues.clear()
+        textureUnits.clear()
+        textureIds.clear()
+        nextTextureUnit = 0
     }
 
     private fun assignUnit(uniform: Uniform<*>, location: Int): Int {
