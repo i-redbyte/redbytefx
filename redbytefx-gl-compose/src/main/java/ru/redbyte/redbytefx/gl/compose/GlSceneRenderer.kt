@@ -107,8 +107,9 @@ internal class SceneRenderer(
         current.colorTarget = if (renderToTexture) ensureColorTarget(runtime) else null
         val draws = current.drawList()
         draws.reset()
-        runtime.use()
         onFrame(current)
+        requireOffscreenTarget(renderToTexture, draws.offscreen().size)
+        runtime.use()
         execute(runtime, draws)
         draws.reset()
         evictIdleMeshes(runtime)
@@ -116,6 +117,7 @@ internal class SceneRenderer(
 
     private fun execute(runtime: GlProgramRuntime, draws: DrawList) {
         val offscreen = draws.offscreen()
+        requireOffscreenTarget(renderToTexture, offscreen.size)
         if (offscreen.isNotEmpty()) {
             runtime.bindFramebuffer(ensureColorTarget(runtime).framebuffer)
             clear()

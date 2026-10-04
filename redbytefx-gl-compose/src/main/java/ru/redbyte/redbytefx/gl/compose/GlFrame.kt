@@ -70,6 +70,12 @@ internal fun executedDrawCount(
 /** Scene. Depth-test a draw when the surface asked for it, or this mesh writes depth. */
 internal fun drawDepthTest(force: Boolean, meshDepth: Boolean): Boolean = force || meshDepth
 
+internal fun requireOffscreenTarget(renderToTexture: Boolean, offscreenCount: Int) {
+    check(offscreenCount == 0 || renderToTexture) {
+        "Offscreen draws need renderToTexture so the pass has a color target"
+    }
+}
+
 /** Draws recorded during one [GlSurface] frame. [reset] keeps the records for the next frame. */
 internal class DrawList {
     private val screenDraws = ArrayList<RecordedDraw>()
@@ -233,7 +239,8 @@ public class GlFrame internal constructor(
     }
 
     /**
-     * Scene. Records [block] into the offscreen list. The host clears that target once,
+     * Scene. Records [block] into the offscreen list. The surface must be created with
+     * `renderToTexture` so [colorTarget] receives the pass. The host clears that target once,
      * draws the list, then binds framebuffer 0 before any screen draw.
      */
     public fun offscreen(block: () -> Unit) {

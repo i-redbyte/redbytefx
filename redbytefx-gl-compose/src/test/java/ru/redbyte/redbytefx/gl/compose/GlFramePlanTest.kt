@@ -86,6 +86,16 @@ class GlFramePlanTest {
     }
 
     @Test
+    fun offscreenDrawsWithoutARenderTargetAreRejected() {
+        val error = assertThrows(IllegalStateException::class.java) {
+            requireOffscreenTarget(renderToTexture = false, offscreenCount = 1)
+        }
+        assertTrue(error.message!!.contains("renderToTexture"))
+        requireOffscreenTarget(renderToTexture = true, offscreenCount = 2)
+        requireOffscreenTarget(renderToTexture = false, offscreenCount = 0)
+    }
+
+    @Test
     fun theDepthTestFollowsTheSurfaceFlagOrTheMesh() {
         assertFalse(drawDepthTest(force = false, meshDepth = false))
         assertTrue(drawDepthTest(force = false, meshDepth = true))
