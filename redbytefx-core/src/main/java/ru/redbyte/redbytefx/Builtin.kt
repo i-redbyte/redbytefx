@@ -109,6 +109,10 @@ public fun lambert(
     light: Expr<Vec3<Flt<High>>>,
 ): Expr<Flt<High>> = max(dot(normalize(normal), normalize(light)), float(0f))
 
+@JvmName("distanceVec2")
+public fun <P : Prec> distance(left: Expr<Vec2<Flt<P>>>, right: Expr<Vec2<Flt<P>>>): Expr<Flt<P>> =
+    distanceOf(left, right)
+
 @JvmName("distanceVec3")
 public fun <P : Prec> distance(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Flt<P>> =
     distanceOf(left, right)
@@ -134,8 +138,12 @@ private fun <T : ShType> unaryFloatValue(function: String, value: Expr<T>): Expr
     return call(value.shape, function, listOf(value))
 }
 
-private fun <P : Prec> distanceOf(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Flt<P>> =
-    call(floatScalar(left.shape), "distance", listOf(left, right))
+private fun <P : Prec> distanceOf(left: Expr<*>, right: Expr<*>): Expr<Flt<P>> {
+    require(isFloatVector(left.shape) && left.shape == right.shape) {
+        "distance requires float vectors of one precision and length, was ${left.shape} and ${right.shape}"
+    }
+    return call(floatScalar(left.shape), "distance", listOf(left, right))
+}
 
 private fun <P : Prec> crossOf(left: Expr<Vec3<Flt<P>>>, right: Expr<Vec3<Flt<P>>>): Expr<Vec3<Flt<P>>> =
     call(left.shape, "cross", listOf(left, right))

@@ -32,6 +32,25 @@ class BuiltinCallTest {
     }
 
     @Test
+    fun distanceOfVec2SpellsTheSameCall() {
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val span = distance(vec2(0f.lit, 0f.lit), vec2(3f.lit, 4f.lit))
+                vec4(span, span, span, 1f.lit)
+            }
+        }
+        assertTrue(agsl.agslSource().contains("distance(float2(0.0, 0.0), float2(3.0, 4.0))"))
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val span = distance(vec2(0f.med, 0f.med), vec2(3f.med, 4f.med))
+                vec4(span.toHigh(), 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(glsl.fragmentSource().contains("distance(vec2(0.0, 0.0), vec2(3.0, 4.0))"))
+    }
+
+    @Test
     fun normalizeDistanceAndCrossSpellInGlsl() {
         val program = shader(ShaderTarget.Gles30) {
             vertex { glPosition(attributeVec4("position")) }

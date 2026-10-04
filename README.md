@@ -175,7 +175,7 @@ shader(ShaderTarget.Agsl) {
 
 Scalar floats of one precision support `+`, `-`, `*`, `/`. Vectors support vector-vector and vector-scalar math of the same precision. `mat2`, `mat3`, and `mat4` multiply a matrix of the same size or a vector with that many lanes; both spell `*`. Float and int scalars compare with `gt`, `lt`, `ge`, `le`, `eq`, and `ne`. `gte` is another spelling of `ge`. `ifElse(condition, ifTrue, ifFalse)` is the ternary. Boolean scalars support `and`, `or`, and `not`.
 
-Math that spells the same call in both languages includes `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, and `length`. `sqrt` is the GLSL call and does not replace a negative argument.
+Math that spells the same call in both languages includes `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`, and `distance` for `vec2` and `vec3`. `sqrt` is the GLSL call and does not replace a negative argument.
 
 `redbytefx-stdlib` adds coordinate and compositing recipes on the same `fragment` receiver: `normalizedUv`, `sampleUv`, `centeredUv`, masks, reveals, blend helpers, and SDF helpers such as `sdCircle` and `softFill`. `softFill` and `stroke` still take the pen width from the caller. `softFillScreen(distance)` and `strokeScreen(distance, width)` take the edge width from `fwidth(distance)` and are legal only in a fragment.
 

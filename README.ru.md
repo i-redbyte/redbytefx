@@ -175,7 +175,7 @@ shader(ShaderTarget.Agsl) {
 
 Скалярные float одной точности поддерживают `+`, `-`, `*`, `/`. Векторы поддерживают вектор-вектор и вектор-скаляр той же точности. `mat2`, `mat3` и `mat4` умножаются на матрицу того же размера или на вектор с таким же числом компонент; оба языка пишут `*`. Сравнения скаляров float и int: `gt`, `lt`, `ge`, `le`, `eq`, `ne`. `gte` - другое написание `ge`. `ifElse(condition, ifTrue, ifFalse)` - это тернарный выбор. Булевы скаляры поддерживают `and`, `or` и `not`.
 
-Математика с одним и тем же вызовом в обоих языках: `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`. `sqrt` - это вызов GLSL, отрицательный аргумент не заменяется.
+Математика с одним и тем же вызовом в обоих языках: `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length` и `distance` для `vec2` и `vec3`. `sqrt` - это вызов GLSL, отрицательный аргумент не заменяется.
 
 `redbytefx-stdlib` добавляет рецепты координат и композитинга на том же receiver `fragment`: `normalizedUv`, `sampleUv`, `centeredUv`, маски, reveal, смешивание и SDF вроде `sdCircle` и `softFill`. У `softFill` и `stroke` ширина пера по-прежнему аргумент вызывающего. `softFillScreen(distance)` и `strokeScreen(distance, width)` берут ширину края из `fwidth(distance)` и законны только во фрагменте.
 
