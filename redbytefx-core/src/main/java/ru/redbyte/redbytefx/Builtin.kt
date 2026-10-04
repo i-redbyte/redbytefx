@@ -11,6 +11,10 @@ public fun <T : ShType> sin(value: Expr<T>): Expr<T> = unaryFloat("sin", value)
 
 public fun <T : ShType> cos(value: Expr<T>): Expr<T> = unaryFloat("cos", value)
 
+public fun <T : ShType> tan(value: Expr<T>): Expr<T> = unaryFloat("tan", value)
+
+public fun <T : ShType> sign(value: Expr<T>): Expr<T> = unaryFloat("sign", value)
+
 public fun <T : ShType> abs(value: Expr<T>): Expr<T> = unaryFloat("abs", value)
 
 public fun <T : ShType> floor(value: Expr<T>): Expr<T> = unaryFloat("floor", value)
@@ -30,6 +34,18 @@ public fun <T : ShType> fwidth(value: Expr<T>): Expr<T> = derivative("fwidth", v
 public fun <T : ShType> radians(value: Expr<T>): Expr<T> = unaryFloat("radians", value)
 
 public fun <T : ShType> atan(value: Expr<T>): Expr<T> = unaryFloat("atan", value)
+
+public fun <T : ShType> reflect(incident: Expr<T>, normal: Expr<T>): Expr<T> =
+    sameShape("reflect", incident, normal)
+
+@JvmName("transposeMat2")
+public fun transpose(matrix: Expr<Mat2>): Expr<Mat2> = transposeOf(matrix)
+
+@JvmName("transposeMat3")
+public fun transpose(matrix: Expr<Mat3>): Expr<Mat3> = transposeOf(matrix)
+
+@JvmName("transposeMat4")
+public fun transpose(matrix: Expr<Mat4>): Expr<Mat4> = transposeOf(matrix)
 
 public fun <T : ShType> atan(y: Expr<T>, x: Expr<T>): Expr<T> = sameShape("atan", y, x)
 
@@ -136,6 +152,11 @@ private fun <T : ShType> unaryFloatValue(function: String, value: Expr<T>): Expr
         "$function requires a float scalar or vector, was ${value.shape}"
     }
     return call(value.shape, function, listOf(value))
+}
+
+private fun <T : ShType> transposeOf(matrix: Expr<*>): Expr<T> {
+    require(matrix.shape is Shape.Matrix) { "transpose requires a matrix, was ${matrix.shape}" }
+    return call(matrix.shape, "transpose", listOf(matrix))
 }
 
 private fun <P : Prec> distanceOf(left: Expr<*>, right: Expr<*>): Expr<Flt<P>> {

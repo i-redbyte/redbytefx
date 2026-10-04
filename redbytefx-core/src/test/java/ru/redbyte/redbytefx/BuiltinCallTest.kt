@@ -32,6 +32,40 @@ class BuiltinCallTest {
     }
 
     @Test
+    fun signTanReflectAndTransposeSpellTheSharedNames() {
+        val basis = mat2(vec2(1f.lit, 0f.lit), vec2(0f.lit, 1f.lit))
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val turned = tan(sign(1f.lit))
+                val bounced = reflect(vec2(1f.lit, 0f.lit), vec2(0f.lit, 1f.lit))
+                val flipped = transpose(basis) * vec2(1f.lit, 0f.lit)
+                vec4(turned, bounced.x, flipped.x, flipped.y)
+            }
+        }
+        val agslSource = agsl.agslSource()
+        assertTrue(agslSource.contains("tan(sign(1.0))"))
+        assertTrue(agslSource.contains("reflect(float2(1.0, 0.0), float2(0.0, 1.0))"))
+        assertTrue(agslSource.contains("transpose(float2x2("))
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val turned = tan(sign(1f.lit))
+                val bounced = reflect(vec3(0f.lit, 1f.lit, 0f.lit), vec3(0f.lit, 0f.lit, 1f.lit))
+                val flipped = transpose(mat3(
+                    vec3(1f.lit, 0f.lit, 0f.lit),
+                    vec3(0f.lit, 1f.lit, 0f.lit),
+                    vec3(0f.lit, 0f.lit, 1f.lit),
+                )) * vec3(0f.lit, 1f.lit, 0f.lit)
+                vec4(turned, bounced.x, flipped.y, 1f.lit)
+            }
+        }
+        val fragment = glsl.fragmentSource()
+        assertTrue(fragment.contains("tan(sign(1.0))"))
+        assertTrue(fragment.contains("reflect(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0))"))
+        assertTrue(fragment.contains("transpose(mat3("))
+    }
+
+    @Test
     fun distanceOfVec2SpellsTheSameCall() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {
