@@ -1,14 +1,15 @@
 package ru.redbyte.redbytefx.gl
 
 /**
- * One uniform or storage block buffer at binding point 0.
+ * One uniform or storage block buffer at [binding].
  *
- * The binding point is context state, so a second program with its own block replaces it.
+ * The binding point is context state, so another program that uses the same point replaces it.
  * [bind] must run each time the owning program is made current, not only after a write.
  */
 internal class GlBlockBuffer(
     private val device: GlDevice,
     private val storage: Boolean,
+    private val binding: Int,
 ) {
     var name: Int = 0
         private set
@@ -51,12 +52,12 @@ internal class GlBlockBuffer(
 
     fun bind() {
         if (name == 0) return
-        if (storage) device.bindShaderStorageBase(name, 0) else device.bindUniformBufferBase(name, 0)
+        if (storage) device.bindShaderStorageBase(name, binding) else device.bindUniformBufferBase(name, binding)
     }
 
     fun delete() {
         if (name != 0) {
-            if (storage) device.bindShaderStorageBase(0, 0) else device.bindUniformBufferBase(0, 0)
+            if (storage) device.bindShaderStorageBase(0, binding) else device.bindUniformBufferBase(0, binding)
             device.deleteBuffer(name)
             name = 0
         }

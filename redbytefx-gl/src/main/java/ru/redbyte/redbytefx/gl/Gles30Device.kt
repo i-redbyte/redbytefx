@@ -189,6 +189,16 @@ public class Gles30Device : GlDevice() {
         GLES30.glUniformBlockBinding(program, blockIndex, binding)
     }
 
+    override fun maxUniformBufferBindings(): Int {
+        GLES30.glGetIntegerv(GLES30.GL_MAX_UNIFORM_BUFFER_BINDINGS, statusSlot, 0)
+        return statusSlot[0]
+    }
+
+    override fun maxShaderStorageBufferBindings(): Int {
+        GLES31.glGetIntegerv(GLES31.GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, statusSlot, 0)
+        return statusSlot[0]
+    }
+
     override fun shaderStorageData(buffer: Int, data: ByteArray) {
         GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffer)
         GLES31.glBufferData(

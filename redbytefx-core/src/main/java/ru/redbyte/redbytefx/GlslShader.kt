@@ -20,7 +20,7 @@ internal fun linkGlsl(
     names: IdentifierAllocator,
     functions: List<UserFunction>,
     fragmentWrites: List<FragmentWrite>,
-    block: UniformBlock?,
+    blocks: List<UniformBlock>,
     stages: LinkedStages = LinkedStages(),
     version: Int = GLSL_300,
     programTarget: ShaderTarget = ShaderTarget.Gles30,
@@ -125,7 +125,7 @@ internal fun linkGlsl(
             outputName = null,
             outputValue = null,
             blockText = blockText(
-                block,
+                blocks,
                 writes.map { it.value } + listOfNotNull(position) + commandExprs(vertexStatements),
             ),
             version = version,
@@ -159,18 +159,18 @@ internal fun linkGlsl(
             outputName = if (orderedWrites.isEmpty()) "oColor" else null,
             outputValue = if (orderedWrites.isEmpty()) fragmentText else null,
             blockText = blockText(
-                block,
+                blocks,
                 listOf(fragmentBody) + fragmentWrites.map { it.value },
             ),
             version = version,
         ),
         bindings = bindings,
-        uniformBlock = block,
+        uniformBlocks = blocks,
         geometryText = geometry?.let {
-            spellGeometry(it, uniformNames, varyingNames, functions, occupied, pipeMembers, block)
+            spellGeometry(it, uniformNames, varyingNames, functions, occupied, pipeMembers, blocks)
         },
         tessControlText = tessControl?.let {
-            spellTessControl(it, uniformNames, varyingNames, functions, occupied, pipeMembers, block)
+            spellTessControl(it, uniformNames, varyingNames, functions, occupied, pipeMembers, blocks)
         },
         tessEvalText = tessEval?.let {
             spellTessEval(
@@ -180,7 +180,7 @@ internal fun linkGlsl(
                 functions,
                 occupied,
                 pipeMembers,
-                block,
+                blocks,
                 tessControl?.vertices ?: 0,
             )
         },
@@ -237,22 +237,31 @@ private fun pipeBlock(
 
 private const val VERTEX_PER_VERTEX = "out gl_PerVertex {\n  vec4 gl_Position;\n};"
 
-private fun blockText(block: UniformBlock?, roots: List<Expr<*>>): String {
-    if (block == null || !referencesBlock(roots)) return ""
+private fun blockText(blocks: List<UniformBlock>, roots: List<Expr<*>>): String {
+    if (blocks.isEmpty()) return ""
+    val used = referencedMembers(roots)
     return buildString {
-        append("layout(std140) uniform ").append(block.typeName).append(" {\n")
-        for (member in block.members) {
-            append("  ").append(memberDeclaration(member)).append(";\n")
+        for (block in blocks) {
+            if (block.members.none { it in used }) continue
+            append("layout(std140, binding = ").append(block.binding).append(") uniform ")
+                .append(block.typeName).append(" {\n")
+            for (member in block.members) {
+                append("  ").append(memberDeclaration(member)).append(";\n")
+            }
+            append("} ").append(block.instanceName).append(";\n")
         }
-        append("} ").append(block.instanceName).append(";\n")
     }
 }
 
-private fun referencesBlock(roots: List<Expr<*>>): Boolean {
-    var found = false
+private fun referencedMembers(roots: List<Expr<*>>): Set<BlockMember> {
+    val found = mutableSetOf<BlockMember>()
     roots.forEach { root ->
         walk(root, linkedSetOf()) { node ->
-            if (node is ExprNode.BlockRef || node is ExprNode.Index) found = true
+            when (node) {
+                is ExprNode.BlockRef -> found += node.member
+                is ExprNode.Index -> found += node.member
+                else -> Unit
+            }
         }
     }
     return found
@@ -606,12 +615,12 @@ private fun glslLocalBase(suggested: String?, index: Int): String {
 
 internal fun spellCompute(
     layout: ComputeLayout,
-    storage: StorageBlock?,
+    storage: List<StorageBlock>,
     statements: List<PrimitiveCommand>,
     uniforms: List<Uniform<*>>,
     names: IdentifierAllocator,
     functions: List<UserFunction>,
-    block: UniformBlock?,
+    blocks: List<UniformBlock>,
     shared: List<BlockMember>,
 ): ShaderProgram {
     val bindings = uniforms.map { uniform ->
@@ -639,7 +648,7 @@ internal fun spellCompute(
             append("uniform ").append(glslDeclaration(binding.uniform.shape)).append(' ')
                 .append(binding.agslName).append(";\n")
         }
-        append(blockText(block, roots))
+        append(blockText(blocks, roots))
         append(storageText(storage))
         for (member in shared) {
             append("shared ").append(glslDeclaration(member.shape)).append(' ')
@@ -655,8 +664,8 @@ internal fun spellCompute(
     return ShaderProgram(
         target = ShaderTarget.Gles31,
         bindings = bindings,
-        uniformBlock = block,
-        storageBlock = storage,
+        uniformBlocks = blocks,
+        storageBlocks = storage,
         computeSourceText = source,
     )
 }
@@ -667,10 +676,10 @@ private fun localSizeText(layout: ComputeLayout): String = if (layout.y == null 
     "layout(local_size_x = ${layout.x}, local_size_y = ${layout.y ?: 1}, local_size_z = ${layout.z ?: 1}) in;\n"
 }
 
-private fun storageText(block: StorageBlock?): String {
-    if (block == null) return ""
-    return buildString {
-        append("layout(std430, binding = 0) buffer ").append(block.typeName).append(" {\n")
+private fun storageText(blocks: List<StorageBlock>): String = buildString {
+    for (block in blocks) {
+        append("layout(std430, binding = ").append(block.binding).append(") buffer ")
+            .append(block.typeName).append(" {\n")
         for (member in block.members) {
             append("  ").append(memberDeclaration(member)).append(";\n")
         }
@@ -694,7 +703,7 @@ internal fun spellGeometry(
     functions: List<UserFunction>,
     occupied: Set<String>,
     pipeMembers: List<Varying<*>>,
-    block: UniformBlock?,
+    blocks: List<UniformBlock>,
 ): String = spellPrimitive(
     header = listOf(
         "layout(${stage.input.glslName}) in;",
@@ -702,7 +711,7 @@ internal fun spellGeometry(
     ),
     commands = stage.commands,
     env = StageEnv(
-        uniformNames, varyingNames, functions, occupied, pipeMembers, block, AuthoringPlace.Geometry,
+        uniformNames, varyingNames, functions, occupied, pipeMembers, blocks, AuthoringPlace.Geometry,
         inName = "gs_in", outName = "gs_out", inArray = true, outArray = false,
         copy = PipeCopy(beforeEachEmit = true, perVertex = GEOMETRY_PER_VERTEX),
         varyingAt = { name, index -> "gs_in[$index].$name" },
@@ -717,12 +726,12 @@ internal fun spellTessControl(
     functions: List<UserFunction>,
     occupied: Set<String>,
     pipeMembers: List<Varying<*>>,
-    block: UniformBlock?,
+    blocks: List<UniformBlock>,
 ): String = spellPrimitive(
     header = listOf("layout(vertices = ${stage.vertices}) out;"),
     commands = stage.commands,
     env = StageEnv(
-        uniformNames, varyingNames, functions, occupied, pipeMembers, block, AuthoringPlace.TessControl,
+        uniformNames, varyingNames, functions, occupied, pipeMembers, blocks, AuthoringPlace.TessControl,
         inName = "tc_in", outName = "tc_out", inArray = true, outArray = true,
         copy = PipeCopy(
             beforeEachEmit = false,
@@ -741,7 +750,7 @@ internal fun spellTessEval(
     functions: List<UserFunction>,
     occupied: Set<String>,
     pipeMembers: List<Varying<*>>,
-    block: UniformBlock?,
+    blocks: List<UniformBlock>,
     patchVertices: Int,
 ): String {
     val primitive = when (stage.primitive) {
@@ -767,7 +776,7 @@ internal fun spellTessEval(
         listOf(layout),
         stage.commands,
         StageEnv(
-            uniformNames, varyingNames, functions, occupied, pipeMembers, block, AuthoringPlace.TessEval,
+            uniformNames, varyingNames, functions, occupied, pipeMembers, blocks, AuthoringPlace.TessEval,
             inName = "te_in", outName = "te_out", inArray = true, outArray = false,
             copy = PipeCopy(
                 beforeEachEmit = false,
@@ -806,7 +815,7 @@ private class StageEnv(
     val functions: List<UserFunction>,
     val occupied: Set<String>,
     val pipeMembers: List<Varying<*>>,
-    val block: UniformBlock?,
+    val blocks: List<UniformBlock>,
     val stage: AuthoringPlace,
     val inName: String,
     val outName: String,
@@ -876,7 +885,7 @@ private fun spellPrimitive(
             append("uniform ").append(glslDeclaration(uniform.key.shape)).append(' ')
                 .append(uniform.value).append(";\n")
         }
-        append(blockText(env.block, roots))
+        append(blockText(env.blocks, roots))
         if (piped && writesGlPosition(commands)) {
             env.copy.perVertex.forEach { append(it).append('\n') }
         }

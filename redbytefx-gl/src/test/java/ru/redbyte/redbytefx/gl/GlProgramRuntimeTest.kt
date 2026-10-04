@@ -824,6 +824,79 @@ class GlProgramRuntimeTest {
         val created = assertThrows(GlException::class.java) { runtime.createBuffer() }
         assertEquals(GlCode.Destroyed, created.code)
     }
+
+    @Test
+    fun twoBlocksBindAtTheirDeclarationPointsAndTheLimitIsTheContext() {
+        lateinit var frame: UniformBlock
+        lateinit var color: UniformBlock
+        val program = shader(ShaderTarget.Gles30) {
+            frame = uniformBlock("frame") { float("time") }
+            color = uniformBlock("color") { vec3("rgb") }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        assertTrue(runtime.set(frame, floatArrayOf(1f)))
+        assertTrue(runtime.set(color, floatArrayOf(0f, 1f, 0f)))
+        assertEquals(listOf(0, 1), device.assignedBlockBindings)
+        assertEquals(listOf(0, 1), device.uniformBindPoints)
+
+        lateinit var foreign: UniformBlock
+        shader(ShaderTarget.Gles30) {
+            foreign = uniformBlock("other") { float("time") }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.set(foreign, floatArrayOf(1f))
+        }
+
+        val limited = RecordingGlDevice(uniformBindingLimit = 1)
+        val rejected = assertThrows(GlException::class.java) {
+            GlProgramRuntime(program, limited).link()
+        }
+        assertEquals(GlCode.BlockBindingLimit, rejected.code)
+
+        lateinit var cells: StorageBlock
+        lateinit var gain: StorageBlock
+        val compute = shader(ShaderTarget.Gles31) {
+            cells = storageBlock("cells") { float("value") }
+            gain = storageBlock("gain") { float("amount") }
+            compute(8) { }
+        }
+        val computeDevice = RecordingGlDevice()
+        val computeRuntime = GlProgramRuntime(compute, computeDevice)
+        computeRuntime.link()
+        assertTrue(computeRuntime.set(cells, floatArrayOf(1f)))
+        assertTrue(computeRuntime.set(gain, floatArrayOf(2f)))
+        assertEquals(listOf(0, 1), computeDevice.storageBindPoints)
+        val first = FloatArray(1)
+        val second = FloatArray(1)
+        assertEquals(1, computeRuntime.read(cells, first))
+        assertEquals(1, computeRuntime.read(gain, second))
+        assertEquals(1f, first[0], 0f)
+        assertEquals(2f, second[0], 0f)
+        assertThrows(IllegalArgumentException::class.java) {
+            computeRuntime.read(cellsFromAnotherShader(), FloatArray(1))
+        }
+
+        val storageLimited = RecordingGlDevice(storageBindingLimit = 1)
+        val storageRejected = assertThrows(GlException::class.java) {
+            GlProgramRuntime(compute, storageLimited).link()
+        }
+        assertEquals(GlCode.BlockBindingLimit, storageRejected.code)
+    }
+
+    private fun cellsFromAnotherShader(): StorageBlock {
+        lateinit var foreign: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            foreign = storageBlock("other") { float("value") }
+            compute(8) { }
+        }
+        return foreign
+    }
 }
 
 private fun imageProgram(image: (Uniform<Sampler2D>) -> Unit) = shader(ShaderTarget.Gles30) {
@@ -848,6 +921,8 @@ private class RecordingGlDevice(
     private val missing: Set<String> = emptySet(),
     private val textureUnitLimit: Int = 8,
     private val uniformBlockIndex: Int = 0,
+    private val uniformBindingLimit: Int = 24,
+    private val storageBindingLimit: Int = 8,
 ) : GlDevice() {
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
@@ -1038,15 +1113,24 @@ private class RecordingGlDevice(
         writes += "bufferSubData"
     }
 
+    val uniformBindPoints = mutableListOf<Int>()
+    val assignedBlockBindings = mutableListOf<Int>()
+
     override fun bindUniformBufferBase(buffer: Int, binding: Int) {
         writes += "bindBuffer"
+        uniformBindPoints += binding
     }
 
     override fun uniformBlockIndex(program: Int, name: String): Int = uniformBlockIndex
 
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) {
         writes += "blockBinding"
+        assignedBlockBindings += binding
     }
+
+    override fun maxUniformBufferBindings(): Int = uniformBindingLimit
+
+    override fun maxShaderStorageBufferBindings(): Int = storageBindingLimit
 
     var storageDataCalls = 0
     var storageSubDataCalls = 0
@@ -1077,8 +1161,11 @@ private class RecordingGlDevice(
 
     override fun unmapShaderStorage(buffer: Int) = Unit
 
+    val storageBindPoints = mutableListOf<Int>()
+
     override fun bindShaderStorageBase(buffer: Int, binding: Int) {
         writes += "bindStorage"
+        storageBindPoints += binding
     }
 
     override fun maxCombinedTextureImageUnits(): Int = textureUnitLimit

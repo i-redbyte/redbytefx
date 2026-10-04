@@ -36,6 +36,7 @@ public enum class GlCode {
     CompileFailed,
     LinkFailed,
     TextureUnitLimit,
+    BlockBindingLimit,
     UniformBlockNotBound,
     MissingUniformLocation,
     FramebufferIncomplete,
@@ -69,8 +70,7 @@ public class GlProgramRuntime(
     private var programId = 0
     private var linked = false
     private var destroyed = false
-    private val uniformBuffer = GlBlockBuffer(device, storage = false)
-    private val storageBuffer = GlBlockBuffer(device, storage = true)
+    private val blocks = GlOwnedBlocks(device, program)
     private val ownedTextures = mutableListOf<Int>()
     private val framebufferColors = HashMap<Int, Int>()
     private var boundFramebuffer: Int = 0
@@ -82,6 +82,7 @@ public class GlProgramRuntime(
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         if (linked) return
+        blocks.rejectExcess()
         val id = when (program.target) {
             ShaderTarget.Agsl -> reject(GlCode.WrongTarget, "GL runtime requires a GLES shader")
             ShaderTarget.Gles30, ShaderTarget.Gles32 -> linkGraphicsProgram()
@@ -176,15 +177,14 @@ public class GlProgramRuntime(
 
     /**
      * Binds this program on the owning GL thread; call before draws and uniform uploads.
-     * Also rebinds this program's uniform and storage block at binding point 0, which another
-     * program on the same context may have taken. A texture upload binds on the active unit;
+     * Also rebinds this program's uniform and storage blocks at their declaration-order binding
+     * points, which another program on the same context may have taken. A texture upload binds on the active unit;
      * samplers whose unit no longer holds their texture are bound again here.
      */
     public fun use() {
         checkReady()
         device.useProgram(programId)
-        uniformBuffer.bind()
-        storageBuffer.bind()
+        blocks.bind()
         samplers.rebindDisturbed()
     }
 
@@ -566,8 +566,8 @@ public class GlProgramRuntime(
 
     public fun set(block: UniformBlock, values: FloatArray): Boolean {
         checkReady()
-        require(block === program.uniformBlock) { "Uniform block does not belong to this shader" }
-        if (uniformBuffer.name == 0) {
+        val buffer = blocks.uniform(block)
+        if (buffer.name == 0) {
             val index = device.uniformBlockIndex(programId, block.typeName)
             if (index < 0) {
                 reject(
@@ -575,25 +575,25 @@ public class GlProgramRuntime(
                     "Uniform block \"${block.typeName}\" is not active in this program",
                 )
             }
-            device.uniformBlockBinding(programId, index, 0)
+            device.uniformBlockBinding(programId, index, block.binding)
         }
-        if (!uniformBuffer.pending(values)) return false
-        val wrote = uniformBuffer.write(packStd140(block, values))
-        uniformBuffer.remember(values)
+        if (!buffer.pending(values)) return false
+        val wrote = buffer.write(packStd140(block, values))
+        buffer.remember(values)
         if (!wrote) return false
-        uniformBuffer.bind()
+        buffer.bind()
         return true
     }
 
     @JvmName("setStorage")
     public fun set(block: StorageBlock, values: FloatArray): Boolean {
         checkReady()
-        require(block === program.storageBlock) { "Storage block does not belong to this shader" }
-        if (!storageBuffer.pending(values)) return false
-        val wrote = storageBuffer.write(packStd430(block, values))
-        storageBuffer.remember(values)
+        val buffer = blocks.storage(block)
+        if (!buffer.pending(values)) return false
+        val wrote = buffer.write(packStd430(block, values))
+        buffer.remember(values)
         if (!wrote) return false
-        storageBuffer.bind()
+        buffer.bind()
         return true
     }
 
@@ -608,19 +608,19 @@ public class GlProgramRuntime(
     @JvmName("readStorage")
     public fun read(block: StorageBlock, into: FloatArray): Int {
         checkReady()
-        require(block === program.storageBlock) { "Storage block does not belong to this shader" }
-        val bytes = storageBuffer.storedBytes()
+        val buffer = blocks.storage(block)
+        val bytes = buffer.storedBytes()
         require(bytes > 0) { "Storage block \"${block.name}\" has not been uploaded" }
-        val count = storageBuffer.storedFloats()
+        val count = buffer.storedFloats()
         require(into.size >= count) {
             "Storage block \"${block.name}\" needs $count floats, was ${into.size}"
         }
         device.bufferUpdateBarrier()
-        val mapped = device.mapShaderStorageRead(storageBuffer.name, bytes)
+        val mapped = device.mapShaderStorageRead(buffer.name, bytes)
         try {
             return unpackStd430(block, mapped, count, into)
         } finally {
-            device.unmapShaderStorage(storageBuffer.name)
+            device.unmapShaderStorage(buffer.name)
         }
     }
 
@@ -636,8 +636,7 @@ public class GlProgramRuntime(
         ownedTextures.clear()
         framebufferColors.clear()
         boundFramebuffer = 0
-        uniformBuffer.delete()
-        storageBuffer.delete()
+        blocks.delete()
         if (programId != 0) {
             device.useProgram(0)
             device.deleteProgram(programId)

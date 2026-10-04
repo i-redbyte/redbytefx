@@ -7,7 +7,7 @@ import java.nio.ByteOrder
  * One std140 uniform block owned by a GLES 3.0 program.
  *
  * Fields are highp float scalars, vectors, matrices, and sized arrays. An unsized array stays on
- * a storage block. The block is written as a whole.
+ * a storage block. The block is written as a whole. [binding] is the declaration order, starting at 0.
  */
 public class UniformBlock internal constructor(
     public val name: String,
@@ -16,6 +16,7 @@ public class UniformBlock internal constructor(
     internal val members: List<BlockMember>,
     public val offsets: IntArray,
     public val byteSize: Int,
+    public val binding: Int,
 )
 
 internal class BlockMember(
@@ -66,10 +67,18 @@ public class UniformBlockBuilder internal constructor(
         fragmentStage(block)
     }
 
-    internal fun finish(name: String, typeName: String): UniformBlock {
+    internal fun finish(name: String, typeName: String, binding: Int): UniformBlock {
         require(members.isNotEmpty()) { "Uniform block requires a field" }
         val layout = std140BlockLayout(members)
-        return UniformBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize)
+        return UniformBlock(
+            name,
+            typeName,
+            instanceName,
+            members.toList(),
+            layout.offsets,
+            layout.byteSize,
+            binding,
+        )
     }
 
     private fun <T : ShType> array(name: String, shape: Shape, size: Int): StorageArray<T> {

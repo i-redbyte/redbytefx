@@ -254,6 +254,8 @@ internal class FloatDevice : GlDevice() {
     override fun bindUniformBufferBase(buffer: Int, binding: Int) = Unit
     override fun uniformBlockIndex(program: Int, name: String): Int = 0
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) = Unit
+    override fun maxUniformBufferBindings(): Int = 24
+    override fun maxShaderStorageBufferBindings(): Int = 8
     override fun shaderStorageData(buffer: Int, data: ByteArray) = Unit
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) = Unit
     override fun bindShaderStorageBase(buffer: Int, binding: Int) = Unit

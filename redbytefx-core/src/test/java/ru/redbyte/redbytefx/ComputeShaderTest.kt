@@ -54,7 +54,7 @@ class ComputeShaderTest {
     }
 
     @Test
-    fun graphicsStagesAndASecondBlockAreRejected() {
+    fun graphicsStagesAreRejectedOnAComputeProgram() {
         val vertex = assertThrows(AuthoringException::class.java) {
             shader(ShaderTarget.Gles31) {
                 vertex { glPosition(attributeVec4("position")) }
@@ -81,10 +81,29 @@ class ComputeShaderTest {
         }
         assertEquals(ProgramCode.MissingCompute, missing.code)
 
+    }
+
+    @Test
+    fun twoStorageBlocksBindInDeclarationOrder() {
+        lateinit var cells: StorageBlock
+        lateinit var gain: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            cells = storageBlock("cells") { float("value") }
+            gain = storageBlock("gain") { float("amount") }
+            compute(8) { }
+        }
+        val source = program.computeSource()
+        assertEquals(0, cells.binding)
+        assertEquals(1, gain.binding)
+        assertTrue(source.contains("layout(std430, binding = 0) buffer cells {"))
+        assertTrue(source.contains("layout(std430, binding = 1) buffer gain {"))
+        assertEquals("cells", program.storageBlock?.name)
+        assertEquals(2, program.storageBlocks.size)
+
         assertThrows(IllegalArgumentException::class.java) {
             shader(ShaderTarget.Gles31) {
                 storageBlock("cells") { float("value") }
-                storageBlock("other") { float("gain") }
+                storageBlock("cells") { float("gain") }
                 compute(8) { }
             }
         }
@@ -225,7 +244,7 @@ class ComputeShaderTest {
                 compute(4) { value.store(gain) }
             }
         }
-        assertTrue(compute.computeSource().contains("layout(std140) uniform frame {"))
+        assertTrue(compute.computeSource().contains("layout(std140, binding = 0) uniform frame {"))
         assertTrue(compute.computeSource().contains("highp float gain;"))
     }
 }

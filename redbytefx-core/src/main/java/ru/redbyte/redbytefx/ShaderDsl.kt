@@ -16,8 +16,8 @@ public class ShaderProgram internal constructor(
     private val vertex: String? = null,
     private val fragment: String? = null,
     internal val bindings: List<UniformBinding>,
-    public val uniformBlock: UniformBlock? = null,
-    public val storageBlock: StorageBlock? = null,
+    public val uniformBlocks: List<UniformBlock> = emptyList(),
+    public val storageBlocks: List<StorageBlock> = emptyList(),
     private val computeSourceText: String? = null,
     private val geometryText: String? = null,
     private val tessControlText: String? = null,
@@ -42,6 +42,14 @@ public class ShaderProgram internal constructor(
 
     public fun tessEvalSource(): String =
         tessEvalText ?: error("This shader has no GLES tessellation evaluation source")
+
+    /** The first uniform block, which is binding point 0 when the shader declares one. */
+    public val uniformBlock: UniformBlock?
+        get() = uniformBlocks.firstOrNull()
+
+    /** The first storage block, which is binding point 0 when the shader declares one. */
+    public val storageBlock: StorageBlock?
+        get() = storageBlocks.firstOrNull()
 
     public fun spelledUniforms(): List<SpelledUniform> =
         bindings.map { SpelledUniform(it.uniform, it.agslName) }
@@ -130,8 +138,8 @@ public class ShaderDsl internal constructor(
     private var vertexPosition: Expr<Vec4<Flt<High>>>? = null
     private var vertexBuilt = false
     private val functions = mutableListOf<UserFunction>()
-    private var block: UniformBlock? = null
-    private var storage: StorageBlock? = null
+    private val uniformBlocks = mutableListOf<UniformBlock>()
+    private val storageBlocks = mutableListOf<StorageBlock>()
     private var buildingStorageMembers: List<BlockMember>? = null
     private var computeLayout: ComputeLayout? = null
     private val sharedMembers = mutableListOf<BlockMember>()
@@ -155,21 +163,22 @@ public class ShaderDsl internal constructor(
 
     public fun uniformBlock(name: String, build: UniformBlockBuilder.() -> Unit): UniformBlock {
         advance(AuthoringAction.DeclareUniformBlock)
-        require(block == null) { "Shader already has a uniform block" }
         require(name.isNotBlank()) { "Uniform block name must not be blank" }
         val typeName = sanitizeSuggestedIdentifier(name, "b")
+        require(blockNameFree(typeName)) { "Shader already has a block named $typeName" }
         val builder = UniformBlockBuilder("b_$typeName", ::vertex, ::fragment)
         builder.build()
-        val created = builder.finish(name, typeName)
-        block = created
+        val created = builder.finish(name, typeName, uniformBlocks.size)
+        uniformBlocks += created
         return created
     }
 
     public fun storageBlock(name: String, build: StorageBlockBuilder.() -> Unit): StorageBlock {
         advance(AuthoringAction.DeclareStorage)
-        require(storage == null) { "Shader already has a storage block" }
         require(name.isNotBlank()) { "Storage block name must not be blank" }
-        val typeName = names.reserve(sanitizeSuggestedIdentifier(name, "b"))
+        val requested = sanitizeSuggestedIdentifier(name, "b")
+        require(blockNameFree(requested)) { "Shader already has a block named $requested" }
+        val typeName = names.reserve(requested)
         val instanceName = names.reserve("b_$typeName")
         lateinit var builder: StorageBlockBuilder
         builder = StorageBlockBuilder(instanceName) { layout, body ->
@@ -181,10 +190,13 @@ public class ShaderDsl internal constructor(
             }
         }
         builder.build()
-        val created = builder.finish(name, typeName)
-        storage = created
+        val created = builder.finish(name, typeName, storageBlocks.size)
+        storageBlocks += created
         return created
     }
+
+    private fun blockNameFree(typeName: String): Boolean =
+        uniformBlocks.none { it.typeName == typeName } && storageBlocks.none { it.typeName == typeName }
 
     public fun compute(localSizeX: Int, build: ComputeDsl.() -> Unit) {
         compute(ComputeLayout(localSizeX, null, null), build)
@@ -454,12 +466,12 @@ public class ShaderDsl internal constructor(
         commandExprs(computeStatements).forEach { checkFunctionStage(it, AuthoringPlace.Compute) }
         return spellCompute(
             layout = layout,
-            storage = storage,
+            storage = storageBlocks.toList(),
             statements = computeStatements.toList(),
             uniforms = uniforms,
             names = names,
             functions = functions,
-            block = block,
+            blocks = uniformBlocks.toList(),
             shared = sharedMembers.toList(),
         )
     }
@@ -470,7 +482,8 @@ public class ShaderDsl internal constructor(
             is ExprNode.Index -> node.member
             else -> null
         }
-        val storageOwned = (storage?.members ?: buildingStorageMembers)?.any { it === member } == true
+        val storageOwned = buildingStorageMembers?.any { it === member } == true ||
+            storageBlocks.any { block -> block.members.any { it === member } }
         val sharedOwned = member != null && sharedMembers.any { it === member }
         require(member != null && (storageOwned || sharedOwned)) {
             "Storage write requires a field of this shader's storage block"
@@ -635,7 +648,7 @@ public class ShaderDsl internal constructor(
             names = names,
             functions = functions,
             fragmentWrites = fragmentWrites,
-            block = block,
+            blocks = uniformBlocks.toList(),
             stages = LinkedStages(
                 vertexStatements = vertexStatements.toList(),
                 fragmentStatements = fragmentStatements.toList(),

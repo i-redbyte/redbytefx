@@ -104,6 +104,12 @@ public abstract class GlDevice {
 
     public abstract fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int)
 
+    /** Device. `GL_MAX_UNIFORM_BUFFER_BINDINGS` for this context. */
+    public abstract fun maxUniformBufferBindings(): Int
+
+    /** Device. `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS` for this context. */
+    public abstract fun maxShaderStorageBufferBindings(): Int
+
     public abstract fun shaderStorageData(buffer: Int, data: ByteArray)
 
     public abstract fun shaderStorageSubData(buffer: Int, data: ByteArray)

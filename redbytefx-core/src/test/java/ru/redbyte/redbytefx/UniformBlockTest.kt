@@ -52,7 +52,7 @@ class UniformBlockTest {
             }
         }
         val fragment = program.fragmentSource()
-        assertTrue(fragment.contains("layout(std140) uniform frame {"))
+        assertTrue(fragment.contains("layout(std140, binding = 0) uniform frame {"))
         assertTrue(fragment.contains("highp float time;"))
         assertTrue(fragment.contains("highp vec3 color;"))
         assertTrue(fragment.contains("b_frame.time"))
@@ -68,11 +68,33 @@ class UniformBlockTest {
             }
         }
         assertEquals(AuthoringCode.UniformBlockOnAgsl, agsl.code)
+    }
+
+    @Test
+    fun twoUniformBlocksBindInDeclarationOrder() {
+        lateinit var frame: UniformBlock
+        lateinit var color: UniformBlock
+        lateinit var time: HighFloat
+        lateinit var rgb: HighVec3
+        val program = shader(ShaderTarget.Gles30) {
+            frame = uniformBlock("frame") { time = float("time") }
+            color = uniformBlock("color") { rgb = vec3("rgb") }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(rgb.x, rgb.y, rgb.z, time) }
+        }
+        assertEquals(0, frame.binding)
+        assertEquals(1, color.binding)
+        val fragment = program.fragmentSource()
+        assertTrue(fragment.contains("layout(std140, binding = 0) uniform frame {"))
+        assertTrue(fragment.contains("layout(std140, binding = 1) uniform color {"))
+        assertFalse(program.vertexSource().contains("uniform color"))
+        assertEquals("frame", program.uniformBlock?.name)
+        assertEquals(listOf(0, 1), program.uniformBlocks.map { it.binding })
 
         assertThrows(IllegalArgumentException::class.java) {
             shader(ShaderTarget.Gles30) {
                 uniformBlock("frame") { float("time") }
-                uniformBlock("other") { float("gain") }
+                uniformBlock("frame") { float("gain") }
                 vertex { glPosition(attributeVec4("position")) }
                 fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
             }

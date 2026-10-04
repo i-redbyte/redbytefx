@@ -7,6 +7,7 @@ import java.nio.ByteOrder
  * One std430 shader storage block owned by a GLES 3.1 compute program.
  *
  * Fields are highp float scalars and vectors. The block is written as a whole.
+ * [binding] is the declaration order, starting at 0.
  */
 public class StorageBlock internal constructor(
     public val name: String,
@@ -15,6 +16,7 @@ public class StorageBlock internal constructor(
     internal val members: List<BlockMember>,
     public val offsets: IntArray,
     private val fixedByteSize: Int,
+    public val binding: Int,
 ) {
     public val byteSize: Int
         get() {
@@ -82,7 +84,7 @@ public class StorageBlockBuilder internal constructor(
 
     internal fun memberSnapshot(): List<BlockMember> = members.toList()
 
-    internal fun finish(name: String, typeName: String): StorageBlock {
+    internal fun finish(name: String, typeName: String, binding: Int): StorageBlock {
         require(members.isNotEmpty()) { "Storage block requires a field" }
         val unsizedAt = members.indexOfFirst { it.unsized }
         if (unsizedAt >= 0 && unsizedAt != members.lastIndex) {
@@ -92,7 +94,7 @@ public class StorageBlockBuilder internal constructor(
             )
         }
         val layout = std430Layout(members.toList())
-        return StorageBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize)
+        return StorageBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize, binding)
     }
 
     private fun <T : ShType> array(name: String, shape: Shape, size: Int): StorageArray<T> {
