@@ -706,6 +706,31 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aDefaultDrawDoesNotQueryTheDriver() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        runtime.drawRange(4, 3, 0, 3, null, null)
+        runtime.uploadRgba(1, 1, ByteArray(4))
+        assertEquals(0, device.glErrorChecks)
+    }
+
+    @Test
+    fun strictErrorsTurnADriverErrorIntoAnException() {
+        val device = RecordingGlDevice()
+        device.glError = 0x0502
+        val runtime = GlProgramRuntime(passthrough(), device, strictErrors = true)
+        runtime.link()
+        val error = assertThrows(GlException::class.java) {
+            runtime.drawRange(4, 3, 0, 3, null, null)
+        }
+        assertEquals(GlCode.DriverError, error.code)
+        assertEquals(1, device.glErrorChecks)
+        runtime.uploadRgba(1, 1, ByteArray(4))
+        assertEquals(2, device.glErrorChecks)
+    }
+
+    @Test
     fun drawRangeRejectsTheWrongThread() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)
@@ -1304,6 +1329,16 @@ private class RecordingGlDevice(
 
     override fun bindFramebuffer(framebuffer: Int) {
         boundFramebuffers += framebuffer
+    }
+
+    var glError: Int = 0
+    var glErrorChecks: Int = 0
+
+    override fun takeGlError(): Int {
+        glErrorChecks += 1
+        val error = glError
+        glError = 0
+        return error
     }
 
     var readPixelCalls = 0

@@ -12,4 +12,9 @@ public data class GlSurfaceConfig(
     public val depth: Boolean = false,
     /** When true, inactive spelled uniforms fail [ru.redbyte.redbytefx.gl.GlProgramRuntime.link]. */
     public val strictUniformLocations: Boolean = false,
+    /**
+     * When true, a driver error after draw, dispatch, texture upload, or read becomes
+     * [ru.redbyte.redbytefx.gl.GlException]. The default draw does not call `glGetError`.
+     */
+    public val strictErrors: Boolean = false,
 )

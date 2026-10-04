@@ -254,6 +254,12 @@ public abstract class GlDevice {
      * Drains pending `glGetError` values. The default port ignores errors; [Gles30Device] logs them.
      */
     public open fun flushGlErrors(context: String): Unit = Unit
+
+    /**
+     * Device. Returns one pending `glGetError`, or 0 when there is none, and drains the rest.
+     * The default port reports no error. A draw does not call this unless strict error mode is on.
+     */
+    public open fun takeGlError(): Int = 0
 }
 
 /** One face of a cube map, in `GL_TEXTURE_CUBE_MAP_*` order. */

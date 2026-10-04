@@ -119,7 +119,12 @@ internal class ComputeRenderer(
     private val requirement: String?,
     private val slot: GlSlot,
     private val link: (ShaderProgram, GlTextureUnits) -> GlProgramRuntime = { program, units ->
-        linkProgram(program, controller.config.strictUniformLocations, units)
+        linkProgram(
+            program,
+            controller.config.strictUniformLocations,
+            units,
+            controller.config.strictErrors,
+        )
     },
 ) : GLSurfaceView.Renderer {
     private var reported = false

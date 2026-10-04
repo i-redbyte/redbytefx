@@ -41,6 +41,7 @@ public enum class GlCode {
     MissingUniformLocation,
     FramebufferIncomplete,
     FeedbackLoop,
+    DriverError,
 }
 
 public class GlException(
@@ -55,12 +56,20 @@ public class GlException(
  * An unchanged float or texture does not call the device again.
  * [textureUnits] is shared by every runtime that draws on this EGL context.
  */
+/**
+ * Device. Owns one GLES program on the thread that created it.
+ *
+ * @param strictErrors when true, `glGetError` runs after draw, dispatch, texture upload, and read,
+ * and a driver error becomes [GlException] with [GlCode.DriverError]. The default does not query
+ * the driver on those calls. A strict link still drains errors after link.
+ */
 public class GlProgramRuntime(
     private val program: ShaderProgram,
     private val device: GlDevice,
     private val contextThread: Thread = Thread.currentThread(),
     private val strictUniformLocations: Boolean = false,
     private val textureUnits: GlTextureUnits = GlTextureUnits(),
+    private val strictErrors: Boolean = false,
 ) {
     private val locations = IdentityHashMap<Uniform<*>, Int>()
     private val floatValues = IdentityHashMap<Uniform<*>, Float>()
@@ -237,6 +246,7 @@ public class GlProgramRuntime(
         device.texture2DLinearRepeat(name)
         device.texImage2DRgba(name, width, height, rgba)
         ownedTextures += name
+        checkDriver("upload")
         return name
     }
 
@@ -290,6 +300,7 @@ public class GlProgramRuntime(
         }
         textureUnits.disturbActive()
         device.texSubImage2DRgba(texture, x, y, width, height, rgba)
+        checkDriver("upload")
     }
 
     /**
@@ -306,6 +317,7 @@ public class GlProgramRuntime(
         textureUnits.disturbActive()
         device.textureCubeLinearClamp(texture)
         device.texImageCubeFace(texture, face, width, height, rgba)
+        checkDriver("upload")
     }
 
     /**
@@ -404,6 +416,7 @@ public class GlProgramRuntime(
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         readFramebufferPixels(device, width, height, into)
+        checkDriver("read")
     }
 
     /**
@@ -415,6 +428,7 @@ public class GlProgramRuntime(
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         readColorTargetPixels(device, boundFramebuffer, target, into)
+        checkDriver("read")
     }
 
     /**
@@ -508,6 +522,7 @@ public class GlProgramRuntime(
                 first,
             )
         }
+        if (kind != DrawKind.None) checkDriver("draw")
     }
 
     /**
@@ -575,6 +590,7 @@ public class GlProgramRuntime(
         if (memoryBarrier) {
             device.shaderStorageBarrier()
         }
+        checkDriver("dispatch")
     }
 
     private fun bindSampler(uniform: Uniform<*>, texture: Int, cube: Boolean): Boolean {
@@ -640,7 +656,9 @@ public class GlProgramRuntime(
         device.bufferUpdateBarrier()
         val mapped = device.mapShaderStorageRead(buffer.name, bytes)
         try {
-            return unpackStd430(block, mapped, count, into)
+            val countRead = unpackStd430(block, mapped, count, into)
+            checkDriver("read")
+            return countRead
         } finally {
             device.unmapShaderStorage(buffer.name)
         }
@@ -670,6 +688,14 @@ public class GlProgramRuntime(
         vectorValues.clear()
         intValues.clear()
         samplers.clear()
+    }
+
+    private fun checkDriver(where: String) {
+        if (!strictErrors) return
+        val error = device.takeGlError()
+        if (error != 0) {
+            reject(GlCode.DriverError, "OpenGL error 0x${Integer.toHexString(error)} after $where")
+        }
     }
 
     private fun writeScalar(uniform: Uniform<*>, value: Float): Boolean {

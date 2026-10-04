@@ -68,8 +68,9 @@ internal class SceneRenderer(
         publish(GlLinkState.Pending)
         val textureUnits = GlTextureUnits()
         val strict = controller.config.strictUniformLocations
+        val strictErrors = controller.config.strictErrors
         val runtime = try {
-            linkProgram(controller.program, strict, textureUnits)
+            linkProgram(controller.program, strict, textureUnits, strictErrors)
         } catch (error: GlException) {
             fail(error)
             return
@@ -77,7 +78,7 @@ internal class SceneRenderer(
         val presentProgram = present
         if (presentProgram != null) {
             presentRuntime = try {
-                linkProgram(presentProgram, strict, textureUnits)
+                linkProgram(presentProgram, strict, textureUnits, strictErrors)
             } catch (error: GlException) {
                 runtime.destroy()
                 fail(error)

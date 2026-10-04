@@ -462,6 +462,16 @@ public class Gles30Device : GlDevice() {
             error = GLES30.glGetError()
         }
     }
+
+    override fun takeGlError(): Int {
+        var found = GLES30.GL_NO_ERROR
+        var error = GLES30.glGetError()
+        while (error != GLES30.GL_NO_ERROR) {
+            if (found == GLES30.GL_NO_ERROR) found = error
+            error = GLES30.glGetError()
+        }
+        return found
+    }
 }
 
 private const val LOG_TAG = "RedByteFX"

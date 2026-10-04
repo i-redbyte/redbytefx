@@ -32,12 +32,14 @@ internal fun linkProgram(
     program: ShaderProgram,
     strictUniformLocations: Boolean,
     textureUnits: GlTextureUnits,
+    strictErrors: Boolean = false,
 ): GlProgramRuntime {
     val linked = GlProgramRuntime(
         program,
         Gles30Device(),
         strictUniformLocations = strictUniformLocations,
         textureUnits = textureUnits,
+        strictErrors = strictErrors,
     )
     try {
         linked.link()
