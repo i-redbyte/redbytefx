@@ -54,17 +54,6 @@ class LanguageFeatureTest {
 
         val outside = assertThrows(AuthoringException::class.java) { fwidth(1f.lit) }
         assertEquals(AuthoringCode.DerivativeOutsideFragment, outside.code)
-
-        val discarded = assertThrows(AuthoringException::class.java) {
-            shader(ShaderTarget.Gles30) {
-                vertex {
-                    discard()
-                    glPosition(attributeVec4("position"))
-                }
-                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
-            }
-        }
-        assertEquals(AuthoringCode.DiscardOutsideFragment, discarded.code)
     }
 
     @Test
@@ -186,5 +175,11 @@ class LanguageFeatureTest {
             }
         }
         assertEquals(AuthoringCode.SamplerOnAgsl, cube.code)
+    }
+
+    @Test
+    fun theVertexStageHasNoDiscard() {
+        val names = ShaderDsl.VertexDsl::class.java.methods.map { it.name }
+        assertFalse(names.contains("discard"))
     }
 }

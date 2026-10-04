@@ -688,10 +688,6 @@ public class ShaderDsl internal constructor(
             program.sink.whenTrue(condition, body)
         }
 
-        public fun discard() {
-            program.advance(AuthoringAction.Discard)
-        }
-
         public fun attributeVec2(name: String): Expr<Vec2<Flt<High>>> = attribute(
             name,
             Shape.Vector(ScalarKind.Float, Precision.High, 2),
