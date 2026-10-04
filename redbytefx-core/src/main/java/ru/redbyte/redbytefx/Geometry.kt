@@ -629,6 +629,7 @@ public class TessEvalDsl internal constructor(
 }
 
 internal const val GLSL_300 = 300
+internal const val GLSL_310 = 310
 internal const val GLSL_320 = 320
 internal const val MAX_GEOMETRY_VERTICES = 256
 internal const val MAX_PATCH_VERTICES = 32

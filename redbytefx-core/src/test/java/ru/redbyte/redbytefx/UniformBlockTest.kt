@@ -52,7 +52,8 @@ class UniformBlockTest {
             }
         }
         val fragment = program.fragmentSource()
-        assertTrue(fragment.contains("layout(std140, binding = 0) uniform frame {"))
+        assertTrue(fragment.contains("layout(std140) uniform frame {"))
+        assertFalse(fragment.contains("binding"))
         assertTrue(fragment.contains("highp float time;"))
         assertTrue(fragment.contains("highp vec3 color;"))
         assertTrue(fragment.contains("b_frame.time"))
@@ -85,8 +86,17 @@ class UniformBlockTest {
         assertEquals(0, frame.binding)
         assertEquals(1, color.binding)
         val fragment = program.fragmentSource()
-        assertTrue(fragment.contains("layout(std140, binding = 0) uniform frame {"))
-        assertTrue(fragment.contains("layout(std140, binding = 1) uniform color {"))
+        assertTrue(fragment.contains("layout(std140) uniform frame {"))
+        assertTrue(fragment.contains("layout(std140) uniform color {"))
+        assertFalse(fragment.contains("binding"))
+        val es32 = shader(ShaderTarget.Gles32) {
+            uniformBlock("frame") {
+                val time = float("time")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(time, time, time, 1f.lit) }
+            }
+        }
+        assertTrue(es32.fragmentSource().contains("layout(std140, binding = 0) uniform frame {"))
         assertFalse(program.vertexSource().contains("uniform color"))
         assertEquals("frame", program.uniformBlock?.name)
         assertEquals(listOf(0, 1), program.uniformBlocks.map { it.binding })

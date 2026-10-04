@@ -127,6 +127,7 @@ internal fun linkGlsl(
             blockText = blockText(
                 blocks,
                 writes.map { it.value } + listOfNotNull(position) + commandExprs(vertexStatements),
+                version,
             ),
             version = version,
         ),
@@ -161,6 +162,7 @@ internal fun linkGlsl(
             blockText = blockText(
                 blocks,
                 listOf(fragmentBody) + fragmentWrites.map { it.value },
+                version,
             ),
             version = version,
         ),
@@ -237,13 +239,15 @@ private fun pipeBlock(
 
 private const val VERTEX_PER_VERTEX = "out gl_PerVertex {\n  vec4 gl_Position;\n};"
 
-private fun blockText(blocks: List<UniformBlock>, roots: List<Expr<*>>): String {
+private fun blockText(blocks: List<UniformBlock>, roots: List<Expr<*>>, version: Int): String {
     if (blocks.isEmpty()) return ""
     val used = referencedMembers(roots)
     return buildString {
         for (block in blocks) {
             if (block.members.none { it in used }) continue
-            append("layout(std140, binding = ").append(block.binding).append(") uniform ")
+            append("layout(std140")
+            if (version >= GLSL_310) append(", binding = ").append(block.binding)
+            append(") uniform ")
                 .append(block.typeName).append(" {\n")
             for (member in block.members) {
                 append("  ").append(memberDeclaration(member)).append(";\n")
@@ -648,7 +652,7 @@ internal fun spellCompute(
             append("uniform ").append(glslDeclaration(binding.uniform.shape)).append(' ')
                 .append(binding.agslName).append(";\n")
         }
-        append(blockText(blocks, roots))
+        append(blockText(blocks, roots, GLSL_310))
         append(storageText(storage))
         for (member in shared) {
             append("shared ").append(glslDeclaration(member.shape)).append(' ')
@@ -885,7 +889,7 @@ private fun spellPrimitive(
             append("uniform ").append(glslDeclaration(uniform.key.shape)).append(' ')
                 .append(uniform.value).append(";\n")
         }
-        append(blockText(env.blocks, roots))
+        append(blockText(env.blocks, roots, GLSL_320))
         if (piped && writesGlPosition(commands)) {
             env.copy.perVertex.forEach { append(it).append('\n') }
         }
