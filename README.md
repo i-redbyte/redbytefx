@@ -97,7 +97,7 @@ val patch = shader(ShaderTarget.Gles32) {
 
 A varying written by the vertex and read by the fragment is declared on every stage between them: vertex, tessellation control, tessellation evaluation, geometry, then fragment. Missing stages are skipped. At each boundary the previous stage's `out` matches the next stage's `in` by name, type, and precision. When geometry or tessellation is present, those declarations are members of one interface block named `rb_pipe`. Every stage of that program lists the same members: varyings the vertex wrote and that the fragment or an intermediate stage reads, in declaration order. A varying that is declared and never written stays out of the block. Tessellation control copies `tc_in[gl_InvocationID]` to `tc_out[gl_InvocationID]`. Geometry copies the input vertex just written to `gl_Position`: one `gl_in[k]` in that position, including a `repeat` index, becomes `gs_in[k]` immediately before that `EmitVertex`. The same copy applies when that `gl_Position` was written before the `repeat` or `whenTrue` that emits, and it is not reused after an emit that already consumed it. Several indices, or a position that does not read `gl_in` while the varying is still unwritten, is an error whose message asks for `varying.set` before that emit. A `varying.set` between that `gl_Position` and the emit replaces the copy of that varying for that emit only. Tessellation evaluation interpolates with `gl_TessCoord` when the stage does not write the varying. One input vertex is copied from `te_in[0]`. Triangles weight the three patch vertices by `gl_TessCoord`. Isolines `mix` the two vertices by `gl_TessCoord.x`. Quads use a bilinear `mix` of corners `(0,0)`, `(1,0)`, `(1,1)`, and `(0,1)` by `gl_TessCoord.xy`. An explicit write replaces that interpolation. A stage that has `rb_pipe` and writes `gl_Position` redeclares `gl_PerVertex` with only `vec4 gl_Position` before the block. A uniform read in geometry or tessellation is declared in that stage. `glIn(index)` and `varying.at(index)` accept dynamic `int` expressions; only compile-time constant indices are bounds-checked against the input patch.
 
-`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The list includes a triangle, screen-space spheres, a red flag, a lit solid, one std140 camera block, vector comparisons, a rainbow arch painted by a shared function, geometry spikes and a wireframe, a tessellated ocean, a starfield with lightning, a 3D word, and five small games: a tunnel, a maze, breakout, a rail shot, and a descent. The sample UI stays in English unless the device language is Russian. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
+`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The OpenGL list covers buffers and indexed draws, textures and mipmaps, lighting, instancing, render-to-texture, geometry, tessellation, and small games. The sample UI stays in English unless the device language is Russian. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
 
 ## Install
 
@@ -105,6 +105,7 @@ A varying written by the vertex and read by the fragment is declared on every st
 dependencies {
     implementation("io.github.i-redbyte:redbytefx-core:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-gl:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-compose:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-3d:1.1.0")
@@ -115,6 +116,7 @@ dependencies {
 |----------|------|
 | `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, GLSL ES 3.10 compute, and GLSL ES 3.20 spelling |
 | `redbytefx-gl` | GLES 3.0, 3.1, and 3.2 link, uniform and matrix writes, cube and 2D binds, compute `dispatch`, and storage uploads, bound to the EGL thread |
+| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame`, and mesh helpers for a GLES scene in Compose |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
 | `redbytefx-stdlib` | Effect recipes: coordinates, masks, compositing, SDF, and `lambert` |
 | `redbytefx-3d` | CPU scene data for meshes and cameras. No OpenGL driver |

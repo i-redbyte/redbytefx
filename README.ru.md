@@ -97,7 +97,7 @@ val patch = shader(ShaderTarget.Gles32) {
 
 Varying, который пишет вершина и читает фрагмент, объявляется на каждой стадии между ними: вершина, tessellation control, tessellation evaluation, geometry, затем фрагмент. Отсутствующие стадии пропускаются. На каждой границе `out` предыдущей стадии совпадает с `in` следующей по имени, типу и precision. Если в программе есть geometry или tessellation, эти объявления - члены одного блока `rb_pipe`. На всех стадиях программы один и тот же набор: varying, которые записала вершина и которые читает фрагмент или промежуточная стадия, в порядке объявления. Объявленный и нигде не записанный varying в блок не входит. Tessellation control копирует `tc_in[gl_InvocationID]` в `tc_out[gl_InvocationID]`. Geometry берёт индекс той входной вершины, которую только что записали в `gl_Position`: один `gl_in[k]`, в том числе индекс `repeat`, становится `gs_in[k]` непосредственно перед этим `EmitVertex`. Та же прокидка работает, когда этот `gl_Position` записан до `repeat` или `whenTrue`, который эмитит, и не используется повторно после emit, который её уже забрал. Несколько индексов или позиция без `gl_in`, пока varying ещё не записан, - ошибка, и текст просит явный `varying.set` перед этим emit. `varying.set` между этим `gl_Position` и emit заменяет прокидку только этого varying и только этого emit. Tessellation evaluation интерполирует `gl_TessCoord`, если стадия этот varying не писала. Одна входная вершина копируется из `te_in[0]`. Triangles взвешивают три вершины патча через `gl_TessCoord`. Isolines делают `mix` двух вершин по `gl_TessCoord.x`. Quads делают билинейный `mix` углов `(0,0)`, `(1,0)`, `(1,1)` и `(0,1)` по `gl_TessCoord.xy`. Явная запись заменяет эту интерполяцию. Стадия, у которой есть `rb_pipe` и которая пишет `gl_Position`, переобъявляет `gl_PerVertex` только с `vec4 gl_Position` до пользовательского блока. Uniform, прочитанный в geometry или tessellation, объявляется в исходнике этой стадии. `glIn(index)` и `varying.at(index)` допускают динамический `int`; проверка границ патча на этапе компиляции есть только для константных индексов.
 
-Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. В списке есть треугольник, экранные сферы, красный флаг, освещённое тело, один std140-блок камеры, сравнения векторов, радужная арка общей функцией, шипы и каркас geometry-стадии, океан на tessellation, звёздное небо с молниями, объёмная надпись и пять небольших игр: туннель, лабиринт, арканоид, налёт и спуск. Интерфейс примеров остаётся английским, пока язык устройства не русский. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
+Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. Список OpenGL покрывает буферы и индексные вызовы, текстуры и мип-уровни, освещение, инстансинг, рисование в текстуру, geometry, tessellation и небольшие игры. Интерфейс примеров остаётся английским, пока язык устройства не русский. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
 
 ## Установка
 
@@ -105,6 +105,7 @@ Varying, который пишет вершина и читает фрагмен
 dependencies {
     implementation("io.github.i-redbyte:redbytefx-core:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-gl:1.1.0")
+    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-compose:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.0")
     implementation("io.github.i-redbyte:redbytefx-3d:1.1.0")
@@ -115,6 +116,7 @@ dependencies {
 |----------|------|
 | `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00, compute GLSL ES 3.10 и GLSL ES 3.20 |
 | `redbytefx-gl` | Линковка GLES 3.0, 3.1 и 3.2, запись uniform и матриц, привязка 2D и куба, compute `dispatch` и загрузка storage на потоке EGL |
+| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame` и помощники мешей для GLES-сцены в Compose |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` для AGSL |
 | `redbytefx-stdlib` | Рецепты эффекта: координаты, маски, композитинг, SDF и `lambert` |
 | `redbytefx-3d` | Данные сцены на CPU: меши и камера. Драйвера OpenGL нет |
