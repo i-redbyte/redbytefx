@@ -28,6 +28,8 @@ private class HeldMesh {
     var indexCount = 0
     var vao = 0
     var drawnFrame = 0L
+    var enabledAttribs = IntArray(0)
+    var enabledAttribCount = 0
 }
 
 internal class SceneRenderer(
@@ -55,6 +57,7 @@ internal class SceneRenderer(
     private var viewHeight = 0
     private var startedNanos = 0L
     private var reported = false
+    private var attribScratch = IntArray(8)
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         releaseGpu(contextAlive = false)
@@ -161,11 +164,23 @@ internal class SceneRenderer(
         GLES30.glBindVertexArray(held.vao)
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, held.buffer)
         val attribs = target.attribs
+        var nextCount = 0
         for (index in attribs.indices) {
             val attrib = attribs[index]
             val location = runtime.attribLocation(attrib.name)
-            if (location >= 0) runtime.vertexAttribFloat(location, attrib.size, target.stride, attrib.offset)
+            if (location >= 0) {
+                if (nextCount == attribScratch.size) attribScratch = attribScratch.copyOf(attribScratch.size * 2)
+                attribScratch[nextCount] = location
+                nextCount += 1
+                runtime.vertexAttribFloat(location, attrib.size, target.stride, attrib.offset)
+            }
         }
+        forEachStaleAttrib(held.enabledAttribs, held.enabledAttribCount, attribScratch, nextCount) {
+            runtime.disableVertexAttribArray(it)
+        }
+        if (held.enabledAttribs.size < nextCount) held.enabledAttribs = IntArray(nextCount)
+        attribScratch.copyInto(held.enabledAttribs, 0, 0, nextCount)
+        held.enabledAttribCount = nextCount
         if (held.element != 0) GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, held.element)
         if (instances != null) bindInstances(runtime, instances)
         if (target.patchVertices > 0) GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, target.patchVertices)
@@ -274,6 +289,7 @@ internal class SceneRenderer(
         surface.elements = null
         surface.indexCount = 0
         surface.vao = 0
+        surface.enabledAttribCount = 0
         heldMeshes.clear()
         heldOrder.clear()
         instanceBuffer = 0

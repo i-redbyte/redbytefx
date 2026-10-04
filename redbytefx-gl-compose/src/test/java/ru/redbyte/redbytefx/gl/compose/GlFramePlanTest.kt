@@ -86,6 +86,16 @@ class GlFramePlanTest {
     }
 
     @Test
+    fun aSecondPassDisablesAttribsTheMeshNoLongerUses() {
+        val disabled = ArrayList<Int>()
+        forEachStaleAttrib(intArrayOf(0, 1, 3), 3, intArrayOf(0, 2), 2) { disabled += it }
+        assertEquals(listOf(1, 3), disabled)
+        disabled.clear()
+        forEachStaleAttrib(intArrayOf(0), 1, intArrayOf(0, 1), 2) { disabled += it }
+        assertTrue(disabled.isEmpty())
+    }
+
+    @Test
     fun offscreenDrawsWithoutARenderTargetAreRejected() {
         val error = assertThrows(IllegalStateException::class.java) {
             requireOffscreenTarget(renderToTexture = false, offscreenCount = 1)

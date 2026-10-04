@@ -70,6 +70,30 @@ internal fun executedDrawCount(
 /** Scene. Depth-test a draw when the surface asked for it, or this mesh writes depth. */
 internal fun drawDepthTest(force: Boolean, meshDepth: Boolean): Boolean = force || meshDepth
 
+internal fun forEachStaleAttrib(
+    enabled: IntArray,
+    enabledCount: Int,
+    next: IntArray,
+    nextCount: Int,
+    disable: (Int) -> Unit,
+) {
+    var index = 0
+    while (index < enabledCount) {
+        val location = enabled[index]
+        var kept = false
+        var cursor = 0
+        while (cursor < nextCount) {
+            if (next[cursor] == location) {
+                kept = true
+                break
+            }
+            cursor += 1
+        }
+        if (!kept) disable(location)
+        index += 1
+    }
+}
+
 internal fun requireOffscreenTarget(renderToTexture: Boolean, offscreenCount: Int) {
     check(offscreenCount == 0 || renderToTexture) {
         "Offscreen draws need renderToTexture so the pass has a color target"
