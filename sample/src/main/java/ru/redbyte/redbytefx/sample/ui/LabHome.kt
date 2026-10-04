@@ -44,11 +44,11 @@ fun LabHome(
         )
         LabCard(
             modifier = Modifier.weight(1f),
-            badge = "OPENGL ES 3.0",
+            badge = "OPENGL ES 3.x",
             title = say("OpenGL examples", "Примеры OpenGL"),
             summary = say(
-                "Meshes, light, and five small games. The code chip opens the description beside the GLSL that OpenGL ES compiles.",
-                "Сетки, свет и пять небольших игр. Кнопка кода открывает описание рядом с GLSL, который собирает OpenGL ES.",
+                "Meshes, textures, light, and small games, from ES 3.0 through geometry and tessellation. The code chip opens the description beside the GLSL that OpenGL ES compiles.",
+                "Сетки, текстуры, свет и небольшие игры, от ES 3.0 до geometry и tessellation. Кнопка кода открывает описание рядом с GLSL, который собирает OpenGL ES.",
             ),
             onClick = onGl,
         )
