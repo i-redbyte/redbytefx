@@ -33,6 +33,7 @@ internal class RecordedDraw {
     var instances: FloatArray? = null
     var present: Boolean = false
     var wholeMesh: Boolean = false
+    var pipeline: GlPipeline = GlPipeline.Default
 }
 
 /** Scene. [indices] must be non-empty and every index must address a vertex. */
@@ -130,6 +131,7 @@ internal class DrawList {
         present: Boolean,
         presentReady: Boolean,
         available: Int,
+        pipeline: GlPipeline = GlPipeline.Default,
     ) {
         require(!present || !recordingOffscreen) { "An offscreen draw uses the surface program" }
         check(!present || presentReady) { "This surface has no present program" }
@@ -148,6 +150,7 @@ internal class DrawList {
         record.instances = instances
         record.present = present
         record.wholeMesh = count < 0
+        record.pipeline = pipeline
         if (recordingOffscreen) offscreenDraws += record else screenDraws += record
     }
 
@@ -244,7 +247,9 @@ public class GlFrame internal constructor(
      * argument error. [instances] is column-major model matrices, [MODEL_MATRIX_FLOATS] floats each,
      * bound as [MODEL_COLUMN_0] through [MODEL_COLUMN_3] with divisor 1. The array is read after
      * [onFrame][GlSurface] returns, so do not change it during this frame. [present] selects
-     * [presentRuntime] and is only valid for a screen draw.
+     * [presentRuntime] and is only valid for a screen draw. [pipeline] is applied on the GL thread
+     * for this draw only. The next draw applies its own, and the default leaves blend off, scissor
+     * off, every color channel written, and depth writes on. The depth test is unchanged.
      */
     public fun draw(
         mesh: GlMesh? = null,
@@ -252,6 +257,7 @@ public class GlFrame internal constructor(
         count: Int = -1,
         instances: FloatArray? = null,
         present: Boolean = false,
+        pipeline: GlPipeline = GlPipeline.Default,
     ) {
         val target = mesh ?: requireNotNull(surfaceMesh) { "This frame has no surface mesh" }
         val available = if (target === surfaceMesh) {
@@ -259,7 +265,7 @@ public class GlFrame internal constructor(
         } else {
             target.indices?.size ?: (target.vertices.size / target.stride)
         }
-        draws.draw(target, first, count, instances, present, presentRuntime != null, available)
+        draws.draw(target, first, count, instances, present, presentRuntime != null, available, pipeline)
     }
 
     /**

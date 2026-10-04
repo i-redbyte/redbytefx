@@ -129,7 +129,16 @@ internal class SceneRenderer(
         }
         clear()
         if (draws.recordedCount() == 0) {
-            drawMesh(runtime, mesh, surface, first = 0, count = 0, wholeMesh = true, instances = null)
+            drawMesh(
+                runtime,
+                mesh,
+                surface,
+                first = 0,
+                count = 0,
+                wholeMesh = true,
+                instances = null,
+                pipeline = GlPipeline.Default,
+            )
             return
         }
         val screen = draws.screen()
@@ -142,7 +151,16 @@ internal class SceneRenderer(
 
     private fun drawRecorded(runtime: GlProgramRuntime, draw: RecordedDraw) {
         val target = draw.mesh
-        drawMesh(runtime, target, hold(runtime, target), draw.first, draw.count, draw.wholeMesh, draw.instances)
+        drawMesh(
+            runtime,
+            target,
+            hold(runtime, target),
+            draw.first,
+            draw.count,
+            draw.wholeMesh,
+            draw.instances,
+            draw.pipeline,
+        )
     }
 
     @Suppress("LongParameterList")
@@ -154,6 +172,7 @@ internal class SceneRenderer(
         count: Int,
         wholeMesh: Boolean,
         instances: FloatArray?,
+        pipeline: GlPipeline,
     ) {
         if (held.buffer == 0) return
         val indexCount = if (held.element != 0) held.indexCount else null
@@ -161,6 +180,7 @@ internal class SceneRenderer(
         if (executed == 0) return
         runtime.use()
         depthTest(target)
+        applyPipeline(pipeline, GlesPipelineOps)
         GLES30.glBindVertexArray(held.vao)
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, held.buffer)
         val attribs = target.attribs

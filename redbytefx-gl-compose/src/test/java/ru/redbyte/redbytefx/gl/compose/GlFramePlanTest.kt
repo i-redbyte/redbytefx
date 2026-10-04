@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.gl.compose
 
+import android.opengl.GLES30
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -160,6 +161,52 @@ class GlFramePlanTest {
         }
     }
 
+    @Test
+    fun aPassAppliesItsPipelineAndTheNextPassRestoresTheDefault() {
+        val custom = GlPipeline(
+            blend = true,
+            srcFactor = BlendFactor.SrcAlpha,
+            dstFactor = BlendFactor.OneMinusSrcAlpha,
+            equation = BlendEquation.Add,
+            scissor = true,
+            x = 1,
+            y = 2,
+            width = 4,
+            height = 5,
+            writeRed = false,
+            depthMask = false,
+        )
+        val list = DrawList()
+        list.draw(triangle, 0, 3, null, false, false, 3, custom)
+        list.draw(triangle, 0, 3, null, false, false, 3)
+        assertTrue(list.screen()[0].pipeline.blend)
+        assertFalse(list.screen()[1].pipeline.blend)
+        assertSame(GlPipeline.Default, list.screen()[1].pipeline)
+
+        val ops = RecordingOps()
+        applyPipeline(custom, ops)
+        applyPipeline(GlPipeline.Default, ops)
+        assertEquals(
+            listOf(
+                "blend",
+                "func ${GLES30.GL_SRC_ALPHA} ${GLES30.GL_ONE_MINUS_SRC_ALPHA}",
+                "eq ${GLES30.GL_FUNC_ADD}",
+                "scissorOn",
+                "box 1 2 4 5",
+                "mask false true true true",
+                "depth false",
+                "blendOff",
+                "scissorOff",
+                "mask true true true true",
+                "depth true",
+            ),
+            ops.lines,
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            applyPipeline(GlPipeline(scissor = true, width = 0, height = 2), ops)
+        }
+    }
+
     private fun runtime(): GlProgramRuntime = GlProgramRuntime(
         shader(ShaderTarget.Gles30) {
             vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
@@ -167,4 +214,36 @@ class GlFramePlanTest {
         },
         FloatDevice(),
     )
+}
+
+private class RecordingOps : PipelineOps {
+    val lines = mutableListOf<String>()
+
+    override fun blend(enabled: Boolean) {
+        lines += if (enabled) "blend" else "blendOff"
+    }
+
+    override fun blendFunc(src: Int, dst: Int) {
+        lines += "func $src $dst"
+    }
+
+    override fun blendEquation(equation: Int) {
+        lines += "eq $equation"
+    }
+
+    override fun scissorTest(enabled: Boolean) {
+        lines += if (enabled) "scissorOn" else "scissorOff"
+    }
+
+    override fun scissor(x: Int, y: Int, width: Int, height: Int) {
+        lines += "box $x $y $width $height"
+    }
+
+    override fun colorMask(red: Boolean, green: Boolean, blue: Boolean, alpha: Boolean) {
+        lines += "mask $red $green $blue $alpha"
+    }
+
+    override fun depthMask(enabled: Boolean) {
+        lines += "depth $enabled"
+    }
 }
