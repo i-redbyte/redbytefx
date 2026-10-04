@@ -173,7 +173,7 @@ shader(ShaderTarget.Agsl) {
 }
 ```
 
-Scalar floats of one precision support `+`, `-`, `*`, `/`. Vectors support vector-vector and vector-scalar math of the same precision. Comparisons are `gt`, `lt`, `ge`, `le`, `eq`, `ne`. `gte` is another spelling of `ge`. `ifElse(condition, ifTrue, ifFalse)` is the ternary. Boolean scalars support `and`, `or`, and `not`.
+Scalar floats of one precision support `+`, `-`, `*`, `/`. Vectors support vector-vector and vector-scalar math of the same precision. `mat2`, `mat3`, and `mat4` multiply a matrix of the same size or a vector with that many lanes; both spell `*`. Comparisons are `gt`, `lt`, `ge`, `le`, `eq`, `ne`. `gte` is another spelling of `ge`. `ifElse(condition, ifTrue, ifFalse)` is the ternary. Boolean scalars support `and`, `or`, and `not`.
 
 Math that spells the same call in both languages includes `sin`, `cos`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, and `length`. `sqrt` is the GLSL call and does not replace a negative argument.
 

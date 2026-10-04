@@ -5,7 +5,8 @@ import kotlin.jvm.JvmName
 /**
  * Column-major `mat2` / `mat3` / `mat4` constructors and matrix–vector multiply.
  *
- * Each [mat2] argument is one **column** (`vec2` … `vec4`). Use `matrix * vector` via [times].
+ * Each [mat2] argument is one **column** (`vec2` … `vec4`). Use `matrix * vector` and
+ * `matrix * matrix` via [times]. Both languages spell matrix multiplication as `*`.
  */
 
 /** Column-major 2×2 matrix from two column vectors. */
@@ -39,6 +40,22 @@ public operator fun Expr<Mat3>.times(vector: Expr<Vec3<Flt<High>>>): Expr<Vec3<F
 public operator fun Expr<Mat4>.times(vector: Expr<Vec4<Flt<High>>>): Expr<Vec4<Flt<High>>> =
     matVec(this, vector)
 
+@JvmName("timesMat2Mat2")
+public operator fun Expr<Mat2>.times(other: Expr<Mat2>): Expr<Mat2> = matMat(this, other)
+
+@JvmName("timesMat3Mat3")
+public operator fun Expr<Mat3>.times(other: Expr<Mat3>): Expr<Mat3> = matMat(this, other)
+
+@JvmName("timesMat4Mat4")
+public operator fun Expr<Mat4>.times(other: Expr<Mat4>): Expr<Mat4> = matMat(this, other)
+
+internal fun matMatShape(left: Shape, right: Shape): Shape {
+    require(left is Shape.Matrix && right is Shape.Matrix && left.lanes == right.lanes) {
+        "Matrix product requires matrices of one size, was $left and $right"
+    }
+    return left
+}
+
 internal fun matVecShape(matrix: Shape, vector: Shape): Shape {
     require(matrix is Shape.Matrix) {
         "Left side of a matrix-vector product must be a matrix, was $matrix"
@@ -67,3 +84,6 @@ private fun <T : ShType> matrix(vararg columns: Expr<*>): Expr<T> {
 
 private fun <T : ShType> matVec(matrix: Expr<*>, vector: Expr<*>): Expr<T> =
     Expr(matVecShape(matrix.shape, vector.shape), ExprNode.Binary(ArithOp.Mul, matrix, vector))
+
+private fun <T : ShType> matMat(left: Expr<*>, right: Expr<*>): Expr<T> =
+    Expr(matMatShape(left.shape, right.shape), ExprNode.Binary(ArithOp.Mul, left, right))

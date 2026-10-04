@@ -72,4 +72,34 @@ class VectorAlgebraTest {
         assertTrue(agsl.contains("(rows * fragCoord).xy"))
         assertTrue(agsl.contains("float((1 + 2))"))
     }
+
+    @Test
+    fun matrixProductSpellsOrdinaryMultiplication() {
+        val left = mat4(
+            vec4(1f.lit, 0f.lit, 0f.lit, 0f.lit),
+            vec4(0f.lit, 1f.lit, 0f.lit, 0f.lit),
+            vec4(0f.lit, 0f.lit, 1f.lit, 0f.lit),
+            vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit),
+        )
+        val right = mat4(
+            vec4(2f.lit, 0f.lit, 0f.lit, 0f.lit),
+            vec4(0f.lit, 2f.lit, 0f.lit, 0f.lit),
+            vec4(0f.lit, 0f.lit, 2f.lit, 0f.lit),
+            vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit),
+        )
+        assertEquals(Shape.Matrix(4), (left * right).shape)
+        val painted = (left * right) * vec4(1f.lit, 0f.lit, 0f.lit, 0f.lit)
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment { vec4(painted.x, painted.y, painted.z, painted.w) }
+        }
+        assertTrue(agsl.agslSource().contains(" * float4x4("))
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(painted.x, painted.y, painted.z, painted.w) }
+        }
+        assertTrue(glsl.fragmentSource().contains(" * mat4("))
+        assertThrows(IllegalArgumentException::class.java) {
+            matMatShape(Shape.Matrix(2), Shape.Matrix(4))
+        }
+    }
 }
