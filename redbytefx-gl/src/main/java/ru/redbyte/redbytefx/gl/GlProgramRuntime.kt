@@ -570,8 +570,10 @@ public class GlProgramRuntime(
             }
             device.uniformBlockBinding(programId, index, 0)
         }
-        if (!uniformBuffer.accept(values)) return false
-        if (!uniformBuffer.write(packStd140(block, values))) return false
+        if (!uniformBuffer.pending(values)) return false
+        val wrote = uniformBuffer.write(packStd140(block, values))
+        uniformBuffer.remember(values)
+        if (!wrote) return false
         uniformBuffer.bind()
         return true
     }
@@ -580,8 +582,10 @@ public class GlProgramRuntime(
     public fun set(block: StorageBlock, values: FloatArray): Boolean {
         checkReady()
         require(block === program.storageBlock) { "Storage block does not belong to this shader" }
-        if (!storageBuffer.accept(values)) return false
-        if (!storageBuffer.write(packStd430(block, values))) return false
+        if (!storageBuffer.pending(values)) return false
+        val wrote = storageBuffer.write(packStd430(block, values))
+        storageBuffer.remember(values)
+        if (!wrote) return false
         storageBuffer.bind()
         return true
     }

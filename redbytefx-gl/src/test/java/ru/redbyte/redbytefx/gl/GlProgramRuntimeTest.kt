@@ -482,6 +482,54 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aFailedBlockUploadIsRetriedWithTheSameFloats() {
+        val device = RecordingGlDevice()
+        lateinit var block: UniformBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles30) {
+                block = uniformBlock("frame") {
+                    float("time")
+                    vec3("color")
+                }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+            device,
+        )
+        runtime.link()
+        val values = floatArrayOf(1f, 0.2f, 0.4f, 0.6f)
+        val bad = floatArrayOf(Float.NaN, 0.2f, 0.4f, 0.6f)
+        assertThrows(IllegalArgumentException::class.java) { runtime.set(block, bad) }
+        assertThrows(IllegalArgumentException::class.java) { runtime.set(block, bad) }
+        device.failNextBufferName = true
+        assertThrows(IllegalArgumentException::class.java) { runtime.set(block, values) }
+        assertEquals(0, device.bufferDataCalls)
+        assertTrue(runtime.set(block, values))
+        assertEquals(1, device.bufferDataCalls)
+        assertFalse(runtime.set(block, values.copyOf()))
+
+        lateinit var storage: StorageBlock
+        val compute = GlProgramRuntime(
+            shader(ShaderTarget.Gles31) {
+                storage = storageBlock("cells") { float("value") }
+                compute(1) { }
+            },
+            device,
+        )
+        compute.link()
+        device.failNextBufferName = true
+        assertThrows(IllegalArgumentException::class.java) { compute.set(storage, floatArrayOf(4f)) }
+        val unread = assertThrows(IllegalArgumentException::class.java) {
+            compute.read(storage, FloatArray(1))
+        }
+        assertTrue(unread.message!!.contains("has not been uploaded"))
+        assertTrue(compute.set(storage, floatArrayOf(4f)))
+        val read = FloatArray(1)
+        assertEquals(1, compute.read(storage, read))
+        assertEquals(4f, read[0], 0f)
+    }
+
+    @Test
     fun gles32LinksVertexTessellationGeometryAndFragment() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(
@@ -917,9 +965,16 @@ private class RecordingGlDevice(
     var bufferDataCalls = 0
     var bufferSubDataCalls = 0
     var deleteBufferCalls = 0
+    var failNextBufferName = false
     private var nextBuffer = 1
 
-    override fun createBuffer(): Int = nextBuffer++
+    override fun createBuffer(): Int {
+        if (failNextBufferName) {
+            failNextBufferName = false
+            return 0
+        }
+        return nextBuffer++
+    }
 
     override fun deleteBuffer(buffer: Int) {
         deleteBufferCalls += 1

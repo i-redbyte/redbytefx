@@ -15,16 +15,20 @@ internal class GlBlockBuffer(
     private var bytes: ByteArray? = null
     private var floats: FloatArray? = null
 
-    /** Remembers [values]. False when they equal the last call, so packing can be skipped. */
-    fun accept(values: FloatArray): Boolean {
-        val previousFloats = floats
-        if (previousFloats != null && previousFloats.contentEquals(values)) return false
-        floats = if (previousFloats != null && previousFloats.size == values.size) {
-            values.copyInto(previousFloats)
+    /** True when [values] differ from the last upload the device accepted. */
+    fun pending(values: FloatArray): Boolean {
+        val previous = floats
+        return previous == null || !previous.contentEquals(values)
+    }
+
+    /** Records [values] after packing and the device write have both succeeded. */
+    fun remember(values: FloatArray) {
+        val previous = floats
+        floats = if (previous != null && previous.size == values.size) {
+            values.copyInto(previous)
         } else {
             values.copyOf()
         }
-        return true
     }
 
     /** Uploads [packed] unless it equals the bytes already in the buffer. */
