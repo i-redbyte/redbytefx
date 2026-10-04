@@ -6,7 +6,7 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 
 - `shader(ShaderTarget, block)` returns [ShaderProgram](https://github.com/i-redbyte/redbytefx/blob/master/redbytefx-core/src/main/java/ru/redbyte/redbytefx/ShaderDsl.kt).
 - AGSL: API 31+, `newAgslInstance()`, Compose `rememberFxController` / `redbyteFx`.
-- GLES: API 24+, `GlProgramRuntime` or `GlSurface` in `redbytefx-gl-compose`.
+- GLES: API 24+, `GlProgramRuntime` in `redbytefx-gl`, or `GlSurface` in `redbytefx-gl-compose`.
 
 ## Две поверхности
 
@@ -26,7 +26,7 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 ## Statements
 
 - `repeat(1..64) { i -> }` - counted `for` loop.
-- `local(init) { }` / `set` - not inside `repeat`.
+- `local(init)` / `local(init, "name")` / `set` - `local` is not legal inside `repeat`.
 - `whenTrue(cond) { }` - `if` without `else`.
 - `fn(witness..., "name") { p0, ... -> expr }` - no nesting, no recursion.
 - `discard()` / `discard(cond)` - fragment only.
@@ -39,7 +39,7 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 
 ## User functions (`fn`)
 
-Stage DSLs expose `fn { … }` and `fn(witness) { p -> … }`. The return type is `Fn0` … `Fn8` (parameter count). Call with `invoke()` or `fnHandle(arg)` to emit a user function in shader source. No nesting, recursion, or cross-stage calls. The body receiver is `FnDsl`: `sample()`, `fragCoord`, and `resolution` are not in scope. Qualify the stage (`this@fragment.sample()`) only when that capture is intentional.
+Stage DSLs expose `fn { … }` and `fn(witness) { p -> … }`. The return type is `Fn0` … `Fn8` (parameter count). Call that handle with `invoke` / `fn(args)` to emit a user function in shader source. No nesting, recursion, or cross-stage calls. The body receiver is `FnDsl`: `sample()`, `fragCoord`, and `resolution` are not in scope. Qualify the stage (`this@fragment.sample()`) only when that capture is intentional.
 
 ## Comparisons
 
