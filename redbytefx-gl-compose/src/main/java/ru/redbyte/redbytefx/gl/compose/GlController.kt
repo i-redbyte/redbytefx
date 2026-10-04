@@ -64,8 +64,6 @@ public class GlController internal constructor(
         drainQueued.set(false)
         drainPending()
     }
-    private val writeBatch = ArrayList<UniformWrite>()
-    private val taskBatch = ArrayList<() -> Unit>()
 
     /**
      * Runs [block] on the GL thread.
@@ -140,26 +138,31 @@ public class GlController internal constructor(
         if (drainQueued.compareAndSet(false, true)) queue(drainTask)
     }
 
-    /** Applies queued uniform writes and [runOnGl] blocks. Must run on the GL thread. */
+    /**
+     * Applies queued uniform writes, then [runOnGl] blocks, one at a time.
+     * Must run on the GL thread. A write or block that throws is not retried; everything still
+     * queued is scheduled again, so one failure does not drop the rest of the drain.
+     */
     private fun drainPending() {
         while (true) {
-            val active = synchronized(lock) {
-                val linked = runtime
-                if (linked == null || (pending.isEmpty() && tasks.isEmpty())) return
-                writeBatch.addAll(pending.values)
-                taskBatch.addAll(tasks)
-                pending.clear()
-                tasks.clear()
-                linked
-            }
+            val action = nextDrainAction() ?: return
             try {
-                for (index in writeBatch.indices) writeBatch[index](active)
-                for (index in taskBatch.indices) taskBatch[index]()
-            } finally {
-                writeBatch.clear()
-                taskBatch.clear()
+                action()
+            } catch (error: Throwable) {
+                scheduleDrain()
+                throw error
             }
         }
+    }
+
+    private fun nextDrainAction(): (() -> Unit)? = synchronized(lock) {
+        val linked = runtime ?: return null
+        val key = pending.keys.firstOrNull()
+        if (key != null) {
+            val write = pending.remove(key) ?: return null
+            return { write(linked) }
+        }
+        tasks.removeFirstOrNull()
     }
 
     private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {

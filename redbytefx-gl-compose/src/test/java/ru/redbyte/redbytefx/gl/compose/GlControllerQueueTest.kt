@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.gl.compose
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
@@ -138,6 +139,43 @@ class GlControllerQueueTest {
         assertEquals(0.7f, newDevice.lastFloat)
     }
 
+    @Test
+    fun aFailingWriteDoesNotDropTheRestOfTheDrain() {
+        lateinit var bad: Uniform<Flt<High>>
+        lateinit var good: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            bad = uniform("bad", 0f)
+            good = uniform("good", 0f)
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(bad.expr, good.expr, 0f.lit, 1f.lit) }
+        }
+        val device = FloatDevice()
+        device.rejectNegative = true
+        val runtime = GlProgramRuntime(program, device).also { it.link() }
+        val queued = ArrayDeque<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { queued.addLast(it) }
+        val controller = GlController(program, GlSurfaceConfig())
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, runtime)
+        var followed = false
+        controller.set(bad, -1f)
+        controller.set(good, 0.5f)
+        controller.runOnGl { followed = true }
+        var thrown = 0
+        var steps = 0
+        while (queued.isNotEmpty() && steps < 8) {
+            steps += 1
+            try {
+                queued.removeFirst().invoke()
+            } catch (error: IllegalStateException) {
+                thrown += 1
+            }
+        }
+        assertEquals(1, thrown)
+        assertEquals(0.5f, device.lastFloat)
+        assertTrue(followed)
+    }
+
     private fun amountProgram(): Pair<ru.redbyte.redbytefx.ShaderProgram, Uniform<Flt<High>>> {
         lateinit var amount: Uniform<Flt<High>>
         val program = shader(ShaderTarget.Gles30) {
@@ -152,6 +190,7 @@ class GlControllerQueueTest {
 internal class FloatDevice : GlDevice() {
     var floatCalls: Int = 0
     var lastFloat: Float = Float.NaN
+    var rejectNegative: Boolean = false
 
     override fun createShader(stage: GlStage): Int = 1
     override fun shaderSource(shader: Int, source: String) = Unit
@@ -164,6 +203,7 @@ internal class FloatDevice : GlDevice() {
     override fun uniformLocation(program: Int, name: String): Int = 1
     override fun attribLocation(program: Int, name: String): Int = 0
     override fun uniform1f(location: Int, value: Float) {
+        if (rejectNegative && value < 0f) error("rejected")
         floatCalls += 1
         lastFloat = value
     }
