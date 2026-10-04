@@ -68,7 +68,10 @@ internal class WorldPen(
     private val camX: Float,
     private val camY: Float,
     private val camZ: Float,
+    pitch: Float = 0f,
 ) {
+    private val pitchCos = cos(pitch)
+    private val pitchSin = sin(pitch)
     val data = ArrayList<Float>(4096)
     private val tri = FloatArray(12)
     private var count = 0
@@ -127,9 +130,11 @@ internal class WorldPen(
 
     private fun vertex(x: Float, y: Float, z: Float, shade: Float) {
         val slot = count * 4
+        val dy = y - camY
+        val dz = z - camZ
         tri[slot] = x - camX
-        tri[slot + 1] = y - camY
-        tri[slot + 2] = z - camZ
+        tri[slot + 1] = dy * pitchCos + dz * pitchSin
+        tri[slot + 2] = dz * pitchCos - dy * pitchSin
         tri[slot + 3] = shade
         count += 1
         if (count < 3) return

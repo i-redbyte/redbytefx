@@ -54,7 +54,7 @@ internal fun lampScene(): TimedScene {
             val nz = normalZ.expr.x
             val normal = vec3(nx, ny, nz)
             val inv = 1f.lit / max(length(normal), 0.0001f.lit)
-            val light = vec3((-0.35f).lit, 0.8f.lit, 0.45f.lit)
+            val light = vec3((-0.35f).lit, 0.8f.lit, (-0.45f).lit)
             val diffuse = max((nx * light.x + ny * light.y + nz * light.z) * inv, 0f.lit)
             val spec = pow(diffuse, 28f)
             val warm = vec3(1f.lit, 0.62f.lit, 0.22f.lit) * (0.16f.lit + diffuse * 0.9f.lit)

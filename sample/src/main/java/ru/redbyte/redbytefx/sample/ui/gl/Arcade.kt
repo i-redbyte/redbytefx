@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.floor
 import kotlin.math.sin
 import kotlinx.coroutines.isActive
@@ -149,7 +150,7 @@ internal class MazeRun {
     }
 
     private fun rebuild() {
-        val pen = WorldPen(x, 0.28f, z - 2.1f)
+        val pen = WorldPen(x, BALL_Y + EYE_UP, z - EYE_BACK, EYE_PITCH)
         MAZE.forEachIndexed { row, line ->
             line.forEachIndexed { col, mark ->
                 val cx = col + 0.5f
@@ -164,7 +165,7 @@ internal class MazeRun {
                 }
             }
         }
-        pen.sphere(x, 0.2f, z, 0.16f, 0.95f, 0.78f, 0.25f)
+        pen.sphere(x, BALL_Y, z, 0.16f, 0.95f, 0.78f, 0.25f)
         mesh = pen.toArray()
     }
 
@@ -179,6 +180,10 @@ internal class MazeRun {
 
     private companion object {
         const val PAD = 0.2f
+        const val BALL_Y = 0.2f
+        const val EYE_UP = 4.2f
+        const val EYE_BACK = 2.6f
+        val EYE_PITCH = atan2(EYE_UP, EYE_BACK)
         val MAZE = listOf(
             "#########",
             "#S      #",

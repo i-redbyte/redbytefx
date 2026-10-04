@@ -119,7 +119,7 @@ internal fun DemoSlice() {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
         ) {
             Text(
-                text = say("Quads $shown", "Квадратов: $shown"),
+                text = say("Quads $shown", "Прямоугольников: $shown"),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )

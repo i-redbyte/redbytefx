@@ -45,6 +45,64 @@ class ArcadeTest {
     }
 
     @Test
+    fun mazeCameraSeesTheBallFirstThroughTheScreenCenter() {
+        val mesh = MazeRun().mesh
+        var nearest = Float.MAX_VALUE
+        var blueOverRed = 1f
+        var index = 0
+        while (index < mesh.size) {
+            val hit = centerRayHit(mesh, index)
+            if (hit >= 0f && hit < nearest) {
+                nearest = hit
+                blueOverRed = mesh[index + 6] / mesh[index + 4]
+            }
+            index += 24
+        }
+        assertTrue(nearest < Float.MAX_VALUE)
+        assertTrue(blueOverRed < 0.3f)
+    }
+
+    @Test
+    fun aPitchedPenPutsThePointOnItsAxisAtTheScreenCenter() {
+        val pen = WorldPen(0f, 4f, -3f, pitch = kotlin.math.atan2(4f, 3f))
+        pen.box(0f, 0f, 0f, 0.1f, 0.1f, 0.1f, 1f, 1f, 1f)
+        val mesh = pen.toArray()
+        var sumY = 0f
+        var vertices = 0
+        var index = 0
+        while (index < mesh.size) {
+            assertTrue(mesh[index + 2] > 4.5f)
+            sumY += mesh[index + 1]
+            vertices += 1
+            index += 8
+        }
+        assertEquals(0f, sumY / vertices, 0.05f)
+    }
+
+    private fun centerRayHit(mesh: FloatArray, at: Int): Float {
+        val ax = mesh[at]
+        val ay = mesh[at + 1]
+        val az = mesh[at + 2]
+        val e1x = mesh[at + 8] - ax
+        val e1y = mesh[at + 9] - ay
+        val e1z = mesh[at + 10] - az
+        val e2x = mesh[at + 16] - ax
+        val e2y = mesh[at + 17] - ay
+        val e2z = mesh[at + 18] - az
+        val px = -e2y
+        val py = e2x
+        val det = e1x * px + e1y * py
+        if (abs(det) < 1e-7f) return -1f
+        val u = (-ax * px - ay * py) / det
+        val qx = -ay * e1z + az * e1y
+        val qy = -az * e1x + ax * e1z
+        val qz = -ax * e1y + ay * e1x
+        val v = qz / det
+        if (u < 0f || v < 0f || u + v > 1f) return -1f
+        return (e2x * qx + e2y * qy + e2z * qz) / det
+    }
+
+    @Test
     fun breakoutRemovesTheBrickTheBallHits() {
         val game = BreakoutRun()
         game.ballX = -0.91f

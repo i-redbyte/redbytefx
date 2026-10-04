@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -13,9 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -30,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.io.IOException
@@ -101,6 +107,8 @@ private const val PLANET_TAP_TRAVEL: Float = 36f
 private const val PLANET_TAP_RADIUS: Float = 0.34f
 
 private const val PLANET_PHOTO_EDGE: Int = 256
+
+private const val PLANET_BAR_WIDTH: Int = 320
 
 private val planetWhite = byteArrayOf(-1, -1, -1, -1)
 
@@ -436,8 +444,8 @@ internal fun DemoPlanet() {
             if (photo != null && stamp == generation.get()) rig.photo = photo
         }
     }
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f)) {
+    val stage = @Composable { modifier: Modifier ->
+        Box(modifier = modifier) {
             key(scene.program) {
                 GlSurface(
                     controller = controller,
@@ -460,7 +468,10 @@ internal fun DemoPlanet() {
                 modifier = Modifier.align(Alignment.TopEnd),
             )
         }
+    }
+    val bar = @Composable { modifier: Modifier ->
         PlanetBar(
+            modifier = modifier,
             moons = moons,
             mode = mode,
             onMoons = { next ->
@@ -482,6 +493,17 @@ internal fun DemoPlanet() {
             },
         )
     }
+    if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            stage(Modifier.weight(1f).fillMaxHeight())
+            bar(Modifier.width(PLANET_BAR_WIDTH.dp).verticalScroll(rememberScrollState()))
+        }
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            stage(Modifier.weight(1f))
+            bar(Modifier.fillMaxWidth())
+        }
+    }
 }
 
 private fun PlanetRig.render(scene: PlanetScene, frame: GlFrame) {
@@ -502,6 +524,7 @@ private fun PlanetRig.render(scene: PlanetScene, frame: GlFrame) {
 
 @Composable
 private fun PlanetBar(
+    modifier: Modifier,
     moons: Int,
     mode: Int,
     onMoons: (Int) -> Unit,
@@ -510,9 +533,7 @@ private fun PlanetBar(
     onPhoto: () -> Unit,
 ) {
     CyberPanel(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+        modifier = modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Text(

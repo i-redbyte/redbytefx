@@ -83,9 +83,9 @@ internal fun stampCell(x: Float, y: Float, cells: Int = STAMP_CELLS): Pair<Int, 
     return column to row
 }
 
-internal fun stampBlock(red: Int, green: Int, blue: Int): ByteArray {
-    val cell = STAMP_SIZE / STAMP_CELLS
-    val rgba = ByteArray(cell * cell * 4)
+/** One opaque color over an [edge] x [edge] RGBA square. */
+internal fun stampFill(edge: Int, red: Int, green: Int, blue: Int): ByteArray {
+    val rgba = ByteArray(edge * edge * 4)
     var index = 0
     while (index < rgba.size) {
         rgba[index] = red.toByte()
@@ -113,7 +113,7 @@ internal fun DemoStamp() {
         dsl = stampDsl,
     ) { frame ->
         if (images.runtime !== frame.runtime) {
-            images.texture = frame.runtime.uploadRgba(STAMP_SIZE, STAMP_SIZE, stampBlock(30, 70, 140))
+            images.texture = frame.runtime.uploadRgba(STAMP_SIZE, STAMP_SIZE, stampFill(STAMP_SIZE, 30, 70, 140))
             images.runtime = frame.runtime
             images.serial = -1
         }
@@ -121,7 +121,7 @@ internal fun DemoStamp() {
         if (serial != 0 && serial != images.serial) {
             val (column, row) = stampCell(pointer.x, pointer.y)
             val cell = STAMP_SIZE / STAMP_CELLS
-            val ink = if (serial % 2 == 0) stampBlock(220, 70, 40) else stampBlock(240, 200, 60)
+            val ink = if (serial % 2 == 0) stampFill(cell, 220, 70, 40) else stampFill(cell, 240, 200, 60)
             frame.runtime.texSubImage2DRgba(
                 images.texture,
                 STAMP_SIZE,

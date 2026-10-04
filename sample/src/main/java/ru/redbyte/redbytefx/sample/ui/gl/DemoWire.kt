@@ -60,7 +60,7 @@ internal fun wireScene(): WireScene {
             vec4(0.15f.lit, 0.82f.lit * pulse, 0.95f.lit, 1f.lit)
         }
     }
-    return WireScene(program, sphere(0.68f), time)
+    return WireScene(program, sphere(0.68f, stacks = 6, slices = 10), time)
 }
 
 @Composable

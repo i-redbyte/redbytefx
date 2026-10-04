@@ -115,6 +115,10 @@ class GlScenesTest {
         assertEquals(18, sliceIndexCount(3))
         assertEquals(0 to 0, stampCell(-0.9f, -0.9f))
         assertEquals(STAMP_CELLS - 1 to STAMP_CELLS - 1, stampCell(0.9f, 0.9f))
+        assertTrue(requireNotNull(wireScene().mesh.indices).size / 3 <= 120)
+        assertEquals(STAMP_SIZE * STAMP_SIZE * 4, stampFill(STAMP_SIZE, 30, 70, 140).size)
+        val cell = STAMP_SIZE / STAMP_CELLS
+        assertEquals(cell * cell * 4, stampFill(cell, 220, 70, 40).size)
         assertEquals(MIP_SIZE * MIP_SIZE * 4, checkerRgba(MIP_SIZE, 1).size)
         assertTrue(checkerRgba(4, 1)[0] != checkerRgba(4, 1)[4])
         val sky = skyScene().program
