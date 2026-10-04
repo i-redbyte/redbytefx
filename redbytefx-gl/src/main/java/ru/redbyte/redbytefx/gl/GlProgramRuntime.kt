@@ -396,6 +396,28 @@ public class GlProgramRuntime(
     }
 
     /**
+     * Device. Reads RGBA8 of the framebuffer that is already bound into [into].
+     * [into] must hold `width * height * 4` bytes. The size is checked before `glReadPixels`.
+     * The framebuffer binding is left as it was.
+     */
+    public fun readFramebuffer(width: Int, height: Int, into: ByteArray) {
+        checkThread()
+        if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
+        readFramebufferPixels(device, width, height, into)
+    }
+
+    /**
+     * Device. Reads RGBA8 of [target] into [into].
+     * The size is checked before any bind or `glReadPixels`. The framebuffer that was bound
+     * before this call is bound again afterward.
+     */
+    public fun readColorTarget(target: GlColorTarget, into: ByteArray) {
+        checkThread()
+        if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
+        readColorTargetPixels(device, boundFramebuffer, target, into)
+    }
+
+    /**
      * Device. Allocates a buffer name on the EGL thread that linked this runtime.
      * [destroy] does not delete it. [deleteBuffer] still deletes it afterward, while the
      * EGL context is current.

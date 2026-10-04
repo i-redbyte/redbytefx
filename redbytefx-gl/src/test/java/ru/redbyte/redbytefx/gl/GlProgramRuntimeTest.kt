@@ -811,6 +811,41 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun pixelReadChecksTheBufferBeforeTouchingTheFramebuffer() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val target = runtime.createColorTarget(2, 3)
+        runtime.bindFramebuffer(target.framebuffer)
+        val bound = device.boundFramebuffers.size
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.readFramebuffer(2, 3, ByteArray(3))
+        }
+        assertEquals(0, device.readPixelCalls)
+        assertEquals(bound, device.boundFramebuffers.size)
+        val into = ByteArray(2 * 3 * 4)
+        runtime.readFramebuffer(2, 3, into)
+        assertEquals(1, device.readPixelCalls)
+        assertEquals(9, into[0].toInt())
+        assertEquals(target.framebuffer, device.boundFramebuffers.last())
+
+        val marks = device.boundFramebuffers.size
+        runtime.readColorTarget(target, into)
+        assertEquals(marks, device.boundFramebuffers.size)
+        assertEquals(2, device.readPixelCalls)
+
+        runtime.bindFramebuffer(0)
+        val beforeRestore = device.boundFramebuffers.size
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.readColorTarget(target, ByteArray(1))
+        }
+        assertEquals(beforeRestore, device.boundFramebuffers.size)
+        runtime.readColorTarget(target, into)
+        assertEquals(listOf(target.framebuffer, 0), device.boundFramebuffers.takeLast(2))
+        assertEquals(3, device.readPixelCalls)
+    }
+
+    @Test
     fun aBufferCanBeDeletedAfterTheProgramAndNotTwice() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)
@@ -1269,6 +1304,13 @@ private class RecordingGlDevice(
 
     override fun bindFramebuffer(framebuffer: Int) {
         boundFramebuffers += framebuffer
+    }
+
+    var readPixelCalls = 0
+
+    override fun readPixelsRgba(x: Int, y: Int, width: Int, height: Int, rgba: ByteArray) {
+        readPixelCalls += 1
+        rgba.fill(9)
     }
 
     override fun createRenderbuffer(): Int = nextRenderbuffer++

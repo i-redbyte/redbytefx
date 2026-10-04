@@ -399,6 +399,7 @@ internal class FloatDevice : GlDevice() {
     override fun createFramebuffer(): Int = 1
     override fun deleteFramebuffer(framebuffer: Int) = Unit
     override fun bindFramebuffer(framebuffer: Int) = Unit
+    override fun readPixelsRgba(x: Int, y: Int, width: Int, height: Int, rgba: ByteArray) = Unit
     override fun createRenderbuffer(): Int = 1
     override fun deleteRenderbuffer(renderbuffer: Int) = Unit
     override fun framebufferColor(framebuffer: Int, texture: Int) = Unit

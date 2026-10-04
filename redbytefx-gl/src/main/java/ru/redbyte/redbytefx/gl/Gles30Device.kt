@@ -388,6 +388,15 @@ public class Gles30Device : GlDevice() {
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
     }
 
+    override fun readPixelsRgba(x: Int, y: Int, width: Int, height: Int, rgba: ByteArray) {
+        val needed = rgbaByteCount(width, height)
+        require(rgba.size >= needed) { "Pixel read needs $needed bytes, was ${rgba.size}" }
+        val buffer = ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder())
+        GLES30.glReadPixels(x, y, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buffer)
+        buffer.position(0)
+        buffer.get(rgba, 0, needed)
+    }
+
     override fun createRenderbuffer(): Int {
         GLES30.glGenRenderbuffers(1, statusSlot, 0)
         return statusSlot[0]

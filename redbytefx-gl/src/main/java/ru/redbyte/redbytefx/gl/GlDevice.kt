@@ -217,6 +217,12 @@ public abstract class GlDevice {
     /** Device. Binds a framebuffer. Zero binds the default framebuffer. */
     public abstract fun bindFramebuffer(framebuffer: Int)
 
+    /**
+     * Device. `glReadPixels` of RGBA8 into [rgba].
+     * [rgba] must already hold at least `width * height * 4` bytes.
+     */
+    public abstract fun readPixelsRgba(x: Int, y: Int, width: Int, height: Int, rgba: ByteArray)
+
     /** Device. Allocates a renderbuffer name on the current EGL context. */
     public abstract fun createRenderbuffer(): Int
 
