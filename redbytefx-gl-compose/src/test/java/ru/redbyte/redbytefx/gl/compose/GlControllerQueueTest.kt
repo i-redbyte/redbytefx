@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.gl.compose
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
@@ -174,6 +175,24 @@ class GlControllerQueueTest {
         assertEquals(1, thrown)
         assertEquals(0.5f, device.lastFloat)
         assertTrue(followed)
+    }
+
+    @Test
+    fun the129thGlTaskFailsAndTheFirstOneStays() {
+        val (program, amount) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = ArrayDeque<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { queued.addLast(it) }
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        repeat(200) { controller.set(amount, 0.1f) }
+        val ran = ArrayList<Int>()
+        repeat(128) { index -> controller.runOnGl { ran += index } }
+        assertThrows(IllegalStateException::class.java) { controller.runOnGl { ran += 128 } }
+        while (queued.isNotEmpty()) queued.removeFirst().invoke()
+        assertEquals(0, ran.first())
+        assertEquals(127, ran.last())
+        assertEquals(128, ran.size)
     }
 
     private fun amountProgram(): Pair<ru.redbyte.redbytefx.ShaderProgram, Uniform<Flt<High>>> {

@@ -68,13 +68,14 @@ public class GlController internal constructor(
     /**
      * Runs [block] on the GL thread.
      *
-     * If the surface is not linked yet, [block] waits until link and then runs. The queue keeps at
-     * most [MAX_QUEUED_GL_TASKS] arbitrary blocks; uniform [set] calls are coalesced separately.
+     * If the surface is not linked yet, [block] waits until link and then runs. The queue holds at
+     * most [MAX_QUEUED_GL_TASKS] arbitrary blocks and throws [IllegalStateException] instead of
+     * dropping the oldest. Uniform [set] calls are coalesced separately and do not count.
      */
     public fun runOnGl(block: () -> Unit) {
         synchronized(lock) {
-            if (tasks.size >= MAX_QUEUED_GL_TASKS) {
-                tasks.removeFirst()
+            check(tasks.size < MAX_QUEUED_GL_TASKS) {
+                "GL task queue is full ($MAX_QUEUED_GL_TASKS)"
             }
             tasks.addLast(block)
         }
