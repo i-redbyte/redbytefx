@@ -14,7 +14,9 @@ import ru.redbyte.redbytefx.Med
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.SamplerCube
 import ru.redbyte.redbytefx.ShaderProgram
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
@@ -32,8 +34,10 @@ private typealias UniformWrite = (GlProgramRuntime) -> Unit
  *
  * [set] keeps the latest value per uniform and runs it on the GL thread. Writes that happen
  * before the surface has linked are applied after link, not dropped. When the EGL context is
- * recreated, the latest value of every [set] uniform is written to the new program. A texture
- * name from [bind] belongs to one context, so it is not replayed: bind again after re-uploading.
+ * recreated, the latest value of every [set] uniform is written to the new program. A uniform
+ * block and a storage block are retained the same way. A texture name from [bind] belongs to one
+ * context, so it is not replayed: bind again after re-uploading. [dispatch] and [read] run once
+ * on the GL thread. [read] returns immediately and fills the caller's buffer from that queue.
  * [runOnGl] blocks run once.
  */
 @Stable
@@ -58,6 +62,8 @@ public class GlController internal constructor(
     private val lock = Any()
     private val latest = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
+    private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
+    private val storageBlockWrites = CoalescedWrites<StorageBlock>()
     private val tasks = ArrayDeque<() -> Unit>()
     private val drainQueued = AtomicBoolean(false)
     private val drainTask: () -> Unit = {
@@ -120,6 +126,8 @@ public class GlController internal constructor(
             for (entry in latest) {
                 if (!pending.containsKey(entry.key)) pending[entry.key] = entry.value
             }
+            replay(uniformBlockWrites)
+            replay(storageBlockWrites)
         }
         drainPending()
     }
@@ -158,12 +166,34 @@ public class GlController internal constructor(
 
     private fun nextDrainAction(): (() -> Unit)? = synchronized(lock) {
         val linked = runtime ?: return null
-        val key = pending.keys.firstOrNull()
-        if (key != null) {
-            val write = pending.remove(key) ?: return null
-            return { write(linked) }
-        }
+        poll(pending)?.let { write -> return { write(linked) } }
+        poll(uniformBlockWrites)?.let { write -> return { write(linked) } }
+        poll(storageBlockWrites)?.let { write -> return { write(linked) } }
         tasks.removeFirstOrNull()
+    }
+
+    private fun poll(pendingWrites: IdentityHashMap<Uniform<*>, UniformWrite>): UniformWrite? {
+        val key = pendingWrites.keys.firstOrNull() ?: return null
+        return pendingWrites.remove(key)
+    }
+
+    private fun <K : Any> poll(writes: CoalescedWrites<K>): UniformWrite? {
+        val key = writes.pending.keys.firstOrNull() ?: return null
+        return writes.pending.remove(key)
+    }
+
+    private fun <K : Any> replay(writes: CoalescedWrites<K>) {
+        for (entry in writes.latest) {
+            if (!writes.pending.containsKey(entry.key)) writes.pending[entry.key] = entry.value
+        }
+    }
+
+    private fun <K : Any> enqueueRetained(writes: CoalescedWrites<K>, key: K, write: UniformWrite) {
+        synchronized(lock) {
+            writes.pending[key] = write
+            writes.latest[key] = write
+        }
+        scheduleDrain()
     }
 
     private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {
@@ -243,4 +273,49 @@ public class GlController internal constructor(
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
         enqueue(uniform, retained = true) { it.set(uniform, values) }
     }
+
+    /**
+     * Scene. Uploads [values] to [block] on the GL thread and keeps them for the next context.
+     * [values] is read on that thread; do not change it afterward.
+     */
+    @JvmName("setUniformBlock")
+    public fun set(block: UniformBlock, values: FloatArray) {
+        enqueueRetained(uniformBlockWrites, block) { it.set(block, values) }
+    }
+
+    /**
+     * Scene. Uploads [values] to [block] on the GL thread and keeps them for the next context.
+     * [values] is read on that thread; do not change it afterward.
+     */
+    @JvmName("setStorageBlock")
+    public fun set(block: StorageBlock, values: FloatArray) {
+        enqueueRetained(storageBlockWrites, block) { it.set(block, values) }
+    }
+
+    /**
+     * Scene. Queues [dispatch][GlProgramRuntime.dispatch] on the GL thread.
+     * A failed uniform write does not drop it.
+     */
+    public fun dispatch(x: Int, y: Int = 1, z: Int = 1) {
+        require(x >= 1 && y >= 1 && z >= 1) {
+            "Compute dispatch size must be at least 1, was $x, $y, $z"
+        }
+        runOnGl { runtime?.dispatch(x, y, z) }
+    }
+
+    /**
+     * Scene. Queues a storage read on the GL thread and returns immediately.
+     * [onResult] runs on that thread with the float count after [into] has been filled.
+     */
+    public fun read(block: StorageBlock, into: FloatArray, onResult: (Int) -> Unit) {
+        runOnGl {
+            val linked = runtime ?: return@runOnGl
+            onResult(linked.read(block, into))
+        }
+    }
+}
+
+private class CoalescedWrites<K : Any> {
+    val latest = IdentityHashMap<K, UniformWrite>()
+    val pending = IdentityHashMap<K, UniformWrite>()
 }

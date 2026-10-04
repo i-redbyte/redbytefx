@@ -10,7 +10,9 @@ import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.float2
 import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.gl.GlCompileStatus
 import ru.redbyte.redbytefx.gl.GlDevice
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
@@ -195,6 +197,79 @@ class GlControllerQueueTest {
         assertEquals(128, ran.size)
     }
 
+    @Test
+    fun blockWritesReplayOnANewContext() {
+        lateinit var gain: UniformBlock
+        lateinit var cells: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            gain = uniformBlock("frame") { float("gain") }
+            cells = storageBlock("cells") { float("value") }
+            compute(8) { }
+        }
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = mutableListOf<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { block -> queued += block }
+        controller.attachQueue(queue)
+        controller.set(gain, floatArrayOf(0.25f))
+        controller.set(gain, floatArrayOf(0.5f))
+        controller.set(cells, floatArrayOf(4f))
+        val first = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, first).also { it.link() })
+        assertEquals(0.5f, firstFloat(first.uniformPayloads.single()), 0f)
+        assertEquals(4f, firstFloat(first.storageBytes.values.single()), 0f)
+
+        controller.detachRuntime(requireNotNull(controller.runtime))
+        val second = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, second).also { it.link() })
+        assertEquals(0.5f, firstFloat(second.uniformPayloads.single()), 0f)
+        assertEquals(4f, firstFloat(second.storageBytes.values.single()), 0f)
+    }
+
+    @Test
+    fun dispatchSurvivesAFailedWriteAndReadFillsTheCallerBuffer() {
+        lateinit var bad: Uniform<Flt<High>>
+        lateinit var cells: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            bad = uniform("bad", 0f)
+            cells = storageBlock("cells") { float("value") }
+            compute(8) { }
+        }
+        val device = FloatDevice()
+        device.rejectNegative = true
+        val runtime = GlProgramRuntime(program, device).also { it.link() }
+        val queued = ArrayDeque<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { queued.addLast(it) }
+        val controller = GlController(program, GlSurfaceConfig())
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, runtime)
+        controller.set(bad, -1f)
+        controller.set(cells, floatArrayOf(4f))
+        controller.dispatch(2, 3, 4)
+        val into = FloatArray(1)
+        var count = -1
+        controller.read(cells, into) { count = it }
+        assertEquals(-1, count)
+        assertEquals(0f, into[0], 0f)
+        var thrown = 0
+        var steps = 0
+        while (queued.isNotEmpty() && steps < 8) {
+            steps += 1
+            try {
+                queued.removeFirst().invoke()
+            } catch (error: IllegalStateException) {
+                thrown += 1
+            }
+        }
+        assertEquals(1, thrown)
+        assertEquals(1, device.dispatchCalls)
+        assertEquals(listOf(2, 3, 4), device.dispatchGroups)
+        assertEquals(1, count)
+        assertEquals(4f, into[0], 0f)
+    }
+
+    private fun firstFloat(bytes: ByteArray): Float =
+        java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.nativeOrder()).getFloat(0)
+
     private fun amountProgram(): Pair<ru.redbyte.redbytefx.ShaderProgram, Uniform<Flt<High>>> {
         lateinit var amount: Uniform<Flt<High>>
         val program = shader(ShaderTarget.Gles30) {
@@ -245,23 +320,44 @@ internal class FloatDevice : GlDevice() {
     override fun deleteTexture(texture: Int) = Unit
     override fun texture2DLinearRepeat(texture: Int) = Unit
     override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) = Unit
-    override fun dispatchCompute(x: Int, y: Int, z: Int) = Unit
+    var dispatchCalls = 0
+    val dispatchGroups = mutableListOf<Int>()
+    override fun dispatchCompute(x: Int, y: Int, z: Int) {
+        dispatchCalls += 1
+        dispatchGroups += x
+        dispatchGroups += y
+        dispatchGroups += z
+    }
     override fun shaderStorageBarrier() = Unit
-    override fun createBuffer(): Int = 1
+    private var nextBuffer = 1
+    val uniformPayloads = mutableListOf<ByteArray>()
+    val storageBytes = HashMap<Int, ByteArray>()
+    override fun createBuffer(): Int = nextBuffer++
     override fun deleteBuffer(buffer: Int) = Unit
-    override fun uniformBufferData(buffer: Int, data: ByteArray) = Unit
-    override fun uniformBufferSubData(buffer: Int, data: ByteArray) = Unit
+    override fun uniformBufferData(buffer: Int, data: ByteArray) {
+        uniformPayloads += data.copyOf()
+    }
+    override fun uniformBufferSubData(buffer: Int, data: ByteArray) {
+        uniformPayloads += data.copyOf()
+    }
     override fun bindUniformBufferBase(buffer: Int, binding: Int) = Unit
     override fun uniformBlockIndex(program: Int, name: String): Int = 0
     override fun uniformBlockBinding(program: Int, blockIndex: Int, binding: Int) = Unit
     override fun maxUniformBufferBindings(): Int = 24
     override fun maxShaderStorageBufferBindings(): Int = 8
-    override fun shaderStorageData(buffer: Int, data: ByteArray) = Unit
-    override fun shaderStorageSubData(buffer: Int, data: ByteArray) = Unit
+    override fun shaderStorageData(buffer: Int, data: ByteArray) {
+        storageBytes[buffer] = data.copyOf()
+    }
+    override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
+        storageBytes[buffer] = data.copyOf()
+    }
     override fun bindShaderStorageBase(buffer: Int, binding: Int) = Unit
     override fun bufferUpdateBarrier() = Unit
-    override fun mapShaderStorageRead(buffer: Int, bytes: Int): java.nio.ByteBuffer =
-        java.nio.ByteBuffer.allocate(bytes)
+    override fun mapShaderStorageRead(buffer: Int, bytes: Int): java.nio.ByteBuffer {
+        val stored = checkNotNull(storageBytes[buffer])
+        check(stored.size >= bytes)
+        return java.nio.ByteBuffer.wrap(stored, 0, bytes).order(java.nio.ByteOrder.nativeOrder())
+    }
     override fun unmapShaderStorage(buffer: Int) = Unit
     override fun drawArrays(mode: Int, first: Int, count: Int) = Unit
     override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) = Unit
