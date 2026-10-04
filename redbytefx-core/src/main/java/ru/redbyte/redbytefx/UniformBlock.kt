@@ -6,7 +6,8 @@ import java.nio.ByteOrder
 /**
  * One std140 uniform block owned by a GLES 3.0 program.
  *
- * Fields are highp float scalars and vectors. The block is written as a whole.
+ * Fields are highp float scalars, vectors, matrices, and sized arrays. An unsized array stays on
+ * a storage block. The block is written as a whole.
  */
 public class UniformBlock internal constructor(
     public val name: String,
@@ -42,6 +43,21 @@ public class UniformBlockBuilder internal constructor(
 
     public fun vec4(name: String): HighVec4 = member(name, vector(4))
 
+    public fun mat2(name: String): Expr<Mat2> = member(name, Shape.Matrix(2))
+
+    public fun mat3(name: String): Expr<Mat3> = member(name, Shape.Matrix(3))
+
+    public fun mat4(name: String): Expr<Mat4> = member(name, Shape.Matrix(4))
+
+    public fun floatArray(name: String, size: Int): StorageArray<Flt<High>> =
+        array(name, Shape.Scalar(ScalarKind.Float, Precision.High), size)
+
+    public fun vec2Array(name: String, size: Int): StorageArray<Vec2<Flt<High>>> = array(name, vector(2), size)
+
+    public fun vec3Array(name: String, size: Int): StorageArray<Vec3<Flt<High>>> = array(name, vector(3), size)
+
+    public fun vec4Array(name: String, size: Int): StorageArray<Vec4<Flt<High>>> = array(name, vector(4), size)
+
     public fun vertex(block: ShaderDsl.VertexDsl.() -> Unit) {
         vertexStage(block)
     }
@@ -52,19 +68,29 @@ public class UniformBlockBuilder internal constructor(
 
     internal fun finish(name: String, typeName: String): UniformBlock {
         require(members.isNotEmpty()) { "Uniform block requires a field" }
-        val layout = std140Layout(members.map { it.shape })
+        val layout = std140BlockLayout(members)
         return UniformBlock(name, typeName, instanceName, members.toList(), layout.offsets, layout.byteSize)
     }
 
+    private fun <T : ShType> array(name: String, shape: Shape, size: Int): StorageArray<T> {
+        require(size > 0) { "Uniform array size must be positive, was $size" }
+        return StorageArray(field(name, shape, size))
+    }
+
     private fun <T : ShType> member(name: String, shape: Shape): Expr<T> {
+        val created = field(name, shape, 0)
+        return Expr(shape, ExprNode.BlockRef(created))
+    }
+
+    private fun field(name: String, shape: Shape, arraySize: Int): BlockMember {
         require(name.isNotBlank()) { "Uniform block field name must not be blank" }
         val memberName = sanitizeSuggestedIdentifier(name, "f")
         require(members.none { it.memberName == memberName }) {
             "Uniform block already has a field named $memberName"
         }
-        val member = BlockMember(instanceName, memberName, shape)
+        val member = BlockMember(instanceName, memberName, shape, arraySize)
         members += member
-        return Expr(shape, ExprNode.BlockRef(member))
+        return member
     }
 }
 
@@ -73,20 +99,19 @@ internal class Std140Layout(
     val byteSize: Int,
 )
 
-internal fun std140Layout(shapes: List<Shape>): Std140Layout {
-    val offsets = IntArray(shapes.size)
+internal fun std140BlockLayout(members: List<BlockMember>): Std140Layout {
+    val offsets = IntArray(members.size)
     var cursor = 0
-    shapes.forEachIndexed { index, shape ->
-        val alignment = std140Alignment(shape)
-        cursor = roundUp(cursor, alignment)
+    members.forEachIndexed { index, member ->
+        cursor = roundUp(cursor, std140MemberAlignment(member))
         offsets[index] = cursor
-        cursor += std140Size(shape)
+        cursor += std140MemberSize(member)
     }
     return Std140Layout(offsets, roundUp(cursor, VEC4_ALIGNMENT))
 }
 
 public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
-    val lanes = block.members.sumOf { laneCount(it.shape) }
+    val lanes = block.members.sumOf { logicalUniformLanes(it) }
     require(values.size == lanes) {
         "Uniform block \"${block.name}\" expects $lanes floats, was ${values.size}"
     }
@@ -94,16 +119,151 @@ public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
     val buffer = ByteBuffer.allocate(block.byteSize).order(ByteOrder.nativeOrder())
     var cursor = 0
     block.members.forEachIndexed { index, member ->
-        buffer.position(block.offsets[index])
-        repeat(laneCount(member.shape)) {
-            buffer.putFloat(values[cursor])
-            cursor += 1
-        }
+        cursor = writeStd140(buffer, block.offsets[index], member, values, cursor)
     }
     return buffer.array()
 }
 
+/**
+ * Shade. Copies the logical floats of a std140 [block] into [into].
+ * Padding between `vec3` lanes and between matrix columns is skipped.
+ */
+public fun unpackStd140(block: UniformBlock, packed: ByteBuffer, into: FloatArray): Int {
+    val lanes = block.members.sumOf { logicalUniformLanes(it) }
+    require(into.size >= lanes) {
+        "Uniform block \"${block.name}\" needs $lanes floats, was ${into.size}"
+    }
+    val view = packed.duplicate().order(ByteOrder.nativeOrder())
+    require(view.limit() >= block.byteSize) {
+        "Uniform block \"${block.name}\" needs ${block.byteSize} bytes, was ${view.limit()}"
+    }
+    var cursor = 0
+    block.members.forEachIndexed { index, member ->
+        cursor = readStd140(view, block.offsets[index], member, into, cursor)
+    }
+    return cursor
+}
+
+internal fun logicalUniformLanes(member: BlockMember): Int {
+    val perElement = when (val shape = member.shape) {
+        is Shape.Matrix -> shape.lanes * shape.lanes
+        else -> laneCount(shape)
+    }
+    return if (member.arraySize == 0) perElement else member.arraySize * perElement
+}
+
+internal fun std140MemberAlignment(member: BlockMember): Int = when {
+    member.arraySize > 0 || member.shape is Shape.Matrix -> VEC4_ALIGNMENT
+    else -> std140Alignment(member.shape)
+}
+
+internal fun std140MemberSize(member: BlockMember): Int = when {
+    member.arraySize > 0 -> std140ElementStride(member.shape) * member.arraySize
+    else -> std140ElementSize(member.shape)
+}
+
+internal fun std140ElementStride(shape: Shape): Int = roundUp(std140ElementSize(shape), VEC4_ALIGNMENT)
+
+internal fun std140ElementSize(shape: Shape): Int = when (shape) {
+    is Shape.Matrix -> shape.lanes * VEC4_ALIGNMENT
+    else -> std140Size(shape)
+}
+
 private fun vector(lanes: Int): Shape = Shape.Vector(ScalarKind.Float, Precision.High, lanes)
+
+private fun writeStd140(
+    buffer: ByteBuffer,
+    offset: Int,
+    member: BlockMember,
+    values: FloatArray,
+    cursor: Int,
+): Int = transferStd140(buffer, offset, member, values, cursor, into = null)
+
+private fun readStd140(
+    buffer: ByteBuffer,
+    offset: Int,
+    member: BlockMember,
+    into: FloatArray,
+    cursor: Int,
+): Int = transferStd140(buffer, offset, member, values = null, cursor, into)
+
+private fun transferStd140(
+    buffer: ByteBuffer,
+    offset: Int,
+    member: BlockMember,
+    values: FloatArray?,
+    cursor: Int,
+    into: FloatArray?,
+): Int {
+    val shape = member.shape
+    return if (shape is Shape.Matrix) {
+        transferMatrix(buffer, offset, member, shape, values, cursor, into)
+    } else {
+        transferColumns(buffer, offset, member, laneCount(shape), columnStride(member, shape), values, cursor, into)
+    }
+}
+
+private fun transferMatrix(
+    buffer: ByteBuffer,
+    offset: Int,
+    member: BlockMember,
+    shape: Shape.Matrix,
+    values: FloatArray?,
+    cursor: Int,
+    into: FloatArray?,
+): Int {
+    val elementStride = if (member.arraySize > 0) std140ElementStride(shape) else std140ElementSize(shape)
+    return transferColumns(buffer, offset, member, shape.lanes, elementStride, values, cursor, into)
+}
+
+private fun transferColumns(
+    buffer: ByteBuffer,
+    offset: Int,
+    member: BlockMember,
+    lanes: Int,
+    elementStride: Int,
+    values: FloatArray?,
+    cursor: Int,
+    into: FloatArray?,
+): Int {
+    val elements = if (member.arraySize == 0) 1 else member.arraySize
+    val columnBytes = if (member.shape is Shape.Matrix) VEC4_ALIGNMENT else elementStride
+    var local = cursor
+    var element = 0
+    while (element < elements) {
+        var column = 0
+        val columns = if (member.shape is Shape.Matrix) lanes else 1
+        while (column < columns) {
+            val base = offset + element * elementStride + column * columnBytes
+            local = copyLanes(buffer, base, lanes, values, local, into)
+            column += 1
+        }
+        element += 1
+    }
+    return local
+}
+
+private fun columnStride(member: BlockMember, shape: Shape): Int =
+    if (member.arraySize > 0) std140ElementStride(shape) else std140Size(shape)
+
+private fun copyLanes(
+    buffer: ByteBuffer,
+    base: Int,
+    lanes: Int,
+    values: FloatArray?,
+    cursor: Int,
+    into: FloatArray?,
+): Int {
+    var local = cursor
+    var lane = 0
+    while (lane < lanes) {
+        val at = base + lane * FLOAT_ALIGNMENT
+        if (into != null) into[local] = buffer.getFloat(at) else buffer.putFloat(at, values!![local])
+        local += 1
+        lane += 1
+    }
+    return local
+}
 
 internal fun std430ArrayStride(shape: Shape): Int = roundUp(std140Size(shape), std140Alignment(shape))
 

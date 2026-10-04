@@ -12,7 +12,7 @@ Full narrative: [README.md](https://github.com/i-redbyte/redbytefx/blob/master/R
 
 **Эффект.** `shader(ShaderTarget.Agsl)`, только фрагмент, рецепты `redbytefx-stdlib`, `redbyteFx`. Поток UI, API 31+. Трёхмерность здесь — это `sdSphere` и `rayMarch`: луч считается во фрагменте, сетки нет.
 
-**Сцена.** Вершина и фрагмент, буфер, текстура, draw. OpenGL ES, поток EGL, API 24+. Трёхмерность здесь — это меш. AGSL эту программу не собирает: `uniformMat4` на эффекте отвергается.
+**Сцена.** Вершина и фрагмент, буфер, текстура, draw. OpenGL ES, поток EGL, API 24+. Трёхмерность здесь — это меш. AGSL эту программу не собирает: `uniformMat4` на эффекте отвергается. `uniformBlock` на GLES принимает размерные массивы float/vec и `mat2`/`mat3`/`mat4`; `packStd140` и `unpackStd140` работают логическими float и пропускают padding. Неразмерный массив остаётся у `storageBlock`.
 
 ## Stages
 

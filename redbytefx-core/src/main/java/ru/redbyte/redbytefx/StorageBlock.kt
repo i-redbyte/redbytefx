@@ -30,7 +30,7 @@ public class StorageBlock internal constructor(
 public class StorageArray<T : ShType> internal constructor(
     internal val member: BlockMember,
 ) {
-    /** Reads one element of a storage or `shared` array in a compute shader. */
+    /** Reads one element of a storage, uniform, or `shared` array. */
     public operator fun get(index: Expr<IntS>): Expr<T> =
         Expr(member.shape, ExprNode.Index(member, index))
 }

@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class UniformBlockTest {
 
@@ -75,5 +77,45 @@ class UniformBlockTest {
                 fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
             }
         }
+    }
+
+    @Test
+    fun std140PacksAVec3ArrayAndAMatrixWithoutPadding() {
+        lateinit var wide: UniformBlock
+        val spelled = shader(ShaderTarget.Gles30) {
+            wide = uniformBlock("wide") {
+                val colors = vec3Array("colors", 2)
+                val basis = mat2("basis")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    val tint = colors[0.intLit]
+                    val moved = basis * vec2(tint.x, tint.y)
+                    vec4(moved.x, moved.y, tint.z, 1f.lit)
+                }
+            }
+        }
+        assertEquals(0, wide.offsets[0])
+        assertEquals(32, wide.offsets[1])
+        assertEquals(64, wide.byteSize)
+        val packed = packStd140(
+            wide,
+            floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f),
+        )
+        val into = FloatArray(10)
+        assertEquals(10, unpackStd140(wide, ByteBuffer.wrap(packed), into))
+        assertEquals(1f, into[0], 0f)
+        assertEquals(6f, into[5], 0f)
+        assertEquals(7f, into[6], 0f)
+        assertEquals(10f, into[9], 0f)
+        val view = ByteBuffer.wrap(packed).order(ByteOrder.nativeOrder())
+        assertEquals(0f, view.getFloat(12), 0f)
+        assertEquals(4f, view.getFloat(16), 0f)
+        assertEquals(7f, view.getFloat(32), 0f)
+        assertEquals(8f, view.getFloat(36), 0f)
+        assertEquals(0f, view.getFloat(40), 0f)
+        assertEquals(9f, view.getFloat(48), 0f)
+        assertTrue(spelled.fragmentSource().contains("highp vec3 colors[2];"))
+        assertTrue(spelled.fragmentSource().contains("highp mat2 basis;"))
+        assertTrue(spelled.fragmentSource().contains("b_wide.colors[0]"))
     }
 }

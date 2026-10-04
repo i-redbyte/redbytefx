@@ -242,8 +242,7 @@ private fun blockText(block: UniformBlock?, roots: List<Expr<*>>): String {
     return buildString {
         append("layout(std140) uniform ").append(block.typeName).append(" {\n")
         for (member in block.members) {
-            append("  ").append(glslDeclaration(member.shape)).append(' ')
-                .append(member.memberName).append(";\n")
+            append("  ").append(memberDeclaration(member)).append(";\n")
         }
         append("} ").append(block.instanceName).append(";\n")
     }
@@ -253,7 +252,7 @@ private fun referencesBlock(roots: List<Expr<*>>): Boolean {
     var found = false
     roots.forEach { root ->
         walk(root, linkedSetOf()) { node ->
-            if (node is ExprNode.BlockRef) found = true
+            if (node is ExprNode.BlockRef || node is ExprNode.Index) found = true
         }
     }
     return found
