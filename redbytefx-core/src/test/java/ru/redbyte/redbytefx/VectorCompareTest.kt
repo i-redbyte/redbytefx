@@ -73,4 +73,23 @@ class VectorCompareTest {
         assertTrue(fragment.contains("any(mask)"))
         assertTrue(fragment.contains("(hit > ") || fragment.contains("? 1.0 : 0.0"))
     }
+
+    @Test
+    fun booleanNotSpellsABangInAgslAndGlsl() {
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val hit = not(1f.lit.gt(0f.lit))
+                vec4(ifElse(hit, 1f.lit, 0f.lit), 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(agsl.agslSource().contains("(!(1.0 > 0.0))"))
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val hit = not(1f.lit.gt(0f.lit))
+                vec4(ifElse(hit, 1f.lit, 0f.lit), 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(glsl.fragmentSource().contains("(!(1.0 > 0.0))"))
+    }
 }

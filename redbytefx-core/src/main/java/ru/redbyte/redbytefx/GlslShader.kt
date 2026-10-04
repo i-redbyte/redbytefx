@@ -450,7 +450,10 @@ private class GlslEmitter(
         is ExprNode.IntLiteral -> node.value.toString()
         is ExprNode.Swizzle -> "${emit(node.source)}.${node.mask}"
         is ExprNode.Cast -> "${spell(expr.shape, ShaderTarget.Gles30)}(${emit(node.arg)})"
-        is ExprNode.Unary -> "(-${emit(node.arg)})"
+        is ExprNode.Unary -> when (node.op) {
+            UnaryOp.Neg -> "(-${emit(node.arg)})"
+            UnaryOp.Not -> "(!${emit(node.arg)})"
+        }
         is ExprNode.Binary -> "(${emit(node.left)} ${arithSymbol(node.op)} ${emit(node.right)})"
         is ExprNode.Construct -> {
             val args = node.args.joinToString(", ") { emit(it) }

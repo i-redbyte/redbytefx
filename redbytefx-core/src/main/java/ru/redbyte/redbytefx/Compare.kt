@@ -7,7 +7,7 @@ import kotlin.jvm.JvmName
  *
  * Scalar floats use infix [gt], [lt], [ge], [le], [eq], [ne] (spell as `>`, `<`, … in GLSL).
  * Vector compares return [BVec2] / [BVec3] / [BVec4]; reduce with [any] or [all].
- * [ifElse] is the portable ternary. Prefer [gte] in [Sugar.kt] when `>=` reads more clearly in Kotlin.
+ * [ifElse] is the portable ternary. [not] spells `!`. Prefer [gte] in [Sugar.kt] when `>=` reads more clearly in Kotlin.
  */
 
 /** Float greater-than; result is a shader `bool`. */
@@ -116,6 +116,10 @@ public fun all(value: Expr<BVec4>): Expr<BoolS> = boolReduce("all", value)
 public infix fun Expr<BoolS>.and(other: Expr<BoolS>): Expr<BoolS> = boolOp(ArithOp.And, this, other)
 
 public infix fun Expr<BoolS>.or(other: Expr<BoolS>): Expr<BoolS> = boolOp(ArithOp.Or, this, other)
+
+/** Shade. Boolean negation. AGSL and GLSL both spell `!`. */
+public fun not(value: Expr<BoolS>): Expr<BoolS> =
+    Expr(Shape.Scalar(ScalarKind.Bool, null), ExprNode.Unary(UnaryOp.Not, value))
 
 /** Portable `condition ? ifTrue : ifFalse` for matching expression types. */
 public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse: Expr<T>): Expr<T> {

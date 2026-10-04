@@ -121,4 +121,5 @@ internal enum class ArithOp {
 
 internal enum class UnaryOp {
     Neg,
+    Not,
 }
