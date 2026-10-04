@@ -776,6 +776,21 @@ class GlProgramRuntimeTest {
         assertTrue(device.deletedFramebuffers.contains(target.framebuffer))
         assertTrue(device.deletedTextures.contains(target.colorTexture))
     }
+
+    @Test
+    fun aBufferCanBeDeletedAfterTheProgramAndNotTwice() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val name = runtime.createBuffer()
+        runtime.destroy()
+        assertEquals(0, device.deleteBufferCalls)
+        runtime.deleteBuffer(name)
+        assertEquals(1, device.deleteBufferCalls)
+        assertThrows(IllegalStateException::class.java) { runtime.deleteBuffer(name) }
+        val created = assertThrows(GlException::class.java) { runtime.createBuffer() }
+        assertEquals(GlCode.Destroyed, created.code)
+    }
 }
 
 private fun imageProgram(image: (Uniform<Sampler2D>) -> Unit) = shader(ShaderTarget.Gles30) {

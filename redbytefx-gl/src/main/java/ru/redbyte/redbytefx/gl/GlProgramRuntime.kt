@@ -75,6 +75,7 @@ public class GlProgramRuntime(
     private val framebufferColors = HashMap<Int, Int>()
     private var boundFramebuffer: Int = 0
     private val attribLocations = HashMap<String, Int>()
+    private val deletedUserBuffers = HashSet<Int>()
 
     /** Compiles and links GLES stages from [ShaderProgram]; safe to call once per instance. */
     public fun link() {
@@ -396,18 +397,24 @@ public class GlProgramRuntime(
 
     /**
      * Device. Allocates a buffer name on the EGL thread that linked this runtime.
-     * [destroy] does not delete it.
+     * [destroy] does not delete it. [deleteBuffer] still deletes it afterward, while the
+     * EGL context is current.
      */
     public fun createBuffer(): Int {
         checkReady()
         return device.createBuffer()
     }
 
-    /** Device. Deletes a buffer name on the EGL thread that linked this runtime. */
+    /**
+     * Device. Deletes a buffer name on the EGL thread that linked this runtime.
+     * [destroy] leaves the name in place, and this call still deletes it afterward,
+     * while that EGL context is current. A second delete of the same name fails.
+     */
     public fun deleteBuffer(buffer: Int) {
         checkThread()
-        if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
+        check(buffer !in deletedUserBuffers) { "Buffer $buffer is already deleted" }
         device.deleteBuffer(buffer)
+        deletedUserBuffers += buffer
     }
 
     /**
