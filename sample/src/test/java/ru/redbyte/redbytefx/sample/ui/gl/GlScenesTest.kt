@@ -6,6 +6,7 @@ import org.junit.Test
 import kotlin.math.abs
 import ru.redbyte.redbytefx.gl.compose.MESH_STRIDE
 import ru.redbyte.redbytefx.gl.compose.sphere
+import ru.redbyte.redbytefx.scene.litTexturedMesh
 import ru.redbyte.redbytefx.sample.ui.demos.glesTriangle
 
 class GlScenesTest {
@@ -38,6 +39,7 @@ class GlScenesTest {
             playfield(0.02f, 0.02f, 0.04f).program to gameDsl("breakout"),
             playfield(0.01f, 0.01f, 0.03f).program to gameDsl("raid"),
             playfield(0.02f, 0.03f, 0.06f).program to gameDsl("descent"),
+            litTexturedMesh().program to litTexturedDsl,
         )
         assertEquals(GlExample.entries.size, pairs.size)
         pairs.forEach { (program, dsl) ->

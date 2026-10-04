@@ -14,6 +14,7 @@ import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
+import ru.redbyte.redbytefx.a
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
@@ -38,6 +39,8 @@ public class LitMesh(
  * Scene. A GLES program with attributes `position`, `normal`, and `uv`, plus `view`,
  * `projection`, and [model] matrices. Vertices are multiplied by [model]. Normals are multiplied
  * by [normalMatrix], the upper 3×3 inverse-transpose of [model] computed on the CPU.
+ * When [model] changes at runtime, upload both [model] and a fresh normal matrix from
+ * [normalMatrix], or call [ru.redbyte.redbytefx.gl.compose.setLitModel] on GLES.
  * The default [model] is the identity, which matches a mesh drawn with no model.
  * The fragment samples [LitMesh.albedo] and multiplies it by [ru.redbyte.redbytefx.lambert].
  * AGSL cannot compile it.
@@ -72,7 +75,7 @@ public fun litTexturedMesh(model: FloatArray = MODEL_IDENTITY): LitMesh {
         fragment {
             val shade = lambert(facing.expr, light.expr)
             val texel = texture(albedo, uv.expr)
-            vec4(texel.x * shade, texel.y * shade, texel.z * shade, 1f.lit)
+            vec4(texel.x * shade, texel.y * shade, texel.z * shade, texel.a)
         }
     }
     return LitMesh(program, view, projection, light, albedo, modelUniform, normalUniform)

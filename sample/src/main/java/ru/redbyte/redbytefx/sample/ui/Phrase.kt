@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.sample.ui
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import ru.redbyte.redbytefx.sample.model.DemoInfo
@@ -13,10 +14,14 @@ fun Phrase.show(): String = say(en, ru)
 fun Phrase.showUpper(): String = show().uppercase()
 
 @Composable
-fun say(en: String, ru: String): String {
-    val language = LocalConfiguration.current.locales[0].language
-    return if (language == "ru") ru else en
-}
+fun say(en: String, ru: String): String = sayLocalized(LocalConfiguration.current.locales[0].language, en, ru)
+
+/** Same strings as [say], safe from callbacks and background work. */
+fun say(context: Context, en: String, ru: String): String =
+    sayLocalized(context.resources.configuration.locales[0].language, en, ru)
+
+private fun sayLocalized(language: String, en: String, ru: String): String =
+    if (language == "ru") ru else en
 
 @Composable
 fun russian(): Boolean = LocalConfiguration.current.locales[0].language == "ru"

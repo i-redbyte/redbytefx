@@ -42,10 +42,10 @@ fun DemoScale() {
             DemoPreviewStage(modifier = Modifier.redbyteFx(fx))
         },
         controls = {
-            SliderRow("Scale X", sx * 100f, 25f..300f) {
+            SliderRow("Scale X", sx * 100f, -100f..250f) {
                 sx = it / 100f
             }
-            SliderRow("Scale Y", sy * 100f, 25f..300f) {
+            SliderRow("Scale Y", sy * 100f, -100f..250f) {
                 sy = it / 100f
             }
         }

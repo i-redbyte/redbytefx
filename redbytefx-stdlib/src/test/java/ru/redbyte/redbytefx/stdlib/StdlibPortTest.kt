@@ -11,9 +11,11 @@ import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.float2
 import ru.redbyte.redbytefx.float3
 import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.scale
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
+import ru.redbyte.redbytefx.stdlib.horizontalReveal
 
 class StdlibPortTest {
 
@@ -41,6 +43,7 @@ class StdlibPortTest {
         val agslSource = agsl.agslSource()
         assertTrue(agslSource.contains("fwidth("))
         assertFalse(agslSource.contains("0.02"))
+        assertTrue(agslSource.contains("max(fwidth"))
 
         val glsl = shader(ShaderTarget.Gles30) {
             vertex { glPosition(attributeVec4("position")) }
@@ -52,6 +55,30 @@ class StdlibPortTest {
         val fragment = glsl.fragmentSource()
         assertTrue(fragment.contains("fwidth("))
         assertFalse(fragment.contains("0.02"))
+        assertTrue(fragment.contains("max(fwidth"))
+    }
+
+    @Test
+    fun horizontalRevealUsesProgressAsSmoothstepEdge() {
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val mask = horizontalReveal(fragCoord / resolution, 0.4f, 0.06f)
+                color(float3(mask, mask, mask), 1f)
+            }
+        }
+        val source = agsl.agslSource()
+        assertTrue(source.contains("smoothstep"))
+        assertFalse(source.contains("1.0 - smoothstep"))
+    }
+
+    @Test
+    fun scaleKeepsNegativeFactors() {
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                sample(scale(float2(-1.2f, 0.8f)))
+            }
+        }
+        assertTrue(agsl.agslSource().contains("abs"))
     }
 
     @Test

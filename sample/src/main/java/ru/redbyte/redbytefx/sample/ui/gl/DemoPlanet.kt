@@ -5,8 +5,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -71,6 +70,7 @@ import ru.redbyte.redbytefx.ifElse
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.plus
+import ru.redbyte.redbytefx.sample.permissions.rememberGalleryImagePicker
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
 import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.saturate
@@ -436,14 +436,38 @@ internal fun DemoPlanet() {
     val generation = remember { AtomicInteger(0) }
     var moons by remember { mutableIntStateOf(rig.moons.get()) }
     var mode by remember { mutableIntStateOf(rig.mode.get()) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val stamp = generation.incrementAndGet()
-        scope.launch {
-            val photo = withContext(Dispatchers.Default) { decodePlanetPhoto(context, uri, stamp) }
-            if (photo != null && stamp == generation.get()) rig.photo = photo
-        }
-    }
+    val pickGalleryImage = rememberGalleryImagePicker(
+        onImagePicked = { uri ->
+            val stamp = generation.incrementAndGet()
+            scope.launch {
+                val photo = withContext(Dispatchers.Default) { decodePlanetPhoto(context, uri, stamp) }
+                if (photo != null && stamp == generation.get()) {
+                    rig.photo = photo
+                } else if (stamp == generation.get()) {
+                    Toast.makeText(
+                        context,
+                        say(
+                            context,
+                            "Could not read that image.",
+                            "Не удалось прочитать это изображение.",
+                        ),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+        },
+        onAccessDenied = {
+            Toast.makeText(
+                context,
+                say(
+                    context,
+                    "Gallery access is required to use your photo.",
+                    "Нужен доступ к галерее, чтобы подставить своё фото.",
+                ),
+                Toast.LENGTH_SHORT,
+            ).show()
+        },
+    )
     val stage = @Composable { modifier: Modifier ->
         Box(modifier = modifier) {
             key(scene.program) {
@@ -456,7 +480,7 @@ internal fun DemoPlanet() {
                             val next = (rig.mode.get() + 1) % 3
                             mode = next
                             rig.mode.set(next)
-                            if (next == PLANET_PHOTO && rig.photo == null) picker.launch("image/*")
+                            if (next == PLANET_PHOTO && rig.photo == null) pickGalleryImage()
                         },
                     onFrame = { frame -> rig.render(scene, frame) },
                     overlay = { state -> PlanetLinkOverlay(state) },
@@ -489,7 +513,7 @@ internal fun DemoPlanet() {
             onPhoto = {
                 mode = PLANET_PHOTO
                 rig.mode.set(PLANET_PHOTO)
-                picker.launch("image/*")
+                pickGalleryImage()
             },
         )
     }

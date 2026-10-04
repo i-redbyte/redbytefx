@@ -10,6 +10,6 @@ See the generated Dokka pages for `AuthoringCode`, `ProgramCode`, and `GlCode` e
 | Program | recursive `fn` / `recur` | Use `repeat` or acyclic calls only |
 | Program | `local` inside `repeat` | Use `local` before the loop and `set` inside |
 | GLES link | `MissingUniformLocation` in strict mode | Spelled uniform inactive in linked program |
-| AGSL runtime | `AgslNotSupportedException` | API 31+ or use GLES Compose |
+| AGSL runtime | `AgslNotSupportedException` | API 33+ or use GLES Compose |
 
 Platform matrix: [RedByteFxApis](https://i-redbyte.github.io/redbytefx/) in API reference.

@@ -37,6 +37,7 @@ import ru.redbyte.redbytefx.z
  * Largest fixed step count for [rayMarch].
  * The language has no `while`; [FragmentDsl.repeat] accepts the same 1..64 range.
  */
+/** Upper bound for [rayMarch] steps; matches the compiler `repeat` limit (64). */
 public const val MAX_RAY_STEPS: Int = 64
 
 /**

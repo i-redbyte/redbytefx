@@ -1,11 +1,9 @@
 package ru.redbyte.redbytefx.compose
 
 import android.graphics.RenderEffect as AndroidRenderEffect
-import android.view.View
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
@@ -25,8 +23,6 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalView
-import java.lang.ref.WeakReference
 import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.AgslInstance
 import ru.redbyte.redbytefx.RedByteFxApis
@@ -69,8 +65,8 @@ import ru.redbyte.redbytefx.Vec4
 public class FxController internal constructor(
     internal val control: ShaderControl
 ) {
-    private var hostViewRef: WeakReference<View>? = null
     private var controllerBatchDepth: Int = 0
+    internal var onRuntimeInvalidate: (() -> Unit)? = null
     private var pendingHostInvalidate: Boolean = false
     internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
         private set
@@ -200,11 +196,6 @@ public class FxController internal constructor(
         }
     }
 
-    internal fun attachHost(view: View) {
-        if (hostViewRef?.get() === view) return
-        hostViewRef = WeakReference(view)
-    }
-
     internal fun syncResolution(widthPx: Float, heightPx: Float) {
         // Size changes already re-enter the draw path, so this keeps the shader resolution current
         // without triggering an extra invalidation loop from inside drawing.
@@ -224,22 +215,22 @@ public class FxController internal constructor(
 
     private fun invalidateRuntime() {
         runtimeInvalidationTick += 1
-        hostViewRef?.get()?.postInvalidateOnAnimation()
+        onRuntimeInvalidate?.invoke()
     }
 }
 
 /**
- * Remembers a stable [FxController] for the supplied compiled [effect].
+ * Remembers a stable [FxController] for the supplied compiled [program].
  *
  * The remembered controller owns one runtime instance and is intended to back one render target.
- * If [effect] changes identity, a fresh runtime instance is created for the new compiled shader.
- * Uniform params bound through this controller must come from the same compiled [effect].
+ * If [program] changes identity, a fresh runtime instance is created for the new compiled shader.
+ * Uniform params bound through this controller must come from the same compiled [program].
  *
- * Keep the compiled [effect] stable and remember one controller per place that renders it. If the
+ * Keep the compiled [program] stable and remember one controller per place that renders it. If the
  * same effect is shown in two different composables or at two different sizes, each render target
  * should usually have its own controller.
  *
- * When output looks wrong, inspect `effect.agslSource()` first, then verify param ownership,
+ * When output looks wrong, inspect `program.agslSource()` first, then verify param ownership,
  * sampling space, and controller-per-target usage before treating the issue as a Compose/runtime
  * problem.
  *
@@ -251,17 +242,7 @@ public class FxController internal constructor(
 @Composable
 public fun rememberFxController(program: ShaderProgram): FxController {
     RedByteFxPlatform.requireAgslRuntime()
-    val view = LocalView.current
-    val controller = remember(program) { FxController(AgslShaderControl(program.newAgslInstance())) }
-    DisposableEffect(controller) {
-        onDispose {
-            // No RuntimeShader.release(); dropping the controller is the supported lifecycle end.
-        }
-    }
-    SideEffect {
-        controller.attachHost(view)
-    }
-    return controller
+    return remember(program) { FxController(AgslShaderControl(program.newAgslInstance())) }
 }
 
 /**
@@ -355,7 +336,7 @@ public fun FxController.bindFloat(
  * Binds a `float2` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed. The [param] handle must belong to the effect that created this
+ * the value has actually changed. The [param] handle must belong to the program that created this
  * controller. Outside composition, use [setFloat2] directly instead.
  */
 @Composable
@@ -385,7 +366,7 @@ public fun FxController.bindFloat2(
  * Binds a `float3` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed. The [param] handle must belong to the effect that created this
+ * the value has actually changed. The [param] handle must belong to the program that created this
  * controller. Outside composition, use [setFloat3] directly instead.
  */
 @Composable
@@ -417,7 +398,7 @@ public fun FxController.bindFloat3(
  * Binds a `float4` uniform to Compose state.
  *
  * The uniform is updated after successful recomposition and only invalidates the host view when
- * the value has actually changed. The [param] handle must belong to the effect that created this
+ * the value has actually changed. The [param] handle must belong to the program that created this
  * controller. Outside composition, use [setFloat4] directly instead.
  */
 @Composable
@@ -505,9 +486,11 @@ private class RedByteFxNode(
         graphicsLayer.renderEffect = null
         layer = graphicsLayer
         appliedRenderEffect = null
+        controller.onRuntimeInvalidate = { invalidateDraw() }
     }
 
     override fun onDetach() {
+        controller.onRuntimeInvalidate = null
         layer?.let { requireGraphicsContext().releaseGraphicsLayer(it) }
         layer = null
         appliedRenderEffect = null
@@ -515,7 +498,9 @@ private class RedByteFxNode(
 
     fun updateController(next: FxController) {
         if (controller === next) return
+        controller.onRuntimeInvalidate = null
         controller = next
+        controller.onRuntimeInvalidate = { invalidateDraw() }
         appliedRenderEffect = null
         invalidateDraw()
     }
@@ -540,7 +525,6 @@ private class RedByteFxNode(
     }
 }
 
-@Stable
 internal class TimeBindingState {
     var elapsedSeconds: Float = 0f
     var lastFrameNanos: Long? = null

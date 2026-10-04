@@ -75,6 +75,8 @@ public fun GlCompute(
                     val held = view.tag as GlSlot
                     if (controller.detachQueue(held.queue)) controller.linkStateValue = GlLinkState.Pending
                     view.queueEvent {
+                        held.releaseGl?.invoke()
+                        held.releaseGl = null
                         held.runtime?.let { linked ->
                             controller.detachRuntime(linked)
                             linked.destroy()

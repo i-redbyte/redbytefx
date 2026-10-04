@@ -491,3 +491,10 @@ fun FragmentDsl.traceSpheres(...): Expr<Vec4<Flt<High>>> {
     return vec4(color.x, color.y, color.z, 1f.lit)
 }
 """.trimIndent()
+
+internal val litTexturedDsl = """
+// litTexturedMesh() from redbytefx-3d; setLitModel() keeps normalMatrix in sync.
+val lit = litTexturedMesh()
+shader(ShaderTarget.Gles30) { /* lit.program */ }
+// Each frame: ortho(...), lookAt(...), setLitModel(lit, rotationY), bind(albedo)
+""".trimIndent()

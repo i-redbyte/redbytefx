@@ -50,14 +50,11 @@ public class GlException(
 ) : IllegalStateException(message)
 
 /**
- * One GLES program bound to the thread that created it.
+ * Device. Owns one GLES program on the thread that created it.
  *
  * Uniform locations are queried once, after the device reports a successful link.
  * An unchanged float or texture does not call the device again.
  * [textureUnits] is shared by every runtime that draws on this EGL context.
- */
-/**
- * Device. Owns one GLES program on the thread that created it.
  *
  * @param strictErrors when true, `glGetError` runs after draw, dispatch, texture upload, and read,
  * and a driver error becomes [GlException] with [GlCode.DriverError]. The default does not query
@@ -328,6 +325,7 @@ public class GlProgramRuntime(
         checkReady()
         textureUnits.disturbActive()
         device.generateMipmap2D(texture)
+        checkDriver("generateMipmap2D")
     }
 
     /**
@@ -620,6 +618,7 @@ public class GlProgramRuntime(
         buffer.remember(values)
         if (!wrote) return false
         buffer.bind()
+        checkDriver("uniformBlock")
         return true
     }
 
@@ -632,6 +631,7 @@ public class GlProgramRuntime(
         buffer.remember(values)
         if (!wrote) return false
         buffer.bind()
+        checkDriver("storageBlock")
         return true
     }
 
@@ -781,16 +781,13 @@ public class GlProgramRuntime(
     private fun writeMatrix(uniform: Uniform<*>, location: Int, values: FloatArray): Boolean {
         val previous = vectorValues[uniform]
         if (previous != null && sameVector(previous, values)) return false
-        if (previous != null && previous.size == values.size) {
-            values.copyInto(previous)
-        } else {
-            vectorValues[uniform] = values.copyOf()
-        }
+        val cached = values.copyOf()
+        vectorValues[uniform] = cached
         device.useProgram(programId)
-        when (values.size) {
-            4 -> device.uniformMatrix2fv(location, values)
-            9 -> device.uniformMatrix3fv(location, values)
-            16 -> device.uniformMatrix4fv(location, values)
+        when (cached.size) {
+            4 -> device.uniformMatrix2fv(location, cached)
+            9 -> device.uniformMatrix3fv(location, cached)
+            16 -> device.uniformMatrix4fv(location, cached)
             else -> error("Matrix uniform width must be 4, 9, or 16")
         }
         return true

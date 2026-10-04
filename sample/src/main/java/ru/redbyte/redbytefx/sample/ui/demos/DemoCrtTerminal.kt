@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
+import ru.redbyte.redbytefx.compose.bindInt
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
@@ -29,6 +30,7 @@ private data class CrtTerminalSetup(
     val barrel: Uniform<Flt<High>>,
     val aberration: Uniform<Flt<High>>,
     val scan: Uniform<Flt<High>>,
+    val phosphor: Uniform<IntS>,
 )
 
 @Composable
@@ -37,21 +39,25 @@ fun DemoCrtTerminal() {
     var barrelUi by rememberSaveable { mutableFloatStateOf(28f) }
     var aberrationUi by rememberSaveable { mutableFloatStateOf(62f) }
     var scanUi by rememberSaveable { mutableFloatStateOf(48f) }
+    var amberPhosphor by rememberSaveable { mutableStateOf(false) }
 
     val setup = remember {
         var timeParam: Uniform<Flt<High>>? = null
         var barrelParam: Uniform<Flt<High>>? = null
         var aberrationParam: Uniform<Flt<High>>? = null
         var scanParam: Uniform<Flt<High>>? = null
+        var phosphorParam: Uniform<IntS>? = null
         val effect = shader(ShaderTarget.Agsl) {
             val timeUniform = uniformTime(name = "crt_time")
             val barrelUniform = uniform("crt_barrel", 0.28f)
             val aberrationUniform = uniform("crt_aberration", 0.62f)
             val scanUniform = uniform("crt_scan", 0.48f)
+            val phosphorUniform = uniformInt("crt_phosphor", 0)
             timeParam = timeUniform
             barrelParam = barrelUniform
             aberrationParam = aberrationUniform
             scanParam = scanUniform
+            phosphorParam = phosphorUniform
             fragment {
                 val uv = let(normalizedUv(), "uv")
                 val local = let(uv - float2(0.5f, 0.5f), "local")
@@ -80,7 +86,11 @@ fun DemoCrtTerminal() {
                 val scanMod = let(0.72f + 0.28f * scanLine * scanUniform.expr, "scan_mod")
                 val flicker = let(0.97f + 0.03f * sin(timeUniform.expr * 8.7f), "flicker")
                 val vignette = let(1f - edge * 0.38f, "vignette")
-                rgb * scanMod * flicker * vignette
+                val toned = let(rgb * scanMod * flicker * vignette, "toned")
+                val green = vec3(0.72f.lit, 1f.lit, 0.58f.lit)
+                val amber = vec3(1f.lit, 0.82f.lit, 0.38f.lit)
+                val phosphorRgb = ifElse(phosphorUniform.expr.toFloat() gt 0.5f.lit, amber, green)
+                vec4(toned.r * phosphorRgb.x, toned.g * phosphorRgb.y, toned.b * phosphorRgb.z, toned.a)
             }
         }
         CrtTerminalSetup(
@@ -89,6 +99,7 @@ fun DemoCrtTerminal() {
             barrel = barrelParam!!,
             aberration = aberrationParam!!,
             scan = scanParam!!,
+            phosphor = phosphorParam!!,
         )
     }
 
@@ -97,6 +108,7 @@ fun DemoCrtTerminal() {
     fx.bindFloat(setup.barrel, barrelUi / 100f)
     fx.bindFloat(setup.aberration, aberrationUi / 100f)
     fx.bindFloat(setup.scan, scanUi / 100f)
+    fx.bindInt(setup.phosphor, if (amberPhosphor) 1 else 0)
 
     DemoLayout(
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
@@ -106,6 +118,9 @@ fun DemoCrtTerminal() {
         controls = {
             SwitchRow("Play", playing) {
                 playing = it
+            }
+            SwitchRow("Amber phosphor", amberPhosphor) {
+                amberPhosphor = it
             }
             SliderRow("Barrel", barrelUi, 0f..80f) {
                 barrelUi = it

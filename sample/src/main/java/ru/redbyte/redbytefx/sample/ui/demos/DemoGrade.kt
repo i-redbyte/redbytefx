@@ -15,6 +15,7 @@ import ru.redbyte.redbytefx.stdlib.adjustSaturation
 import ru.redbyte.redbytefx.stdlib.blendMultiply
 import ru.redbyte.redbytefx.stdlib.blendOverlay
 import ru.redbyte.redbytefx.stdlib.blendScreen
+import ru.redbyte.redbytefx.stdlib.remap
 
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
@@ -47,8 +48,9 @@ fun DemoGrade() {
             glowParam = glow
             fragment {
                 val base = let(sample(), "base")
+                val grade = remap(amount.expr, 0f, 1f, 0.55f, 1.55f)
                 val saturated = let(
-                    adjustSaturation(base, mix(0.9f, 1.55f, amount.expr)),
+                    adjustSaturation(base, grade),
                     "saturated"
                 )
                 val tint = let(

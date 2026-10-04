@@ -18,7 +18,7 @@ public fun horizontalReveal(
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromLeft) uv.x else 1f - uv.x
     val t = saturate(progress)
-    return 1f - smoothstep(t - safeFeather, t + safeFeather, axis)
+    return smoothstep(axis, axis + safeFeather, t)
 }
 
 /**
@@ -67,7 +67,7 @@ public fun verticalReveal(
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromTop) uv.y else 1f - uv.y
     val t = saturate(progress)
-    return 1f - smoothstep(t - safeFeather, t + safeFeather, axis)
+    return smoothstep(axis, axis + safeFeather, t)
 }
 
 /**

@@ -181,7 +181,7 @@ tasks.register("dokkaHtmlSite") {
               </ul>
               <p><a href="docs/language-reference.md">Language reference</a> |
               <a href="docs/error-codes.md">Error codes</a></p>
-              <p>Platform: library minSdk 24; AGSL requires API 31+.</p>
+              <p>Platform: library minSdk 24; AGSL requires API 33+.</p>
             </body>
             </html>
             """.trimIndent(),

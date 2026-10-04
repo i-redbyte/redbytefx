@@ -18,9 +18,9 @@ public object RedByteFxApis {
     /**
      * AGSL [android.graphics.RuntimeShader] and Compose [ru.redbyte.redbytefx.compose.redbyteFx].
      *
-     * API 31 (Android 12).
+     * API 33 (Android 13). `RuntimeShader` and `RenderEffect.createRuntimeShaderEffect` are API 33+.
      */
-    public const val AGSL_MIN_SDK: Int = 31
+    public const val AGSL_MIN_SDK: Int = 33
 
     /** Published API reference and platform matrix. */
     public const val DOCS_BASE_URL: String = "https://i-redbyte.github.io/redbytefx/"

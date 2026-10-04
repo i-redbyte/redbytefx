@@ -313,6 +313,17 @@ enum class GlExample(
         ),
         api = "OpenGL ES 3.0",
     ),
+    LitTextured(
+        title = Phrase(
+            "Lit mesh",
+            "Освещённый меш",
+        ),
+        summary = Phrase(
+            "litTexturedMesh(), ortho(), and setLitModel() rotate a textured sphere with Lambert lighting.",
+            "litTexturedMesh(), ortho() и setLitModel() вращают текстурированную сферу с освещением Ламберта.",
+        ),
+        api = "OpenGL ES 3.0 + scene",
+    ),
 }
 
 @Composable
@@ -386,5 +397,6 @@ internal fun GlExampleScreen(example: GlExample) {
         GlExample.Breakout -> DemoBreakout()
         GlExample.Strafe -> DemoStrafe()
         GlExample.Descent -> DemoDescent()
+        GlExample.LitTextured -> DemoLitTextured()
     }
 }

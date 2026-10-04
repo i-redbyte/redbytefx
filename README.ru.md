@@ -2,13 +2,13 @@
 
 # RedByteFX
 
-**RedByteFX** - это Kotlin DSL с двумя поверхностями на одной типизированной алгебре шейдера. **Эффект** - фрагментный шейдер: Android AGSL на API 31+, короткий путь через `redbyteFx`. **Сцена** - меш на OpenGL ES с API 24: вершина и фрагмент, буферы, текстуры и вызовы отрисовки. Та же алгебра собирается в compute OpenGL ES 3.1 и в geometry с tessellation OpenGL ES 3.2.
+**RedByteFX** - это Kotlin DSL с двумя поверхностями на одной типизированной алгебре шейдера. **Эффект** - фрагментный шейдер: Android AGSL на API 33+, короткий путь через `redbyteFx`. **Сцена** - меш на OpenGL ES с API 24: вершина и фрагмент, буферы, текстуры и вызовы отрисовки. Та же алгебра собирается в compute OpenGL ES 3.1 и в geometry с tessellation OpenGL ES 3.2.
 
 Пишется Kotlin, а не строка шейдера. Компилятор выпускает текст, который реально исполняет платформа:
 
 `shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0, compute-программа GLES 3.1 или программа GLES 3.2`
 
-**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) требует **API 31+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose` (`GlSurface`). GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
+**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) требует **API 33+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose` (`GlSurface`). GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
 ## Что вы пишете
 
@@ -97,7 +97,7 @@ val patch = shader(ShaderTarget.Gles32) {
 
 Varying, который пишет вершина и читает фрагмент, объявляется на каждой стадии между ними: вершина, tessellation control, tessellation evaluation, geometry, затем фрагмент. Отсутствующие стадии пропускаются. На каждой границе `out` предыдущей стадии совпадает с `in` следующей по имени, типу и precision. Если в программе есть geometry или tessellation, эти объявления - члены одного блока `rb_pipe`. На всех стадиях программы один и тот же набор: varying, которые записала вершина и которые читает фрагмент или промежуточная стадия, в порядке объявления. Объявленный и нигде не записанный varying в блок не входит. Tessellation control копирует `tc_in[gl_InvocationID]` в `tc_out[gl_InvocationID]`. Geometry берёт индекс той входной вершины, которую только что записали в `gl_Position`: один `gl_in[k]`, в том числе индекс `repeat`, становится `gs_in[k]` непосредственно перед этим `EmitVertex`. Та же прокидка работает, когда этот `gl_Position` записан до `repeat` или `whenTrue`, который эмитит, и не используется повторно после emit, который её уже забрал. Несколько индексов или позиция без `gl_in`, пока varying ещё не записан, - ошибка, и текст просит явный `varying.set` перед этим emit. `varying.set` между этим `gl_Position` и emit заменяет прокидку только этого varying и только этого emit. Tessellation evaluation интерполирует `gl_TessCoord`, если стадия этот varying не писала. Одна входная вершина копируется из `te_in[0]`. Triangles взвешивают три вершины патча через `gl_TessCoord`. Isolines делают `mix` двух вершин по `gl_TessCoord.x`. Quads делают билинейный `mix` углов `(0,0)`, `(1,0)`, `(1,1)` и `(0,1)` по `gl_TessCoord.xy`. Явная запись заменяет эту интерполяцию. Стадия, у которой есть `rb_pipe` и которая пишет `gl_Position`, переобъявляет `gl_PerVertex` только с `vec4 gl_Position` до пользовательского блока. Uniform, прочитанный в geometry или tessellation, объявляется в исходнике этой стадии. `glIn(index)` и `varying.at(index)` допускают динамический `int`; проверка границ патча на этапе компиляции есть только для константных индексов.
 
-Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. Список OpenGL покрывает буферы и индексные вызовы, текстуры и мип-уровни, освещение, инстансинг, рисование в текстуру, geometry, tessellation и небольшие игры. Интерфейс примеров остаётся английским, пока язык устройства не русский. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
+Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. Список OpenGL покрывает буферы и индексные вызовы, текстуры и мип-уровни, освещение, инстансинг, рисование в текстуру, сцену **Lit mesh** (`litTexturedMesh`, `setLitModel`), geometry, tessellation и небольшие игры. В **Planet** можно обернуть планету своим фото (runtime-доступ к галерее на API 28 и ниже; системный photo picker на API 33+). Интерфейс примеров - английский или русский по языку устройства. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
 
 ## Установка
 
@@ -189,9 +189,23 @@ shader(ShaderTarget.Agsl) {
 
 Компилятор не выпускает GLES 2.0 и desktop GL. Он не выпускает `while`, рекурсию, вложенные функции и границу цикла, которая не константа от 1 до 64. `uniformBool`, `uniformMat2`, `uniformMat3`, `uniformMat4` и `samplerCube` на AGSL отвергаются.
 
+## Релизы
+
+Артефакты Maven: `io.github.i-redbyte:redbytefx-*`. Версия **1.1.0** задаётся в [gradle.properties](gradle.properties). Список изменений - [docs/changelog.md](docs/changelog.md).
+
+Публикация в Maven Central (для сопровождающих):
+
+```bash
+./gradlew publishToMavenCentral
+```
+
+Нужны учётные данные Sonatype Central Portal (`mavenCentralUsername`, `mavenCentralPassword`) и настроенный GPG-ключ (`signingInMemoryKey` или `signing.gnupg.*` в свойствах Gradle). Сборка останавливается, если чего-то не хватает.
+
 ## Участие
 
 Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt. Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
+
+Сайт API локально: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI публикует документацию на `https://i-redbyte.github.io/redbytefx/` при push в **`master`/`main`**. См. [docs/github-pages.md](docs/github-pages.md).
 
 ## Лицензия
 

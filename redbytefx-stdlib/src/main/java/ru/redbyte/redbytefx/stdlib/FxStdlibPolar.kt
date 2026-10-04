@@ -18,8 +18,9 @@ public fun radialDistance(
 /**
  * Returns the normalized polar angle of [uv] around [center] in the `[0, 1)` range.
  *
- * `0` points to the positive X axis and the value increases counter-clockwise. This is the
- * canonical angular primitive to inspect before reaching for higher-level polar masks.
+ * `0` points to the positive X axis and the value increases counter-clockwise in mathematical
+ * angle (`atan2`). In typical fragment UV space Y grows downward, so the sweep direction on screen
+ * follows that coordinate system. This is the canonical angular primitive before polar masks.
  */
 public fun polarAngle01(
     uv: Expr<Vec2<Flt<High>>>,

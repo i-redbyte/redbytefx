@@ -58,8 +58,13 @@ public fun FragmentDsl.scale(
     coord: Expr<Vec2<Flt<High>>>,
     factor: Expr<Vec2<Flt<High>>>,
 ): Expr<Vec2<Flt<High>>> {
-    val safeScale = float2(max(factor.x, 0.0001f), max(factor.y, 0.0001f))
+    val safeScale = float2(safeScaleComponent(factor.x), safeScaleComponent(factor.y))
     return center() + (coord - center()) / safeScale
+}
+
+private fun safeScaleComponent(factor: Expr<Flt<High>>): Expr<Flt<High>> {
+    val magnitude = max(abs(factor), 0.0001f)
+    return ifElse(factor lt 0f.lit, -magnitude, magnitude)
 }
 
 public fun FragmentDsl.offset(delta: Expr<Vec2<Flt<High>>>): Expr<Vec2<Flt<High>>> = fragCoord - delta

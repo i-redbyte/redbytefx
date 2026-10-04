@@ -21,6 +21,7 @@ import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.pulse
 import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.sdBox
+import ru.redbyte.redbytefx.stdlib.sdSegment
 import ru.redbyte.redbytefx.stdlib.sdRoundedBox
 import ru.redbyte.redbytefx.stdlib.softFill
 import ru.redbyte.redbytefx.stdlib.softStroke
@@ -108,7 +109,19 @@ fun DemoSigil() {
                     ),
                     "cross"
                 )
-                val mask = let(max(max(frame, ring), max(core, max(spine, cross))), "mask")
+                val slash = let(
+                    softStroke(
+                        distance = sdSegment(
+                            point = sigil,
+                            start = float2(-0.28f, -0.18f),
+                            end = float2(0.28f, 0.22f),
+                        ),
+                        width = 0.024f,
+                        feather = 0.01f,
+                    ),
+                    "slash",
+                )
+                val mask = let(max(max(frame, ring), max(core, max(spine, max(cross, slash)))), "mask")
                 val tint = let(
                     color(
                         mix(0.06f, 0.18f, pulse),
