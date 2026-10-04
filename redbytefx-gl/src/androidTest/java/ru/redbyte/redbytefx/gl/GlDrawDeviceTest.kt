@@ -2,12 +2,15 @@ package ru.redbyte.redbytefx.gl
 
 import android.opengl.GLES30
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assume.assumeTrue
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import ru.redbyte.redbytefx.Expr
+import ru.redbyte.redbytefx.GeometryInput
+import ru.redbyte.redbytefx.GeometryOutput
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
@@ -270,6 +273,41 @@ class GlDrawDeviceTest {
         first.bind(firstImage, red)
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_FAN, 0, 4)
         assertNoGlError("shared units")
+        assertPixel(1, 1, 255, 0, 0)
+    }
+
+    @Test
+    fun aGeometryStageFillsTheTargetOnAnEs32Context() = canvas {
+        val version = IntArray(2)
+        GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+        GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+        assumeTrue(version[0] == 3 && version[1] >= 2)
+        val runtime = link(
+            shader(ShaderTarget.Gles32) {
+                vertex { glPosition(attributeVec4("position")) }
+                geometry(GeometryInput.Triangles, GeometryOutput.TriangleStrip, 3) {
+                    glPosition(glIn(0))
+                    emitVertex()
+                    glPosition(glIn(1))
+                    emitVertex()
+                    glPosition(glIn(2))
+                    emitVertex()
+                    endPrimitive()
+                }
+                fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+        )
+        target(runtime)
+        val vertices = runtime.createBuffer()
+        runtime.replaceArrayBuffer(
+            vertices,
+            0,
+            floatArrayOf(-1f, -1f, 0f, 1f, 3f, -1f, 0f, 1f, -1f, 3f, 0f, 1f),
+        )
+        attribute(runtime, vertices, "position", 4, 4, 0)
+        runtime.use()
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3)
+        assertNoGlError("geometry draw")
         assertPixel(1, 1, 255, 0, 0)
     }
 }

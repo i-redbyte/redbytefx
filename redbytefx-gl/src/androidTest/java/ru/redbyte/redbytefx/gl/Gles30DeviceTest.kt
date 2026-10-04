@@ -1,5 +1,7 @@
 package ru.redbyte.redbytefx.gl
 
+import android.opengl.EGL14
+import android.opengl.EGLExt
 import android.opengl.GLES30
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -162,8 +164,20 @@ class Gles30DeviceTest {
             val runtime = GlProgramRuntime(program, Gles30Device())
             runtime.link()
             runtime.set(checkNotNull(program.storageBlock), floatArrayOf(1f, 0f, 0f, 1f))
+            runtime.dispatch(1)
             runtime.destroy()
-            assertNoGlError("compute storage")
+            assertNoGlError("compute dispatch")
+        }
+    }
+
+    @Test
+    fun pbufferContextUsesTheHighestEs3MinorTheDriverCreates() {
+        val best = highestEs3Minor()
+        EglPbuffer().use {
+            val got = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, got, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, got, 1)
+            assertEquals(best, got[1])
         }
     }
 
@@ -312,6 +326,55 @@ private fun compile(device: Gles30Device, stage: GlStage, source: String): Int {
     val status = device.compileShader(shader)
     check(status.ok) { status.infoLog }
     return shader
+}
+
+private fun highestEs3Minor(): Int {
+    val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+    val initialized = IntArray(2)
+    check(EGL14.eglInitialize(display, initialized, 0, initialized, 1))
+    try {
+        val configAttribs = intArrayOf(
+            EGL14.EGL_RENDERABLE_TYPE, EGLExt.EGL_OPENGL_ES3_BIT_KHR,
+            EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_NONE,
+        )
+        val configs = arrayOfNulls<android.opengl.EGLConfig>(1)
+        val count = IntArray(1)
+        check(EGL14.eglChooseConfig(display, configAttribs, 0, configs, 0, 1, count, 0) && count[0] > 0)
+        for (minor in es3ContextMinors()) {
+            val attribs = if (minor == 0) {
+                intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE)
+            } else {
+                intArrayOf(
+                    EGL14.EGL_CONTEXT_CLIENT_VERSION, 3,
+                    0x30FB, minor,
+                    EGL14.EGL_NONE,
+                )
+            }
+            val context = EGL14.eglCreateContext(display, configs[0], EGL14.EGL_NO_CONTEXT, attribs, 0)
+            if (context == EGL14.EGL_NO_CONTEXT) {
+                EGL14.eglGetError()
+                continue
+            }
+            val surface = EGL14.eglCreatePbufferSurface(
+                display,
+                configs[0],
+                intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE),
+                0,
+            )
+            check(EGL14.eglMakeCurrent(display, surface, surface, context))
+            val version = IntArray(1)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 0)
+            EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
+            EGL14.eglDestroySurface(display, surface)
+            EGL14.eglDestroyContext(display, context)
+            return version[0]
+        }
+        error("Driver created no ES 3 context")
+    } finally {
+        EGL14.eglTerminate(display)
+    }
 }
 
 private fun drainGlError() {

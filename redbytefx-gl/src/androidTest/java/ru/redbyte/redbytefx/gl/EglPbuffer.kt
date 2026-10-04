@@ -29,7 +29,12 @@ internal class EglPbuffer : AutoCloseable {
             "No OpenGL ES 3 config, error ${EGL14.eglGetError()}"
         }
         val config = configs[0]
-        context = checkNotNull(createEsContext(config, minorVersion = 1) ?: createEsContext(config, minorVersion = null)) {
+        var created: android.opengl.EGLContext? = null
+        for (minor in es3ContextMinors()) {
+            created = createEsContext(config, minor.takeIf { it > 0 })
+            if (created != null) break
+        }
+        context = checkNotNull(created) {
             "eglCreateContext failed, error ${EGL14.eglGetError()}"
         }
         val surfaceAttribs = intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE)
