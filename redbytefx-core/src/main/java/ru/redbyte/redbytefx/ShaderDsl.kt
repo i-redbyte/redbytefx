@@ -870,17 +870,35 @@ public class FragmentDsl internal constructor(
 ) {
     private val fnScope = FnDsl(advance, functions, sink)
 
-    /** Fragment position in pixels (AGSL and GLES). */
-    public val fragCoord: Expr<Vec2<Flt<High>>> = Expr(
+    private val fragCoordValue: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
         ExprNode.FragCoord,
     )
 
-    /** Drawable size in pixels; Compose sets this through [ru.redbyte.redbytefx.compose.redbyteFx]. */
-    public val resolution: Expr<Vec2<Flt<High>>> = Expr(
+    private val resolutionValue: Expr<Vec2<Flt<High>>> = Expr(
         Shape.Vector(ScalarKind.Float, Precision.High, 2),
         ExprNode.Resolution,
     )
+
+    /**
+     * Shade. Fragment position in pixels.
+     * AGSL spells `fragCoord`. GLES spells `gl_FragCoord.xy`, including inside a fragment `fn`.
+     */
+    public val fragCoord: Expr<Vec2<Flt<High>>>
+        get() {
+            advance(AuthoringAction.FragCoord)
+            return fragCoordValue
+        }
+
+    /**
+     * Shade. Drawable size in pixels on AGSL. Compose sets it through
+     * [ru.redbyte.redbytefx.compose.redbyteFx]. GLES rejects this input.
+     */
+    public val resolution: Expr<Vec2<Flt<High>>>
+        get() {
+            advance(AuthoringAction.Resolution)
+            return resolutionValue
+        }
 
     public fun texture(
         sampler: Uniform<Sampler2D>,

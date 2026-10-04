@@ -483,10 +483,10 @@ private class GlslEmitter(
             val args = node.args.joinToString(", ") { emit(it) }
             "${node.function.name}($args)"
         }
+        ExprNode.FragCoord -> "gl_FragCoord.xy"
+        ExprNode.Resolution -> throw AuthoringException(AuthoringCode.ResolutionOnGles)
         is ExprNode.Sample,
-        is ExprNode.UnclampedSample,
-        ExprNode.FragCoord,
-        ExprNode.Resolution -> error("GLSL stage cannot spell ${node::class.simpleName}")
+        is ExprNode.UnclampedSample -> error("GLSL stage cannot spell ${node::class.simpleName}")
     }
 
     private fun local(node: ExprNode.Local, shape: Shape): String {

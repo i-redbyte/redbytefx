@@ -99,4 +99,24 @@ class GlslShaderTest {
         }
         assertEquals(AuthoringCode.SamplerOnAgsl, textureOnAgsl.code)
     }
+
+    @Test
+    fun glesFragCoordSpellsGlFragCoordAndResolutionIsRejected() {
+        val program = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val pixel = fn(vec2(0f.lit, 0f.lit)) { _ -> this@fragment.fragCoord }
+                val coord = pixel(vec2(0f.lit, 0f.lit))
+                vec4(coord.x, fragCoord.y, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(program.fragmentSource().contains("gl_FragCoord.xy"))
+        val rejected = assertThrows(AuthoringException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(resolution.x, 0f.lit, 0f.lit, 1f.lit) }
+            }
+        }
+        assertEquals(AuthoringCode.ResolutionOnGles, rejected.code)
+    }
 }

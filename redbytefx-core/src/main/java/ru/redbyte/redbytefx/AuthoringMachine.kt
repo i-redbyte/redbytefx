@@ -62,6 +62,8 @@ internal enum class AuthoringAction {
     Return,
     Discard,
     Derivative,
+    FragCoord,
+    Resolution,
     DeclareShared,
     Barrier,
     Repeat,
@@ -112,6 +114,9 @@ internal enum class AuthoringCode {
     ReturnOutsideStage,
     DiscardOutsideFragment,
     DerivativeOutsideFragment,
+    FragCoordOutsideFragment,
+    ResolutionOnGles,
+    ResolutionOutsideFragment,
     SharedOutsideCompute,
     BarrierOutsideCompute,
     RepeatOutsideStage,
@@ -192,16 +197,11 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
             state.place != AuthoringPlace.Program,
             AuthoringCode.ReturnOutsideStage,
         )
-        AuthoringAction.Discard -> allow(
-            state,
-            fragmentOnly(state),
-            AuthoringCode.DiscardOutsideFragment,
-        )
-        AuthoringAction.Derivative -> allow(
-            state,
-            fragmentOnly(state),
-            AuthoringCode.DerivativeOutsideFragment,
-        )
+        AuthoringAction.Discard,
+        AuthoringAction.Derivative,
+        AuthoringAction.FragCoord,
+        AuthoringAction.Resolution,
+        -> fragmentBuiltin(state, action)
         AuthoringAction.DeclareShared -> allow(
             state,
             computeOnly(state),
@@ -352,6 +352,20 @@ private fun attribute(state: AuthoringState): AuthoringStep = when {
 private fun allow(state: AuthoringState, legal: Boolean, code: AuthoringCode): AuthoringStep =
     if (legal) accept(state) else reject(state, code)
 
+private fun fragmentBuiltin(state: AuthoringState, action: AuthoringAction): AuthoringStep =
+    if (action == AuthoringAction.Resolution && state.target != ShaderTarget.Agsl) {
+        reject(state, AuthoringCode.ResolutionOnGles)
+    } else {
+        allow(state, fragmentOnly(state), fragmentBuiltinCode(action))
+    }
+
+private fun fragmentBuiltinCode(action: AuthoringAction): AuthoringCode = when (action) {
+    AuthoringAction.Discard -> AuthoringCode.DiscardOutsideFragment
+    AuthoringAction.Derivative -> AuthoringCode.DerivativeOutsideFragment
+    AuthoringAction.Resolution -> AuthoringCode.ResolutionOutsideFragment
+    else -> AuthoringCode.FragCoordOutsideFragment
+}
+
 private fun fragmentOnly(state: AuthoringState): Boolean = when (state.place) {
     AuthoringPlace.Fragment -> true
     AuthoringPlace.Function -> state.functionParent == AuthoringPlace.Fragment
@@ -391,6 +405,8 @@ internal fun <T> withAuthoring(advance: (AuthoringAction) -> Unit, block: () -> 
 private fun authoringFallback(action: AuthoringAction): AuthoringCode = when (action) {
     AuthoringAction.Derivative -> AuthoringCode.DerivativeOutsideFragment
     AuthoringAction.Discard -> AuthoringCode.DiscardOutsideFragment
+    AuthoringAction.FragCoord -> AuthoringCode.FragCoordOutsideFragment
+    AuthoringAction.Resolution -> AuthoringCode.ResolutionOnGles
     AuthoringAction.DeclareShared -> AuthoringCode.SharedOutsideCompute
     AuthoringAction.Barrier -> AuthoringCode.BarrierOutsideCompute
     else -> AuthoringCode.RepeatOutsideStage

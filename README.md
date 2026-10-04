@@ -150,7 +150,7 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 
 Stages are a small state machine. Uniforms, samplers, and varyings are declared on the program. `fragment { }` and `vertex { }` emit shader code. `vertex` exists for `ShaderTarget.Gles30` and `ShaderTarget.Gles32`. `geometry`, `tessControl`, and `tessEval` exist for `ShaderTarget.Gles32`. `compute` exists for `ShaderTarget.Gles31`.
 
-- `fragCoord` and `resolution` are AGSL fragment inputs, in pixels.
+- `fragCoord` is a fragment input in pixels, including inside a fragment `fn`. AGSL spells `fragCoord`. GLES spells `gl_FragCoord.xy`. `resolution` is an AGSL fragment input in pixels; GLES rejects it.
 - `sample()` reads the child shader. It is legal only in an AGSL fragment, and not inside `fn`.
 - `texture(sampler, uv)` is legal only in a GLES fragment.
 - `attributeVec2`, `attributeVec3`, `attributeVec4`, and `glPosition` are legal in a GLES vertex. `glPosition` is also legal in geometry and tessellation evaluation.
