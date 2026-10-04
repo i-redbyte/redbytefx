@@ -247,8 +247,7 @@ out
 gen
 
 # Maintainer-only docs (keep locally; excluded from public repository)
-CHANGELOG.md
-CONTRIBUTING.md
+/CONTRIBUTING.md
 
 # Generated API site output (sources live under docs/*.md)
 build/docs/
