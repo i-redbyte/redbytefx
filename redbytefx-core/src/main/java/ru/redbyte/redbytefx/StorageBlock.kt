@@ -152,6 +152,47 @@ public fun packStd430(block: StorageBlock, values: FloatArray): ByteArray {
     return buffer.array()
 }
 
+/**
+ * Writes the logical floats of a std430 [block] into [into].
+ *
+ * [packed] is the byte layout produced by [packStd430] for [valueCount] logical floats,
+ * including the padding a `vec3` element inserts. Padding is not copied into [into].
+ * [valueCount] is the same count [packStd430] received, which sizes an unsized tail.
+ */
+public fun unpackStd430(block: StorageBlock, packed: ByteBuffer, valueCount: Int, into: FloatArray): Int {
+    require(into.size >= valueCount) {
+        "Storage block \"${block.name}\" needs $valueCount floats, was ${into.size}"
+    }
+    val concrete = concreteMembers(block, valueCount)
+    val layout = std430Layout(concrete)
+    val view = packed.duplicate().order(ByteOrder.nativeOrder())
+    require(view.limit() >= layout.byteSize) {
+        "Storage block \"${block.name}\" needs ${layout.byteSize} bytes, was ${view.limit()}"
+    }
+    var cursor = 0
+    concrete.forEachIndexed { index, member ->
+        val lanes = laneCount(member.shape)
+        val elements = if (member.arraySize == 0 && !block.members[index].unsized) 1 else member.arraySize
+        val stride = if (member.arraySize > 0 || block.members[index].unsized) {
+            std430ArrayStride(member.shape) / FLOAT_BYTES
+        } else {
+            lanes
+        }
+        var element = 0
+        while (element < elements) {
+            val base = layout.offsets[index] + element * stride * FLOAT_BYTES
+            var lane = 0
+            while (lane < lanes) {
+                into[cursor] = view.getFloat(base + lane * FLOAT_BYTES)
+                cursor += 1
+                lane += 1
+            }
+            element += 1
+        }
+    }
+    return cursor
+}
+
 private fun concreteMembers(block: StorageBlock, valueCount: Int): List<BlockMember> {
     val counts = elementCounts(block, valueCount)
     return block.members.mapIndexed { index, member ->

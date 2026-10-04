@@ -41,6 +41,10 @@ internal class GlBlockBuffer(
         return true
     }
 
+    fun storedBytes(): Int = bytes?.size ?: 0
+
+    fun storedFloats(): Int = floats?.size ?: 0
+
     fun bind() {
         if (name == 0) return
         if (storage) device.bindShaderStorageBase(name, 0) else device.bindUniformBufferBase(name, 0)

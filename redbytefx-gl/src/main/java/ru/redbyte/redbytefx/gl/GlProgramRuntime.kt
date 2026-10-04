@@ -22,6 +22,7 @@ import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.packStd140
 import ru.redbyte.redbytefx.packStd430
+import ru.redbyte.redbytefx.unpackStd430
 import ru.redbyte.redbytefx.sameFloatUniformValue
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
@@ -602,6 +603,33 @@ public class GlProgramRuntime(
         if (!storageBuffer.write(packStd430(block, values))) return false
         storageBuffer.bind()
         return true
+    }
+
+    /**
+     * Device. Copies a storage block back into [into] on the EGL thread that linked this runtime.
+     *
+     * [into] receives logical floats, the same layout [set] accepts, without std430 padding.
+     * [set] must have uploaded the block first: that upload fixes the byte size, including an
+     * unsized tail. Returns the number of floats written. Shader writes from [dispatch] are
+     * visible because this call waits on `GL_BUFFER_UPDATE_BARRIER_BIT`.
+     */
+    @JvmName("readStorage")
+    public fun read(block: StorageBlock, into: FloatArray): Int {
+        checkReady()
+        require(block === program.storageBlock) { "Storage block does not belong to this shader" }
+        val bytes = storageBuffer.storedBytes()
+        require(bytes > 0) { "Storage block \"${block.name}\" has not been uploaded" }
+        val count = storageBuffer.storedFloats()
+        require(into.size >= count) {
+            "Storage block \"${block.name}\" needs $count floats, was ${into.size}"
+        }
+        device.bufferUpdateBarrier()
+        val mapped = device.mapShaderStorageRead(storageBuffer.name, bytes)
+        try {
+            return unpackStd430(block, mapped, count, into)
+        } finally {
+            device.unmapShaderStorage(storageBuffer.name)
+        }
     }
 
     /** Deletes GL objects; the instance must not be used afterward. */

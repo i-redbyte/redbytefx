@@ -1,5 +1,7 @@
 package ru.redbyte.redbytefx.gl
 
+import java.nio.ByteBuffer
+
 public enum class GlStage {
     Vertex,
     TessControl,
@@ -107,6 +109,18 @@ public abstract class GlDevice {
     public abstract fun shaderStorageSubData(buffer: Int, data: ByteArray)
 
     public abstract fun bindShaderStorageBase(buffer: Int, binding: Int)
+
+    /** Makes shader writes visible to a later [mapShaderStorageRead]. `GL_BUFFER_UPDATE_BARRIER_BIT`. */
+    public abstract fun bufferUpdateBarrier()
+
+    /**
+     * Maps the first [bytes] of a shader storage buffer for reading.
+     * The returned buffer stays valid until [unmapShaderStorage].
+     */
+    public abstract fun mapShaderStorageRead(buffer: Int, bytes: Int): ByteBuffer
+
+    /** Unmaps a buffer mapped by [mapShaderStorageRead]. */
+    public abstract fun unmapShaderStorage(buffer: Int)
 
     /**
      * Device. `glDrawArrays` on the current EGL context. [GlProgramRuntime] checks the thread first.

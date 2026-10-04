@@ -238,6 +238,10 @@ internal class FloatDevice : GlDevice() {
     override fun shaderStorageData(buffer: Int, data: ByteArray) = Unit
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) = Unit
     override fun bindShaderStorageBase(buffer: Int, binding: Int) = Unit
+    override fun bufferUpdateBarrier() = Unit
+    override fun mapShaderStorageRead(buffer: Int, bytes: Int): java.nio.ByteBuffer =
+        java.nio.ByteBuffer.allocate(bytes)
+    override fun unmapShaderStorage(buffer: Int) = Unit
     override fun drawArrays(mode: Int, first: Int, count: Int) = Unit
     override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) = Unit
     override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) = Unit

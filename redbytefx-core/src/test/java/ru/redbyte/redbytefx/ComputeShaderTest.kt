@@ -165,6 +165,38 @@ class ComputeShaderTest {
     }
 
     @Test
+    fun unpackStd430DropsVec3PaddingAndKeepsAnUnsizedTail() {
+        lateinit var color: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            color = storageBlock("color") { vec3Array("rgb", 2) }
+            compute(1) { }
+        }
+        val packed = packStd430(color, floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f))
+        val view = java.nio.ByteBuffer.wrap(packed).order(java.nio.ByteOrder.nativeOrder())
+        val rgb = FloatArray(6)
+        assertEquals(6, unpackStd430(color, view, rgb.size, rgb))
+        assertEquals(1f, rgb[0], 0f)
+        assertEquals(3f, rgb[2], 0f)
+        assertEquals(4f, rgb[3], 0f)
+        assertEquals(6f, rgb[5], 0f)
+
+        lateinit var tail: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            tail = storageBlock("tail") {
+                float("head")
+                floatArray("rest")
+            }
+            compute(1) { }
+        }
+        val tailBytes = packStd430(tail, floatArrayOf(8f, 9f, 10f))
+        val tailView = java.nio.ByteBuffer.wrap(tailBytes).order(java.nio.ByteOrder.nativeOrder())
+        val logical = FloatArray(3)
+        assertEquals(3, unpackStd430(tail, tailView, logical.size, logical))
+        assertEquals(8f, logical[0], 0f)
+        assertEquals(10f, logical[2], 0f)
+    }
+
+    @Test
     fun sharedMemoryStaysInsideComputeAndUniformBlocksStayOffAgsl() {
         val shared = assertThrows(AuthoringException::class.java) {
             shader(ShaderTarget.Gles30) {

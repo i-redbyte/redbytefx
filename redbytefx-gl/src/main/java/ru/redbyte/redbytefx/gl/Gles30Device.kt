@@ -208,6 +208,31 @@ public class Gles30Device : GlDevice() {
         GLES31.glBindBufferBase(GLES31.GL_SHADER_STORAGE_BUFFER, binding, buffer)
     }
 
+    override fun bufferUpdateBarrier() {
+        GLES31.glMemoryBarrier(GLES31.GL_BUFFER_UPDATE_BARRIER_BIT)
+    }
+
+    override fun mapShaderStorageRead(buffer: Int, bytes: Int): ByteBuffer {
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffer)
+        val mapped = GLES31.glMapBufferRange(
+            GLES31.GL_SHADER_STORAGE_BUFFER,
+            0,
+            bytes,
+            GLES31.GL_MAP_READ_BIT,
+        ) as? ByteBuffer
+        check(mapped != null) {
+            "Driver did not map the storage buffer, error ${GLES31.glGetError()}"
+        }
+        return mapped.order(ByteOrder.nativeOrder())
+    }
+
+    override fun unmapShaderStorage(buffer: Int) {
+        GLES31.glBindBuffer(GLES31.GL_SHADER_STORAGE_BUFFER, buffer)
+        check(GLES31.glUnmapBuffer(GLES31.GL_SHADER_STORAGE_BUFFER)) {
+            "Driver failed to unmap the storage buffer, error ${GLES31.glGetError()}"
+        }
+    }
+
     override fun drawArrays(mode: Int, first: Int, count: Int) {
         GLES30.glDrawArrays(mode, first, count)
     }

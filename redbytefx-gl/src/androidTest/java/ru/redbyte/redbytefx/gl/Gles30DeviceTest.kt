@@ -171,6 +171,37 @@ class Gles30DeviceTest {
     }
 
     @Test
+    fun dispatchWritesStorageTheCpuCanReadBack() {
+        EglPbuffer().use {
+            drainGlError()
+            val version = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+            assumeTrue(version[0] > 3 || (version[0] == 3 && version[1] >= 1))
+            lateinit var value: Expr<Vec4<Flt<High>>>
+            val program = shader(ShaderTarget.Gles31) {
+                storageBlock("cells") {
+                    value = vec4("value")
+                }
+                compute(1) { value.store(vec4(4f.lit, 5f.lit, 6f.lit, 7f.lit)) }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            val block = checkNotNull(program.storageBlock)
+            runtime.set(block, floatArrayOf(0f, 0f, 0f, 0f))
+            runtime.dispatch(1)
+            val into = FloatArray(4)
+            assertEquals(4, runtime.read(block, into))
+            assertEquals(4f, into[0], 0f)
+            assertEquals(5f, into[1], 0f)
+            assertEquals(6f, into[2], 0f)
+            assertEquals(7f, into[3], 0f)
+            runtime.destroy()
+            assertNoGlError("storage read")
+        }
+    }
+
+    @Test
     fun pbufferContextUsesTheHighestEs3MinorTheDriverCreates() {
         val best = highestEs3Minor()
         EglPbuffer().use {

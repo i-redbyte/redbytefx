@@ -431,6 +431,39 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun readStorageCopiesTheDeviceBytesWithoutTheStd430Padding() {
+        val device = RecordingGlDevice()
+        lateinit var block: StorageBlock
+        val runtime = GlProgramRuntime(
+            shader(ShaderTarget.Gles31) {
+                block = storageBlock("cells") { vec3("value") }
+                compute(1) { }
+            },
+            device,
+        )
+        runtime.link()
+        assertTrue(runtime.set(block, floatArrayOf(1f, 2f, 3f)))
+        val read = FloatArray(3)
+        assertEquals(3, runtime.read(block, read))
+        assertEquals(1f, read[0], 0f)
+        assertEquals(2f, read[1], 0f)
+        assertEquals(3f, read[2], 0f)
+        assertEquals(1, device.bufferUpdateBarriers)
+
+        val stored = device.storageBytes.values.single()
+        java.nio.ByteBuffer.wrap(stored).order(java.nio.ByteOrder.nativeOrder()).putFloat(0, 9f)
+        assertEquals(3, runtime.read(block, read))
+        assertEquals(9f, read[0], 0f)
+        assertEquals(2f, read[1], 0f)
+        assertEquals(3f, read[2], 0f)
+
+        val short = assertThrows(IllegalArgumentException::class.java) {
+            runtime.read(block, FloatArray(2))
+        }
+        assertTrue(short.message!!.contains("3"))
+    }
+
+    @Test
     fun gles32LinksVertexTessellationGeometryAndFragment() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(
@@ -896,16 +929,32 @@ private class RecordingGlDevice(
 
     var storageDataCalls = 0
     var storageSubDataCalls = 0
+    var bufferUpdateBarriers = 0
+    val storageBytes = HashMap<Int, ByteArray>()
 
     override fun shaderStorageData(buffer: Int, data: ByteArray) {
         storageDataCalls += 1
         writes += "storageData"
+        storageBytes[buffer] = data.copyOf()
     }
 
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
         storageSubDataCalls += 1
         writes += "storageSubData"
+        storageBytes[buffer] = data.copyOf()
     }
+
+    override fun bufferUpdateBarrier() {
+        bufferUpdateBarriers += 1
+    }
+
+    override fun mapShaderStorageRead(buffer: Int, bytes: Int): java.nio.ByteBuffer {
+        val stored = checkNotNull(storageBytes[buffer])
+        check(stored.size >= bytes)
+        return java.nio.ByteBuffer.wrap(stored, 0, bytes).order(java.nio.ByteOrder.nativeOrder())
+    }
+
+    override fun unmapShaderStorage(buffer: Int) = Unit
 
     override fun bindShaderStorageBase(buffer: Int, binding: Int) {
         writes += "bindStorage"
