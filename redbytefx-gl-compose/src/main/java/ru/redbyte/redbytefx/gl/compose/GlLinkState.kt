@@ -1,7 +1,7 @@
 package ru.redbyte.redbytefx.gl.compose
 
 /**
- * Link lifecycle for a [GlController] attached to [GlSurface].
+ * Link lifecycle for a [GlController] attached to [GlSurface] or [GlCompute].
  */
 public sealed interface GlLinkState {
     public data object Pending : GlLinkState

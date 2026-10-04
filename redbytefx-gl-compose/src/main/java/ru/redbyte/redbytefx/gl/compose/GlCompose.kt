@@ -14,7 +14,7 @@ import ru.redbyte.redbytefx.Uniform
 /**
  * Remembers a [GlController] for [program].
  *
- * Use one controller per [GlSurface]. A new [program] or [config] creates a new controller,
+ * Use one controller per [GlSurface] or [GlCompute]. A new [program] or [config] creates a new controller,
  * which does not carry over values set on the previous one.
  */
 @Composable

@@ -359,16 +359,25 @@ internal class FloatDevice : GlDevice() {
         return java.nio.ByteBuffer.wrap(stored, 0, bytes).order(java.nio.ByteOrder.nativeOrder())
     }
     override fun unmapShaderStorage(buffer: Int) = Unit
-    override fun drawArrays(mode: Int, first: Int, count: Int) = Unit
-    override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) = Unit
-    override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) = Unit
+    var drawCalls = 0
+    override fun drawArrays(mode: Int, first: Int, count: Int) {
+        drawCalls += 1
+    }
+    override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) {
+        drawCalls += 1
+    }
+    override fun drawArraysInstanced(mode: Int, first: Int, count: Int, instances: Int) {
+        drawCalls += 1
+    }
     override fun drawElementsInstanced(
         mode: Int,
         count: Int,
         unsignedInt: Boolean,
         instances: Int,
         indexOffset: Int,
-    ) = Unit
+    ) {
+        drawCalls += 1
+    }
     override fun arrayBufferData(buffer: Int, data: FloatArray) = Unit
     override fun arrayBufferSubData(buffer: Int, data: FloatArray) = Unit
     override fun unbindVertexArray() = Unit
