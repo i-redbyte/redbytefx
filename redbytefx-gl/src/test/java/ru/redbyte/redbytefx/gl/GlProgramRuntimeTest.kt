@@ -251,6 +251,24 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aDrawRestoresTheSamplerAnUploadReplaced() {
+        val device = RecordingGlDevice()
+        lateinit var image: Uniform<Sampler2D>
+        val runtime = GlProgramRuntime(imageProgram { image = it }, device)
+        runtime.link()
+        assertTrue(runtime.bind(image, 7))
+        runtime.uploadRgba(1, 1, ByteArray(4))
+        runtime.drawRange(4, 3, 0, 3, null, null)
+        assertEquals(listOf(7, 7), device.boundTextures)
+        runtime.texSubImage2DRgba(7, 1, 1, 0, 0, 1, 1, ByteArray(4))
+        runtime.use()
+        assertEquals(listOf(7, 7, 7), device.boundTextures)
+        runtime.createColorTarget(2, 2)
+        runtime.drawRange(4, 3, 0, 3, null, null)
+        assertEquals(listOf(7, 7, 7, 7), device.boundTextures)
+    }
+
+    @Test
     fun aSecondProgramSeesTheUnitTheFirstProgramReplaced() {
         val units = GlTextureUnits()
         val device = RecordingGlDevice()

@@ -65,8 +65,7 @@ public class GlProgramRuntime(
     private val floatValues = IdentityHashMap<Uniform<*>, Float>()
     private val vectorValues = IdentityHashMap<Uniform<*>, FloatArray>()
     private val intValues = IdentityHashMap<Uniform<*>, Int>()
-    private val boundUnits = IdentityHashMap<Uniform<*>, Int>()
-    private val textureIds = IdentityHashMap<Uniform<*>, Int>()
+    private val samplers = GlSamplerBindings(device, textureUnits) { programId }
     private var programId = 0
     private var linked = false
     private var destroyed = false
@@ -177,13 +176,15 @@ public class GlProgramRuntime(
     /**
      * Binds this program on the owning GL thread; call before draws and uniform uploads.
      * Also rebinds this program's uniform and storage block at binding point 0, which another
-     * program on the same context may have taken.
+     * program on the same context may have taken. A texture upload binds on the active unit;
+     * samplers whose unit no longer holds their texture are bound again here.
      */
     public fun use() {
         checkReady()
         device.useProgram(programId)
         uniformBuffer.bind()
         storageBuffer.bind()
+        samplers.rebindDisturbed()
     }
 
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = writeScalar(uniform, value)
@@ -255,7 +256,7 @@ public class GlProgramRuntime(
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         device.deleteTexture(texture)
         ownedTextures.remove(texture)
-        forgetTexture(texture)
+        samplers.forget(texture)
     }
 
     /**
@@ -371,7 +372,7 @@ public class GlProgramRuntime(
         device.deleteFramebuffer(target.framebuffer)
         device.deleteRenderbuffer(target.depthRenderbuffer)
         device.deleteTexture(target.colorTexture)
-        forgetTexture(target.colorTexture)
+        samplers.forget(target.colorTexture)
         framebufferColors.remove(target.framebuffer)
         if (boundFramebuffer == target.framebuffer) boundFramebuffer = 0
     }
@@ -385,7 +386,7 @@ public class GlProgramRuntime(
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         if (framebuffer != 0) {
             val color = framebufferColors[framebuffer]
-            if (color != null && samplesTexture(color)) {
+            if (color != null && samplers.samples(color)) {
                 reject(GlCode.FeedbackLoop, "Cannot sample the color texture of the bound framebuffer")
             }
         }
@@ -456,6 +457,7 @@ public class GlProgramRuntime(
     ) {
         checkReady()
         require(first >= 0) { "Draw first must be non-negative, was $first" }
+        samplers.rebindDisturbed()
         if (count <= 0 || vertexCount <= 0 || instanceCount == 0) return
         val kind = planDraw(
             vertexCount = vertexCount,
@@ -546,34 +548,13 @@ public class GlProgramRuntime(
         }
     }
 
-    private fun samplesTexture(texture: Int): Boolean {
-        for (bound in textureIds.values) {
-            if (bound == texture) return true
-        }
-        return false
-    }
-
     private fun bindSampler(uniform: Uniform<*>, texture: Int, cube: Boolean): Boolean {
         checkReady()
-        val expected = if (cube) Shape.SamplerCube else Shape.Sampler2D
-        require(uniform.shape == expected) { "GL sampler bind requires $expected" }
         val location = locationOf(uniform)
-        if (location < 0) return false
         if (boundFramebuffer != 0 && framebufferColors[boundFramebuffer] == texture) {
             reject(GlCode.FeedbackLoop, "Cannot sample the color texture of the bound framebuffer")
         }
-        val unit = boundUnits[uniform] ?: assignUnit(uniform, location)
-        textureIds[uniform] = texture
-        if (textureUnits.holds(unit, texture)) return false
-        device.activeTexture(unit)
-        if (cube) device.bindTextureCube(texture) else device.bindTexture2D(texture)
-        textureUnits.record(unit, texture)
-        return true
-    }
-
-    private fun forgetTexture(texture: Int) {
-        textureUnits.forget(texture)
-        textureIds.values.removeAll { it == texture }
+        return samplers.bind(uniform, texture, cube, location)
     }
 
     public fun set(block: UniformBlock, values: FloatArray): Boolean {
@@ -656,23 +637,7 @@ public class GlProgramRuntime(
         floatValues.clear()
         vectorValues.clear()
         intValues.clear()
-        boundUnits.clear()
-        textureIds.clear()
-    }
-
-    private fun assignUnit(uniform: Uniform<*>, location: Int): Int {
-        val limit = device.maxCombinedTextureImageUnits()
-        val unit = textureUnits.take(limit)
-        if (unit < 0) {
-            reject(
-                GlCode.TextureUnitLimit,
-                "Texture unit is outside GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS $limit",
-            )
-        }
-        boundUnits[uniform] = unit
-        device.useProgram(programId)
-        device.uniform1i(location, unit)
-        return unit
+        samplers.clear()
     }
 
     private fun writeScalar(uniform: Uniform<*>, value: Float): Boolean {
@@ -838,5 +803,5 @@ private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
     return true
 }
 
-private fun reject(code: GlCode, message: String): Nothing = throw GlException(code, message)
+internal fun reject(code: GlCode, message: String): Nothing = throw GlException(code, message)
 
