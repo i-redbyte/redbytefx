@@ -75,6 +75,34 @@ class VectorCompareTest {
     }
 
     @Test
+    fun intComparisonsSpellTheSameOperatorsInAgslAndGlsl() {
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val hit = 2.intLit.gt(1.intLit) and 1.intLit.lt(2.intLit) and
+                    2.intLit.ge(2.intLit) and 2.intLit.le(2.intLit) and
+                    2.intLit.eq(2.intLit) and 2.intLit.ne(1.intLit) and
+                    2.intLit.gte(1.intLit)
+                vec4(ifElse(hit, 1f.lit, 0f.lit), 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        val agslSource = agsl.agslSource()
+        assertTrue(agslSource.contains("(2 > 1)"))
+        assertTrue(agslSource.contains("(1 < 2)"))
+        assertTrue(agslSource.contains("(2 >= 2)"))
+        assertTrue(agslSource.contains("(2 <= 2)"))
+        assertTrue(agslSource.contains("(2 == 2)"))
+        assertTrue(agslSource.contains("(2 != 1)"))
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val hit = 3.intLit.gt(1.intLit)
+                vec4(ifElse(hit, 1f.lit, 0f.lit), 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(glsl.fragmentSource().contains("(3 > 1)"))
+    }
+
+    @Test
     fun booleanNotSpellsABangInAgslAndGlsl() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {

@@ -23,6 +23,24 @@ public infix fun <P : Prec> Expr<Flt<P>>.eq(other: Expr<Flt<P>>): Expr<BoolS> = 
 
 public infix fun <P : Prec> Expr<Flt<P>>.ne(other: Expr<Flt<P>>): Expr<BoolS> = compare(CompareOp.Ne, this, other)
 
+@JvmName("gtInt")
+public infix fun Expr<IntS>.gt(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Gt, this, other)
+
+@JvmName("ltInt")
+public infix fun Expr<IntS>.lt(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Lt, this, other)
+
+@JvmName("geInt")
+public infix fun Expr<IntS>.ge(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Ge, this, other)
+
+@JvmName("leInt")
+public infix fun Expr<IntS>.le(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Le, this, other)
+
+@JvmName("eqInt")
+public infix fun Expr<IntS>.eq(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Eq, this, other)
+
+@JvmName("neInt")
+public infix fun Expr<IntS>.ne(other: Expr<IntS>): Expr<BoolS> = intCompare(CompareOp.Ne, this, other)
+
 @JvmName("gtVec2")
 public infix fun <P : Prec> Expr<Vec2<Flt<P>>>.gt(other: Expr<Vec2<Flt<P>>>): Expr<BVec2> =
     vectorCompare(CompareOp.Gt, this, other)
@@ -133,6 +151,13 @@ public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse:
 private fun boolOp(op: ArithOp, left: Expr<BoolS>, right: Expr<BoolS>): Expr<BoolS> =
     Expr(Shape.Scalar(ScalarKind.Bool, null), ExprNode.Binary(op, left, right))
 
+private fun intCompare(op: CompareOp, left: Expr<IntS>, right: Expr<IntS>): Expr<BoolS> {
+    require(left.shape == intScalar && left.shape == right.shape) {
+        "$op requires int scalars, was ${left.shape} and ${right.shape}"
+    }
+    return Expr(boolScalar, ExprNode.Compare(op, left, right))
+}
+
 private fun <P : Prec> compare(op: CompareOp, left: Expr<Flt<P>>, right: Expr<Flt<P>>): Expr<BoolS> {
     require(isFloatScalar(left.shape) && left.shape == right.shape) {
         "$op requires float scalars of one precision, was ${left.shape} and ${right.shape}"
@@ -171,6 +196,8 @@ internal fun spellCompare(
 }
 
 private val boolScalar = Shape.Scalar(ScalarKind.Bool, null)
+
+private val intScalar = Shape.Scalar(ScalarKind.Int, null)
 
 internal val CompareOp.symbol: String
     get() = when (this) {

@@ -101,6 +101,9 @@ public infix fun <P : Prec> Expr<Flt<P>>.gte(rhs: Float): Expr<BoolS> = this ge 
 /** Infix `>=` for float expressions (alias of [ge] from [Compare.kt]). */
 public infix fun <P : Prec> Expr<Flt<P>>.gte(other: Expr<Flt<P>>): Expr<BoolS> = this ge other
 
+@JvmName("gteInt")
+public infix fun Expr<IntS>.gte(other: Expr<IntS>): Expr<BoolS> = this ge other
+
 public fun grayscale(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
     val luma = luminance(color).toMed()
     return color(luma, luma, luma, color.a)
