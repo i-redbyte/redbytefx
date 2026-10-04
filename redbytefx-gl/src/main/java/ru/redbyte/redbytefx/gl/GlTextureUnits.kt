@@ -8,23 +8,35 @@ private const val UNKNOWN: Int = -1
  *
  * Units are context state, not program state. Every [GlProgramRuntime] that draws on one context
  * must share one instance. Otherwise two programs both start at unit 0, and one skips a bind
- * because its own cache is stale. A recreated context needs a new instance.
+ * because its own cache is stale. Destroying a runtime returns only the units that runtime took.
+ * A recreated context needs a new instance.
  */
 public class GlTextureUnits {
     private var next = 0
     private var active = 0
     private var held = IntArray(0)
+    private val free = ArrayList<Int>(4)
 
     internal fun take(limit: Int): Int {
-        if (next >= limit) return UNKNOWN
-        val unit = next
-        next += 1
+        val recycled = if (free.isEmpty()) UNKNOWN else free.removeAt(free.lastIndex)
+        val unit = if (recycled != UNKNOWN) recycled else next
+        if (recycled == UNKNOWN) {
+            if (next >= limit) return UNKNOWN
+            next += 1
+        }
         if (unit >= held.size) {
             val grown = IntArray(maxOf(4, held.size * 2)) { UNKNOWN }
             held.copyInto(grown)
             held = grown
         }
         return unit
+    }
+
+    /** Returns a unit a destroyed program no longer uses. A second release is ignored. */
+    internal fun release(unit: Int) {
+        if (unit < 0 || unit >= next || unit in free) return
+        if (unit < held.size) held[unit] = UNKNOWN
+        free += unit
     }
 
     internal fun holds(unit: Int, texture: Int): Boolean = held[unit] == texture

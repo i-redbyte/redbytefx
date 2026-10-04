@@ -56,6 +56,12 @@ internal class GlSamplerBindings(
     }
 
     fun clear() {
+        var index = 0
+        while (index < samplerOrder.size) {
+            val unit = boundUnits[samplerOrder[index]]
+            if (unit != null) textureUnits.release(unit)
+            index += 1
+        }
         boundUnits.clear()
         textureIds.clear()
         samplerOrder.clear()

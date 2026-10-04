@@ -236,6 +236,39 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun destroyingAProgramReturnsItsTextureUnit() {
+        val units = GlTextureUnits()
+        repeat(4) {
+            lateinit var image: Uniform<Sampler2D>
+            val device = RecordingGlDevice(textureUnitLimit = 1)
+            val runtime = GlProgramRuntime(imageProgram { image = it }, device, textureUnits = units)
+            runtime.link()
+            assertTrue(runtime.bind(image, 3))
+            assertEquals(listOf(0), device.textureUnits)
+            runtime.destroy()
+        }
+        lateinit var kept: Uniform<Sampler2D>
+        lateinit var temporary: Uniform<Sampler2D>
+        lateinit var reused: Uniform<Sampler2D>
+        val keptDevice = RecordingGlDevice(textureUnitLimit = 2)
+        val temporaryDevice = RecordingGlDevice(textureUnitLimit = 2)
+        val reusedDevice = RecordingGlDevice(textureUnitLimit = 2)
+        val live = GlProgramRuntime(imageProgram { kept = it }, keptDevice, textureUnits = units)
+        val gone = GlProgramRuntime(imageProgram { temporary = it }, temporaryDevice, textureUnits = units)
+        live.link()
+        gone.link()
+        assertTrue(live.bind(kept, 5))
+        assertTrue(gone.bind(temporary, 8))
+        gone.destroy()
+        val next = GlProgramRuntime(imageProgram { reused = it }, reusedDevice, textureUnits = units)
+        next.link()
+        assertTrue(next.bind(reused, 6))
+        assertEquals(listOf(0), keptDevice.textureUnits)
+        assertEquals(listOf(1), temporaryDevice.textureUnits)
+        assertEquals(listOf(1), reusedDevice.textureUnits)
+    }
+
+    @Test
     fun anUploadOnTheActiveUnitForcesTheNextBind() {
         val device = RecordingGlDevice()
         lateinit var image: Uniform<Sampler2D>
