@@ -19,6 +19,7 @@ public class GlCompileStatus(
 /**
  * Driver port. [GlProgramRuntime] never treats a call as success unless this port says so.
  * [Gles30Device] is the OpenGL ES 3.0 implementation; unit tests supply their own port.
+ * A new abstract method must also be implemented by `Gles30Device`, `RecordingGlDevice`, and `FloatDevice`.
  */
 public abstract class GlDevice {
     public abstract fun createShader(stage: GlStage): Int
