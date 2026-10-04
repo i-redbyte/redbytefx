@@ -665,6 +665,18 @@ class GlProgramRuntimeTest {
         assertFalse(device.deletedTextures.contains(target.colorTexture))
         assertTrue(device.boundFramebuffers.contains(0))
     }
+
+    @Test
+    fun aColorTargetCanBeDeletedAfterTheProgram() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val target = runtime.createColorTarget(4, 4)
+        runtime.destroy()
+        runtime.deleteColorTarget(target)
+        assertTrue(device.deletedFramebuffers.contains(target.framebuffer))
+        assertTrue(device.deletedTextures.contains(target.colorTexture))
+    }
 }
 
 private fun imageProgram(image: (Uniform<Sampler2D>) -> Unit) = shader(ShaderTarget.Gles30) {

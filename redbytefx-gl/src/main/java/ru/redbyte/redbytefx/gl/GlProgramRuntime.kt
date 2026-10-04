@@ -329,7 +329,8 @@ public class GlProgramRuntime(
      * Device. Allocates a color texture and a depth renderbuffer on the EGL thread that linked
      * this runtime, then checks the framebuffer status. An incomplete target is deleted and
      * reported as [GlCode.FramebufferIncomplete]. The color name is not added to the textures
-     * [destroy] deletes. Unbind this target before sampling [GlColorTarget.colorTexture]:
+     * [destroy] deletes; call [deleteColorTarget] while the context is current, before or after
+     * [destroy]. Unbind this target before sampling [GlColorTarget.colorTexture]:
      * a pass must not sample the texture of the framebuffer that is currently bound.
      * Names are invalid after the EGL context is recreated.
      */
@@ -361,10 +362,11 @@ public class GlProgramRuntime(
     /**
      * Device. Deletes a color target on the EGL thread that linked this runtime.
      * This does not delete textures created by [uploadRgba].
+     * [destroy] leaves these names in place, and this call still deletes them afterward,
+     * while that EGL context is current. Do not call it after the context itself is gone.
      */
     public fun deleteColorTarget(target: GlColorTarget) {
         checkThread()
-        if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         device.deleteFramebuffer(target.framebuffer)
         device.deleteRenderbuffer(target.depthRenderbuffer)
         device.deleteTexture(target.colorTexture)

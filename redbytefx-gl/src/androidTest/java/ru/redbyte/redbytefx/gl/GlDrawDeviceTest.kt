@@ -277,6 +277,7 @@ class GlDrawDeviceTest {
 private class Canvas {
     val vao: Int
     private val runtimes = mutableListOf<GlProgramRuntime>()
+    private val targets = mutableListOf<Pair<GlProgramRuntime, GlColorTarget>>()
 
     init {
         val names = IntArray(1)
@@ -294,6 +295,7 @@ private class Canvas {
 
     fun target(runtime: GlProgramRuntime) {
         val target = runtime.createColorTarget(SIZE, SIZE)
+        targets += runtime to target
         runtime.bindFramebuffer(target.framebuffer)
         GLES30.glViewport(0, 0, SIZE, SIZE)
         GLES30.glDisable(GLES30.GL_DEPTH_TEST)
@@ -349,6 +351,7 @@ private class Canvas {
     }
 
     fun close() {
+        for ((runtime, target) in targets) runtime.deleteColorTarget(target)
         for (runtime in runtimes) runtime.destroy()
     }
 }
