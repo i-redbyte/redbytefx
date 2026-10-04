@@ -146,7 +146,7 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 
 `rememberFxController` владеет одним AGSL-рантаймом. На каждую поверхность рисования нужен свой контроллер. `redbyteFx` пишет resolution из размера отрисовки. `RuntimeShader` трогается только с UI-потока.
 
-## Авторство
+## Составление
 
 Стадии - небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут `fragment { }` и `vertex { }`. `vertex` есть у `ShaderTarget.Gles30` и `ShaderTarget.Gles32`. `geometry`, `tessControl` и `tessEval` есть у `ShaderTarget.Gles32`. `compute` есть у `ShaderTarget.Gles31`.
 
