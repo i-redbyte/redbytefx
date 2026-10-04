@@ -151,8 +151,8 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 Стадии - небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут `fragment { }` и `vertex { }`. `vertex` есть у `ShaderTarget.Gles30` и `ShaderTarget.Gles32`. `geometry`, `tessControl` и `tessEval` есть у `ShaderTarget.Gles32`. `compute` есть у `ShaderTarget.Gles31`.
 
 - `fragCoord` - вход фрагмента в пикселях, в том числе внутри фрагментной `fn`. AGSL пишет `fragCoord`. GLES пишет `gl_FragCoord.xy`. `resolution` - вход AGSL-фрагмента в пикселях; GLES его отвергает.
-- `sample()` читает дочерний шейдер. Это законно только в AGSL-фрагменте и не внутри `fn`.
-- `texture(sampler, uv)` законен только в GLES-фрагменте.
+- `sample()` читает дочерний шейдер. Это законно в AGSL-фрагменте, в том числе внутри фрагментной `fn` через `this@fragment.sample()`. Другие стадии отвергают вызов.
+- `texture(sampler, uv)` законен в GLES-фрагменте, в том числе внутри фрагментной `fn` через `this@fragment.texture()`. Другие стадии отвергают вызов.
 - `attributeVec2`, `attributeVec3`, `attributeVec4` и `glPosition` законны в GLES-вершине. `glPosition` также законен в geometry и tessellation evaluation.
 - `varyingFloat`, `varyingVec2`, `varyingVec3` и `varyingVec4` имеют precision highp. Фрагмент читает varying только если его писала вершина.
 - `let(expr, "name")` даёт локальной переменной имя в сгенерированном шейдере.

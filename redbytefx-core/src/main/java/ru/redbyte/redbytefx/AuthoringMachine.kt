@@ -171,13 +171,13 @@ internal fun authoringStep(state: AuthoringState, action: AuthoringAction): Auth
         AuthoringAction.LeaveStage -> leaveStage(state)
         AuthoringAction.Sample -> allow(
             state,
-            state.target == ShaderTarget.Agsl && state.place == AuthoringPlace.Fragment,
+            state.target == ShaderTarget.Agsl && fragmentOnly(state),
             AuthoringCode.SampleOutsideAgslFragment,
         )
         AuthoringAction.Texture -> allow(
             state,
             (state.target == ShaderTarget.Gles30 || state.target == ShaderTarget.Gles32) &&
-                state.place == AuthoringPlace.Fragment,
+                fragmentOnly(state),
             AuthoringCode.TextureOutsideGlesFragment,
         )
         AuthoringAction.Attribute -> attribute(state)

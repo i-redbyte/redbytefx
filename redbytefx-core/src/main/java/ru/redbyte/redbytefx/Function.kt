@@ -222,9 +222,10 @@ public class Fn8<
  * Body of `fn { … }`.
  *
  * [let], [local], [whenTrue], [repeat], and [recur] are available here. Stage builtins
- * ([FragmentDsl.sample], [FragmentDsl.fragCoord], [FragmentDsl.resolution], attributes,
- * `gl_Position`) are not. Qualify the stage (`this@fragment.sample()`) when that capture
- * is intentional.
+ * ([FragmentDsl.sample], [FragmentDsl.texture], [FragmentDsl.fragCoord], [FragmentDsl.resolution],
+ * attributes, `gl_Position`) are not on this receiver. Qualify the stage
+ * (`this@fragment.sample()`, `this@fragment.texture()`) when the `fn` was declared in that
+ * fragment. A vertex or compute `fn` cannot capture them.
  */
 @RedByteFxDsl
 public class FnDsl internal constructor(

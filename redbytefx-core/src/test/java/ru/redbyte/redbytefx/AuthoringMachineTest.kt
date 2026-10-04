@@ -75,6 +75,14 @@ class AuthoringMachineTest {
         assertRejected(glesVertex, AuthoringAction.DeclareVarying, AuthoringCode.VaryingOutsideProgram)
         assertRejected(glesFragment, AuthoringAction.Sample, AuthoringCode.SampleOutsideAgslFragment)
         assertRejected(agslFragment, AuthoringAction.Texture, AuthoringCode.TextureOutsideGlesFragment)
+        assertAccepted(agslFunctionFromFragment, AuthoringAction.Sample, agslFunctionFromFragment)
+        assertRejected(glesFunctionFromVertex, AuthoringAction.Sample, AuthoringCode.SampleOutsideAgslFragment)
+        assertAccepted(
+            authoringState(ShaderTarget.Gles30, AuthoringPlace.Function, AuthoringPlace.Fragment),
+            AuthoringAction.Texture,
+            authoringState(ShaderTarget.Gles30, AuthoringPlace.Function, AuthoringPlace.Fragment),
+        )
+        assertRejected(glesFunctionFromVertex, AuthoringAction.Texture, AuthoringCode.TextureOutsideGlesFragment)
         assertRejected(
             glesFunctionFromVertex,
             AuthoringAction.Attribute,

@@ -141,7 +141,7 @@ class FunctionTest {
     }
 
     @Test
-    fun nestedFunctionUniformAndSampleAreRejected() {
+    fun nestedFunctionAndUniformAreRejectedAndFragmentCallsAreNot() {
         val nested = assertThrows(AuthoringException::class.java) {
             shader(ShaderTarget.Agsl) {
                 fragment {
@@ -168,15 +168,23 @@ class FunctionTest {
         }
         assertEquals(AuthoringCode.UniformInsideFunction, uniform.code)
 
-        val sample = assertThrows(AuthoringException::class.java) {
-            shader(ShaderTarget.Agsl) {
-                fragment {
-                    fn { this@fragment.sample() }
-                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
-                }
+        val sampled = shader(ShaderTarget.Agsl) {
+            fragment {
+                val tone = fn { this@fragment.sample() }
+                tone()
             }
         }
-        assertEquals(AuthoringCode.SampleOutsideAgslFragment, sample.code)
+        assertTrue(sampled.agslSource().contains("rb_sample"))
+        lateinit var image: Uniform<Sampler2D>
+        val textured = shader(ShaderTarget.Gles30) {
+            image = sampler2D("image")
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val color = fn(vec2(0f.lit, 0f.lit)) { uv -> this@fragment.texture(image, uv) }
+                color(vec2(0f.lit, 0f.lit))
+            }
+        }
+        assertTrue(textured.fragmentSource().contains("texture("))
     }
 
     @Test
