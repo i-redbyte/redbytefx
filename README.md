@@ -119,7 +119,7 @@ dependencies {
 | `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame`, and mesh helpers for a GLES scene in Compose |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
 | `redbytefx-stdlib` | Effect recipes: coordinates, masks, compositing, SDF, and `lambert` |
-| `redbytefx-3d` | CPU scene data for meshes and cameras. No OpenGL driver |
+| `redbytefx-3d` | CPU scene data for meshes and cameras (`lookAt`, `perspective`, `ortho`). No OpenGL driver |
 
 ## Compose
 

@@ -125,3 +125,52 @@ public fun perspective(fovy: Float, aspect: Float, near: Float, far: Float, out:
     out[14] = (2f * far * near) / span
     return out
 }
+
+/**
+ * Scene. Orthographic matrix, column-major, the same order as `glUniformMatrix4fv` with transpose false.
+ * Clip z is the OpenGL ES range −1..1, the same convention as [perspective].
+ *
+ * `m00 = 2 / (right - left)`, `m11 = 2 / (top - bottom)`, `m22 = -2 / (far - near)`,
+ * `m30 = -(right + left) / (right - left)`, `m31 = -(top + bottom) / (top - bottom)`,
+ * `m32 = -(far + near) / (far - near)`.
+ * Allocates a new array; per-frame code should pass its own array to the other overload.
+ */
+public fun ortho(left: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float): FloatArray =
+    ortho(left, right, bottom, top, near, far, FloatArray(MATRIX_FLOATS))
+
+/**
+ * Scene. Writes the [ortho] matrix into the first [MATRIX_FLOATS] floats of [out] and returns it.
+ * Invalid arguments throw before [out] is touched.
+ */
+public fun ortho(
+    left: Float,
+    right: Float,
+    bottom: Float,
+    top: Float,
+    near: Float,
+    far: Float,
+    out: FloatArray,
+): FloatArray {
+    require(out.size >= MATRIX_FLOATS) { "Matrix needs $MATRIX_FLOATS floats, was ${out.size}" }
+    require(
+        left.isFinite() && right.isFinite() && bottom.isFinite() && top.isFinite() &&
+            near.isFinite() && far.isFinite(),
+    ) {
+        "ortho arguments must be finite"
+    }
+    require(left != right) { "ortho left and right must differ, was $left" }
+    require(bottom != top) { "ortho bottom and top must differ, was $bottom" }
+    require(far > near) { "ortho far must be greater than near, was far=$far near=$near" }
+    val width = right - left
+    val height = top - bottom
+    val depth = far - near
+    out.fill(0f, 0, MATRIX_FLOATS)
+    out[0] = 2f / width
+    out[5] = 2f / height
+    out[10] = -2f / depth
+    out[12] = -(right + left) / width
+    out[13] = -(top + bottom) / height
+    out[14] = -(far + near) / depth
+    out[15] = 1f
+    return out
+}

@@ -61,4 +61,27 @@ class SceneCameraTest {
             perspective(PI.toFloat() / 2f, 1f, 2f, 1f)
         }
     }
+
+    @Test
+    fun orthoMatchesTheOpenGlColumnMajorMatrix() {
+        val matrix = ortho(0f, 2f, 0f, 4f, 1f, 5f)
+        assertEquals(1f, matrix[0], 0f)
+        assertEquals(0.5f, matrix[5], 0f)
+        assertEquals(-0.5f, matrix[10], 0f)
+        assertEquals(-1f, matrix[12], 0f)
+        assertEquals(-1f, matrix[13], 0f)
+        assertEquals(-1.5f, matrix[14], 0f)
+        assertEquals(1f, matrix[15], 0f)
+        assertEquals(0f, matrix[11], 0f)
+
+        val held = FloatArray(MATRIX_FLOATS) { 7f }
+        assertThrows(IllegalArgumentException::class.java) {
+            ortho(1f, 1f, 0f, 1f, 0f, 1f, held)
+        }
+        assertEquals(7f, held[0], 0f)
+        assertThrows(IllegalArgumentException::class.java) {
+            ortho(0f, 1f, 0f, 1f, 2f, 1f, held)
+        }
+        assertEquals(7f, held[0], 0f)
+    }
 }
