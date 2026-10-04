@@ -75,7 +75,7 @@ mavenPublishing {
     pom {
         name.set("RedByteFX GL")
         description.set(
-            "OpenGL ES 3.0 runtime for shaders compiled by RedByteFX."
+            "OpenGL ES 3.0, 3.1, and 3.2 runtime for shaders compiled by RedByteFX."
         )
         inceptionYear.set("2026")
         url.set("https://github.com/i-redbyte/redbytefx")

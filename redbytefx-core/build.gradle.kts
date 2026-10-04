@@ -73,7 +73,7 @@ mavenPublishing {
     pom {
         name.set("RedByteFX Core")
         description.set(
-            "Typed Kotlin DSL and compiler for authoring Android AGSL effects."
+            "Typed Kotlin DSL and compiler for Android AGSL and OpenGL ES 3.0, 3.1, and 3.2 shaders."
         )
         inceptionYear.set("2026")
         url.set("https://github.com/i-redbyte/redbytefx")
