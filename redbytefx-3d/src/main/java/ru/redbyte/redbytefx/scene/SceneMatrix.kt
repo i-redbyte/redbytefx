@@ -8,7 +8,7 @@ private const val DEGENERATE: Float = 1.0e-8f
 /** Scene. Writes a column-major identity into [out] and returns it. */
 public fun identity(out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
     require(out.size >= MATRIX_FLOATS) { "Matrix needs $MATRIX_FLOATS floats, was ${out.size}" }
-    IDENTITY.copyInto(out, endIndex = MATRIX_FLOATS)
+    copyIdentityInto(out)
     return out
 }
 
@@ -57,6 +57,7 @@ public fun multiply(a: FloatArray, b: FloatArray, out: FloatArray = FloatArray(M
 
 /** Scene. Translation in the last column. */
 public fun translation(x: Float, y: Float, z: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
+    require(x.isFinite() && y.isFinite() && z.isFinite()) { "translation components must be finite" }
     identity(out)
     out[12] = x
     out[13] = y
@@ -66,8 +67,11 @@ public fun translation(x: Float, y: Float, z: Float, out: FloatArray = FloatArra
 
 /** Scene. Non-uniform scale on the diagonal. */
 public fun scale(x: Float, y: Float, z: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
-    require(kotlin.math.abs(x) > DEGENERATE && kotlin.math.abs(y) > DEGENERATE && kotlin.math.abs(z) > DEGENERATE) {
-        "scale factors must be non-zero, was ($x, $y, $z)"
+    require(
+        x.isFinite() && y.isFinite() && z.isFinite() &&
+            kotlin.math.abs(x) > DEGENERATE && kotlin.math.abs(y) > DEGENERATE && kotlin.math.abs(z) > DEGENERATE,
+    ) {
+        "scale factors must be finite and non-zero, was ($x, $y, $z)"
     }
     identity(out)
     out[0] = x
@@ -78,6 +82,7 @@ public fun scale(x: Float, y: Float, z: Float, out: FloatArray = FloatArray(MATR
 
 /** Scene. Rotation around +X, column-major. */
 public fun rotationX(radians: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
+    require(radians.isFinite()) { "rotation angle must be finite" }
     identity(out)
     val cosine = cos(radians)
     val sine = sin(radians)
@@ -90,6 +95,7 @@ public fun rotationX(radians: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)
 
 /** Scene. Rotation around +Y, column-major. */
 public fun rotationY(radians: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
+    require(radians.isFinite()) { "rotation angle must be finite" }
     identity(out)
     val cosine = cos(radians)
     val sine = sin(radians)
@@ -102,6 +108,7 @@ public fun rotationY(radians: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)
 
 /** Scene. Rotation around +Z, column-major. */
 public fun rotationZ(radians: Float, out: FloatArray = FloatArray(MATRIX_FLOATS)): FloatArray {
+    require(radians.isFinite()) { "rotation angle must be finite" }
     identity(out)
     val cosine = cos(radians)
     val sine = sin(radians)

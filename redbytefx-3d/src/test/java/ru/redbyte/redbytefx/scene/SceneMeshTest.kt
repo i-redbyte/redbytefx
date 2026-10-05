@@ -1,12 +1,21 @@
 package ru.redbyte.redbytefx.scene
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
 import kotlin.math.hypot
 
 class SceneMeshTest {
+    @Test
+    fun identityArrayCannotCorruptLaterMatrices() {
+        val mutable = IDENTITY
+        mutable[0] = 9f
+        assertEquals(1f, IDENTITY[0], 0f)
+        assertEquals(1f, identity()[0], 0f)
+    }
+
     @Test
     fun primitivesSharePositionNormalAndUv() {
         val meshes = listOf(
@@ -35,6 +44,7 @@ class SceneMeshTest {
 
     @Test
     fun everyTriangleIsCounterClockwiseFromItsNormalSide() {
+        val concave = listOf(0f to 0f, 3f to 0f, 3f to 1f, 1f to 1f, 1f to 3f, 0f to 3f)
         val meshes = listOf(
             triangle(0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 0f),
             quad(2f, 1f),
@@ -43,6 +53,8 @@ class SceneMeshTest {
             torus(1f, 0.2f, majorSegments = 8, minorSegments = 6),
             disc(1f, 0.1f, segments = 8),
             extrudePolygon(listOf(0f to 0f, 1f to 0f, 0.2f to 0.8f), 0.1f),
+            extrudePolygon(concave, 0.1f),
+            extrudePolygon(concave.reversed() + concave.last(), 0.1f),
         )
         for (mesh in meshes) {
             val v = mesh.vertices
@@ -68,6 +80,51 @@ class SceneMeshTest {
                 corner += 3
             }
         }
+    }
+
+    @Test
+    fun concavePolygonCapsCoverExactlyTheOutline() {
+        val outline = listOf(0f to 0f, 3f to 0f, 3f to 1f, 1f to 1f, 1f to 3f, 0f to 3f)
+        for (corners in listOf(outline, outline.reversed())) {
+            val mesh = extrudePolygon(corners, 0.2f)
+            var frontArea = 0f
+            for (offset in mesh.indices.indices step 3) {
+                val a = mesh.indices[offset] * MESH_STRIDE
+                val b = mesh.indices[offset + 1] * MESH_STRIDE
+                val c = mesh.indices[offset + 2] * MESH_STRIDE
+                if (mesh.vertices[a + 5] != 1f) continue
+                frontArea += ((mesh.vertices[b] - mesh.vertices[a]) *
+                    (mesh.vertices[c + 1] - mesh.vertices[a + 1]) -
+                    (mesh.vertices[b + 1] - mesh.vertices[a + 1]) *
+                    (mesh.vertices[c] - mesh.vertices[a])) * 0.5f
+            }
+            assertEquals(5f, frontArea, 0.0001f)
+        }
+    }
+
+    @Test
+    fun polygonRejectsCollapsedOrNonFinitePoints() {
+        assertThrows(IllegalArgumentException::class.java) {
+            extrudePolygon(listOf(0f to 0f, 1f to 0f, 2f to 0f), 0.1f)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extrudePolygon(listOf(0f to 0f, Float.NaN to 0f, 0f to 1f), 0.1f)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extrudePolygon(listOf(0f to 0f, 3f to 3f, 0f to 4f, 4f to 0f, 4f to 4f), 0.1f)
+        }
+    }
+
+    @Test
+    fun primitivesRejectNonFiniteGeometryAndMergeRejectsBadIndices() {
+        assertThrows(IllegalArgumentException::class.java) { sphere(Float.POSITIVE_INFINITY) }
+        assertThrows(IllegalArgumentException::class.java) { quad(Float.NaN, 1f) }
+        assertThrows(IllegalArgumentException::class.java) { disc(1f, Float.POSITIVE_INFINITY) }
+        assertThrows(IllegalArgumentException::class.java) {
+            tubeAlong(circlePath(8), 0.1f, z = Float.NaN)
+        }
+        val bad = SceneMesh(FloatArray(3 * MESH_STRIDE), MESH_STRIDE, sceneMeshAttribs(), intArrayOf(0, 1, 3))
+        assertThrows(IllegalArgumentException::class.java) { merge(listOf(bad)) }
     }
 
     @Test

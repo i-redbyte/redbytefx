@@ -24,6 +24,13 @@ public fun triangle(
     cy: Float,
     cz: Float,
 ): SceneMesh {
+    require(
+        ax.isFinite() && ay.isFinite() && az.isFinite() &&
+            bx.isFinite() && by.isFinite() && bz.isFinite() &&
+            cx.isFinite() && cy.isFinite() && cz.isFinite(),
+    ) {
+        "triangle corners must be finite"
+    }
     val abx = bx - ax
     val aby = by - ay
     val abz = bz - az
@@ -34,7 +41,7 @@ public fun triangle(
     val ny = abz * acx - abx * acz
     val nz = abx * acy - aby * acx
     val length = sqrt(nx * nx + ny * ny + nz * nz)
-    require(length > DEGENERATE_AREA) { "triangle corners must not be collinear" }
+    require(length.isFinite() && length > DEGENERATE_AREA) { "triangle corners must not be collinear" }
     val builder = SceneBuilder(vertices = 3, indices = 3)
     val a = builder.vertex(ax, ay, az, nx / length, ny / length, nz / length, 0f, 0f)
     val b = builder.vertex(bx, by, bz, nx / length, ny / length, nz / length, 1f, 0f)
@@ -48,8 +55,8 @@ public fun triangle(
  * [width] and [height] are full edge lengths. Four vertices and six indices. UVs cover 0..1.
  */
 public fun quad(width: Float = 1f, height: Float = 1f): SceneMesh {
-    require(width > 0f) { "quad width must be positive, was $width" }
-    require(height > 0f) { "quad height must be positive, was $height" }
+    require(width.isFinite() && width > 0f) { "quad width must be finite and positive, was $width" }
+    require(height.isFinite() && height > 0f) { "quad height must be finite and positive, was $height" }
     val hx = width * 0.5f
     val hy = height * 0.5f
     val builder = SceneBuilder(vertices = 4, indices = 6)
@@ -76,8 +83,12 @@ public fun box(
     halfY: Float,
     halfZ: Float,
 ): SceneMesh {
-    require(halfX > 0f && halfY > 0f && halfZ > 0f) {
-        "box half extents must be positive, was ($halfX, $halfY, $halfZ)"
+    require(
+        centerX.isFinite() && centerY.isFinite() && centerZ.isFinite() &&
+            halfX.isFinite() && halfY.isFinite() && halfZ.isFinite() &&
+            halfX > 0f && halfY > 0f && halfZ > 0f,
+    ) {
+        "box center and half extents must be finite, with positive extents"
     }
     val x0 = centerX - halfX
     val x1 = centerX + halfX
@@ -103,7 +114,7 @@ public fun box(
  * are one triangle per slice, so the index count is `slices * (6 * stacks - 6)`.
  */
 public fun sphere(radius: Float, stacks: Int = 16, slices: Int = 24): SceneMesh {
-    require(radius > 0f) { "sphere radius must be positive, was $radius" }
+    require(radius.isFinite() && radius > 0f) { "sphere radius must be finite and positive, was $radius" }
     require(stacks >= 2) { "sphere stacks must be at least 2, was $stacks" }
     require(slices >= 3) { "sphere slices must be at least 3, was $slices" }
     val columns = slices + 1
@@ -147,8 +158,8 @@ public fun torus(
     majorSegments: Int = 32,
     minorSegments: Int = 16,
 ): SceneMesh {
-    require(major > 0f) { "torus major radius must be positive, was $major" }
-    require(minor > 0f) { "torus minor radius must be positive, was $minor" }
+    require(major.isFinite() && major > 0f) { "torus major radius must be finite and positive, was $major" }
+    require(minor.isFinite() && minor > 0f) { "torus minor radius must be finite and positive, was $minor" }
     require(majorSegments >= 3) { "torus major segments must be at least 3, was $majorSegments" }
     require(minorSegments >= 3) { "torus minor segments must be at least 3, was $minorSegments" }
     val columns = minorSegments + 1

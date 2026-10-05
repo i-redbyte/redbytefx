@@ -44,52 +44,73 @@ public fun tagUv(mesh: SceneMesh, u: Float, v: Float? = null): SceneMesh {
 /** Scene. Concatenates indexed triangle meshes that share [MESH_STRIDE]. */
 public fun merge(parts: List<SceneMesh>): SceneMesh {
     require(parts.isNotEmpty()) { "merge needs at least one mesh" }
-    val vertices = ArrayList<Float>()
-    val indices = ArrayList<Int>()
+    var vertexFloats = 0L
+    var indexCount = 0L
     for (part in parts) {
         require(part.stride == MESH_STRIDE) { "merge needs stride $MESH_STRIDE, was ${part.stride}" }
-        val base = vertices.size / MESH_STRIDE
-        for (value in part.vertices) vertices += value
-        for (index in part.indices) indices += index + base
+        require(part.vertices.size % MESH_STRIDE == 0) { "merge needs complete vertices" }
+        val vertexCount = part.vertices.size / MESH_STRIDE
+        require(part.indices.size % 3 == 0 && part.indices.all { it in 0 until vertexCount }) {
+            "merge needs triangle indices inside the vertex range"
+        }
+        vertexFloats += part.vertices.size
+        indexCount += part.indices.size
+    }
+    require(vertexFloats <= Int.MAX_VALUE && indexCount <= Int.MAX_VALUE) { "Merged mesh is too large" }
+    val vertices = FloatArray(vertexFloats.toInt())
+    val indices = IntArray(indexCount.toInt())
+    var vertexOffset = 0
+    var indexOffset = 0
+    for (part in parts) {
+        part.vertices.copyInto(vertices, vertexOffset)
+        val base = vertexOffset / MESH_STRIDE
+        for (index in part.indices) indices[indexOffset++] = index + base
+        vertexOffset += part.vertices.size
     }
     return SceneMesh(
-        vertices = vertices.toFloatArray(),
+        vertices = vertices,
         stride = MESH_STRIDE,
         attribs = sceneMeshAttribs(),
-        indices = indices.toIntArray(),
+        indices = indices,
     )
 }
 
 internal class MeshWriter {
-    private val vertices = ArrayList<Float>()
-    private val indices = ArrayList<Int>()
+    private var vertices = FloatArray(64)
+    private var indices = IntArray(96)
+    private var vertexFloats = 0
+    private var indexCount = 0
 
     fun vertex(x: Float, y: Float, z: Float, nx: Float, ny: Float, nz: Float, u: Float, v: Float): Int {
-        val id = vertices.size / MESH_STRIDE
-        vertices += x
-        vertices += y
-        vertices += z
-        vertices += nx
-        vertices += ny
-        vertices += nz
-        vertices += u
-        vertices += v
+        if (vertexFloats + MESH_STRIDE > vertices.size) vertices = vertices.copyOf(vertices.size * 2)
+        val id = vertexFloats / MESH_STRIDE
+        vertices[vertexFloats] = x
+        vertices[vertexFloats + 1] = y
+        vertices[vertexFloats + 2] = z
+        vertices[vertexFloats + 3] = nx
+        vertices[vertexFloats + 4] = ny
+        vertices[vertexFloats + 5] = nz
+        vertices[vertexFloats + 6] = u
+        vertices[vertexFloats + 7] = v
+        vertexFloats += MESH_STRIDE
         return id
     }
 
     fun tri(a: Int, b: Int, c: Int) {
-        indices += a
-        indices += b
-        indices += c
+        if (indexCount + 3 > indices.size) indices = indices.copyOf(indices.size * 2)
+        indices[indexCount] = a
+        indices[indexCount + 1] = b
+        indices[indexCount + 2] = c
+        indexCount += 3
     }
 
     fun mesh(): SceneMesh {
-        require(indices.isNotEmpty()) { "Mesh needs at least one triangle" }
+        require(indexCount > 0) { "Mesh needs at least one triangle" }
         return SceneMesh(
-            vertices = vertices.toFloatArray(),
+            vertices = vertices.copyOf(vertexFloats),
             stride = MESH_STRIDE,
             attribs = sceneMeshAttribs(),
-            indices = indices.toIntArray(),
+            indices = indices.copyOf(indexCount),
         )
     }
 }

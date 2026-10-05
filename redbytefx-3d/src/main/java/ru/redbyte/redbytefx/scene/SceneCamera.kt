@@ -10,14 +10,20 @@ private const val DEGENERATE: Float = 1.0e-8f
 public const val MATRIX_FLOATS: Int = 16
 
 /**
- * Scene. Column-major identity. The array is shared: copy it with [identity] before writing.
+ * Scene. Column-major identity. Each read returns a new array that callers may modify.
  */
-public val IDENTITY: FloatArray = floatArrayOf(
+public val IDENTITY: FloatArray get() = identityValues.copyOf()
+
+private val identityValues: FloatArray = floatArrayOf(
     1f, 0f, 0f, 0f,
     0f, 1f, 0f, 0f,
     0f, 0f, 1f, 0f,
     0f, 0f, 0f, 1f,
 )
+
+internal fun copyIdentityInto(out: FloatArray) {
+    identityValues.copyInto(out, endIndex = MATRIX_FLOATS)
+}
 
 /**
  * Scene. Right-handed view matrix, Y up, column-major, the same order as
