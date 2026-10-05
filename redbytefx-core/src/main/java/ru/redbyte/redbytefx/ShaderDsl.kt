@@ -390,6 +390,7 @@ public class ShaderDsl internal constructor(
         try {
             sink.stage = fragmentStatements
             fragmentBody = FragmentDsl(
+                target,
                 ::advance,
                 stageFunctions,
                 ::declareFragmentOut,
@@ -946,6 +947,8 @@ private fun isMedVec4(shape: Shape): Boolean =
  */
 @RedByteFxDsl
 public class FragmentDsl internal constructor(
+    /** Backend used to compile this fragment stage. */
+    public val target: ShaderTarget,
     private val advance: (AuthoringAction) -> Unit,
     private val functions: StageFunctions,
     private val declareOut: (String, Int) -> FragmentOutput,

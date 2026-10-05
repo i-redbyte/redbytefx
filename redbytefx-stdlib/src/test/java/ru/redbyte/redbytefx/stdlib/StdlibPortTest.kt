@@ -68,6 +68,25 @@ class StdlibPortTest {
     }
 
     @Test
+    fun topLeftUvFlipsOnlyGlesVerticalAxis() {
+        fun source(target: ShaderTarget) = shader(target) {
+            fragment {
+                val uv = topLeftUv()
+                vec4(uv.x, uv.y, 0f.lit, 1f.lit)
+            }
+        }.let { if (target == ShaderTarget.Agsl) it.agslSource() else it.fragmentSource() }
+
+        val agslMain = source(ShaderTarget.Agsl).substringAfter("half4 main(")
+        val glesMain = source(ShaderTarget.Gles30).substringAfter("void main(")
+        assertFalse(agslMain.contains("1.0 -"))
+        assertTrue(glesMain.contains("1.0 -"))
+        assertTrue(agslMain.contains("fragCoord"))
+        assertTrue(glesMain.contains("gl_FragCoord.xy"))
+        assertTrue(agslMain.contains("uResolution"))
+        assertTrue(glesMain.contains("uResolution"))
+    }
+
+    @Test
     fun screenFillAndStrokeUseFwidth() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {

@@ -3,15 +3,16 @@ package ru.redbyte.redbytefx.stdlib
 import ru.redbyte.redbytefx.*
 
 /**
- * Converts sample-space coordinates into normalized UV space.
+ * Converts sample-space coordinates into normalized UV space with the backend's native origin.
  *
  * This is a tiny canonical convenience helper around `fragCoord / resolution` for shaders that
  * want to stay in normalized coordinates for masks, gradients, and procedural math. Reach for it
  * when the shader really wants `[0,1]` UV space; otherwise staying in raw sample space with
  * `fragCoord` often keeps AGSL ports easier to read.
  *
- * Pairs with [sampleUv]: normalized coordinates → resample. Core `FragmentDsl.sample` stays in pixel
- * space.
+ * AGSL has a top-left origin and GLES has a bottom-left origin. Use [topLeftUv] when the same
+ * authored effect needs matching vertical orientation on both backends. Pairs with [sampleUv]
+ * on AGSL: normalized coordinates → resample. Core `FragmentDsl.sample` stays in pixel space.
  */
 public fun FragmentDsl.normalizedUv(
     coord: Expr<Vec2<Flt<High>>> = fragCoord,
@@ -19,6 +20,19 @@ public fun FragmentDsl.normalizedUv(
     max(resolution.x, 0.0001f),
     max(resolution.y, 0.0001f),
 )
+
+/**
+ * Returns normalized UV with `(0, 0)` at the top-left on AGSL and GLES.
+ *
+ * The GLES Y axis is flipped after normalization; AGSL already uses top-left coordinates.
+ * [coord] must use the current backend's native fragment-coordinate origin.
+ */
+public fun FragmentDsl.topLeftUv(
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
+): Expr<Vec2<Flt<High>>> {
+    val uv = normalizedUv(coord)
+    return if (target == ShaderTarget.Agsl) uv else float2(uv.x, 1f - uv.y)
+}
 
 /**
  * Samples Compose content from normalized UV coordinates. AGSL only.
