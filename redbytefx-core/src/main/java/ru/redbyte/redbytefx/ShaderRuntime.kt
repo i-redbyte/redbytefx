@@ -96,6 +96,10 @@ internal class ShaderRuntime(
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         val width = sanitizeResolution(widthPx)
         val height = sanitizeResolution(heightPx)
+        val handle = program.resolution
+        if (handle != null) {
+            return set(handle, width, height)
+        }
         val previousWidth = resolutionWidth
         val previousHeight = resolutionHeight
         if (

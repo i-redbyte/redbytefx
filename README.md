@@ -2,13 +2,13 @@
 
 # RedByteFX
 
-**RedByteFX** is a Kotlin DSL with two surfaces on one typed shader algebra. An **effect** is a fragment shader: Android AGSL on API 33+, the short path through `redbyteFx`. A **scene** is a mesh on OpenGL ES from API 24: vertex and fragment stages, buffers, textures, and draws. The same algebra also compiles to OpenGL ES 3.1 compute and OpenGL ES 3.2 geometry and tessellation.
+**RedByteFX** is a Kotlin DSL with two surfaces on one typed shader algebra. An **effect** is a fragment shader: Android AGSL on API 33+, or GLES from API 24, both on the short `redbyteFx` path. A **scene** is a mesh on OpenGL ES from API 24: vertex and fragment stages, buffers, textures, and draws. The same algebra also compiles to OpenGL ES 3.1 compute and OpenGL ES 3.2 geometry and tessellation.
 
 Authoring is Kotlin, not a shader string. The compiler emits the text the platform actually runs:
 
 `shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, a GLES 3.0 program, a GLES 3.1 compute program, or a GLES 3.2 program`
 
-**Platform:** library `minSdk` is **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) needs **API 33+** (`RuntimeShader`); below that, runtime calls throw `AgslNotSupportedException` and Android Studio warns via `@RequiresApi`. **OpenGL ES** scenes work from API 24 through `redbytefx-gl` and `redbytefx-gl-compose` (`GlSurface`). GLES output is GLSL ES 3.00, 3.10 compute, or 3.20 with geometry and tessellation. API reference: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
+**Platform:** library `minSdk` is **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `Modifier.redbyteFx`) needs **API 33+** (`RuntimeShader`); below that, runtime calls throw `AgslNotSupportedException` and Android Studio warns via `@RequiresApi`. **OpenGL ES** works from API 24 through `redbytefx-gl` and `redbytefx-gl-compose`: scenes use `GlSurface`; fragment-only effects use GLES `redbyteFx`. GLES output is GLSL ES 3.00, 3.10 compute, or 3.20 with geometry and tessellation. API reference: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
 ## What you write
 
@@ -46,15 +46,13 @@ val crate = shader(ShaderTarget.Gles30) {
 }
 ```
 
-OpenGL ES 3.0 needs both stages. Varyings written in the vertex stage are read in the fragment stage. Inspect them with `vertexSource()` and `fragmentSource()`.
+A GLES **scene** needs both stages. Varyings written in the vertex stage are read in the fragment stage. Inspect them with `vertexSource()` and `fragmentSource()`.
+
+A GLES **effect** may omit `vertex { }`. The compiler injects a fullscreen triangle whose attribute is spelled `a_corner` (the same layout as `screenMesh`). Pair that program with GLES `redbyteFx`. Geometry or tessellation still needs an explicit vertex stage.
 
 ```kotlin
 val pulse = shader(ShaderTarget.Gles30) {
     val time = uniformTime()
-    vertex {
-        val position = attributeVec2("position")
-        glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
-    }
     fragment {
         val wave = sin(time.expr)
         vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
@@ -97,7 +95,7 @@ val patch = shader(ShaderTarget.Gles32) {
 
 A varying written by the vertex and read by the fragment is declared on every stage between them: vertex, tessellation control, tessellation evaluation, geometry, then fragment. Missing stages are skipped. At each boundary the previous stage's `out` matches the next stage's `in` by name, type, and precision. When geometry or tessellation is present, those declarations are members of one interface block named `rb_pipe`. Every stage of that program lists the same members: varyings the vertex wrote and that the fragment or an intermediate stage reads, in declaration order. A varying that is declared and never written stays out of the block. Tessellation control copies `tc_in[gl_InvocationID]` to `tc_out[gl_InvocationID]`. Geometry copies the input vertex just written to `gl_Position`: one `gl_in[k]` in that position, including a `repeat` index, becomes `gs_in[k]` immediately before that `EmitVertex`. The same copy applies when that `gl_Position` was written before the `repeat` or `whenTrue` that emits, and it is not reused after an emit that already consumed it. Several indices, or a position that does not read `gl_in` while the varying is still unwritten, is an error whose message asks for `varying.set` before that emit. A `varying.set` between that `gl_Position` and the emit replaces the copy of that varying for that emit only. Tessellation evaluation interpolates with `gl_TessCoord` when the stage does not write the varying. One input vertex is copied from `te_in[0]`. Triangles weight the three patch vertices by `gl_TessCoord`. Isolines `mix` the two vertices by `gl_TessCoord.x`. Quads use a bilinear `mix` of corners `(0,0)`, `(1,0)`, `(1,1)`, and `(0,1)` by `gl_TessCoord.xy`. An explicit write replaces that interpolation. A stage that has `rb_pipe` and writes `gl_Position` redeclares `gl_PerVertex` with only `vec4 gl_Position` before the block. A uniform read in geometry or tessellation is declared in that stage. `glIn(index)` and `varying.at(index)` accept dynamic `int` expressions; only compile-time constant indices are bounds-checked against the input patch.
 
-`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The OpenGL list covers buffers and indexed draws, textures and mipmaps, lighting, instancing, render-to-texture, a **Lit mesh** scene (`litTexturedMesh`, `setLitModel`), geometry, tessellation, and small games. **Planet** can use a gallery photo (runtime read permission on API 28 and below; system photo picker on API 33+). The sample UI is English or Russian from the device locale. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
+`Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. GLES `redbyteFx` is a different symbol in `ru.redbyte.redbytefx.gl.compose`: import one per file. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The OpenGL list covers a fragment-only **Effect** (`redbyteFx`, stdlib SDF), buffers and indexed draws, textures and mipmaps, lighting, instancing, render-to-texture, a **Lit mesh** scene (`litTexturedMesh`, `setLitModel`), geometry, tessellation, and small games. **Planet** can use a gallery photo (runtime read permission on API 28 and below; system photo picker on API 33+). The sample UI is English or Russian from the device locale. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
 
 ## Install
 
@@ -116,9 +114,9 @@ dependencies {
 |----------|------|
 | `redbytefx-core` | `shader`, `Expr`, uniforms, AGSL, GLSL ES 3.00, GLSL ES 3.10 compute, and GLSL ES 3.20 spelling |
 | `redbytefx-gl` | GLES 3.0, 3.1, and 3.2 link, uniform and matrix writes, cube and 2D binds, compute `dispatch`, and storage uploads, bound to the EGL thread |
-| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame`, and mesh helpers for a GLES scene in Compose |
+| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame`, mesh helpers, and GLES `redbyteFx` for a fragment-only effect |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` for AGSL |
-| `redbytefx-stdlib` | Effect recipes: coordinates, masks, compositing, SDF, and `lambert` |
+| `redbytefx-stdlib` | Effect recipes: coordinates, masks, compositing, 2D/3D SDF, lighting, color, noise |
 | `redbytefx-3d` | CPU scene data for meshes and cameras (`lookAt`, `perspective`, `ortho`). No OpenGL driver |
 
 ## Compose
@@ -144,13 +142,33 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 }
 ```
 
-`rememberFxController` owns one AGSL runtime. Use one controller per render target. `redbyteFx` writes the resolution from the draw size. `RuntimeShader` is touched on the UI thread.
+`rememberFxController` owns one AGSL runtime. Use one controller per render target. `Modifier.redbyteFx` writes `uResolution` from the draw size. `ShaderProgram.resolution` is always bound on AGSL. `RuntimeShader` is touched on the UI thread.
+
+A GLES effect uses the same fragment recipe from API 24. Omit `vertex { }`; the compiler injects a fullscreen triangle. `ru.redbyte.redbytefx.gl.compose.redbyteFx` draws it and writes `resolution`. It does not sample Compose content (`sample()` and `sampleUv()` stay AGSL-only).
+
+```kotlin
+val pulse = shader(ShaderTarget.Gles30) {
+    val time = uniformTime()
+    fragment {
+        val uv = aspectCenteredUv(normalizedUv(), resolution)
+        val fill = softFill(sdHexagon(uv, 0.3f))
+        vec4(fill, fill, fill, 1f.lit)
+    }
+}
+
+@Composable
+fun Pulse(program: ShaderProgram, time: HighFloatUniform) {
+    val fx = rememberGlController(program)
+    fx.bindTime(time)
+    redbyteFx(fx, Modifier.fillMaxSize())
+}
+```
 
 ## Authoring
 
 Stages are a small state machine. Uniforms, samplers, and varyings are declared on the program. `fragment { }` and `vertex { }` emit shader code. `vertex` exists for `ShaderTarget.Gles30` and `ShaderTarget.Gles32`. `geometry`, `tessControl`, and `tessEval` exist for `ShaderTarget.Gles32`. `compute` exists for `ShaderTarget.Gles31`.
 
-- `fragCoord` is a fragment input in pixels, including inside a fragment `fn`. AGSL spells `fragCoord`. GLES spells `gl_FragCoord.xy`. `resolution` is an AGSL fragment input in pixels; GLES rejects it.
+- `fragCoord` is a fragment input in pixels, including inside a fragment `fn`. AGSL spells `fragCoord`. GLES spells `gl_FragCoord.xy`. `resolution` is `uResolution` on AGSL and GLES; Compose writes it from the draw size. The name `uResolution` is reserved: declare `resolution` by reading `FragmentDsl.resolution`, not with `uniform("uResolution", …)`.
 - `sample()` reads the child shader. It is legal in an AGSL fragment, including inside a fragment `fn` via `this@fragment.sample()`. Other stages reject it.
 - `texture(sampler, uv)` is legal in a GLES fragment, including inside a fragment `fn` via `this@fragment.texture()`. Other stages reject it.
 - `attributeVec2`, `attributeVec3`, `attributeVec4`, and `glPosition` are legal in a GLES vertex. `glPosition` is also legal in geometry and tessellation evaluation.
@@ -177,7 +195,7 @@ Scalar floats of one precision support `+`, `-`, `*`, `/`. Vectors support vecto
 
 Math that spells the same call in both languages includes `sin`, `cos`, `tan`, `sign`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`, `reflect`, `transpose`, and `distance` for `vec2` and `vec3`. `sqrt` is the GLSL call and does not replace a negative argument.
 
-`redbytefx-stdlib` adds coordinate and compositing recipes on the same `fragment` receiver: `normalizedUv`, `sampleUv`, `centeredUv`, masks, reveals, blend helpers, and SDF helpers such as `sdCircle` and `softFill`. `softFill` and `stroke` still take the pen width from the caller. `softFillScreen(distance)` and `strokeScreen(distance, width)` take the edge width from `fwidth(distance)` and are legal only in a fragment.
+`redbytefx-stdlib` adds coordinate and compositing recipes on the same `fragment` receiver: `normalizedUv`, `sampleUv` (AGSL only), `centeredUv`, `aspectCenteredUv`, `rotate2d`, masks, reveals, blend helpers, and SDF helpers such as `sdCircle`, `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, and `softFill`. 3D distances include `sdCylinder` and `sdOctahedron`; lighting/color extras include `fresnel`, `phong`, `hueShift`, and `filmicTonemap`. `softFill` and `stroke` still take the pen width from the caller. `softFillScreen(distance)` and `strokeScreen(distance, width)` take the edge width from `fwidth(distance)` and are legal only in a fragment.
 
 ## Runtime
 
@@ -191,7 +209,7 @@ The compiler does not emit GLES 2.0 or desktop GL. It does not emit `while`, rec
 
 ## Releases
 
-Published artifacts: `io.github.i-redbyte:redbytefx-*`. Version **1.1.0** is defined in [gradle.properties](gradle.properties). See [docs/changelog.md](docs/changelog.md).
+Published artifacts: `io.github.i-redbyte:redbytefx-*`. Version **1.1.0** is defined in [gradle.properties](gradle.properties). See [docs/changelog.md](docs/changelog.md) ([Русский](docs/changelog.ru.md)).
 
 To publish to Maven Central (maintainers):
 
@@ -203,7 +221,7 @@ Requires Sonatype Central Portal credentials (`mavenCentralUsername`, `mavenCent
 
 ## Contributing
 
-Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt with JetBrains official Kotlin style (`kotlin.code.style=official`, `detekt-formatting`). Reformat with `./gradlew detekt -PdetektAutoCorrect=true`. Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
+Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt with JetBrains official Kotlin style (`kotlin.code.style=official`, `detekt-formatting`). Reformat with `./gradlew detekt -PdetektAutoCorrect=true`. A pre-commit hook in `githooks/` runs `./gradlew detekt` on every commit (installed into `.git/hooks` by Gradle, or `./gradlew installGitHooks`). Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
 
 API site locally: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI publishes to `https://i-redbyte.github.io/redbytefx/` on push to **`master`/`main`**; other branches only verify the build. See [docs/github-pages.md](docs/github-pages.md).
 

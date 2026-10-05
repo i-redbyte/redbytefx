@@ -13,6 +13,35 @@ public fun hash21(point: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> =
     fract(sin(point.x * 127.1f + point.y * 311.7f) * 43758.5453f)
 
 /**
+ * Two-channel hash in `[0, 1)` from a `float2` cell.
+ */
+public fun hash22(point: Expr<Vec2<Flt<High>>>): Expr<Vec2<Flt<High>>> {
+    val hashed = float2(
+        dot(point, float2(127.1f, 311.7f)),
+        dot(point, float2(269.5f, 183.3f)),
+    )
+    return fract(sin(hashed) * 43758.5453f)
+}
+
+/**
+ * Nearest-feature Voronoi distance in `[0, ~1.5]` from a `float2` domain.
+ */
+public fun voronoi(point: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> {
+    val cell = floor(point)
+    val local = fract(point)
+    var nearest = float(8f)
+    for (gy in -1..1) {
+        for (gx in -1..1) {
+            val offset = float2(gx.toFloat(), gy.toFloat())
+            val random = hash22(cell + offset)
+            val delta = offset + random - local
+            nearest = min(nearest, dot(delta, delta))
+        }
+    }
+    return sqrt(nearest)
+}
+
+/**
  * Computes value noise from a `float2` position.
  *
  * The returned value is smoothly interpolated in the `[0, 1]` range. This is useful when a shader

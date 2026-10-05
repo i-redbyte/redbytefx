@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -45,6 +46,8 @@ class AgslShaderTest {
         val agsl = program.agslSource()
         assertTrue(agsl.contains("uniform shader uContent;"))
         assertTrue(agsl.contains("uniform float2 uResolution;"))
+        assertEquals(1, agsl.split("uniform float2 uResolution").size - 1)
+        assertNotNull(program.resolution)
         assertTrue(agsl.contains("uniform float u_amount;"))
         assertEquals(1, agsl.split("float2 shifted").size - 1)
         assertTrue(agsl.contains("float2 shifted = (fragCoord + float2(u_amount, 0.0));"))
@@ -113,6 +116,7 @@ class AgslShaderTest {
         assertFalse(runtime.setResolution(1f, 3f))
         assertEquals(1f, writer.float2Values("uResolution").last().first)
         assertEquals(3f, writer.float2Values("uResolution").last().second)
+        assertNotNull(program.resolution)
     }
 
     @Test

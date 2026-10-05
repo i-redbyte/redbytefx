@@ -40,12 +40,11 @@ class CompositionRulesTest {
         assertTrue(fragment.contains("distance(vec2(0.0, 0.0), vec2(3.0, 4.0))"))
         assertTrue(fragment.contains("(!(2 > 1))"))
 
-        val rejected = assertThrows(AuthoringException::class.java) {
-            shader(ShaderTarget.Gles30) {
-                vertex { glPosition(attributeVec4("position")) }
-                fragment { vec4(resolution.x, 0f.lit, 0f.lit, 1f.lit) }
-            }
+        val sized = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(resolution.x, 0f.lit, 0f.lit, 1f.lit) }
         }
-        assertEquals(AuthoringCode.ResolutionOnGles, rejected.code)
+        assertTrue(sized.fragmentSource().contains("uResolution"))
+        assertEquals("uResolution", sized.spelledUniforms().single { it.name == "uResolution" }.name)
     }
 }

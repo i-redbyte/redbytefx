@@ -13,6 +13,7 @@ import ru.redbyte.redbytefx.float3
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.scale
 import ru.redbyte.redbytefx.shader
+import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.x
@@ -206,5 +207,26 @@ class StdlibPortTest {
         }.fragmentSource()
         assertTrue(wrapped.contains("max("))
         assertTrue(wrapped.contains("0.25"))
+    }
+
+    @Test
+    fun glesEffectRecipesCompileWithoutAVertexStage() {
+        val source = shader(ShaderTarget.Gles30) {
+            fragment {
+                val uv = aspectCenteredUv(normalizedUv(), resolution)
+                val p = rotate2d(uv, 0.4f)
+                val hex = sdHexagon(p, 0.3f)
+                val tri = sdEquilateralTriangle(p, 0.2f)
+                val body = opRound(sdfSmoothSubtract(hex, tri, 0.08f), 0.02f)
+                val shade = fresnel(float3(0f, 1f, 0f), float3(0f, 0f, 1f), 4f)
+                val rgb = filmicTonemap(hueShift(cosinePalette(voronoi(uv)), 0.2f))
+                vec4(rgb.x * softFill(body) * shade, rgb.y, rgb.z, 1f.lit)
+            }
+        }
+        assertTrue(source.vertexSource().contains("a_corner"))
+        val fragment = source.fragmentSource()
+        assertTrue(fragment.contains("uResolution"))
+        assertTrue(fragment.contains("cos("))
+        assertTrue(fragment.contains("pow("))
     }
 }

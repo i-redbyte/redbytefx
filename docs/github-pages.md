@@ -17,6 +17,7 @@ This is a **project** site:
 | Index | `https://i-redbyte.github.io/redbytefx/` |
 | Module API | `https://i-redbyte.github.io/redbytefx/redbytefx-core/…` |
 | Guides | `https://i-redbyte.github.io/redbytefx/docs/language-reference.md` |
+| Changelog | `https://i-redbyte.github.io/redbytefx/docs/changelog.md` · [RU](https://i-redbyte.github.io/redbytefx/docs/changelog.ru.md) |
 
 ## Source links in Dokka
 

@@ -231,9 +231,13 @@ public class GlFrame internal constructor(
         seconds: Float,
         aspect: Float,
         upload: (FloatArray) -> Unit,
+        widthPx: Float = 1f,
+        heightPx: Float = 1f,
     ) : this(runtime, { vertices, _ -> upload(vertices) }, null, null) {
         this.seconds = seconds
         this.aspect = aspect
+        this.widthPx = widthPx
+        this.heightPx = heightPx
     }
 
     private var surfaceVertices: Int = surfaceMesh?.let { it.vertices.size / it.stride } ?: 0
@@ -245,6 +249,14 @@ public class GlFrame internal constructor(
 
     /** Surface width divided by height. */
     public var aspect: Float = 1f
+        internal set
+
+    /** Drawable width in pixels. Written each frame before [GlSurface]'s `onFrame`. */
+    public var widthPx: Float = 1f
+        internal set
+
+    /** Drawable height in pixels. Written each frame before [GlSurface]'s `onFrame`. */
+    public var heightPx: Float = 1f
         internal set
 
     /** Offscreen target when the surface renders to a texture; null otherwise. */

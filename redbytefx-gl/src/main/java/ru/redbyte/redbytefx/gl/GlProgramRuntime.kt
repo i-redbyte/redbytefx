@@ -194,6 +194,17 @@ public class GlProgramRuntime(
         samplers.rebindDisturbed()
     }
 
+    /**
+     * Writes `uResolution` from pixel width and height when the fragment reads `resolution`.
+     * No-op when that uniform is not on this program.
+     */
+    public fun setResolution(widthPx: Float, heightPx: Float): Boolean {
+        val uniform = program.resolution ?: return false
+        val width = if (widthPx > 0f) widthPx else 1f
+        val height = if (heightPx > 0f) heightPx else 1f
+        return set(uniform, width, height)
+    }
+
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = writeScalar(uniform, value)
 
     @JvmName("setMedFloat")

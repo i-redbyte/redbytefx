@@ -135,9 +135,11 @@ class GlFramePlanTest {
     fun theReleasedConstructorForwardsVerticesAndNeedsAnExplicitMesh() {
         var uploaded: FloatArray? = null
         val vertices = FloatArray(6)
-        val frame = GlFrame(runtime(), 2f, 1.5f) { uploaded = it }
+        val frame = GlFrame(runtime(), 2f, 1.5f, { uploaded = it }, 320f, 180f)
         assertEquals(2f, frame.seconds)
         assertEquals(1.5f, frame.aspect)
+        assertEquals(320f, frame.widthPx)
+        assertEquals(180f, frame.heightPx)
         frame.replace(vertices)
         assertSame(vertices, uploaded)
         assertThrows(IllegalArgumentException::class.java) { frame.draw() }

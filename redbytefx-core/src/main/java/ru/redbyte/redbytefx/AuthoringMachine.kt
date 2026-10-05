@@ -115,7 +115,6 @@ internal enum class AuthoringCode {
     DiscardOutsideFragment,
     DerivativeOutsideFragment,
     FragCoordOutsideFragment,
-    ResolutionOnGles,
     ResolutionOutsideFragment,
     SharedOutsideCompute,
     BarrierOutsideCompute,
@@ -353,11 +352,7 @@ private fun allow(state: AuthoringState, legal: Boolean, code: AuthoringCode): A
     if (legal) accept(state) else reject(state, code)
 
 private fun fragmentBuiltin(state: AuthoringState, action: AuthoringAction): AuthoringStep =
-    if (action == AuthoringAction.Resolution && state.target != ShaderTarget.Agsl) {
-        reject(state, AuthoringCode.ResolutionOnGles)
-    } else {
-        allow(state, fragmentOnly(state), fragmentBuiltinCode(action))
-    }
+    allow(state, fragmentOnly(state), fragmentBuiltinCode(action))
 
 private fun fragmentBuiltinCode(action: AuthoringAction): AuthoringCode = when (action) {
     AuthoringAction.Discard -> AuthoringCode.DiscardOutsideFragment
@@ -406,7 +401,7 @@ private fun authoringFallback(action: AuthoringAction): AuthoringCode = when (ac
     AuthoringAction.Derivative -> AuthoringCode.DerivativeOutsideFragment
     AuthoringAction.Discard -> AuthoringCode.DiscardOutsideFragment
     AuthoringAction.FragCoord -> AuthoringCode.FragCoordOutsideFragment
-    AuthoringAction.Resolution -> AuthoringCode.ResolutionOnGles
+    AuthoringAction.Resolution -> AuthoringCode.ResolutionOutsideFragment
     AuthoringAction.DeclareShared -> AuthoringCode.SharedOutsideCompute
     AuthoringAction.Barrier -> AuthoringCode.BarrierOutsideCompute
     else -> AuthoringCode.RepeatOutsideStage

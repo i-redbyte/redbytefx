@@ -21,12 +21,11 @@ public fun FragmentDsl.normalizedUv(
 )
 
 /**
- * Samples the input content from normalized UV coordinates.
+ * Samples Compose content from normalized UV coordinates. AGSL only.
  *
- * This is the inverse convenience of [normalizedUv] and expands to `sample(uv * resolution)`.
- * Prefer plain `sample(...)` when the shader is already operating in pixel/sample coordinates, or
- * when normalized UV is only used for masks/gradients while the actual content read still happens
- * at `fragCoord`.
+ * This is the inverse of [normalizedUv] and expands to `sample(uv * resolution)`. Core
+ * [FragmentDsl.sample] is illegal on GLES, so this helper cannot be used in a GLES fragment.
+ * Prefer plain `sample(...)` when the shader is already in pixel coordinates.
  *
  * Do not pass pixel coordinates or `fragCoord` here - use core `sample(...)` instead.
  */
@@ -241,3 +240,46 @@ public fun wrapLambert(
     light: Expr<Vec3<Flt<High>>>,
     floor: Float,
 ): Expr<Flt<High>> = wrapLambert(normal, light, float(floor))
+
+/**
+ * Schlick-style rim: `(1 - n·v)^power`. [normal] and [view] are normalized inside the call.
+ */
+public fun fresnel(
+    normal: Expr<Vec3<Flt<High>>>,
+    view: Expr<Vec3<Flt<High>>>,
+    power: Expr<Flt<High>> = float(5f),
+): Expr<Flt<High>> {
+    val facing = saturate(dot(normalize(normal), normalize(view)))
+    return pow(1f - facing, max(power, 0.0001f))
+}
+
+/** [fresnel] with a literal [power]. */
+public fun fresnel(
+    normal: Expr<Vec3<Flt<High>>>,
+    view: Expr<Vec3<Flt<High>>>,
+    power: Float,
+): Expr<Flt<High>> = fresnel(normal, view, float(power))
+
+/**
+ * Blinn-Phong specular weight. [normal], [light], and [view] are normalized inside the call.
+ */
+public fun phong(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+    view: Expr<Vec3<Flt<High>>>,
+    shininess: Expr<Flt<High>> = float(32f),
+): Expr<Flt<High>> {
+    val n = normalize(normal)
+    val l = normalize(light)
+    val v = normalize(view)
+    val h = normalize(l + v)
+    return pow(max(dot(n, h), 0f), max(shininess, 0.0001f))
+}
+
+/** [phong] with a literal [shininess]. */
+public fun phong(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+    view: Expr<Vec3<Flt<High>>>,
+    shininess: Float,
+): Expr<Flt<High>> = phong(normal, light, view, float(shininess))

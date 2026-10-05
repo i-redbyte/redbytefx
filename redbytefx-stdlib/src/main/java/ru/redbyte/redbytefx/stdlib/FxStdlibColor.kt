@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx.stdlib
 
 import ru.redbyte.redbytefx.*
+import kotlin.jvm.JvmName
 
 private fun blendAmount(amount: Expr<Flt<High>>): Expr<Flt<High>> = saturate(amount)
 
@@ -123,3 +124,61 @@ public fun blendOverlay(
     blend: Expr<Vec4<Flt<Med>>>,
     amount: Float,
 ): Expr<Vec4<Flt<Med>>> = blendOverlay(base, blend, float(amount))
+
+/**
+ * Rodrigues hue rotation of [rgb] around the `(1,1,1)` axis by [amount] radians.
+ */
+public fun hueShift(
+    rgb: Expr<Vec3<Flt<High>>>,
+    amount: Expr<Flt<High>>,
+): Expr<Vec3<Flt<High>>> {
+    val axis = float3(0.57735026f, 0.57735026f, 0.57735026f)
+    val c = cos(amount)
+    val s = sin(amount)
+    return rgb * c + cross(axis, rgb) * s + axis * dot(axis, rgb) * (1f - c)
+}
+
+/** [hueShift] with a literal angle in radians. */
+public fun hueShift(
+    rgb: Expr<Vec3<Flt<High>>>,
+    amount: Float,
+): Expr<Vec3<Flt<High>>> = hueShift(rgb, float(amount))
+
+/** Hue-rotates RGB of [color] and keeps alpha. */
+@JvmName("hueShiftColor")
+public fun hueShift(
+    color: Expr<Vec4<Flt<Med>>>,
+    amount: Expr<Flt<High>>,
+): Expr<Vec4<Flt<Med>>> {
+    val rgb = hueShift(
+        float3(color.r.toHigh(), color.g.toHigh(), color.b.toHigh()),
+        amount,
+    )
+    return ru.redbyte.redbytefx.color(rgb.toMed(), color.a)
+}
+
+/** Hue-rotates [color] by a literal angle in radians. */
+@JvmName("hueShiftColorLiteral")
+public fun hueShift(
+    color: Expr<Vec4<Flt<Med>>>,
+    amount: Float,
+): Expr<Vec4<Flt<Med>>> = hueShift(color, float(amount))
+
+/**
+ * ACES fitted tonemap, then saturates to `[0, 1]`.
+ */
+public fun filmicTonemap(rgb: Expr<Vec3<Flt<High>>>): Expr<Vec3<Flt<High>>> {
+    val a = 2.51f
+    val b = 0.03f
+    val c = 2.43f
+    val d = 0.59f
+    val e = 0.14f
+    return saturate((rgb * (rgb * a + b)) / (rgb * (rgb * c + d) + e))
+}
+
+/** Tonemaps RGB of [color] and keeps alpha. */
+@JvmName("filmicTonemapColor")
+public fun filmicTonemap(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
+    val rgb = filmicTonemap(float3(color.r.toHigh(), color.g.toHigh(), color.b.toHigh()))
+    return ru.redbyte.redbytefx.color(rgb.toMed(), color.a)
+}

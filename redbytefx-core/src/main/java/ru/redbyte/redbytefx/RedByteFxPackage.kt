@@ -10,6 +10,6 @@
  * - AGSL: [newAgslInstance] or [ru.redbyte.redbytefx.compose.rememberFxController] +
  *   [ru.redbyte.redbytefx.compose.redbyteFx]
  * - GLES: [ru.redbyte.redbytefx.gl.GlProgramRuntime] or
- *   [ru.redbyte.redbytefx.gl.compose.GlSurface]
+ *   [ru.redbyte.redbytefx.gl.compose.GlSurface] / [ru.redbyte.redbytefx.gl.compose.redbyteFx]
  */
 package ru.redbyte.redbytefx

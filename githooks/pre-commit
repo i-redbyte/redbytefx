@@ -1,0 +1,8 @@
+#!/bin/sh
+# Fail the commit when detekt reports issues on main sources.
+# Bypass only with `git commit --no-verify` when you must.
+set -e
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+echo "pre-commit: ./gradlew detekt"
+./gradlew detekt --quiet

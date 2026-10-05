@@ -4,18 +4,6 @@ import ru.redbyte.redbytefx.*
 import kotlin.jvm.JvmName
 
 /**
- * Computes the normalized position of [value] inside the `[inputStart, inputEnd]` range.
- *
- * **Relation to [remap]:** [remap] is `mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))`.
- * Use [inverseLerp] for the raw `t` only; use [remap] when mapping into a destination range.
- *
- * The result is not clamped, so values outside the input range may produce values below `0` or
- * above `1`. Collapsed input ranges are undefined, just like the equivalent hand-written AGSL.
- * This is a small canonical support helper when a shader already has a clear numeric range model
- * and simply needs readable normalization math.
- */
-
-/**
  * Computes the normalized position of [value] inside the literal `[inputStart, inputEnd]` range.
  */
 public fun inverseLerp(
@@ -23,18 +11,6 @@ public fun inverseLerp(
     inputEnd: Float,
     value: Expr<Flt<High>>,
 ): Expr<Flt<High>> = inverseLerp(float(inputStart), float(inputEnd), value)
-
-/**
- * Remaps [value] from `[inputStart, inputEnd]` into `[outputStart, outputEnd]`.
- *
- * **Formula:** `mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))` - the only
- * canonical remapping path; literal overloads delegate here without a second formula.
- *
- * The interpolation amount is not clamped. Use [saturate] on the result when the output should
- * stay inside the destination range. This is the main canonical mapping helper in `stdlib`: it
- * turns raw numeric ranges into readable mask, blend, or motion intensities without inventing
- * ad-hoc inline math every time.
- */
 
 /**
  * Remaps [value] between two literal ranges.

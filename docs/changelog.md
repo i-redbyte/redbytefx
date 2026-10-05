@@ -2,6 +2,8 @@
 
 All notable changes to the published Maven artifacts (`io.github.i-redbyte:redbytefx-*`) are listed here.
 
+Русская версия: [changelog.ru.md](changelog.ru.md).
+
 ## 1.1.0 — 2026-04-04
 
 ### Platform and docs
@@ -19,6 +21,10 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - **`cosinePalette`**: saturates RGB to `[0, 1]`.
 - **`grain`**: folds time with `fract` before hashing.
 - **`wrapLambert`**: Lambert with an ambient floor.
+- **`resolution`**: legal on GLES as `uResolution`; Compose writes the view size. AGSL programs always bind `ShaderProgram.resolution` (the generated source already declared it). `uResolution` is reserved as an author uniform name.
+- **GLES fragment-only**: omit `vertex { }` and the compiler injects a fullscreen `a_corner` triangle. That attribute keeps the `a_corner` spelling even if a user `fn` reuses the identifier. Unused fragment functions that read `resolution` still bind `uResolution`.
+- SDF extras: `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, `sdCylinder`, `sdOctahedron`, `opRound`, `opOnion`, `sdfSmoothSubtract`, `sdfSmoothIntersect`, `rotate2d`.
+- Lighting/color extras: `fresnel`, `phong`, `hueShift`, `filmicTonemap`, `hash22`, `voronoi`.
 
 ### GLES and 3D
 
@@ -39,10 +45,12 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 ### Compose
 
 - **`redbyteFx`**: runtime invalidation uses `invalidateDraw()` instead of `View.postInvalidateOnAnimation()`.
+- GLES **`redbyteFx(controller)`**: fragment-only effect host with [screenMesh] and auto `uResolution`. `GlFrame`'s public constructor accepts pixel size; the present program also receives `setResolution`.
 - KDoc uses **program** consistently (not “effect”) for `ShaderProgram` ownership.
 
 ### Sample app
 
 - GLES **Lit mesh** demo (`litTexturedMesh`, `ortho`, `setLitModel`).
+- GLES **Effect** demo: fragment-only `redbyteFx`, `resolution`, stdlib SDF (`sdHexagon`, `rotate2d`).
 - Gallery **photo picker** on Planet with runtime permissions and system photo picker on API 33+.
 - Additional API showcases: `remap`, `sdSegment`, `bindInt`, negative `scale`.

@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
@@ -82,4 +83,26 @@ private const val NO_FRAME = Long.MIN_VALUE
 private class GlTimeBindingState {
     var elapsedSeconds: Float = 0f
     var lastFrameNanos: Long = NO_FRAME
+}
+
+/**
+ * GLES effect host. Same short path as AGSL [ru.redbyte.redbytefx.compose.redbyteFx]:
+ * fragment-only `shader(ShaderTarget.Gles30) { fragment { … } }`, [rememberGlController], then this
+ * composable. It draws a fullscreen triangle ([screenMesh]) and writes `resolution` from the view
+ * size. Unlike the AGSL modifier, it does not sample Compose content (`sample()` / `sampleUv()` stay
+ * AGSL-only). The two `redbyteFx` symbols live in different packages; import one per file.
+ */
+@Composable
+public fun redbyteFx(
+    controller: GlController,
+    modifier: Modifier = Modifier,
+    onFrame: (GlFrame) -> Unit = {},
+) {
+    val mesh = remember { screenMesh() }
+    GlSurface(
+        controller = controller,
+        mesh = mesh,
+        modifier = modifier,
+        onFrame = onFrame,
+    )
 }

@@ -28,7 +28,7 @@
  *
  * First-pass starter path in `stdlib`:
  *
- * - coordinates: [normalizedUv], [sampleUv], [centeredUv], [aspectCenteredUv]
+ * - coordinates: [normalizedUv], [sampleUv] (AGSL only), [centeredUv], [aspectCenteredUv]
  * - masks / reveal: [circleMask], [rectMask], [ringMask], [horizontalReveal],
  *   [verticalReveal], [radialReveal]
  * - compositing: [maskedMix], [alphaMask], [maskedScreen]
@@ -52,9 +52,12 @@
  * Prefer these **after** the canonical path is comfortable: distortion and noise
  * (`fbm`, `domainWarp`, `chromaticOffset`), frame/crop masks (`frameMask`, `cornerMask`),
  * procedural detail, palette remixing, and similar “extra visual” helpers.
- * Analytic 3D distances ([sdSphere], [sdBox3], [sdTorus], [sdCapsule], [sdTriangle]) and [rayMarch]
- * live here as expressions. Distances and [rayMarch] are the effect. A mesh does not belong in this module.
+ * Analytic 3D distances ([sdSphere], [sdBox3], [sdTorus], [sdCapsule], [sdCylinder],
+ * [sdOctahedron], [sdTriangle]) and [rayMarch] live here as expressions. Distances and [rayMarch]
+ * are the effect. A mesh does not belong in this module.
  * [sdBox] stays the 2D box; the 3D box is [sdBox3]. [sdTriangle] is unsigned.
+ * 2D extras: [sdHexagon], [sdRhombus], [sdEquilateralTriangle], [opRound], [opOnion], [rotate2d].
+ * Lighting extras: [fresnel], [phong]. Color extras: [hueShift], [filmicTonemap].
  *
  * ### Supporting utilities (not the teaching spine)
  *

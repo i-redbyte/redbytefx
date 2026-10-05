@@ -227,6 +227,29 @@ private fun dokkaEntryRedirect(title: String, page: String): String = """
     </html>
 """.trimIndent()
 
+private fun installGitHooks() {
+    val source = rootDir.resolve("githooks")
+    val gitDir = rootDir.resolve(".git")
+    if (!source.isDirectory || !gitDir.isDirectory) {
+        return
+    }
+    val destDir = gitDir.resolve("hooks")
+    destDir.mkdirs()
+    source.listFiles()?.filter { it.isFile }?.forEach { hook ->
+        val dest = destDir.resolve(hook.name)
+        hook.copyTo(dest, overwrite = true)
+        dest.setExecutable(true)
+    }
+}
+
+installGitHooks()
+
+tasks.register("installGitHooks") {
+    group = "verification"
+    description = "Copy githooks/ into .git/hooks so detekt runs before each commit."
+    doLast { installGitHooks() }
+}
+
 tasks.register("qualityCheck") {
     group = "verification"
     description = "Unit tests, sample compilation, and Detekt on main sources."

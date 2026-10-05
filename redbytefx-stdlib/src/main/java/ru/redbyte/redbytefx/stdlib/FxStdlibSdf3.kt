@@ -22,9 +22,11 @@ import ru.redbyte.redbytefx.lt
 import ru.redbyte.redbytefx.max
 import ru.redbyte.redbytefx.min
 import ru.redbyte.redbytefx.minus
+import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.normalize
 import ru.redbyte.redbytefx.or
 import ru.redbyte.redbytefx.plus
+import ru.redbyte.redbytefx.saturate
 import ru.redbyte.redbytefx.sqrt
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.unaryMinus
@@ -182,6 +184,75 @@ public fun smoothMin(
 /** Polynomial smooth minimum with a literal blend radius [k]. */
 public fun smoothMin(a: Expr<Flt<High>>, b: Expr<Flt<High>>, k: Float): Expr<Flt<High>> =
     smoothMin(a, b, float(k))
+
+/**
+ * Smooth [sdfSubtract]: [cut] is removed from [shape] with blend radius [k].
+ */
+public fun sdfSmoothSubtract(
+    shape: Expr<Flt<High>>,
+    cut: Expr<Flt<High>>,
+    k: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val safeK = max(k, 0.0001f)
+    val h = saturate(0.5f - (shape + cut) * 0.5f / safeK)
+    return mix(shape, -cut, h) + safeK * h * (1f - h)
+}
+
+/** Smooth [sdfSubtract] with a literal blend radius [k]. */
+public fun sdfSmoothSubtract(
+    shape: Expr<Flt<High>>,
+    cut: Expr<Flt<High>>,
+    k: Float,
+): Expr<Flt<High>> = sdfSmoothSubtract(shape, cut, float(k))
+
+/** Smooth [sdfIntersect] with blend radius [k]. */
+public fun sdfSmoothIntersect(
+    a: Expr<Flt<High>>,
+    b: Expr<Flt<High>>,
+    k: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val safeK = max(k, 0.0001f)
+    val h = saturate(0.5f - (b - a) * 0.5f / safeK)
+    return mix(b, a, h) + safeK * h * (1f - h)
+}
+
+/** Smooth [sdfIntersect] with a literal blend radius [k]. */
+public fun sdfSmoothIntersect(
+    a: Expr<Flt<High>>,
+    b: Expr<Flt<High>>,
+    k: Float,
+): Expr<Flt<High>> = sdfSmoothIntersect(a, b, float(k))
+
+/**
+ * Signed distance from [point] to an infinite cylinder along Y of [radius].
+ */
+public fun sdCylinder(
+    point: Expr<Vec3<Flt<High>>>,
+    radius: Expr<Flt<High>>,
+): Expr<Flt<High>> = length(point.xz) - max(radius, 0f)
+
+/** Signed distance from [point] to an infinite Y cylinder with a literal [radius]. */
+public fun sdCylinder(
+    point: Expr<Vec3<Flt<High>>>,
+    radius: Float,
+): Expr<Flt<High>> = sdCylinder(point, float(radius))
+
+/**
+ * Signed distance from [point] to a regular octahedron of [size] (half extent along each axis).
+ */
+public fun sdOctahedron(
+    point: Expr<Vec3<Flt<High>>>,
+    size: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val p = abs(point)
+    return (p.x + p.y + p.z - max(size, 0f)) * 0.57735026f
+}
+
+/** Signed distance from [point] to an octahedron with a literal [size]. */
+public fun sdOctahedron(
+    point: Expr<Vec3<Flt<High>>>,
+    size: Float,
+): Expr<Flt<High>> = sdOctahedron(point, float(size))
 
 /**
  * Sphere-traces [scene] from [origin] along [direction].

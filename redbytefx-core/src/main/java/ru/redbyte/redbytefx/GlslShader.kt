@@ -31,10 +31,14 @@ internal fun linkGlsl(
     val tessControl = stages.tessControl
     val tessEval = stages.tessEval
     val bindings = uniforms.map { uniform ->
-        UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
+        UniformBinding(uniform, spelledUniformName(uniform.name, names))
     }
     val attributeNames = attributes.associateWith { attribute ->
-        names.reserve(sanitizeIdentifier(attribute.name, "a_"))
+        if (attribute.name == "corner") {
+            RB_SCREEN_CORNER_ATTRIB
+        } else {
+            names.reserve(sanitizeIdentifier(attribute.name, "a_"))
+        }
     }
     val varyingNames = varyings.associateWith { varying ->
         names.reserve(sanitizeIdentifier(varying.name, "v_"))
@@ -94,6 +98,7 @@ internal fun linkGlsl(
     collectUniforms(fragmentBody, fragmentUniforms)
     fragmentWrites.forEach { collectUniforms(it.value, fragmentUniforms) }
     commandExprs(fragmentStatements).forEach { collectUniforms(it, fragmentUniforms) }
+    bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.let { fragmentUniforms += it.uniform }
     val vertexExtra = spellCommands(
         vertexStatements,
         vertexEmitter,
@@ -269,6 +274,14 @@ private fun referencedMembers(roots: List<Expr<*>>): Set<BlockMember> {
         }
     }
     return found
+}
+
+internal fun exprUsesResolution(expr: Expr<*>): Boolean {
+    var used = false
+    walk(expr, linkedSetOf()) { node ->
+        if (node == ExprNode.Resolution) used = true
+    }
+    return used
 }
 
 internal fun collectVaryings(expr: Expr<*>, into: MutableSet<Varying<*>>) {
@@ -500,7 +513,7 @@ private class GlslEmitter(
             "${node.function.name}($args)"
         }
         ExprNode.FragCoord -> "gl_FragCoord.xy"
-        ExprNode.Resolution -> throw AuthoringException(AuthoringCode.ResolutionOnGles)
+        ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample,
         is ExprNode.UnclampedSample,
         -> error("GLSL stage cannot spell ${node::class.simpleName}")
@@ -1184,4 +1197,6 @@ internal fun glslReservedNames(): Set<String> = buildSet {
     add("gl_Position")
     add("oColor")
     add("texture")
+    add(RB_RESOLUTION_UNIFORM)
+    add(RB_SCREEN_CORNER_ATTRIB)
 }

@@ -16,6 +16,11 @@ internal fun sanitizeIdentifier(raw: String, prefix: String): String {
     return if (normalized.startsWith(prefix)) normalized else prefix + normalized
 }
 
+internal fun spelledUniformName(name: String?, names: IdentifierAllocator): String {
+    if (name == RB_RESOLUTION_UNIFORM) return RB_RESOLUTION_UNIFORM
+    return names.reserve(sanitizeIdentifier(name ?: "value", "u_"))
+}
+
 internal fun sanitizeSuggestedIdentifier(raw: String, leadingDigitPrefix: String): String {
     val cleaned = buildString {
         raw.forEachIndexed { index, ch ->

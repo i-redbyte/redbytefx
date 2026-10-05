@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.sample.model.Phrase
 import ru.redbyte.redbytefx.sample.ui.CyberBadge
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
+import ru.redbyte.redbytefx.sample.ui.demos.DemoGlFx
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
 import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.sample.ui.show
@@ -35,6 +36,17 @@ enum class GlExample(
         summary = Phrase(
             "One triangle, a vertex stage, and a fragment stage on an OpenGL ES 3.0 surface.",
             "Один треугольник, вершинный и фрагментный этапы на поверхности OpenGL ES 3.0.",
+        ),
+        api = "OpenGL ES 3.0",
+    ),
+    Effect(
+        title = Phrase(
+            "Effect",
+            "Эффект",
+        ),
+        summary = Phrase(
+            "Fragment-only GLES, like AGSL redbyteFx: resolution, stdlib SDF, no vertex or mesh to write.",
+            "Только фрагмент на GLES, как AGSL redbyteFx: resolution, SDF из stdlib, без вершины и меша.",
         ),
         api = "OpenGL ES 3.0",
     ),
@@ -372,6 +384,7 @@ fun GlExampleList(onOpen: (GlExample) -> Unit) {
 internal fun GlExampleScreen(example: GlExample) {
     when (example) {
         GlExample.Triangle -> DemoGles()
+        GlExample.Effect -> DemoGlFx()
         GlExample.Balls -> DemoBalls()
         GlExample.Flag -> DemoFlag()
         GlExample.Floor -> DemoFloor()

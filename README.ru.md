@@ -2,13 +2,13 @@
 
 # RedByteFX
 
-**RedByteFX** - это Kotlin DSL с двумя поверхностями на одной типизированной алгебре шейдера. **Эффект** - фрагментный шейдер: Android AGSL на API 33+, короткий путь через `redbyteFx`. **Сцена** - меш на OpenGL ES с API 24: вершина и фрагмент, буферы, текстуры и вызовы отрисовки. Та же алгебра собирается в compute OpenGL ES 3.1 и в geometry с tessellation OpenGL ES 3.2.
+**RedByteFX** - это Kotlin DSL с двумя поверхностями на одной типизированной алгебре шейдера. **Эффект** - фрагментный шейдер: Android AGSL на API 33+ или GLES с API 24, оба на коротком пути `redbyteFx`. **Сцена** - меш на OpenGL ES с API 24: вершина и фрагмент, буферы, текстуры и вызовы отрисовки. Та же алгебра собирается в compute OpenGL ES 3.1 и в geometry с tessellation OpenGL ES 3.2.
 
 Пишется Kotlin, а не строка шейдера. Компилятор выпускает текст, который реально исполняет платформа:
 
 `shader(target) { ... } -> ShaderProgram -> AGSL RuntimeShader, программа GLES 3.0, compute-программа GLES 3.1 или программа GLES 3.2`
 
-**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `redbyteFx`) требует **API 33+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose` (`GlSurface`). GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
+**Платформа:** `minSdk` библиотеки **24**. **AGSL** (`ShaderTarget.Agsl`, `rememberFxController`, `Modifier.redbyteFx`) требует **API 33+** (`RuntimeShader`); ниже - `AgslNotSupportedException` и предупреждение IDE через `@RequiresApi`. **OpenGL ES** - с API 24 через `redbytefx-gl` и `redbytefx-gl-compose`: сцены через `GlSurface`, эффект только из фрагмента через GLES `redbyteFx`. GLES: GLSL ES 3.00, 3.10 compute, 3.20 geometry/tessellation. Справочник API: [GitHub Pages](https://i-redbyte.github.io/redbytefx/).
 
 ## Что вы пишете
 
@@ -46,15 +46,13 @@ val crate = shader(ShaderTarget.Gles30) {
 }
 ```
 
-OpenGL ES 3.0 требует обе стадии. Varying, записанный в вершине, читается во фрагменте. Тексты: `vertexSource()` и `fragmentSource()`.
+GLES-**сцена** требует обе стадии. Varying, записанный в вершине, читается во фрагменте. Тексты: `vertexSource()` и `fragmentSource()`.
+
+GLES-**эффект** может обойтись без `vertex { }`. Компилятор подставляет полноэкранный треугольник с атрибутом `a_corner` (та же раскладка, что у `screenMesh`). Такую программу рисует GLES `redbyteFx`. Geometry и tessellation по-прежнему требуют явную вершину.
 
 ```kotlin
 val pulse = shader(ShaderTarget.Gles30) {
     val time = uniformTime()
-    vertex {
-        val position = attributeVec2("position")
-        glPosition(vec4(position.x, position.y, 0f.lit, 1f.lit))
-    }
     fragment {
         val wave = sin(time.expr)
         vec4(0.5f.lit + wave * 0.5f.lit, 0.15f.lit, 0.85f.lit, 1f.lit)
@@ -97,7 +95,7 @@ val patch = shader(ShaderTarget.Gles32) {
 
 Varying, который пишет вершина и читает фрагмент, объявляется на каждой стадии между ними: вершина, tessellation control, tessellation evaluation, geometry, затем фрагмент. Отсутствующие стадии пропускаются. На каждой границе `out` предыдущей стадии совпадает с `in` следующей по имени, типу и precision. Если в программе есть geometry или tessellation, эти объявления - члены одного блока `rb_pipe`. На всех стадиях программы один и тот же набор: varying, которые записала вершина и которые читает фрагмент или промежуточная стадия, в порядке объявления. Объявленный и нигде не записанный varying в блок не входит. Tessellation control копирует `tc_in[gl_InvocationID]` в `tc_out[gl_InvocationID]`. Geometry берёт индекс той входной вершины, которую только что записали в `gl_Position`: один `gl_in[k]`, в том числе индекс `repeat`, становится `gs_in[k]` непосредственно перед этим `EmitVertex`. Та же прокидка работает, когда этот `gl_Position` записан до `repeat` или `whenTrue`, который эмитит, и не используется повторно после emit, который её уже забрал. Несколько индексов или позиция без `gl_in`, пока varying ещё не записан, - ошибка, и текст просит явный `varying.set` перед этим emit. `varying.set` между этим `gl_Position` и emit заменяет прокидку только этого varying и только этого emit. Tessellation evaluation интерполирует `gl_TessCoord`, если стадия этот varying не писала. Одна входная вершина копируется из `te_in[0]`. Triangles взвешивают три вершины патча через `gl_TessCoord`. Isolines делают `mix` двух вершин по `gl_TessCoord.x`. Quads делают билинейный `mix` углов `(0,0)`, `(1,0)`, `(1,1)` и `(0,1)` по `gl_TessCoord.xy`. Явная запись заменяет эту интерполяцию. Стадия, у которой есть `rb_pipe` и которая пишет `gl_Position`, переобъявляет `gl_PerVertex` только с `vec4 gl_Position` до пользовательского блока. Uniform, прочитанный в geometry или tessellation, объявляется в исходнике этой стадии. `glIn(index)` и `varying.at(index)` допускают динамический `int`; проверка границ патча на этапе компиляции есть только для константных индексов.
 
-Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. Список OpenGL покрывает буферы и индексные вызовы, текстуры и мип-уровни, освещение, инстансинг, рисование в текстуру, сцену **Lit mesh** (`litTexturedMesh`, `setLitModel`), geometry, tessellation и небольшие игры. В **Planet** можно обернуть планету своим фото (runtime-доступ к галерее на API 28 и ниже; системный photo picker на API 33+). Интерфейс примеров - английский или русский по языку устройства. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает.
+Тестовое приложение открывает примеры AGSL и OpenGL с разных экранов. Каждая OpenGL-сцена - это `GLSurfaceView`, который линкует `ShaderProgram`. Список OpenGL покрывает фрагментный **Effect** (`redbyteFx`, SDF из stdlib), буферы и индексные вызовы, текстуры и мип-уровни, освещение, инстансинг, рисование в текстуру, сцену **Lit mesh** (`litTexturedMesh`, `setLitModel`), geometry, tessellation и небольшие игры. В **Planet** можно обернуть планету своим фото (runtime-доступ к галерее на API 28 и ниже; системный photo picker на API 33+). Интерфейс примеров - английский или русский по языку устройства. Geometry и tessellation требуют контекст OpenGL ES 3.2. `Modifier.redbyteFx` остаётся на AGSL и программу GLES не запускает. GLES `redbyteFx` - другой символ в `ru.redbyte.redbytefx.gl.compose`: в одном файле импортируйте один из них.
 
 ## Установка
 
@@ -116,9 +114,9 @@ dependencies {
 |----------|------|
 | `redbytefx-core` | `shader`, `Expr`, uniform-ы, спеллинг AGSL, GLSL ES 3.00, compute GLSL ES 3.10 и GLSL ES 3.20 |
 | `redbytefx-gl` | Линковка GLES 3.0, 3.1 и 3.2, запись uniform и матриц, привязка 2D и куба, compute `dispatch` и загрузка storage на потоке EGL |
-| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame` и помощники мешей для GLES-сцены в Compose |
+| `redbytefx-gl-compose` | `GlSurface`, `GlController`, `GlFrame`, помощники мешей и GLES `redbyteFx` для эффекта только из фрагмента |
 | `redbytefx-compose` | `rememberFxController`, `FxController`, `Modifier.redbyteFx` для AGSL |
-| `redbytefx-stdlib` | Рецепты эффекта: координаты, маски, композитинг, SDF и `lambert` |
+| `redbytefx-stdlib` | Рецепты эффекта: координаты, маски, композитинг, 2D/3D SDF, освещение, цвет, шум |
 | `redbytefx-3d` | Данные сцены на CPU: меши и камера (`lookAt`, `perspective`, `ortho`). Драйвера OpenGL нет |
 
 ## Compose
@@ -144,13 +142,33 @@ fun WaveLabel(program: ShaderProgram, amplitude: HighFloatUniform, frequency: Hi
 }
 ```
 
-`rememberFxController` владеет одним AGSL-рантаймом. На каждую поверхность рисования нужен свой контроллер. `redbyteFx` пишет resolution из размера отрисовки. `RuntimeShader` трогается только с UI-потока.
+`rememberFxController` владеет одним AGSL-рантаймом. На каждую поверхность рисования нужен свой контроллер. `Modifier.redbyteFx` пишет `uResolution` из размера отрисовки. На AGSL `ShaderProgram.resolution` всегда привязан. `RuntimeShader` трогается только с UI-потока.
+
+GLES-эффект с API 24 пишет тот же фрагмент. Без `vertex { }` компилятор подставляет полноэкранный треугольник. `ru.redbyte.redbytefx.gl.compose.redbyteFx` рисует его и пишет `resolution`. Compose-контент он не сэмплирует (`sample()` и `sampleUv()` остаются только у AGSL).
+
+```kotlin
+val pulse = shader(ShaderTarget.Gles30) {
+    val time = uniformTime()
+    fragment {
+        val uv = aspectCenteredUv(normalizedUv(), resolution)
+        val fill = softFill(sdHexagon(uv, 0.3f))
+        vec4(fill, fill, fill, 1f.lit)
+    }
+}
+
+@Composable
+fun Pulse(program: ShaderProgram, time: HighFloatUniform) {
+    val fx = rememberGlController(program)
+    fx.bindTime(time)
+    redbyteFx(fx, Modifier.fillMaxSize())
+}
+```
 
 ## Составление
 
 Стадии - небольшой автомат. Uniform, sampler и varying объявляются на программе. Код шейдера пишут `fragment { }` и `vertex { }`. `vertex` есть у `ShaderTarget.Gles30` и `ShaderTarget.Gles32`. `geometry`, `tessControl` и `tessEval` есть у `ShaderTarget.Gles32`. `compute` есть у `ShaderTarget.Gles31`.
 
-- `fragCoord` - вход фрагмента в пикселях, в том числе внутри фрагментной `fn`. AGSL пишет `fragCoord`. GLES пишет `gl_FragCoord.xy`. `resolution` - вход AGSL-фрагмента в пикселях; GLES его отвергает.
+- `fragCoord` - вход фрагмента в пикселях, в том числе внутри фрагментной `fn`. AGSL пишет `fragCoord`. GLES пишет `gl_FragCoord.xy`. `resolution` - это `uResolution` на AGSL и GLES; Compose пишет его из размера кадра. Имя `uResolution` зарезервировано: объявляйте его чтением `FragmentDsl.resolution`, а не через `uniform("uResolution", …)`.
 - `sample()` читает дочерний шейдер. Это законно в AGSL-фрагменте, в том числе внутри фрагментной `fn` через `this@fragment.sample()`. Другие стадии отвергают вызов.
 - `texture(sampler, uv)` законен в GLES-фрагменте, в том числе внутри фрагментной `fn` через `this@fragment.texture()`. Другие стадии отвергают вызов.
 - `attributeVec2`, `attributeVec3`, `attributeVec4` и `glPosition` законны в GLES-вершине. `glPosition` также законен в geometry и tessellation evaluation.
@@ -177,7 +195,7 @@ shader(ShaderTarget.Agsl) {
 
 Математика с одним и тем же вызовом в обоих языках: `sin`, `cos`, `tan`, `sign`, `abs`, `floor`, `ceil`, `fract`, `sqrt`, `min`, `max`, `mod`, `pow`, `mix`, `clamp`, `smoothstep`, `step`, `saturate`, `dot`, `length`, `reflect`, `transpose` и `distance` для `vec2` и `vec3`. `sqrt` - это вызов GLSL, отрицательный аргумент не заменяется.
 
-`redbytefx-stdlib` добавляет рецепты координат и композитинга на том же receiver `fragment`: `normalizedUv`, `sampleUv`, `centeredUv`, маски, reveal, смешивание и SDF вроде `sdCircle` и `softFill`. У `softFill` и `stroke` ширина пера по-прежнему аргумент вызывающего. `softFillScreen(distance)` и `strokeScreen(distance, width)` берут ширину края из `fwidth(distance)` и законны только во фрагменте.
+`redbytefx-stdlib` добавляет рецепты координат и композитинга на том же receiver `fragment`: `normalizedUv`, `sampleUv` (только AGSL), `centeredUv`, `aspectCenteredUv`, `rotate2d`, маски, reveal, смешивание и SDF вроде `sdCircle`, `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle` и `softFill`. Трёхмерные дистанции: `sdCylinder` и `sdOctahedron`; освещение и цвет: `fresnel`, `phong`, `hueShift`, `filmicTonemap`. У `softFill` и `stroke` ширина пера по-прежнему аргумент вызывающего. `softFillScreen(distance)` и `strokeScreen(distance, width)` берут ширину края из `fwidth(distance)` и законны только во фрагменте.
 
 ## Рантайм
 
@@ -191,7 +209,7 @@ shader(ShaderTarget.Agsl) {
 
 ## Релизы
 
-Артефакты Maven: `io.github.i-redbyte:redbytefx-*`. Версия **1.1.0** задаётся в [gradle.properties](gradle.properties). Список изменений - [docs/changelog.md](docs/changelog.md).
+Артефакты Maven: `io.github.i-redbyte:redbytefx-*`. Версия **1.1.0** задаётся в [gradle.properties](gradle.properties). Список изменений - [docs/changelog.ru.md](docs/changelog.ru.md) ([English](docs/changelog.md)).
 
 Публикация в Maven Central (для сопровождающих):
 
@@ -203,7 +221,7 @@ shader(ShaderTarget.Agsl) {
 
 ## Участие
 
-Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt с официальным кодстайлом Kotlin от JetBrains (`kotlin.code.style=official`, `detekt-formatting`). Автоформат: `./gradlew detekt -PdetektAutoCorrect=true`. Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
+Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt с официальным кодстайлом Kotlin от JetBrains (`kotlin.code.style=official`, `detekt-formatting`). Автоформат: `./gradlew detekt -PdetektAutoCorrect=true`. Pre-commit хук в `githooks/` перед каждым коммитом запускает `./gradlew detekt` (Gradle копирует его в `.git/hooks`, либо `./gradlew installGitHooks`). Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
 
 Сайт API локально: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI публикует документацию на `https://i-redbyte.github.io/redbytefx/` при push в **`master`/`main`**. См. [docs/github-pages.md](docs/github-pages.md).
 

@@ -54,6 +54,21 @@ public class ShaderProgram internal constructor(
     public fun spelledUniforms(): List<SpelledUniform> =
         bindings.map { SpelledUniform(it.uniform, it.agslName) }
 
+    /**
+     * Pixel-size uniform (`uResolution`) when the fragment reads [FragmentDsl.resolution],
+     * and always on AGSL (the generated source always declares it).
+     * Compose writes it from the draw size.
+     */
+    public val resolution: HighVec2Uniform?
+        get() {
+            val found = bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.uniform
+                ?: return null
+            val expected = Shape.Vector(ScalarKind.Float, Precision.High, 2)
+            if (found.shape != expected) return null
+            @Suppress("UNCHECKED_CAST")
+            return found as HighVec2Uniform
+        }
+
     public fun floatUniform(name: String): HighFloatUniform = lookup(name, highFloatShape())
 
     public fun vec2Uniform(name: String): HighVec2Uniform = lookup(name, highVecShape(2))
@@ -232,6 +247,7 @@ public class ShaderDsl internal constructor(
 
     public fun uniform(name: String, default: Float): HighFloatUniform {
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         require(default.isFinite()) { "Uniform default must be finite, was $default" }
         val handle = createUniform<Flt<High>>(
             name = name,
@@ -295,6 +311,7 @@ public class ShaderDsl internal constructor(
 
     public fun sampler2D(name: String): Uniform<Sampler2D> {
         advance(AuthoringAction.DeclareSampler)
+        requireAuthorUniformName(name)
         val handle = createSampler<Sampler2D>(name, Shape.Sampler2D)
         uniforms += handle
         return handle
@@ -302,6 +319,7 @@ public class ShaderDsl internal constructor(
 
     public fun samplerCube(name: String): Uniform<SamplerCube> {
         advance(AuthoringAction.DeclareSampler)
+        requireAuthorUniformName(name)
         val handle = createSampler<SamplerCube>(name, Shape.SamplerCube)
         uniforms += handle
         return handle
@@ -309,6 +327,7 @@ public class ShaderDsl internal constructor(
 
     public fun uniformInt(name: String, default: Int): Uniform<IntS> {
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         val handle = createIntUniform<IntS>(name, default)
         uniforms += handle
         return handle
@@ -317,6 +336,7 @@ public class ShaderDsl internal constructor(
     public fun uniformBool(name: String, default: Boolean): Uniform<BoolS> {
         if (target == ShaderTarget.Agsl) throw AuthoringException(AuthoringCode.BoolOnAgsl)
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         val handle = createBoolUniform<BoolS>(name, default)
         uniforms += handle
         return handle
@@ -334,6 +354,7 @@ public class ShaderDsl internal constructor(
     private fun <T : ShType> matrixUniform(name: String, lanes: Int, default: FloatArray): Uniform<T> {
         if (target == ShaderTarget.Agsl) throw AuthoringException(AuthoringCode.MatrixOnAgsl)
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         require(default.size == lanes * lanes) {
             "Matrix uniform \"$name\" expects ${lanes * lanes} floats, was ${default.size}"
         }
@@ -438,6 +459,35 @@ public class ShaderDsl internal constructor(
         }
     }
 
+    private fun bindResolutionUniform(body: Expr<*>) {
+        val roots = buildList {
+            add(body)
+            addAll(fragmentWrites.map { it.value })
+            addAll(commandExprs(fragmentStatements))
+            functions.filter { it.stage == AuthoringPlace.Fragment }.forEach { function ->
+                add(function.body)
+                addAll(commandExprs(function.statements))
+            }
+        }
+        if (roots.none { exprUsesResolution(it) }) return
+        ensureResolutionUniform()
+    }
+
+    private fun ensureResolutionUniform() {
+        if (uniforms.any { it.name == RB_RESOLUTION_UNIFORM }) return
+        uniforms += createVectorUniform<Vec2<Flt<High>>>(
+            RB_RESOLUTION_UNIFORM,
+            Shape.Vector(ScalarKind.Float, Precision.High, 2),
+            floatArrayOf(1f, 1f),
+        )
+    }
+
+    private fun requireAuthorUniformName(name: String) {
+        require(name != RB_RESOLUTION_UNIFORM) {
+            "Uniform name \"$RB_RESOLUTION_UNIFORM\" is reserved for fragment resolution"
+        }
+    }
+
     public fun vertex(block: VertexDsl.() -> Unit) {
         check(!vertexBuilt) { "Shader already has a vertex stage" }
         advance(AuthoringAction.EnterVertex)
@@ -452,11 +502,31 @@ public class ShaderDsl internal constructor(
 
     internal fun compile(): ShaderProgram {
         rejectRecursion(functions)
+        if (shouldInjectFullscreenVertex()) {
+            injectFullscreenVertex()
+        }
         return when (target) {
             ShaderTarget.Agsl -> compileAgsl()
             ShaderTarget.Gles30 -> compileGlsl()
             ShaderTarget.Gles31 -> compileCompute()
             ShaderTarget.Gles32 -> compileGlsl(version = GLSL_320, programTarget = ShaderTarget.Gles32)
+        }
+    }
+
+    private fun shouldInjectFullscreenVertex(): Boolean {
+        if (vertexBuilt || fragmentBody == null) return false
+        return when (target) {
+            ShaderTarget.Gles30 -> true
+            ShaderTarget.Gles32 ->
+                geometryStage == null && tessControlStage == null && tessEvalStage == null
+            else -> false
+        }
+    }
+
+    private fun injectFullscreenVertex() {
+        vertex {
+            val corner = attributeVec2("corner")
+            glPosition(vec4(corner.x, corner.y, 0f.lit, 1f.lit))
         }
     }
 
@@ -497,9 +567,9 @@ public class ShaderDsl internal constructor(
         val body = checkNotNull(fragmentBody) { "AGSL shader requires a fragment stage" }
         require(isFloatVec4(body.shape)) { "AGSL fragment must return a float vec4, was ${body.shape}" }
         checkFunctionStage(body, AuthoringPlace.Fragment)
+        ensureResolutionUniform()
         val bindings = uniforms.map { uniform ->
-            val agslName = names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_"))
-            UniformBinding(uniform, agslName)
+            UniformBinding(uniform, spelledUniformName(uniform.name, names))
         }
         val uniformNames = bindings.associateBy { it.uniform }
         val varyingNames = varyings.associateWith { varying ->
@@ -534,6 +604,7 @@ public class ShaderDsl internal constructor(
         precision: Precision = Precision.High,
     ): Uniform<T> {
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         require(components.all { it.isFinite() }) { "Uniform default must be finite" }
         val handle = createVectorUniform<T>(
             name = name,
@@ -608,6 +679,7 @@ public class ShaderDsl internal constructor(
         if (!vertexBuilt) throw ProgramException(ProgramCode.MissingVertex, "GLES program requires a vertex stage")
         val body = fragmentBody
             ?: throw ProgramException(ProgramCode.MissingFragment, "GLES program requires a fragment stage")
+        bindResolutionUniform(body)
         val position = vertexPosition
         if (position == null && !hasPosition(vertexStatements)) {
             throw ProgramException(ProgramCode.MissingGlPosition, "GLES vertex must assign gl_Position")
@@ -870,7 +942,7 @@ private fun isMedVec4(shape: Shape): Boolean =
  *
  * [fragCoord] and [resolution] are in pixels. [sample] reads the child shader on AGSL only.
  * [texture] samples a [Sampler2D] on GLES only. `fn` bodies use [FnDsl] and do not see those
- * stage members implicitly.
+ * stage members implicitly. GLES [resolution] is the `uResolution` uniform; Compose writes it.
  */
 @RedByteFxDsl
 public class FragmentDsl internal constructor(
@@ -903,8 +975,10 @@ public class FragmentDsl internal constructor(
         }
 
     /**
-     * Shade. Drawable size in pixels on AGSL. Compose sets it through
-     * [ru.redbyte.redbytefx.compose.redbyteFx]. GLES rejects this input.
+     * Shade. Drawable size in pixels. AGSL Compose sets it through
+     * [ru.redbyte.redbytefx.compose.redbyteFx]. GLES Compose sets it through
+     * [ru.redbyte.redbytefx.gl.compose.redbyteFx] / [ru.redbyte.redbytefx.gl.compose.GlSurface].
+     * Spelled `uResolution`.
      */
     public val resolution: Expr<Vec2<Flt<High>>>
         get() {
@@ -1255,6 +1329,7 @@ private fun renderAgsl(
     append("uniform shader ").append(RB_INPUT_UNIFORM).append(";\n")
     append("uniform float2 ").append(RB_RESOLUTION_UNIFORM).append(";\n")
     for (binding in bindings) {
+        if (binding.agslName == RB_RESOLUTION_UNIFORM) continue
         val type = spell(binding.uniform.shape, ShaderTarget.Agsl)
         append("uniform ").append(type).append(' ').append(binding.agslName).append(";\n")
     }

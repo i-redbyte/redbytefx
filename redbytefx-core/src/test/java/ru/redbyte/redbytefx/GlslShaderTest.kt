@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -101,7 +102,7 @@ class GlslShaderTest {
     }
 
     @Test
-    fun glesFragCoordSpellsGlFragCoordAndResolutionIsRejected() {
+    fun glesFragCoordSpellsGlFragCoordAndResolutionIsUResolution() {
         val program = shader(ShaderTarget.Gles30) {
             vertex { glPosition(attributeVec4("position")) }
             fragment {
@@ -111,12 +112,71 @@ class GlslShaderTest {
             }
         }
         assertTrue(program.fragmentSource().contains("gl_FragCoord.xy"))
-        val rejected = assertThrows(AuthoringException::class.java) {
-            shader(ShaderTarget.Gles30) {
-                vertex { glPosition(attributeVec4("position")) }
-                fragment { vec4(resolution.x, 0f.lit, 0f.lit, 1f.lit) }
+        val sized = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(resolution.x, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertTrue(sized.fragmentSource().contains("uResolution"))
+        assertNotNull(sized.resolution)
+    }
+
+    @Test
+    fun glesFragmentOnlyInjectsFullscreenCornerVertex() {
+        val program = shader(ShaderTarget.Gles30) {
+            fragment { vec4(0.2f.lit, 0.3f.lit, 0.4f.lit, 1f.lit) }
+        }
+        assertTrue(program.vertexSource().contains("a_corner"))
+        assertTrue(program.vertexSource().contains("gl_Position"))
+    }
+
+    @Test
+    fun unusedFragmentFunctionThatReadsResolutionStillBindsUResolution() {
+        val program = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                fn { vec4(this@fragment.resolution.x, 0f.lit, 0f.lit, 1f.lit) }
+                vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
             }
         }
-        assertEquals(AuthoringCode.ResolutionOnGles, rejected.code)
+        assertNotNull(program.resolution)
+        assertTrue(program.fragmentSource().contains("uResolution"))
+    }
+
+    @Test
+    fun authorCannotDeclareUResolution() {
+        assertThrows(IllegalArgumentException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                uniform("uResolution", 1f)
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                uniformVec2("uResolution", 1f, 1f)
+                fragment { sample() }
+            }
+        }
+    }
+
+    @Test
+    fun fragmentFunctionNamedACornerDoesNotRenameTheScreenAttribute() {
+        val program = shader(ShaderTarget.Gles30) {
+            fragment {
+                fn("a_corner") { vec4(0.2f.lit, 0.3f.lit, 0.4f.lit, 1f.lit) }
+                vec4(0.2f.lit, 0.3f.lit, 0.4f.lit, 1f.lit)
+            }
+        }
+        assertTrue(program.vertexSource().contains("in highp vec2 a_corner;"))
+        assertTrue(program.fragmentSource().contains("a_corner_1"))
+    }
+
+    @Test
+    fun gles32FragmentOnlyInjectsFullscreenCornerVertex() {
+        val program = shader(ShaderTarget.Gles32) {
+            fragment { vec4(0.2f.lit, 0.3f.lit, 0.4f.lit, 1f.lit) }
+        }
+        assertTrue(program.vertexSource().contains("#version 320 es"))
+        assertTrue(program.vertexSource().contains("a_corner"))
     }
 }

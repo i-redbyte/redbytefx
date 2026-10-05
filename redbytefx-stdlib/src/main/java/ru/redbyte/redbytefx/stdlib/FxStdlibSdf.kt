@@ -90,6 +90,87 @@ public fun sdSegment(
 }
 
 /**
+ * Signed distance from [point] to a regular hexagon of [radius], centered at the origin.
+ */
+public fun sdHexagon(
+    point: Expr<Vec2<Flt<High>>>,
+    radius: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val r = max(radius, 0f)
+    val kxy = float2(-0.8660254f, 0.5f)
+    val kz = float(0.57735026f)
+    val folded = abs(point)
+    val t = min(dot(kxy, folded), 0f)
+    val p = folded - kxy * (t * 2f)
+    val q = p - float2(clamp(p.x, -kz * r, kz * r), r)
+    return length(q) * sign(q.y)
+}
+
+/** Signed distance from [point] to a hexagon with a literal [radius]. */
+public fun sdHexagon(
+    point: Expr<Vec2<Flt<High>>>,
+    radius: Float,
+): Expr<Flt<High>> = sdHexagon(point, float(radius))
+
+/**
+ * Signed distance from [point] to a rhombus whose half-extents are [halfSize].
+ */
+public fun sdRhombus(
+    point: Expr<Vec2<Flt<High>>>,
+    halfSize: Expr<Vec2<Flt<High>>>,
+): Expr<Flt<High>> {
+    val b = float2(max(halfSize.x, 0f), max(halfSize.y, 0f))
+    val p = abs(point)
+    val ndot = (b.x - p.x * 2f) * b.x - (b.y - p.y * 2f) * b.y
+    val h = clamp(ndot / max(dot(b, b), 0.0001f), -1f, 1f)
+    val offset = b * 0.5f * float2(1f - h, 1f + h)
+    val d = length(p - offset)
+    return d * sign(p.x * b.y + p.y * b.x - b.x * b.y)
+}
+
+/**
+ * Signed distance from [point] to an equilateral triangle of [radius], pointing +Y.
+ */
+public fun sdEquilateralTriangle(
+    point: Expr<Vec2<Flt<High>>>,
+    radius: Expr<Flt<High>>,
+): Expr<Flt<High>> {
+    val r = max(radius, 0f)
+    val k = float(1.7320508f)
+    val px = abs(point.x) - r
+    val py = point.y + r / k
+    val folded = ifElse(
+        (px + k * py) gt 0f,
+        float2(px - k * py, -k * px - py) * 0.5f,
+        float2(px, py),
+    )
+    val q = float2(folded.x - clamp(folded.x, r * -2f, 0f.lit), folded.y)
+    return -length(q) * sign(q.y)
+}
+
+/** Signed distance from [point] to an equilateral triangle with a literal [radius]. */
+public fun sdEquilateralTriangle(
+    point: Expr<Vec2<Flt<High>>>,
+    radius: Float,
+): Expr<Flt<High>> = sdEquilateralTriangle(point, float(radius))
+
+/** Rounds an SDF by subtracting [radius]. */
+public fun opRound(distance: Expr<Flt<High>>, radius: Expr<Flt<High>>): Expr<Flt<High>> =
+    distance - max(radius, 0f)
+
+/** Rounds an SDF by a literal [radius]. */
+public fun opRound(distance: Expr<Flt<High>>, radius: Float): Expr<Flt<High>> =
+    opRound(distance, float(radius))
+
+/** Builds a ring of [thickness] around an SDF contour. */
+public fun opOnion(distance: Expr<Flt<High>>, thickness: Expr<Flt<High>>): Expr<Flt<High>> =
+    abs(distance) - max(thickness, 0f)
+
+/** Builds a ring of literal [thickness] around an SDF contour. */
+public fun opOnion(distance: Expr<Flt<High>>, thickness: Float): Expr<Flt<High>> =
+    opOnion(distance, float(thickness))
+
+/**
  * Fills an SDF shape with a hard edge.
  */
 public fun fill(distance: Expr<Flt<High>>): Expr<Flt<High>> =

@@ -113,6 +113,10 @@ internal class SceneRenderer(
         frameNumber += 1
         current.seconds = (System.nanoTime() - startedNanos) / NANOS_PER_SECOND
         current.aspect = aspect
+        current.widthPx = viewWidth.toFloat().coerceAtLeast(1f)
+        current.heightPx = viewHeight.toFloat().coerceAtLeast(1f)
+        runtime.setResolution(current.widthPx, current.heightPx)
+        presentRuntime?.setResolution(current.widthPx, current.heightPx)
         current.colorTarget = if (renderToTexture) ensureColorTarget(runtime) else null
         val draws = current.drawList()
         draws.reset()
