@@ -23,25 +23,28 @@ public class GlMesh(
     public val clearB: Float = 0.045f,
     indices: IntArray? = null,
 ) {
-    public var vertices: FloatArray = vertices
+    @Volatile
+    internal var arrays: MeshArrays = MeshArrays(vertices, indices, 0L)
         private set
 
-    public var indices: IntArray? = indices
-        private set
+    public val vertices: FloatArray get() = arrays.vertices
+
+    public val indices: IntArray? get() = arrays.indices
 
     init {
         require(stride > 0) { "Stride must be positive, was $stride" }
-        requireLayout(this.vertices, this.indices)
+        requireLayout(vertices, indices)
     }
 
     /**
-     * Scene. Replaces CPU vertex (and optional index) arrays. The next draw uploads them because
-     * the references changed.
+     * Scene. Publishes CPU vertex and index arrays together for the GL thread. The next draw
+     * uploads them even when the caller reuses the same arrays. Do not mutate an array while the
+     * GL thread may be reading it; prepare its contents before calling this method.
      */
+    @Synchronized
     public fun replace(vertices: FloatArray, indices: IntArray? = this.indices) {
         requireLayout(vertices, indices)
-        this.vertices = vertices
-        this.indices = indices
+        arrays = MeshArrays(vertices, indices, arrays.revision + 1)
     }
 
     private fun requireLayout(vertices: FloatArray, indices: IntArray?) {
@@ -59,6 +62,12 @@ public class GlMesh(
         if (indices != null) requireIndexRange(indices, vertices.size / stride)
     }
 }
+
+internal class MeshArrays(
+    val vertices: FloatArray,
+    val indices: IntArray?,
+    val revision: Long,
+)
 
 private const val MAX_ATTRIB_SIZE = 4
 

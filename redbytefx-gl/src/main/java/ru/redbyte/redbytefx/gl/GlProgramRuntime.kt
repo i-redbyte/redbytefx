@@ -491,8 +491,18 @@ public class GlProgramRuntime(
     ) {
         checkReady()
         require(first >= 0) { "Draw first must be non-negative, was $first" }
+        require(vertexCount >= 0) { "Vertex count must be non-negative, was $vertexCount" }
+        require(count >= 0) { "Draw count must be non-negative, was $count" }
+        require(instanceCount == null || instanceCount >= 0) {
+            "Instance count must be non-negative, was $instanceCount"
+        }
+        if (elements == null && vertexCount > 0) {
+            require(first <= vertexCount && count <= vertexCount - first) {
+                "Draw range $first + $count is past $vertexCount vertices"
+            }
+        }
         samplers.rebindDisturbed()
-        if (count <= 0 || vertexCount <= 0 || instanceCount == 0) return
+        if (count == 0 || vertexCount == 0 || instanceCount == 0) return
         val kind = planDraw(
             vertexCount = vertexCount,
             indexCount = if (elements != null) count else null,

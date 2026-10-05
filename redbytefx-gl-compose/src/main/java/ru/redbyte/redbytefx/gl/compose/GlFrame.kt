@@ -112,13 +112,6 @@ internal fun requireOffscreenTarget(renderToTexture: Boolean, offscreenCount: In
     }
 }
 
-internal fun meshArraysChanged(
-    lastVertices: FloatArray?,
-    lastIndices: IntArray?,
-    vertices: FloatArray,
-    indices: IntArray?,
-): Boolean = lastVertices !== vertices || lastIndices !== indices
-
 /** Draws recorded during one [GlSurface] frame. [reset] keeps the records for the next frame. */
 internal class DrawList {
     private val screenDraws = ArrayList<RecordedDraw>()
@@ -333,7 +326,8 @@ public class GlFrame internal constructor(
         val available = if (target === surfaceMesh) {
             surfaceIndices?.size ?: surfaceVertices
         } else {
-            target.indices?.size ?: (target.vertices.size / target.stride)
+            val arrays = target.arrays
+            arrays.indices?.size ?: (arrays.vertices.size / target.stride)
         }
         draws.draw(
             target,

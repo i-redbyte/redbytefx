@@ -257,8 +257,20 @@ class GlFramePlanTest {
                 pose,
             )
         }
-        assertFalse(meshArraysChanged(triangle.vertices, triangle.indices, triangle.vertices, triangle.indices))
-        assertTrue(meshArraysChanged(triangle.vertices, triangle.indices, FloatArray(9), triangle.indices))
+    }
+
+    @Test
+    fun meshPublishesVertexAndIndexArraysAsOneRevision() {
+        val initial = triangle.arrays
+        val replacement = FloatArray(4 * triangle.stride)
+        val indices = intArrayOf(0, 1, 2, 0, 2, 3)
+        triangle.replace(replacement, indices)
+        val published = triangle.arrays
+        assertSame(replacement, published.vertices)
+        assertSame(indices, published.indices)
+        assertEquals(initial.revision + 1, published.revision)
+        triangle.replace(replacement, indices)
+        assertEquals(published.revision + 1, triangle.arrays.revision)
     }
 
     private fun runtime(): GlProgramRuntime = GlProgramRuntime(

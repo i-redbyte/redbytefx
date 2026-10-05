@@ -62,7 +62,7 @@ public class GlController internal constructor(
     private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
     private val storageBlockWrites = CoalescedWrites<StorageBlock>()
-    private val tasks = ArrayDeque<() -> Unit>()
+    private val tasks = ArrayDeque<(GlProgramRuntime) -> Unit>()
     private var queueGeneration = 0L
     private var drainQueued = false
 
@@ -74,6 +74,10 @@ public class GlController internal constructor(
      * dropping the oldest. Uniform [set] calls are coalesced separately and do not count.
      */
     public fun runOnGl(block: () -> Unit) {
+        enqueueTask { block() }
+    }
+
+    private fun enqueueTask(block: (GlProgramRuntime) -> Unit) {
         synchronized(lock) {
             check(tasks.size < MAX_QUEUED_GL_TASKS) {
                 "GL task queue is full ($MAX_QUEUED_GL_TASKS)"
@@ -184,7 +188,8 @@ public class GlController internal constructor(
         poll(pending)?.let { write -> return { write(linked) } }
         poll(uniformBlockWrites)?.let { write -> return { write(linked) } }
         poll(storageBlockWrites)?.let { write -> return { write(linked) } }
-        tasks.removeFirstOrNull()
+        tasks.removeFirstOrNull()?.let { task -> return { task(linked) } }
+        null
     }
 
     private fun poll(pendingWrites: IdentityHashMap<Uniform<*>, UniformWrite>): UniformWrite? {
@@ -320,7 +325,7 @@ public class GlController internal constructor(
         require(x >= 1 && y >= 1 && z >= 1) {
             "Compute dispatch size must be at least 1, was $x, $y, $z"
         }
-        runOnGl { runtime?.dispatch(x, y, z) }
+        enqueueTask { linked -> linked.dispatch(x, y, z) }
     }
 
     /**
@@ -328,8 +333,7 @@ public class GlController internal constructor(
      * [onResult] runs on that thread with the float count after [into] has been filled.
      */
     public fun read(block: StorageBlock, into: FloatArray, onResult: (Int) -> Unit) {
-        runOnGl {
-            val linked = runtime ?: return@runOnGl
+        enqueueTask { linked ->
             onResult(linked.read(block, into))
         }
     }

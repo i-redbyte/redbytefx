@@ -740,6 +740,26 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun drawRangeRejectsInvalidCountsBeforeCallingTheDriver() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.drawRange(4, 3, 0, -1, null, null)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.drawRange(4, -1, 0, 0, null, null)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.drawRange(4, 3, 0, 3, null, -1)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runtime.drawRange(4, 3, 2, 2, null, null)
+        }
+        assertTrue(device.draws.isEmpty())
+    }
+
+    @Test
     fun aDefaultDrawDoesNotQueryTheDriver() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)

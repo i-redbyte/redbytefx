@@ -33,8 +33,7 @@ private class HeldMesh {
     var drawnFrame = 0L
     var enabledAttribs = IntArray(0)
     var enabledAttribCount = 0
-    var sourceVertices: FloatArray? = null
-    var sourceIndices: IntArray? = null
+    var sourceRevision = -1L
 }
 
 internal class SceneRenderer(
@@ -92,7 +91,8 @@ internal class SceneRenderer(
         }
         slot.runtime = runtime
         try {
-            fill(runtime, surface, mesh.stride, mesh.vertices, mesh.indices)
+            val arrays = mesh.arrays
+            fill(runtime, surface, mesh.stride, arrays.vertices, arrays.indices, arrays.revision)
             frame = GlFrame(runtime, upload, mesh, presentRuntime)
         } catch (error: Throwable) {
             releaseGpu(contextAlive = true)
@@ -268,16 +268,17 @@ internal class SceneRenderer(
 
     private fun hold(runtime: GlProgramRuntime, target: GlMesh): HeldMesh {
         if (target === mesh) return surface
+        val arrays = target.arrays
         val existing = heldMeshes[target]
         if (existing != null) {
             existing.drawnFrame = frameNumber
-            if (meshArraysChanged(existing.sourceVertices, existing.sourceIndices, target.vertices, target.indices)) {
-                fill(runtime, existing, target.stride, target.vertices, target.indices)
+            if (existing.sourceRevision != arrays.revision) {
+                fill(runtime, existing, target.stride, arrays.vertices, arrays.indices, arrays.revision)
             }
             return existing
         }
         val created = HeldMesh()
-        fill(runtime, created, target.stride, target.vertices, target.indices)
+        fill(runtime, created, target.stride, arrays.vertices, arrays.indices, arrays.revision)
         created.drawnFrame = frameNumber
         heldMeshes[target] = created
         heldOrder += target
@@ -290,6 +291,7 @@ internal class SceneRenderer(
         stride: Int,
         vertices: FloatArray,
         indices: IntArray?,
+        revision: Long = held.sourceRevision,
         preserveIndices: Boolean = false,
     ) {
         if (held.vao == 0) {
@@ -299,9 +301,8 @@ internal class SceneRenderer(
         if (held.buffer == 0) held.buffer = runtime.createBuffer()
         held.floats = runtime.replaceArrayBuffer(held.buffer, held.floats, vertices)
         held.vertexCount = vertices.size / stride
-        held.sourceVertices = vertices
+        held.sourceRevision = revision
         if (preserveIndices) return
-        held.sourceIndices = indices
         if (indices == null) {
             if (held.element != 0) {
                 GLES30.glBindVertexArray(held.vao)
@@ -369,8 +370,7 @@ internal class SceneRenderer(
         surface.indexCount = 0
         surface.vao = 0
         surface.enabledAttribCount = 0
-        surface.sourceVertices = null
-        surface.sourceIndices = null
+        surface.sourceRevision = -1L
         heldMeshes.clear()
         heldOrder.clear()
         instanceBuffer = 0
