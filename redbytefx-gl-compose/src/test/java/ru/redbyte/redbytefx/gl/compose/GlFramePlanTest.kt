@@ -278,7 +278,6 @@ class GlFramePlanTest {
         val frame = GlFrame(runtime(), { _, _ -> }, triangle, null)
         assertThrows(IllegalArgumentException::class.java) { frame.draw(count = 6) }
         triangle.replace(FloatArray(4 * triangle.stride), intArrayOf(0, 1, 2, 0, 2, 3))
-        frame.syncSurfaceMesh(triangle.arrays)
         frame.draw(count = 6)
         assertEquals(6, frame.drawList().screen().single().count)
     }

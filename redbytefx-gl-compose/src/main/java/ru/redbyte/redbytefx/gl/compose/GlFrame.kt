@@ -338,6 +338,7 @@ public class GlFrame internal constructor(
     ) {
         val target = mesh ?: requireNotNull(surfaceMesh) { "This frame has no surface mesh" }
         val available = if (target === surfaceMesh) {
+            syncSurfaceMesh(target.arrays)
             surfaceIndices?.size ?: surfaceVertices
         } else {
             val arrays = target.arrays
