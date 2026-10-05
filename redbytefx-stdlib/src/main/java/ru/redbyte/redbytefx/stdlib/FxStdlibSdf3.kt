@@ -39,7 +39,6 @@ import ru.redbyte.redbytefx.z
  * Largest fixed step count for [rayMarch].
  * The language has no `while`; [FragmentDsl.repeat] accepts the same 1..64 range.
  */
-/** Upper bound for [rayMarch] steps; matches the compiler `repeat` limit (64). */
 public const val MAX_RAY_STEPS: Int = 64
 
 /**
@@ -245,7 +244,19 @@ public fun sdOctahedron(
     size: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val p = abs(point)
-    return (p.x + p.y + p.z - max(size, 0f)) * 0.57735026f
+    val extent = max(size, 0f)
+    val m = p.x + p.y + p.z - extent
+    val nearX = 3f * p.x lt m
+    val nearY = 3f * p.y lt m
+    val nearZ = 3f * p.z lt m
+    val q = ifElse(
+        nearX,
+        p,
+        ifElse(nearY, float3(p.y, p.z, p.x), float3(p.z, p.x, p.y)),
+    )
+    val k = clamp(0.5f * (q.z - q.y + extent), float(0f), extent)
+    val edgeDistance = length(float3(q.x, q.y - extent + k, q.z - k))
+    return ifElse(nearX or nearY or nearZ, edgeDistance, m * 0.57735026f)
 }
 
 /** Signed distance from [point] to an octahedron with a literal [size]. */
@@ -274,19 +285,24 @@ public fun FragmentDsl.rayMarch(
     require(steps in 1..MAX_RAY_STEPS) {
         "rayMarch steps must be 1..$MAX_RAY_STEPS, was $steps"
     }
+    require(epsilon.isFinite() && epsilon > 0f) { "rayMarch epsilon must be finite and positive" }
+    require(far.isFinite() && far > 0f) { "rayMarch far must be finite and positive" }
     val start = local(origin)
     val dir = local(normalize(direction))
     val traveled = local(float(0f))
     val hit = local(float(far))
+    val active = local(float(1f))
     val near = float(epsilon)
     val horizon = float(far)
     repeat(steps) {
-        val point = start.expr + dir.expr * traveled.expr
-        val dist = scene(point)
-        val close = (dist lt near) and (traveled.expr le horizon)
-        val stop = close or (traveled.expr gt horizon)
-        hit.set(ifElse(close, traveled.expr, hit.expr))
-        traveled.set(ifElse(stop, traveled.expr, traveled.expr + dist))
+        whenTrue((active.expr gt 0f) and (traveled.expr le horizon)) {
+            val point = start.expr + dir.expr * traveled.expr
+            val dist = scene(point)
+            val close = dist lt near
+            hit.set(ifElse(close, traveled.expr, hit.expr))
+            active.set(ifElse(close, float(0f), active.expr))
+            traveled.set(ifElse(close, traveled.expr, traveled.expr + dist))
+        }
     }
     return hit.expr
 }

@@ -177,6 +177,23 @@ class StdlibPortTest {
     }
 
     @Test
+    fun octahedronIncludesEdgeAndVertexDistanceOnBothBackends() {
+        fun source(target: ShaderTarget) = shader(target) {
+            fragment {
+                val distance = sdOctahedron(float3(2f, 0f, 0f), 1f)
+                vec4(distance, distance, distance, 1f.lit)
+            }
+        }.let { if (target == ShaderTarget.Agsl) it.agslSource() else it.fragmentSource() }
+
+        for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
+            val generated = source(target)
+            assertTrue(generated.contains("clamp("))
+            assertTrue(generated.contains("length("))
+            assertTrue(generated.contains("?"))
+        }
+    }
+
+    @Test
     fun lambertCompilesOnAgslAndGles() {
         fun program(target: ShaderTarget) = shader(target) {
             if (target != ShaderTarget.Agsl) {
@@ -204,6 +221,23 @@ class StdlibPortTest {
         }.fragmentSource()
         assertEquals(1, Regex("normalize\\(").findAll(source).count())
         assertTrue(source.indexOf("normalize(") < source.indexOf("for (int"))
+        val loop = source.substringAfter("for (int")
+        assertTrue(loop.indexOf("if (") < loop.indexOf("length("))
+    }
+
+    @Test
+    fun rayMarchRejectsInvalidDistances() {
+        for ((epsilon, far) in listOf(0f to 20f, Float.NaN to 20f, 0.001f to 0f)) {
+            assertThrows(IllegalArgumentException::class.java) {
+                shader(ShaderTarget.Agsl) {
+                    fragment {
+                        rayMarch(float3(0f, 0f, 0f), float3(0f, 0f, 1f), epsilon = epsilon, far = far) {
+                            sdSphere(it, 1f)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Test
