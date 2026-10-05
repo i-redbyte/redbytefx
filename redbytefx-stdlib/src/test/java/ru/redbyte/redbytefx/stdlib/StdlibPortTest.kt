@@ -15,6 +15,9 @@ import ru.redbyte.redbytefx.scale
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
+import ru.redbyte.redbytefx.x
+import ru.redbyte.redbytefx.y
+import ru.redbyte.redbytefx.z
 import ru.redbyte.redbytefx.stdlib.horizontalReveal
 
 class StdlibPortTest {
@@ -172,5 +175,36 @@ class StdlibPortTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun cosinePaletteSaturatesRgbAndGrainFoldsTime() {
+        val palette = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val rgb = cosinePalette(0.5f.lit)
+                vec4(rgb.x, rgb.y, rgb.z, 1f.lit)
+            }
+        }.fragmentSource()
+        assertTrue(palette.contains("clamp("))
+
+        val noise = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val n = grain(float2(0.2f, 0.3f), 12.7f.lit, 20f)
+                vec4(n, n, n, 1f.lit)
+            }
+        }.fragmentSource()
+        assertTrue(noise.contains("fract("))
+
+        val wrapped = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val shade = wrapLambert(float3(0f, 1f, 0f), float3(0.2f, 0.8f, 0.1f), 0.25f)
+                vec4(shade, shade, shade, 1f.lit)
+            }
+        }.fragmentSource()
+        assertTrue(wrapped.contains("max("))
+        assertTrue(wrapped.contains("0.25"))
     }
 }

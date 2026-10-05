@@ -46,7 +46,8 @@ public fun grain(
     scale: Expr<Flt<High>> = float(180f),
 ): Expr<Flt<High>> {
     val safeScale = max(scale, 1f)
-    val animatedUv = uv * safeScale + float2(time * 19.19f, time * 37.73f)
+    val t = fract(time)
+    val animatedUv = uv * safeScale + float2(t * 19.19f, t * 37.73f)
     return hash21(animatedUv) * 2f - 1f
 }
 

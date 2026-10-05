@@ -224,3 +224,20 @@ public fun lambert(
     normal: Expr<Vec3<Flt<High>>>,
     light: Expr<Vec3<Flt<High>>>,
 ): Expr<Flt<High>> = ru.redbyte.redbytefx.lambert(normal, light)
+
+/**
+ * Shade. [lambert] with a floor so a back-facing surface still has ambient light.
+ * [floor] is the unlit weight, typically `0.2`…`0.4`.
+ */
+public fun wrapLambert(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+    floor: Expr<Flt<High>> = float(0.32f),
+): Expr<Flt<High>> = max(lambert(normal, light), floor)
+
+/** Shade. [wrapLambert] with a literal floor. */
+public fun wrapLambert(
+    normal: Expr<Vec3<Flt<High>>>,
+    light: Expr<Vec3<Flt<High>>>,
+    floor: Float,
+): Expr<Flt<High>> = wrapLambert(normal, light, float(floor))

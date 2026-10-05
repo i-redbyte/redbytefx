@@ -7,11 +7,12 @@ import android.opengl.GLES30
  *
  * Scene. [stride] and every [GlAttrib] count floats. Each attribute must fit inside one stride,
  * and every index must address a vertex. The host uploads [vertices] and [indices] on first draw.
- * A later draw of the same object uploads them again, so an in-place edit is visible.
- * Use [GlFrame.replace] for the surface mesh.
+ * A later draw of the same object skips the upload when those arrays are the same references.
+ * After an in-place edit, pass a new array through [replace], or use [GlFrame.replace] for the
+ * surface mesh.
  */
 public class GlMesh(
-    public val vertices: FloatArray,
+    vertices: FloatArray,
     public val stride: Int,
     public val attribs: List<GlAttrib>,
     public val mode: Int = GLES30.GL_TRIANGLES,
@@ -20,10 +21,30 @@ public class GlMesh(
     public val clearR: Float = 0.02f,
     public val clearG: Float = 0.025f,
     public val clearB: Float = 0.045f,
-    public val indices: IntArray? = null,
+    indices: IntArray? = null,
 ) {
+    public var vertices: FloatArray = vertices
+        private set
+
+    public var indices: IntArray? = indices
+        private set
+
     init {
         require(stride > 0) { "Stride must be positive, was $stride" }
+        requireLayout(this.vertices, this.indices)
+    }
+
+    /**
+     * Scene. Replaces CPU vertex (and optional index) arrays. The next draw uploads them because
+     * the references changed.
+     */
+    public fun replace(vertices: FloatArray, indices: IntArray? = this.indices) {
+        requireLayout(vertices, indices)
+        this.vertices = vertices
+        this.indices = indices
+    }
+
+    private fun requireLayout(vertices: FloatArray, indices: IntArray?) {
         require(vertices.size % stride == 0) {
             "Vertex buffer size ${vertices.size} is not a multiple of stride $stride"
         }

@@ -15,6 +15,10 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - **Reveal masks** (`horizontalReveal`, `verticalReveal`): progress 0 and 1 fully hide/show content.
 - **Screen SDF** (`softFillScreen`, `strokeScreen`): guard `fwidth` when it collapses to zero.
 - **Polar KDoc** clarifies angle direction in fragment UV space.
+- **`choose(selector) { on(id) { … }; otherwise { … } }`**: nested portable ternary on a float id.
+- **`cosinePalette`**: saturates RGB to `[0, 1]`.
+- **`grain`**: folds time with `fract` before hashing.
+- **`wrapLambert`**: Lambert with an ambient floor.
 
 ### GLES and 3D
 
@@ -25,6 +29,12 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - **`strictErrors`**: also checks the driver after uniform/storage block writes and `generateMipmap2D`.
 - Matrix uniform cache always copies caller arrays (avoids accidental mutation).
 - **`GlCompute`**: releases GPU resources on dispose like `GlSurface`.
+- **`GlFrame.draw(model, material)`**: one model matrix per draw (copied) and a per-draw material uniform.
+- **`GlPipeline.cullFace`**: optional face culling; default stays off.
+- Extra meshes skip GPU upload when vertex/index array references are unchanged.
+- Scene matrices: `identity` / `IDENTITY`, `multiply`, `translation`, `rotationX`/`Y`/`Z`, `scale`.
+- Scene meshes: `disc`, `extrudePolygon`, `tubeAlong`, `transform`, `merge`, `tagUv`.
+- **`instanceModel()`**: `mat4` from instance attributes `a_model0`…`a_model3`.
 
 ### Compose
 

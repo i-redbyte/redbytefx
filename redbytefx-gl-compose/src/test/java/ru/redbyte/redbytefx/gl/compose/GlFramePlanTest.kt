@@ -195,16 +195,51 @@ class GlFramePlanTest {
                 "box 1 2 4 5",
                 "mask false true true true",
                 "depth false",
+                "cullOff",
                 "blendOff",
                 "scissorOff",
                 "mask true true true true",
                 "depth true",
+                "cullOff",
             ),
             ops.lines,
         )
+        val culled = GlPipeline(cullFace = CullFace.Back)
+        ops.lines.clear()
+        applyPipeline(culled, ops)
+        assertEquals(listOf("blendOff", "scissorOff", "mask true true true true", "depth true", "cull", "cullFace ${GLES30.GL_BACK}"), ops.lines)
         assertThrows(IllegalArgumentException::class.java) {
             applyPipeline(GlPipeline(scissor = true, width = 0, height = 2), ops)
         }
+    }
+
+    @Test
+    fun aModelIsCopiedAndCannotBeCombinedWithInstances() {
+        val list = DrawList()
+        val pose = FloatArray(MODEL_MATRIX_FLOATS) { index -> if (index % 5 == 0) 1f else 0f }
+        pose[12] = 3f
+        list.draw(triangle, 0, 3, null, false, false, 3, GlPipeline.Default, material = 2f, model = pose)
+        pose[12] = 9f
+        val draw = list.screen().single()
+        assertEquals(3f, draw.instances!![12], 0f)
+        assertTrue(draw.hasMaterial)
+        assertEquals(2f, draw.materialValue, 0f)
+        assertThrows(IllegalArgumentException::class.java) {
+            list.draw(
+                triangle,
+                0,
+                3,
+                FloatArray(MODEL_MATRIX_FLOATS),
+                false,
+                false,
+                3,
+                GlPipeline.Default,
+                null,
+                pose,
+            )
+        }
+        assertFalse(meshArraysChanged(triangle.vertices, triangle.indices, triangle.vertices, triangle.indices))
+        assertTrue(meshArraysChanged(triangle.vertices, triangle.indices, FloatArray(9), triangle.indices))
     }
 
     private fun runtime(): GlProgramRuntime = GlProgramRuntime(
@@ -245,5 +280,13 @@ private class RecordingOps : PipelineOps {
 
     override fun depthMask(enabled: Boolean) {
         lines += "depth $enabled"
+    }
+
+    override fun cull(enabled: Boolean) {
+        lines += if (enabled) "cull" else "cullOff"
+    }
+
+    override fun cullFace(mode: Int) {
+        lines += "cullFace $mode"
     }
 }

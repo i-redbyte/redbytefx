@@ -1,10 +1,12 @@
 package ru.redbyte.redbytefx.scene
 
+import ru.redbyte.redbytefx.Expr
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Mat3
 import ru.redbyte.redbytefx.Mat4
 import ru.redbyte.redbytefx.Sampler2D
+import ru.redbyte.redbytefx.ShaderDsl
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
@@ -12,6 +14,7 @@ import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.a
 import ru.redbyte.redbytefx.lambert
 import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.mat4
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
@@ -45,7 +48,7 @@ public class LitMesh(
  * The fragment samples [LitMesh.albedo] and multiplies it by [ru.redbyte.redbytefx.lambert].
  * AGSL cannot compile it.
  */
-public fun litTexturedMesh(model: FloatArray = MODEL_IDENTITY): LitMesh {
+public fun litTexturedMesh(model: FloatArray = IDENTITY): LitMesh {
     val normals = normalMatrix(model)
     lateinit var view: Uniform<Mat4>
     lateinit var projection: Uniform<Mat4>
@@ -126,9 +129,14 @@ public fun normalMatrix(model: FloatArray, out: FloatArray = FloatArray(NORMAL_M
 private const val NORMAL_MATRIX_FLOATS: Int = 9
 private const val NORMAL_DEGENERATE: Float = 1.0e-8f
 
-private val MODEL_IDENTITY = floatArrayOf(
-    1f, 0f, 0f, 0f,
-    0f, 1f, 0f, 0f,
-    0f, 0f, 1f, 0f,
-    0f, 0f, 0f, 1f,
+/**
+ * Scene. Column-major model from instance attributes `a_model0`…`a_model3`,
+ * spelled by `attributeVec4("model0")` through `"model3"`. Pair with `GlFrame.draw` `model`
+ * or `instances`. A draw without those attributes reads a zero matrix.
+ */
+public fun ShaderDsl.VertexDsl.instanceModel(): Expr<Mat4> = mat4(
+    attributeVec4("model0"),
+    attributeVec4("model1"),
+    attributeVec4("model2"),
+    attributeVec4("model3"),
 )

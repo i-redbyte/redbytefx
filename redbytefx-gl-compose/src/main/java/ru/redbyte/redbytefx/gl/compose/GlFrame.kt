@@ -1,5 +1,8 @@
 package ru.redbyte.redbytefx.gl.compose
 
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.gl.GlColorTarget
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 
@@ -18,6 +21,9 @@ public const val MODEL_COLUMN_2: String = "a_model2"
 /** Instance attribute spelled by `attributeVec4("model3")`. Divisor is one. */
 public const val MODEL_COLUMN_3: String = "a_model3"
 
+/** Uniform value that means "read material from mesh UV.x". */
+internal const val MATERIAL_FROM_UV: Float = -1f
+
 internal val MODEL_COLUMNS: Array<String> = arrayOf(
     MODEL_COLUMN_0,
     MODEL_COLUMN_1,
@@ -34,6 +40,9 @@ internal class RecordedDraw {
     var present: Boolean = false
     var wholeMesh: Boolean = false
     var pipeline: GlPipeline = GlPipeline.Default
+    var hasMaterial: Boolean = false
+    var materialValue: Float = 0f
+    var modelStorage: FloatArray? = null
 }
 
 /** Scene. [indices] must be non-empty and every index must address a vertex. */
@@ -101,6 +110,13 @@ internal fun requireOffscreenTarget(renderToTexture: Boolean, offscreenCount: In
     }
 }
 
+internal fun meshArraysChanged(
+    lastVertices: FloatArray?,
+    lastIndices: IntArray?,
+    vertices: FloatArray,
+    indices: IntArray?,
+): Boolean = lastVertices !== vertices || lastIndices !== indices
+
 /** Draws recorded during one [GlSurface] frame. [reset] keeps the records for the next frame. */
 internal class DrawList {
     private val screenDraws = ArrayList<RecordedDraw>()
@@ -132,9 +148,17 @@ internal class DrawList {
         presentReady: Boolean,
         available: Int,
         pipeline: GlPipeline = GlPipeline.Default,
+        material: Float? = null,
+        model: FloatArray? = null,
     ) {
         require(!present || !recordingOffscreen) { "An offscreen draw uses the surface program" }
         check(!present || presentReady) { "This surface has no present program" }
+        require(model == null || instances == null) { "draw takes model or instances, not both" }
+        if (model != null) {
+            require(model.size >= MODEL_MATRIX_FLOATS) {
+                "Model needs $MODEL_MATRIX_FLOATS floats, was ${model.size}"
+            }
+        }
         require(instances == null || instances.size % MODEL_MATRIX_FLOATS == 0) {
             "Instance buffer needs $MODEL_MATRIX_FLOATS floats per model matrix, was ${instances?.size}"
         }
@@ -147,11 +171,21 @@ internal class DrawList {
         record.mesh = mesh
         record.first = first
         record.count = resolved
-        record.instances = instances
+        record.instances = packedModel(record, model, instances)
         record.present = present
         record.wholeMesh = count < 0
         record.pipeline = pipeline
+        record.hasMaterial = material != null
+        record.materialValue = material ?: 0f
         if (recordingOffscreen) offscreenDraws += record else screenDraws += record
+    }
+
+    private fun packedModel(record: RecordedDraw, model: FloatArray?, instances: FloatArray?): FloatArray? {
+        if (instances != null) return instances
+        if (model == null) return null
+        val storage = record.modelStorage ?: FloatArray(MODEL_MATRIX_FLOATS).also { record.modelStorage = it }
+        model.copyInto(storage, endIndex = MODEL_MATRIX_FLOATS)
+        return storage
     }
 
     fun offscreen(block: () -> Unit) {
@@ -217,6 +251,13 @@ public class GlFrame internal constructor(
     public var colorTarget: GlColorTarget? = null
         internal set
 
+    /**
+     * Scene. Per-draw material uniform written just before each [draw] that passes `material`.
+     * A draw without `material` writes `-1` so the shader can read UV.x.
+     * Set this in [onFrame][GlSurface] before those draws.
+     */
+    public var material: Uniform<Flt<High>>? = null
+
     private val draws = DrawList()
 
     /**
@@ -246,16 +287,23 @@ public class GlFrame internal constructor(
      * no matrices, is ignored and does not suppress the automatic draw. A range past the mesh is an
      * argument error. [instances] is column-major model matrices, [MODEL_MATRIX_FLOATS] floats each,
      * bound as [MODEL_COLUMN_0] through [MODEL_COLUMN_3] with divisor 1. The array is read after
-     * [onFrame][GlSurface] returns, so do not change it during this frame. [present] selects
-     * [presentRuntime] and is only valid for a screen draw. [pipeline] is applied on the GL thread
-     * for this draw only. The next draw applies its own, and the default leaves blend off, scissor
-     * off, every color channel written, and depth writes on. The depth test is unchanged.
+     * [onFrame][GlSurface] returns, so do not change it during this frame. [model] is one such
+     * matrix, copied immediately, so the same scratch array may be reused for the next draw in this
+     * frame. [model] and [instances] together are an argument error. [material] is written to
+     * [GlFrame.material] on the GL thread just before this draw; omit it to write `-1`. [present]
+     * selects [presentRuntime] and is only valid for a screen draw. [pipeline] is applied on the GL
+     * thread for this draw only. The next draw applies its own, and the default leaves blend off,
+     * scissor off, every color channel written, depth writes on, and culling off. The depth test is
+     * unchanged.
      */
+    @JvmOverloads
     public fun draw(
         mesh: GlMesh? = null,
         first: Int = 0,
         count: Int = -1,
         instances: FloatArray? = null,
+        model: FloatArray? = null,
+        material: Float? = null,
         present: Boolean = false,
         pipeline: GlPipeline = GlPipeline.Default,
     ) {
@@ -265,7 +313,18 @@ public class GlFrame internal constructor(
         } else {
             target.indices?.size ?: (target.vertices.size / target.stride)
         }
-        draws.draw(target, first, count, instances, present, presentRuntime != null, available, pipeline)
+        draws.draw(
+            target,
+            first,
+            count,
+            instances,
+            present,
+            presentRuntime != null,
+            available,
+            pipeline,
+            material,
+            model,
+        )
     }
 
     /**

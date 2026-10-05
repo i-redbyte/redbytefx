@@ -3,7 +3,10 @@ package ru.redbyte.redbytefx.gl.compose
 import android.opengl.GLES30
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
+import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
+import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.gl.GlColorTarget
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
@@ -30,6 +33,8 @@ private class HeldMesh {
     var drawnFrame = 0L
     var enabledAttribs = IntArray(0)
     var enabledAttribCount = 0
+    var sourceVertices: FloatArray? = null
+    var sourceIndices: IntArray? = null
 }
 
 internal class SceneRenderer(
@@ -114,18 +119,22 @@ internal class SceneRenderer(
         onFrame(current)
         requireOffscreenTarget(renderToTexture, draws.offscreen().size)
         runtime.use()
-        execute(runtime, draws)
+        execute(runtime, draws, current.material)
         draws.reset()
         evictIdleMeshes(runtime)
     }
 
-    private fun execute(runtime: GlProgramRuntime, draws: DrawList) {
+    private fun execute(
+        runtime: GlProgramRuntime,
+        draws: DrawList,
+        materialUniform: Uniform<Flt<High>>?,
+    ) {
         val offscreen = draws.offscreen()
         requireOffscreenTarget(renderToTexture, offscreen.size)
         if (offscreen.isNotEmpty()) {
             runtime.bindFramebuffer(ensureColorTarget(runtime).framebuffer)
             clear()
-            for (index in offscreen.indices) drawRecorded(runtime, offscreen[index])
+            for (index in offscreen.indices) drawRecorded(runtime, offscreen[index], materialUniform)
             runtime.bindFramebuffer(0)
         }
         clear()
@@ -146,11 +155,21 @@ internal class SceneRenderer(
         for (index in screen.indices) {
             val draw = screen[index]
             val active = if (draw.present) checkNotNull(presentRuntime) else runtime
-            drawRecorded(active, draw)
+            drawRecorded(active, draw, materialUniform)
         }
     }
 
-    private fun drawRecorded(runtime: GlProgramRuntime, draw: RecordedDraw) {
+    private fun drawRecorded(
+        runtime: GlProgramRuntime,
+        draw: RecordedDraw,
+        materialUniform: Uniform<Flt<High>>?,
+    ) {
+        if (draw.hasMaterial) {
+            val handle = checkNotNull(materialUniform) { "draw(material) needs GlFrame.material" }
+            runtime.set(handle, draw.materialValue)
+        } else if (materialUniform != null) {
+            runtime.set(materialUniform, MATERIAL_FROM_UV)
+        }
         val target = draw.mesh
         drawMesh(
             runtime,
@@ -241,7 +260,9 @@ internal class SceneRenderer(
         val existing = heldMeshes[target]
         if (existing != null) {
             existing.drawnFrame = frameNumber
-            fill(runtime, existing, target.stride, target.vertices, target.indices)
+            if (meshArraysChanged(existing.sourceVertices, existing.sourceIndices, target.vertices, target.indices)) {
+                fill(runtime, existing, target.stride, target.vertices, target.indices)
+            }
             return existing
         }
         val created = HeldMesh()
@@ -260,6 +281,8 @@ internal class SceneRenderer(
         if (held.buffer == 0) held.buffer = runtime.createBuffer()
         held.floats = runtime.replaceArrayBuffer(held.buffer, held.floats, vertices)
         held.vertexCount = vertices.size / stride
+        held.sourceVertices = vertices
+        held.sourceIndices = indices
         if (indices == null) return
         if (held.element == 0) held.element = runtime.createBuffer()
         held.elements = runtime.elementBufferData(held.element, indices)
@@ -317,6 +340,8 @@ internal class SceneRenderer(
         surface.indexCount = 0
         surface.vao = 0
         surface.enabledAttribCount = 0
+        surface.sourceVertices = null
+        surface.sourceIndices = null
         heldMeshes.clear()
         heldOrder.clear()
         instanceBuffer = 0

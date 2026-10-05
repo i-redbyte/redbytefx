@@ -10,6 +10,16 @@ private const val DEGENERATE: Float = 1.0e-8f
 public const val MATRIX_FLOATS: Int = 16
 
 /**
+ * Scene. Column-major identity. The array is shared: copy it with [identity] before writing.
+ */
+public val IDENTITY: FloatArray = floatArrayOf(
+    1f, 0f, 0f, 0f,
+    0f, 1f, 0f, 0f,
+    0f, 0f, 1f, 0f,
+    0f, 0f, 0f, 1f,
+)
+
+/**
  * Scene. Right-handed view matrix, Y up, column-major, the same order as
  * `glUniformMatrix4fv` with transpose false.
  * [eye] and [center] must differ. [up] must not be parallel to the view direction.

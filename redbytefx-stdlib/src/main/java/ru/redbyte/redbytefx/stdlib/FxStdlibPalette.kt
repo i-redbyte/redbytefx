@@ -8,8 +8,8 @@ private const val TAU: Float = 6.2831855f
  * Builds a cosine palette from a scalar [tone].
  *
  * [bias], [amplitude], [frequency], and [phase] follow the familiar procedural-art cosine palette
- * convention. The returned RGB values are not clamped automatically. This is a style-oriented
- * palette helper, not part of the first canonical authoring path.
+ * convention. RGB is saturated to `[0, 1]`. This is a style-oriented palette helper, not part of
+ * the first canonical authoring path.
  */
 public fun cosinePalette(
     tone: Expr<Flt<High>>,
@@ -17,10 +17,12 @@ public fun cosinePalette(
     amplitude: Expr<Vec3<Flt<High>>> = float3(0.5f, 0.5f, 0.5f),
     frequency: Expr<Vec3<Flt<High>>> = float3(1f, 1f, 1f),
     phase: Expr<Vec3<Flt<High>>> = float3(0f, 0.33f, 0.67f),
-): Expr<Vec3<Flt<High>>> = float3(
-    bias.x + amplitude.x * cos(TAU * (frequency.x * tone + phase.x)),
-    bias.y + amplitude.y * cos(TAU * (frequency.y * tone + phase.y)),
-    bias.z + amplitude.z * cos(TAU * (frequency.z * tone + phase.z)),
+): Expr<Vec3<Flt<High>>> = saturate(
+    float3(
+        bias.x + amplitude.x * cos(TAU * (frequency.x * tone + phase.x)),
+        bias.y + amplitude.y * cos(TAU * (frequency.y * tone + phase.y)),
+        bias.z + amplitude.z * cos(TAU * (frequency.z * tone + phase.z)),
+    ),
 )
 
 /**

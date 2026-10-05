@@ -15,6 +15,8 @@ class SceneMeshTest {
             box(0f, 0f, 0f, 0.5f, 0.4f, 0.3f),
             sphere(1f, stacks = 4, slices = 6),
             torus(1f, 0.2f, majorSegments = 8, minorSegments = 6),
+            disc(1f, 0.1f, segments = 8),
+            extrudePolygon(listOf(0f to 0f, 1f to 0f, 0f to 1f), 0.1f),
         )
         for (mesh in meshes) {
             assertEquals(MESH_STRIDE, mesh.stride)
@@ -39,6 +41,8 @@ class SceneMeshTest {
             box(0f, 0f, 0f, 0.5f, 0.4f, 0.3f),
             sphere(1f, stacks = 5, slices = 7),
             torus(1f, 0.2f, majorSegments = 8, minorSegments = 6),
+            disc(1f, 0.1f, segments = 8),
+            extrudePolygon(listOf(0f to 0f, 1f to 0f, 0.2f to 0.8f), 0.1f),
         )
         for (mesh in meshes) {
             val v = mesh.vertices
@@ -106,5 +110,25 @@ class SceneMeshTest {
         assertEquals(0.25f, tube, 0.001f)
         val normal = abs(mesh.vertices[3]) + abs(mesh.vertices[4]) + abs(mesh.vertices[5])
         assertTrue(normal > 0.5f)
+    }
+
+    @Test
+    fun transformMovesPositionsAndMergesIndexBases() {
+        val moved = transform(triangle(0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 0f), translation(2f, 0f, 0f))
+        assertEquals(2f, moved.vertices[0], 0.0001f)
+        val tagged = tagUv(moved, 3f, 0.25f)
+        assertEquals(3f, tagged.vertices[6], 0f)
+        assertEquals(0.25f, tagged.vertices[7], 0f)
+        val combined = merge(listOf(moved, triangle(0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 0f)))
+        assertEquals(6, combined.indices.size)
+        assertEquals(3, combined.indices[3])
+        val tube = tubeAlong(circlePath(8), 0.05f, rings = 4, z = 0.1f)
+        assertEquals(MESH_STRIDE, tube.stride)
+        assertTrue(tube.indices.isNotEmpty())
+    }
+
+    private fun circlePath(count: Int): List<Pair<Float, Float>> = List(count) { index ->
+        val angle = index / count.toFloat() * (Math.PI * 2).toFloat()
+        kotlin.math.cos(angle) to kotlin.math.sin(angle)
     }
 }

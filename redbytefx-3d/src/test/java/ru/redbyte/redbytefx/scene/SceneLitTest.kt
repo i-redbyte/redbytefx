@@ -4,6 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.shader
+import ru.redbyte.redbytefx.times
+import ru.redbyte.redbytefx.vec4
 
 class SceneLitTest {
     @Test
@@ -19,6 +24,15 @@ class SceneLitTest {
         assertTrue(fragment.contains("normalize("))
         assertTrue(vertex.contains("u_model"))
         assertTrue(vertex.contains("u_normal_matrix"))
+        val instance = shader(ShaderTarget.Gles30) {
+            vertex {
+                val model = instanceModel()
+                glPosition(model * vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit))
+            }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertTrue(instance.vertexSource().contains("a_model0"))
+        assertTrue(instance.vertexSource().contains("a_model3"))
         val model = checkNotNull(lit.model.components)
         val normals = checkNotNull(lit.normalMatrix.components)
         assertEquals(1f, model[0], 0f)

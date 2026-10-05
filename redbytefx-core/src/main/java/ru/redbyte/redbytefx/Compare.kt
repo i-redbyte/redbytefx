@@ -7,7 +7,8 @@ import kotlin.jvm.JvmName
  *
  * Scalar floats use infix [gt], [lt], [ge], [le], [eq], [ne] (spell as `>`, `<`, … in GLSL).
  * Vector compares return [BVec2] / [BVec3] / [BVec4]; reduce with [any] or [all].
- * [ifElse] is the portable ternary. [not] spells `!`. Prefer [gte] in [Sugar.kt] when `>=` reads more clearly in Kotlin.
+ * [ifElse] is the portable ternary. [choose] is nested [ifElse] on a float selector.
+ * [not] spells `!`. Prefer [gte] in [Sugar.kt] when `>=` reads more clearly in Kotlin.
  */
 
 /** Float greater-than; result is a shader `bool`. */
@@ -146,6 +147,65 @@ public fun <T : ShType> ifElse(condition: Expr<BoolS>, ifTrue: Expr<T>, ifFalse:
         "ifElse branches must share a shape, was ${ifTrue.shape} and ${ifFalse.shape}"
     }
     return Expr(ifTrue.shape, ExprNode.Select(condition, ifTrue, ifFalse))
+}
+
+/**
+ * Nested [ifElse] for a float [selector]. Each [ChooseScope.on] wins when
+ * `abs(selector - id) < width`. The first matching arm is taken. [ChooseScope.otherwise] is required.
+ */
+public fun <T : ShType> choose(
+    selector: Expr<Flt<High>>,
+    width: Float = 0.5f,
+    block: ChooseScope<T>.() -> Unit,
+): Expr<T> {
+    require(width > 0f) { "choose width must be positive, was $width" }
+    val scope = ChooseScope<T>(selector, width)
+    scope.block()
+    return scope.build()
+}
+
+/** Arms of [choose]. [on] is `abs(selector - id) < width`. */
+public class ChooseScope<T : ShType> internal constructor(
+    private val selector: Expr<Flt<High>>,
+    private val width: Float,
+) {
+    private val arms = ArrayList<Pair<Float, Expr<T>>>()
+    private var fallback: Expr<T>? = null
+
+    public fun on(id: Float, value: Expr<T>) {
+        arms += id to value
+    }
+
+    public fun on(id: Int, value: Expr<T>) {
+        on(id.toFloat(), value)
+    }
+
+    public fun on(id: Float, value: () -> Expr<T>) {
+        on(id, value())
+    }
+
+    public fun on(id: Int, value: () -> Expr<T>) {
+        on(id.toFloat(), value())
+    }
+
+    public fun otherwise(value: Expr<T>) {
+        fallback = value
+    }
+
+    public fun otherwise(value: () -> Expr<T>) {
+        otherwise(value())
+    }
+
+    internal fun build(): Expr<T> {
+        var result = requireNotNull(fallback) { "choose needs otherwise" }
+        var index = arms.lastIndex
+        while (index >= 0) {
+            val (id, value) = arms[index]
+            result = ifElse(abs(selector - id.lit) lt width.lit, value, result)
+            index -= 1
+        }
+        return result
+    }
 }
 
 private fun boolOp(op: ArithOp, left: Expr<BoolS>, right: Expr<BoolS>): Expr<BoolS> =

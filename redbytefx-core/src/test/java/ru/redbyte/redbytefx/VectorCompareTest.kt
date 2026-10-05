@@ -120,4 +120,27 @@ class VectorCompareTest {
         }
         assertTrue(glsl.fragmentSource().contains("(!(1.0 > 0.0))"))
     }
+
+    @Test
+    fun chooseNestsIfElseOnTheSelector() {
+        val glsl = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val tone = choose(0f.lit) {
+                    on(0f) { 1f.lit }
+                    on(1f) { 0.5f.lit }
+                    otherwise { 0f.lit }
+                }
+                vec4(tone, tone, tone, 1f.lit)
+            }
+        }
+        val source = glsl.fragmentSource()
+        assertTrue(source.contains("abs("))
+        assertTrue(source.contains("? 1.0 :"))
+        assertThrows(IllegalArgumentException::class.java) {
+            choose(0f.lit) {
+                on(0f, 1f.lit)
+            }
+        }
+    }
 }

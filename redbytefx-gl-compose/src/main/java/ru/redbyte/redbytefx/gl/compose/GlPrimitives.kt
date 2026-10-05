@@ -7,10 +7,16 @@ import ru.redbyte.redbytefx.scene.MESH_POSITION as SCENE_POSITION
 import ru.redbyte.redbytefx.scene.MESH_STRIDE as SCENE_STRIDE
 import ru.redbyte.redbytefx.scene.MESH_UV as SCENE_UV
 import ru.redbyte.redbytefx.scene.box as sceneBox
+import ru.redbyte.redbytefx.scene.disc as sceneDisc
+import ru.redbyte.redbytefx.scene.extrudePolygon as sceneExtrude
+import ru.redbyte.redbytefx.scene.merge as sceneMerge
 import ru.redbyte.redbytefx.scene.quad as sceneQuad
 import ru.redbyte.redbytefx.scene.sphere as sceneSphere
+import ru.redbyte.redbytefx.scene.tagUv as sceneTagUv
 import ru.redbyte.redbytefx.scene.torus as sceneTorus
+import ru.redbyte.redbytefx.scene.transform as sceneTransform
 import ru.redbyte.redbytefx.scene.triangle as sceneTriangle
+import ru.redbyte.redbytefx.scene.tubeAlong as sceneTube
 
 /**
  * Triangle meshes that share one vertex layout.
@@ -74,6 +80,37 @@ public fun torus(
     minorSegments: Int = 16,
 ): GlMesh = sceneTorus(major, minor, majorSegments, minorSegments).toGlMesh()
 
+/** Scene. Filled disc in XY with a short rim. */
+public fun disc(radius: Float, halfZ: Float, segments: Int = 48): GlMesh =
+    sceneDisc(radius, halfZ, segments).toGlMesh()
+
+/** Scene. Prism along Z from a closed XY outline. */
+public fun extrudePolygon(outline: List<Pair<Float, Float>>, halfZ: Float): GlMesh =
+    sceneExtrude(outline, halfZ).toGlMesh()
+
+/** Scene. Tube along a closed XY path. */
+public fun tubeAlong(
+    path: List<Pair<Float, Float>>,
+    radius: Float,
+    rings: Int = 8,
+    z: Float = 0f,
+): GlMesh = sceneTube(path, radius, rings, z).toGlMesh()
+
+/** Scene. Moves [mesh] by a column-major [matrix]. */
+public fun transform(mesh: GlMesh, matrix: FloatArray): GlMesh =
+    sceneTransform(mesh.toSceneMesh(), matrix).toGlMesh(mesh)
+
+/** Scene. Writes [u] (and optional [v]) into every vertex UV. */
+public fun tagUv(mesh: GlMesh, u: Float, v: Float? = null): GlMesh =
+    sceneTagUv(mesh.toSceneMesh(), u, v).toGlMesh(mesh)
+
+/** Scene. Concatenates indexed triangle meshes that share [MESH_STRIDE]. */
+public fun merge(parts: List<GlMesh>): GlMesh {
+    require(parts.isNotEmpty()) { "merge needs at least one mesh" }
+    val head = parts.first()
+    return sceneMerge(parts.map { it.toSceneMesh() }).toGlMesh(head)
+}
+
 internal fun SceneMesh.toGlMesh(): GlMesh = GlMesh(
     vertices = vertices,
     stride = stride,
@@ -81,3 +118,21 @@ internal fun SceneMesh.toGlMesh(): GlMesh = GlMesh(
     depth = true,
     indices = indices,
 )
+
+private fun SceneMesh.toGlMesh(style: GlMesh): GlMesh = GlMesh(
+    vertices = vertices,
+    stride = stride,
+    attribs = style.attribs,
+    mode = style.mode,
+    patchVertices = style.patchVertices,
+    depth = style.depth,
+    clearR = style.clearR,
+    clearG = style.clearG,
+    clearB = style.clearB,
+    indices = indices,
+)
+
+private fun GlMesh.toSceneMesh(): SceneMesh {
+    val elements = requireNotNull(indices) { "transform needs indices" }
+    return SceneMesh(vertices, stride, sceneMeshAttribs(), elements)
+}

@@ -23,12 +23,20 @@ public enum class BlendEquation {
     ReverseSubtract,
 }
 
+/** Scene. Faces passed to `glCullFace`. [Off] leaves culling disabled. */
+public enum class CullFace {
+    Off,
+    Front,
+    Back,
+    FrontAndBack,
+}
+
 /**
  * Scene. Extra pass state on top of the depth test.
  *
  * The default matches the driver: blend off, scissor off, all color channels written, depth writes
- * on. Each draw applies its own [GlPipeline], so a pass does not leave blend, scissor, the color
- * mask, or the depth mask for the next one. Face culling is not enabled.
+ * on, face culling off. Each draw applies its own [GlPipeline], so a pass does not leave blend,
+ * scissor, the color mask, the depth mask, or culling for the next one.
  */
 public class GlPipeline(
     public val blend: Boolean = false,
@@ -45,6 +53,7 @@ public class GlPipeline(
     public val writeBlue: Boolean = true,
     public val writeAlpha: Boolean = true,
     public val depthMask: Boolean = true,
+    public val cullFace: CullFace = CullFace.Off,
 ) {
     public companion object {
         public val Default: GlPipeline = GlPipeline()
@@ -59,6 +68,8 @@ internal interface PipelineOps {
     fun scissor(x: Int, y: Int, width: Int, height: Int)
     fun colorMask(red: Boolean, green: Boolean, blue: Boolean, alpha: Boolean)
     fun depthMask(enabled: Boolean)
+    fun cull(enabled: Boolean)
+    fun cullFace(mode: Int)
 }
 
 internal fun applyPipeline(pipeline: GlPipeline, ops: PipelineOps) {
@@ -80,6 +91,12 @@ internal fun applyPipeline(pipeline: GlPipeline, ops: PipelineOps) {
     }
     ops.colorMask(pipeline.writeRed, pipeline.writeGreen, pipeline.writeBlue, pipeline.writeAlpha)
     ops.depthMask(pipeline.depthMask)
+    if (pipeline.cullFace == CullFace.Off) {
+        ops.cull(false)
+    } else {
+        ops.cull(true)
+        ops.cullFace(cullFace(pipeline.cullFace))
+    }
 }
 
 internal fun blendFactor(factor: BlendFactor): Int = when (factor) {
@@ -99,6 +116,13 @@ internal fun blendEquation(equation: BlendEquation): Int = when (equation) {
     BlendEquation.Add -> GLES30.GL_FUNC_ADD
     BlendEquation.Subtract -> GLES30.GL_FUNC_SUBTRACT
     BlendEquation.ReverseSubtract -> GLES30.GL_FUNC_REVERSE_SUBTRACT
+}
+
+internal fun cullFace(face: CullFace): Int = when (face) {
+    CullFace.Off -> GLES30.GL_BACK
+    CullFace.Front -> GLES30.GL_FRONT
+    CullFace.Back -> GLES30.GL_BACK
+    CullFace.FrontAndBack -> GLES30.GL_FRONT_AND_BACK
 }
 
 internal object GlesPipelineOps : PipelineOps {
@@ -128,5 +152,13 @@ internal object GlesPipelineOps : PipelineOps {
 
     override fun depthMask(enabled: Boolean) {
         GLES30.glDepthMask(enabled)
+    }
+
+    override fun cull(enabled: Boolean) {
+        if (enabled) GLES30.glEnable(GLES30.GL_CULL_FACE) else GLES30.glDisable(GLES30.GL_CULL_FACE)
+    }
+
+    override fun cullFace(mode: Int) {
+        GLES30.glCullFace(mode)
     }
 }

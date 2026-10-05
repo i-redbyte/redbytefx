@@ -15,5 +15,8 @@ class GlPrimitivesTest {
         assertEquals(24 * MESH_STRIDE, mesh.vertices.size)
         assertEquals(36, mesh.indices?.size)
         assertNotNull(mesh.indices)
+        val discMesh = disc(1f, 0.1f, segments = 8)
+        assertEquals(MESH_STRIDE, discMesh.stride)
+        assertNotNull(discMesh.indices)
     }
 }
