@@ -47,7 +47,7 @@ internal class SceneRenderer(
 ) : GLSurfaceView.Renderer {
     private val nameSlot = IntArray(1)
     private val surface = HeldMesh()
-    private val heldMeshes = IdentityHashMap<GlMesh, HeldMesh>()
+    private var heldMeshes = IdentityHashMap<GlMesh, HeldMesh>()
     private val heldOrder = ArrayList<GlMesh>()
     private val upload: (FloatArray, IntArray?) -> Unit = { vertices, indices -> replaceSurface(vertices, indices) }
     private var frame: GlFrame? = null
@@ -326,6 +326,7 @@ internal class SceneRenderer(
 
     private fun evictIdleMeshes(runtime: GlProgramRuntime) {
         var index = heldOrder.size - 1
+        var evicted = false
         while (index >= 0) {
             val target = heldOrder[index]
             val held = heldMeshes.getValue(target)
@@ -333,8 +334,13 @@ internal class SceneRenderer(
                 deleteNames(runtime, held)
                 heldMeshes.remove(target)
                 heldOrder.removeAt(index)
+                evicted = true
             }
             index -= 1
+        }
+        if (evicted && heldOrder.isEmpty()) {
+            heldOrder.trimToSize()
+            heldMeshes = IdentityHashMap()
         }
     }
 
@@ -372,7 +378,9 @@ internal class SceneRenderer(
         surface.enabledAttribCount = 0
         surface.sourceRevision = -1L
         heldMeshes.clear()
+        heldMeshes = IdentityHashMap()
         heldOrder.clear()
+        heldOrder.trimToSize()
         instanceBuffer = 0
         instanceFloats = 0
         colorTarget = null

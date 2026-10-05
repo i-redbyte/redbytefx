@@ -127,8 +127,12 @@ internal class DrawList {
     fun recordedCount(): Int = screenDraws.size + offscreenDraws.size
 
     fun reset() {
+        val oversizedScreen = screenDraws.size > MAX_POOLED_DRAWS * 4
+        val oversizedOffscreen = offscreenDraws.size > MAX_POOLED_DRAWS * 4
         screenDraws.clear()
         offscreenDraws.clear()
+        if (oversizedScreen) screenDraws.trimToSize()
+        if (oversizedOffscreen) offscreenDraws.trimToSize()
         for (record in pool) {
             record.mesh = null
             record.instances = null
@@ -136,6 +140,7 @@ internal class DrawList {
         }
         if (pool.size > MAX_POOLED_DRAWS) {
             pool.subList(MAX_POOLED_DRAWS, pool.size).clear()
+            pool.trimToSize()
         }
         pooled = 0
         recordingOffscreen = false
