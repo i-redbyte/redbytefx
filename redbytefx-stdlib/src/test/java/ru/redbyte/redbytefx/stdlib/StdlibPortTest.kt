@@ -92,6 +92,25 @@ class StdlibPortTest {
     }
 
     @Test
+    fun nonlinearColorTransformsRestorePremultiplication() {
+        fun source(target: ShaderTarget) = shader(target) {
+            fragment {
+                val input = color(float3(0.2f, 0.1f, 0.05f), 0.25f)
+                val graded = posterize(input, 3f)
+                val toned = filmicTonemap(input)
+                color(graded.r, toned.g, toned.b, input.a)
+            }
+        }.let { if (target == ShaderTarget.Agsl) it.agslSource() else it.fragmentSource() }
+
+        for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
+            val generated = source(target)
+            assertTrue(generated.contains("max("))
+            assertTrue(generated.contains("floor("))
+            assertTrue(generated.contains(".a"))
+        }
+    }
+
+    @Test
     fun topLeftUvFlipsOnlyGlesVerticalAxis() {
         fun source(target: ShaderTarget) = shader(target) {
             fragment {

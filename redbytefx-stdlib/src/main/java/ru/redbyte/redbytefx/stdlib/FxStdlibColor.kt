@@ -196,9 +196,11 @@ public fun filmicTonemap(rgb: Expr<Vec3<Flt<High>>>): Expr<Vec3<Flt<High>>> {
     return saturate((rgb * (rgb * a + b)) / (rgb * (rgb * c + d) + e))
 }
 
-/** Tonemaps RGB of [color] and keeps alpha. */
+/** Tonemaps straight RGB inside a premultiplied [color], then restores premultiplication. */
 @JvmName("filmicTonemapColor")
 public fun filmicTonemap(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
-    val rgb = filmicTonemap(float3(color.r.toHigh(), color.g.toHigh(), color.b.toHigh()))
-    return ru.redbyte.redbytefx.color(rgb.toMed(), color.a)
+    val safeAlpha = max(color.a.toHigh(), 0.000001f)
+    val straight = float3(color.r.toHigh(), color.g.toHigh(), color.b.toHigh()) / safeAlpha
+    val rgb = filmicTonemap(straight)
+    return premultiply(ru.redbyte.redbytefx.color(rgb.toMed(), color.a))
 }

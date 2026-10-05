@@ -70,7 +70,7 @@ public fun posterize(
 ): Expr<Flt<High>> = posterize(value, float(levels))
 
 /**
- * Posterizes the RGB channels of [color] while preserving alpha.
+ * Posterizes straight RGB inside premultiplied [color], preserving alpha.
  */
 @JvmName("posterizeColor")
 public fun posterize(
@@ -78,11 +78,13 @@ public fun posterize(
     levels: Expr<Flt<High>>,
 ): Expr<Vec4<Flt<Med>>> {
     val medLevels = levels.toMed()
+    val alpha = color.a
+    val safeAlpha = max(alpha, 0.000001f)
     return color(
-        r = posterize(color.r, medLevels),
-        g = posterize(color.g, medLevels),
-        b = posterize(color.b, medLevels),
-        a = color.a,
+        r = posterize(color.r / safeAlpha, medLevels) * alpha,
+        g = posterize(color.g / safeAlpha, medLevels) * alpha,
+        b = posterize(color.b / safeAlpha, medLevels) * alpha,
+        a = alpha,
     )
 }
 
