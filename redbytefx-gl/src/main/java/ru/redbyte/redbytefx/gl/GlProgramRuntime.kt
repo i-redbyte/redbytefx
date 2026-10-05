@@ -212,6 +212,7 @@ public class GlProgramRuntime(
             "RGBA texture needs $expected bytes, was ${rgba.size}"
         }
         val name = device.createTexture()
+        if (name == 0) reject(GlCode.DriverError, "Driver returned no texture name")
         try {
             textureUnits.disturbActive()
             device.texture2DLinearRepeat(name)
@@ -233,6 +234,7 @@ public class GlProgramRuntime(
     public fun createTexture(): Int {
         checkReady()
         val name = device.createTexture()
+        if (name == 0) reject(GlCode.DriverError, "Driver returned no texture name")
         ownedTextures += name
         return name
     }
@@ -333,6 +335,7 @@ public class GlProgramRuntime(
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         require(width > 0 && height > 0) { "Framebuffer size must be positive, was ${width}x$height" }
         val color = device.createTexture()
+        if (color == 0) reject(GlCode.DriverError, "Driver returned no color texture name")
         var depth = 0
         var framebuffer = 0
         var completed = false
@@ -341,7 +344,9 @@ public class GlProgramRuntime(
             device.texture2DLinearClamp(color)
             device.texImage2DRgbaAlloc(color, width, height)
             depth = device.createRenderbuffer()
+            if (depth == 0) reject(GlCode.DriverError, "Driver returned no depth renderbuffer name")
             framebuffer = device.createFramebuffer()
+            if (framebuffer == 0) reject(GlCode.DriverError, "Driver returned no framebuffer name")
             device.framebufferColor(framebuffer, color)
             device.framebufferDepth(framebuffer, depth, width, height)
             if (!device.framebufferComplete(framebuffer)) {
@@ -428,6 +433,7 @@ public class GlProgramRuntime(
     public fun createBuffer(): Int {
         checkReady()
         val name = device.createBuffer()
+        if (name == 0) reject(GlCode.DriverError, "Driver returned no buffer name")
         deletedUserBuffers -= name
         return name
     }

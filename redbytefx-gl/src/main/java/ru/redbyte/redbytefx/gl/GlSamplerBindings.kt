@@ -76,10 +76,15 @@ internal class GlSamplerBindings(
                 "Texture unit is outside GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS $limit",
             )
         }
+        try {
+            device.useProgram(programId())
+            device.uniform1i(location, unit)
+        } catch (error: Throwable) {
+            textureUnits.release(unit)
+            throw error
+        }
         boundUnits[uniform] = unit
         samplerOrder += uniform
-        device.useProgram(programId())
-        device.uniform1i(location, unit)
         return unit
     }
 

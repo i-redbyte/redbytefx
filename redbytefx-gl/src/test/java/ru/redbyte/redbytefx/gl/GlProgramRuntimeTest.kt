@@ -59,6 +59,34 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun zeroNamesFromTheDriverFailBeforeTheyCanBeUsed() {
+        val compileDevice = RecordingGlDevice()
+        compileDevice.failNextShaderName = true
+        val compileError = assertThrows(GlException::class.java) {
+            GlProgramRuntime(passthrough(), compileDevice).link()
+        }
+        assertEquals(GlCode.CompileFailed, compileError.code)
+
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device).also { it.link() }
+        device.failNextTextureName = true
+        assertEquals(GlCode.DriverError, assertThrows(GlException::class.java) { runtime.createTexture() }.code)
+        device.failNextBufferName = true
+        assertEquals(GlCode.DriverError, assertThrows(GlException::class.java) { runtime.createBuffer() }.code)
+    }
+
+    @Test
+    fun failedSamplerAssignmentReturnsItsTextureUnitForRetry() {
+        lateinit var image: Uniform<Sampler2D>
+        val device = RecordingGlDevice(textureUnitLimit = 1)
+        val runtime = GlProgramRuntime(imageProgram { image = it }, device).also { it.link() }
+        device.failNextIntWrite = true
+        assertThrows(IllegalStateException::class.java) { runtime.bind(image, 7) }
+        assertTrue(runtime.bind(image, 7))
+        assertEquals(listOf(0), device.textureUnits)
+    }
+
+    @Test
     fun dispatchReachesTheDeviceOnceWithTheGroupCounts() {
         val device = RecordingGlDevice()
         val program = shader(ShaderTarget.Gles31) {
@@ -1102,6 +1130,8 @@ private class RecordingGlDevice(
     var uniform1fCalls = 0
     var failNextFloatWrite = false
     var uniform1iCalls = 0
+    var failNextIntWrite = false
+    var failNextShaderName = false
     var deleteProgramCalls = 0
     val writes = mutableListOf<String>()
     val intValues = mutableListOf<Int>()
@@ -1110,6 +1140,10 @@ private class RecordingGlDevice(
 
     override fun createShader(stage: GlStage): Int {
         createShaderCalls += 1
+        if (failNextShaderName) {
+            failNextShaderName = false
+            return 0
+        }
         val id = nextId++
         stages[id] = stage
         liveShaders += id
@@ -1178,6 +1212,10 @@ private class RecordingGlDevice(
     override fun uniform4f(location: Int, x: Float, y: Float, z: Float, w: Float) = Unit
 
     override fun uniform1i(location: Int, value: Int) {
+        if (failNextIntWrite) {
+            failNextIntWrite = false
+            error("device write failed")
+        }
         writes += "uniform1i"
         uniform1iCalls += 1
         intValues += value
@@ -1217,6 +1255,7 @@ private class RecordingGlDevice(
 
     var createdTextures = 0
     var failNextTextureUpload = false
+    var failNextTextureName = false
     val linearRepeat = mutableListOf<Int>()
     val uploadedWidths = mutableListOf<Int>()
     val uploadedHeights = mutableListOf<Int>()
@@ -1226,6 +1265,10 @@ private class RecordingGlDevice(
 
     override fun createTexture(): Int {
         createdTextures += 1
+        if (failNextTextureName) {
+            failNextTextureName = false
+            return 0
+        }
         return nextTexture++
     }
 

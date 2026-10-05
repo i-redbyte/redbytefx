@@ -57,6 +57,7 @@ internal fun linkComputeProgram(program: ShaderProgram, device: GlDevice): Int {
 
 private fun compileStage(device: GlDevice, stage: GlStage, source: String): Int {
     val shader = device.createShader(stage)
+    if (shader == 0) reject(GlCode.CompileFailed, "Driver returned no shader name for $stage")
     try {
         device.shaderSource(shader, source)
         val status = device.compileShader(shader)
