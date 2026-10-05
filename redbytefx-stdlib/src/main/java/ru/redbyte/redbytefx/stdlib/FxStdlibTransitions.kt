@@ -13,7 +13,7 @@ public fun horizontalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Expr<Flt<High>>,
     feather: Expr<Flt<High>> = float(0.05f),
-    fromLeft: Boolean = true
+    fromLeft: Boolean = true,
 ): Expr<Flt<High>> {
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromLeft) uv.x else 1f - uv.x
@@ -28,12 +28,12 @@ public fun horizontalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Float,
     feather: Float = 0.05f,
-    fromLeft: Boolean = true
+    fromLeft: Boolean = true,
 ): Expr<Flt<High>> = horizontalReveal(
     uv = uv,
     progress = float(progress),
     feather = float(feather),
-    fromLeft = fromLeft
+    fromLeft = fromLeft,
 )
 
 /**
@@ -43,12 +43,12 @@ public fun horizontalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Expr<Flt<High>>,
     feather: Float,
-    fromLeft: Boolean = true
+    fromLeft: Boolean = true,
 ): Expr<Flt<High>> = horizontalReveal(
     uv = uv,
     progress = progress,
     feather = float(feather),
-    fromLeft = fromLeft
+    fromLeft = fromLeft,
 )
 
 /**
@@ -62,7 +62,7 @@ public fun verticalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Expr<Flt<High>>,
     feather: Expr<Flt<High>> = float(0.05f),
-    fromTop: Boolean = true
+    fromTop: Boolean = true,
 ): Expr<Flt<High>> {
     val safeFeather = max(feather, 0.0001f)
     val axis = if (fromTop) uv.y else 1f - uv.y
@@ -77,12 +77,12 @@ public fun verticalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Float,
     feather: Float = 0.05f,
-    fromTop: Boolean = true
+    fromTop: Boolean = true,
 ): Expr<Flt<High>> = verticalReveal(
     uv = uv,
     progress = float(progress),
     feather = float(feather),
-    fromTop = fromTop
+    fromTop = fromTop,
 )
 
 /**
@@ -92,12 +92,12 @@ public fun verticalReveal(
     uv: Expr<Vec2<Flt<High>>>,
     progress: Expr<Flt<High>>,
     feather: Float,
-    fromTop: Boolean = true
+    fromTop: Boolean = true,
 ): Expr<Flt<High>> = verticalReveal(
     uv = uv,
     progress = progress,
     feather = float(feather),
-    fromTop = fromTop
+    fromTop = fromTop,
 )
 
 /**
@@ -112,12 +112,12 @@ public fun radialReveal(
     progress: Expr<Flt<High>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     feather: Expr<Flt<High>> = float(0.08f),
-    maxRadius: Expr<Flt<High>> = float(0.85f)
+    maxRadius: Expr<Flt<High>> = float(0.85f),
 ): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = maxRadius * saturate(progress),
-    feather = feather
+    feather = feather,
 )
 
 /**
@@ -128,13 +128,13 @@ public fun radialReveal(
     progress: Float,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     feather: Float = 0.08f,
-    maxRadius: Float = 0.85f
+    maxRadius: Float = 0.85f,
 ): Expr<Flt<High>> = radialReveal(
     uv = uv,
     progress = float(progress),
     center = center,
     feather = float(feather),
-    maxRadius = float(maxRadius)
+    maxRadius = float(maxRadius),
 )
 
 /**
@@ -145,11 +145,11 @@ public fun radialReveal(
     progress: Expr<Flt<High>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     feather: Float = 0.08f,
-    maxRadius: Float = 0.85f
+    maxRadius: Float = 0.85f,
 ): Expr<Flt<High>> = radialReveal(
     uv = uv,
     progress = progress,
     center = center,
     feather = float(feather),
-    maxRadius = float(maxRadius)
+    maxRadius = float(maxRadius),
 )

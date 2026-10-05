@@ -14,16 +14,16 @@ import ru.redbyte.redbytefx.ScalarKind
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Shape
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
-import ru.redbyte.redbytefx.StorageBlock
-import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.packStd140
 import ru.redbyte.redbytefx.packStd430
-import ru.redbyte.redbytefx.unpackStd430
 import ru.redbyte.redbytefx.sameFloatUniformValue
+import ru.redbyte.redbytefx.unpackStd430
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
 
@@ -432,11 +432,14 @@ public class GlProgramRuntime(
     /**
      * Device. Allocates a buffer name on the EGL thread that linked this runtime.
      * [destroy] does not delete it. [deleteBuffer] still deletes it afterward, while the
-     * EGL context is current.
+     * EGL context is current. The driver may reuse a deleted name; this call clears that mark
+     * so a later [deleteBuffer] of the new object is legal.
      */
     public fun createBuffer(): Int {
         checkReady()
-        return device.createBuffer()
+        val name = device.createBuffer()
+        deletedUserBuffers -= name
+        return name
     }
 
     /**
@@ -859,4 +862,3 @@ private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
 }
 
 internal fun reject(code: GlCode, message: String): Nothing = throw GlException(code, message)
-

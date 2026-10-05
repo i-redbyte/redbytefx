@@ -7,7 +7,7 @@ package ru.redbyte.redbytefx
  * appending `_1`, `_2`, … to the base name.
  */
 internal class IdentifierAllocator(
-    initialOccupied: Set<String> = emptySet()
+    initialOccupied: Set<String> = emptySet(),
 ) {
     private val occupied = initialOccupied.toMutableSet()
 

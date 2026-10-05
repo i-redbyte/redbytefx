@@ -675,8 +675,11 @@ public class ShaderDsl internal constructor(
             require(value.shape == shape) {
                 "Varying \"${this.name}\" expects $shape, was ${value.shape}"
             }
-            if (program.sink.capturing()) program.sink.add(PrimitiveCommand.VaryingSet(this, value))
-            else program.varyingWrites += VaryingWrite(this, value)
+            if (program.sink.capturing()) {
+                program.sink.add(PrimitiveCommand.VaryingSet(this, value))
+            } else {
+                program.varyingWrites += VaryingWrite(this, value)
+            }
         }
 
         public fun glPosition(value: Expr<Vec4<Flt<High>>>) {
@@ -1154,7 +1157,8 @@ private class AgslEmitter(
         is ExprNode.Index,
         is ExprNode.GlIn,
         is ExprNode.Invocation,
-        ExprNode.TessCoord -> error("AGSL cannot spell ${node::class.simpleName}")
+        ExprNode.TessCoord,
+        -> error("AGSL cannot spell ${node::class.simpleName}")
     }
 
     private fun call(node: ExprNode.Call): String {

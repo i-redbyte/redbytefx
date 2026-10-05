@@ -1,15 +1,14 @@
 package ru.redbyte.redbytefx.compose
 
-import android.graphics.RenderEffect as AndroidRenderEffect
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -23,20 +22,21 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.platform.InspectorInfo
-import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.AgslInstance
-import ru.redbyte.redbytefx.RedByteFxApis
-import ru.redbyte.redbytefx.RedByteFxPlatform
-import ru.redbyte.redbytefx.newAgslInstance
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
 import ru.redbyte.redbytefx.Med
+import ru.redbyte.redbytefx.RedByteFxApis
+import ru.redbyte.redbytefx.RedByteFxPlatform
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
+import ru.redbyte.redbytefx.newAgslInstance
+import kotlin.jvm.JvmName
+import android.graphics.RenderEffect as AndroidRenderEffect
 
 /**
  * Compose-friendly controller for one AGSL [ru.redbyte.redbytefx.AgslInstance].
@@ -63,7 +63,7 @@ import ru.redbyte.redbytefx.Vec4
  */
 @Stable
 public class FxController internal constructor(
-    internal val control: ShaderControl
+    internal val control: ShaderControl,
 ) {
     private var controllerBatchDepth: Int = 0
     internal var onRuntimeInvalidate: (() -> Unit)? = null
@@ -261,7 +261,7 @@ public fun rememberFxController(program: ShaderProgram): FxController {
 public fun FxController.bindTime(
     param: Uniform<Flt<High>>,
     isPlaying: Boolean = true,
-    offsetSeconds: Float = 0f
+    offsetSeconds: Float = 0f,
 ) {
     val state = remember(this, param) { TimeBindingState() }
 
@@ -297,7 +297,7 @@ public fun FxController.bindTime(
 @Composable
 public fun FxController.bindFloat(
     param: Uniform<Flt<High>>,
-    value: Float
+    value: Float,
 ) {
     SideEffect {
         setFloat(param, value)
@@ -314,7 +314,7 @@ public fun FxController.bindFloat(
 @Composable
 public fun FxController.bindInt(
     param: Uniform<IntS>,
-    value: Int
+    value: Int,
 ) {
     SideEffect {
         setInt(param, value)
@@ -325,7 +325,7 @@ public fun FxController.bindInt(
 @Composable
 public fun FxController.bindFloat(
     param: Uniform<Flt<Med>>,
-    value: Float
+    value: Float,
 ) {
     SideEffect {
         setFloat(param, value)
@@ -343,7 +343,7 @@ public fun FxController.bindFloat(
 public fun FxController.bindFloat2(
     param: Uniform<Vec2<Flt<High>>>,
     x: Float,
-    y: Float
+    y: Float,
 ) {
     SideEffect {
         setFloat2(param, x, y)
@@ -355,7 +355,7 @@ public fun FxController.bindFloat2(
 public fun FxController.bindFloat2(
     param: Uniform<Vec2<Flt<Med>>>,
     x: Float,
-    y: Float
+    y: Float,
 ) {
     SideEffect {
         setFloat2(param, x, y)
@@ -374,7 +374,7 @@ public fun FxController.bindFloat3(
     param: Uniform<Vec3<Flt<High>>>,
     x: Float,
     y: Float,
-    z: Float
+    z: Float,
 ) {
     SideEffect {
         setFloat3(param, x, y, z)
@@ -387,7 +387,7 @@ public fun FxController.bindFloat3(
     param: Uniform<Vec3<Flt<Med>>>,
     x: Float,
     y: Float,
-    z: Float
+    z: Float,
 ) {
     SideEffect {
         setFloat3(param, x, y, z)
@@ -407,7 +407,7 @@ public fun FxController.bindFloat4(
     x: Float,
     y: Float,
     z: Float,
-    w: Float
+    w: Float,
 ) {
     SideEffect {
         setFloat4(param, x, y, z, w)
@@ -421,7 +421,7 @@ public fun FxController.bindFloat4(
     x: Float,
     y: Float,
     z: Float,
-    w: Float
+    w: Float,
 ) {
     SideEffect {
         setFloat4(param, x, y, z, w)

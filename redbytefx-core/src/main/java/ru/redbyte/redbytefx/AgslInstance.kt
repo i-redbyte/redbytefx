@@ -1,8 +1,8 @@
 package ru.redbyte.redbytefx
 
-import androidx.annotation.RequiresApi
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
+import androidx.annotation.RequiresApi
 
 /**
  * One AGSL runtime instance.

@@ -15,13 +15,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gl.GlTextureUnits
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 
 /** Shown when [GlCompute] is given a program that is not GLES 3.1 compute. */
 internal const val COMPUTE_HOST_TARGET: String = "GlCompute requires a GLES 3.1 compute program"

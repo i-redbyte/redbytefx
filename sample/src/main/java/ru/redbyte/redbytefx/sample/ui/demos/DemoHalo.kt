@@ -1,18 +1,22 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.centerGlow
 import ru.redbyte.redbytefx.stdlib.centeredUv
@@ -23,18 +27,12 @@ import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.radialDirection
 import ru.redbyte.redbytefx.stdlib.rimLight
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
-
 private data class HaloSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val radius: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -70,9 +68,9 @@ fun DemoHalo() {
                         uv = uv,
                         resolution = resolution,
                         radius = radius.expr * (0.82f + phase * 0.32f),
-                        feather = 0.18f
+                        feather = 0.18f,
                     ),
-                    "glow"
+                    "glow",
                 )
                 val rim = let(
                     rimLight(
@@ -80,9 +78,9 @@ fun DemoHalo() {
                         resolution = resolution,
                         radius = radius.expr + 0.08f * phase,
                         width = 0.075f,
-                        feather = 0.024f
+                        feather = 0.024f,
                     ),
-                    "rim"
+                    "rim",
                 )
                 val drift = let(saturate(0.5f + aspectLocal.x * 0.55f - local.y * 0.25f), "drift")
                 val facing = let(saturate(dir.x * 0.5f - dir.y * 0.35f + 0.5f), "facing")
@@ -92,16 +90,16 @@ fun DemoHalo() {
                         mix(0.04f, 0.18f, drift),
                         mix(0.22f, 1f, glow + rim * 0.45f),
                         mix(0.12f, 0.72f, facing),
-                        base.a
+                        base.a,
                     ),
-                    "tint"
+                    "tint",
                 )
                 val screened = let(maskedScreen(base, tint, mask, amount.expr), "screened")
                 maskedOverlay(
                     base = screened,
                     blend = color(float3(0.82f, 1f, 0.74f), base.a),
                     mask = rim,
-                    amount = amount.expr * 0.28f
+                    amount = amount.expr * 0.28f,
                 )
             }
         }
@@ -110,7 +108,7 @@ fun DemoHalo() {
             time = timeParam!!,
             speed = speedParam!!,
             radius = radiusParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -125,7 +123,7 @@ fun DemoHalo() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Halo//Light"
+                label = "Halo//Light",
             )
         },
         controls = {
@@ -141,6 +139,6 @@ fun DemoHalo() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

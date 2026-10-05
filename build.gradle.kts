@@ -14,6 +14,9 @@ plugins {
 version = providers.gradleProperty("redbytefx.version").orElse("1.1.0").get()
 group = "io.github.i-redbyte"
 
+val detektFormatting =
+    "io.gitlab.arturbosch.detekt:detekt-formatting:${libs.versions.detekt.get()}"
+
 val hasMavenCentralCredentials =
     (
         providers.gradleProperty("mavenCentralUsername").isPresent &&
@@ -38,6 +41,12 @@ val hasSigningConfiguration =
     hasInMemoryOrLegacySigningConfiguration || hasGpgCmdSigningConfiguration
 
 subprojects {
+    pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
+        dependencies {
+            add("detektPlugins", detektFormatting)
+        }
+    }
+
     plugins.withId("signing") {
         if (hasGpgCmdSigningConfiguration) {
             extensions.configure<SigningExtension> {
@@ -74,6 +83,8 @@ subprojects {
             }
         }
         tasks.withType<Detekt>().configureEach {
+            jvmTarget = "17"
+            autoCorrect = findProperty("detektAutoCorrect") == "true"
             val mainRoots = listOf("src/main/java", "src/main/kotlin")
                 .map { project.layout.projectDirectory.file(it).asFile }
                 .filter { it.exists() }

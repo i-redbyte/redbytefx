@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindInt
@@ -18,7 +19,6 @@ import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
-import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.sampleUv
@@ -66,9 +66,9 @@ fun DemoCrtTerminal() {
                 val warpedUv = let(
                     float2(
                         saturate(uv.x + delta.x),
-                        saturate(uv.y + delta.y)
+                        saturate(uv.y + delta.y),
                     ),
-                    "warped_uv"
+                    "warped_uv",
                 )
                 val base = let(sampleUv(warpedUv), "base")
                 val edge = let(length(aspectCenteredUv(uv, resolution)), "edge")
@@ -81,7 +81,7 @@ fun DemoCrtTerminal() {
                 val rgb = let(mix(base, split, edgeAmt * 0.88f), "rgb")
                 val scanLine = let(
                     scanlines(fragCoord.y + sin(timeUniform.expr * 1.1f) * 1.4f, 3.4f, 0.85f),
-                    "scan_line"
+                    "scan_line",
                 )
                 val scanMod = let(0.72f + 0.28f * scanLine * scanUniform.expr, "scan_mod")
                 val flicker = let(0.97f + 0.03f * sin(timeUniform.expr * 8.7f), "flicker")
@@ -131,6 +131,6 @@ fun DemoCrtTerminal() {
             SliderRow("Scanlines", scanUi, 0f..100f) {
                 scanUi = it
             }
-        }
+        },
     )
 }

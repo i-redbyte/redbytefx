@@ -3,15 +3,15 @@ package ru.redbyte.redbytefx.gl.compose
 import android.opengl.GLES30
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
-import java.util.IdentityHashMap
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.gl.GlColorTarget
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gl.GlTextureUnits
 import ru.redbyte.redbytefx.gl.IndexElementKind
+import java.util.IdentityHashMap
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 
 /** Frames a recorded mesh may go undrawn before the host deletes its buffers. */
 internal const val HELD_MESH_FRAMES: Long = 60L
@@ -241,6 +241,7 @@ internal class SceneRenderer(
         val existing = heldMeshes[target]
         if (existing != null) {
             existing.drawnFrame = frameNumber
+            fill(runtime, existing, target.stride, target.vertices, target.indices)
             return existing
         }
         val created = HeldMesh()
@@ -285,11 +286,16 @@ internal class SceneRenderer(
     }
 
     private fun deleteNames(runtime: GlProgramRuntime, held: HeldMesh) {
-        if (held.buffer != 0) runtime.deleteBuffer(held.buffer)
-        if (held.element != 0) runtime.deleteBuffer(held.element)
+        val buffer = held.buffer
+        val element = held.element
+        held.buffer = 0
+        held.element = 0
+        if (buffer != 0) runtime.deleteBuffer(buffer)
+        if (element != 0 && element != buffer) runtime.deleteBuffer(element)
         if (held.vao != 0) {
             nameSlot[0] = held.vao
             GLES30.glDeleteVertexArrays(1, nameSlot, 0)
+            held.vao = 0
         }
     }
 

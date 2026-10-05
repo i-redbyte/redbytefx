@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -16,17 +15,9 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.roundToInt
-import ru.redbyte.redbytefx.gl.compose.GL_LINK_FALLBACK
-import ru.redbyte.redbytefx.gl.compose.GlLinkState
-import ru.redbyte.redbytefx.gl.compose.GlSurface
-import ru.redbyte.redbytefx.gl.compose.rememberGlController
-import ru.redbyte.redbytefx.gl.compose.screenMesh
-import ru.redbyte.redbytefx.sample.ui.CyberPanel
-import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.BoolS
 import ru.redbyte.redbytefx.Expr
 import ru.redbyte.redbytefx.Flt
@@ -41,6 +32,11 @@ import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.and
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.dot
+import ru.redbyte.redbytefx.gl.compose.GL_LINK_FALLBACK
+import ru.redbyte.redbytefx.gl.compose.GlLinkState
+import ru.redbyte.redbytefx.gl.compose.GlSurface
+import ru.redbyte.redbytefx.gl.compose.rememberGlController
+import ru.redbyte.redbytefx.gl.compose.screenMesh
 import ru.redbyte.redbytefx.gt
 import ru.redbyte.redbytefx.ifElse
 import ru.redbyte.redbytefx.length
@@ -51,6 +47,8 @@ import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.pow
+import ru.redbyte.redbytefx.sample.ui.CyberPanel
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.unaryMinus
@@ -59,6 +57,8 @@ import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.roundToInt
 
 internal class BallProgram(
     val program: ShaderProgram,

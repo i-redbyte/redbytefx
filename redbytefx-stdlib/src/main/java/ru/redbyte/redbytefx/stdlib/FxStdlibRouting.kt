@@ -15,11 +15,11 @@ public fun segmentMask(
     start: Expr<Vec2<Flt<High>>>,
     end: Expr<Vec2<Flt<High>>>,
     thickness: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> = softStroke(
     distance = sdSegment(point = point, start = start, end = end),
     width = thickness,
-    feather = feather
+    feather = feather,
 )
 
 /**
@@ -30,13 +30,13 @@ public fun segmentMask(
     start: Expr<Vec2<Flt<High>>>,
     end: Expr<Vec2<Flt<High>>>,
     thickness: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = segmentMask(
     point = point,
     start = start,
     end = end,
     thickness = float(thickness),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -49,7 +49,7 @@ public fun segmentMask(
 public fun segmentProgress(
     point: Expr<Vec2<Flt<High>>>,
     start: Expr<Vec2<Flt<High>>>,
-    end: Expr<Vec2<Flt<High>>>
+    end: Expr<Vec2<Flt<High>>>,
 ): Expr<Flt<High>> {
     val local = point - start
     val segment = end - start
@@ -72,7 +72,7 @@ public fun segmentPulse(
     bandWidth: Expr<Flt<High>>,
     thickness: Expr<Flt<High>>,
     bandFeather: Expr<Flt<High>> = float(0.08f),
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeBandWidth = max(bandWidth, 0.0001f)
     val safeBandFeather = max(bandFeather, 0.0001f)
@@ -81,14 +81,14 @@ public fun segmentPulse(
     val band = 1f - smoothstep(
         safeBandWidth * 0.5f,
         safeBandWidth * 0.5f + safeBandFeather,
-        distance
+        distance,
     )
     return band * segmentMask(
         point = point,
         start = start,
         end = end,
         thickness = thickness,
-        feather = feather
+        feather = feather,
     )
 }
 
@@ -103,7 +103,7 @@ public fun segmentPulse(
     bandWidth: Float,
     thickness: Float,
     bandFeather: Float = 0.08f,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = segmentPulse(
     point = point,
     start = start,
@@ -112,5 +112,5 @@ public fun segmentPulse(
     bandWidth = float(bandWidth),
     thickness = float(thickness),
     bandFeather = float(bandFeather),
-    feather = float(feather)
+    feather = float(feather),
 )

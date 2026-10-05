@@ -18,22 +18,26 @@ internal class GlOwnedBlocks(
     private val storageBuffers = IdentityHashMap<StorageBlock, GlBlockBuffer>()
 
     fun rejectExcess() {
-        val uniformLimit = device.maxUniformBufferBindings()
-        for (block in program.uniformBlocks) {
-            if (block.binding >= uniformLimit) {
-                reject(
-                    GlCode.BlockBindingLimit,
-                    "Uniform block \"${block.name}\" needs binding ${block.binding}, the context allows $uniformLimit",
-                )
+        if (program.uniformBlocks.isNotEmpty()) {
+            val uniformLimit = device.maxUniformBufferBindings()
+            for (block in program.uniformBlocks) {
+                if (block.binding >= uniformLimit) {
+                    reject(
+                        GlCode.BlockBindingLimit,
+                        "Uniform block \"${block.name}\" needs binding ${block.binding}, the context allows $uniformLimit",
+                    )
+                }
             }
         }
-        val storageLimit = device.maxShaderStorageBufferBindings()
-        for (block in program.storageBlocks) {
-            if (block.binding >= storageLimit) {
-                reject(
-                    GlCode.BlockBindingLimit,
-                    "Storage block \"${block.name}\" needs binding ${block.binding}, the context allows $storageLimit",
-                )
+        if (program.storageBlocks.isNotEmpty()) {
+            val storageLimit = device.maxShaderStorageBufferBindings()
+            for (block in program.storageBlocks) {
+                if (block.binding >= storageLimit) {
+                    reject(
+                        GlCode.BlockBindingLimit,
+                        "Storage block \"${block.name}\" needs binding ${block.binding}, the context allows $storageLimit",
+                    )
+                }
             }
         }
     }

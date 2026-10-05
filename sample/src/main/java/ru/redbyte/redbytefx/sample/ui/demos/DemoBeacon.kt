@@ -1,18 +1,22 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.circleMask
 import ru.redbyte.redbytefx.stdlib.easeInOutCubic
@@ -20,18 +24,12 @@ import ru.redbyte.redbytefx.stdlib.easeInOutSine
 import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.ringMask
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
-
 private data class BeaconSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val radius: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -64,9 +62,9 @@ fun DemoBeacon() {
                 val center = let(
                     float2(
                         mix(0.18f, 0.82f, travel),
-                        0.5f + sin(time.expr * 0.8f) * 0.12f
+                        0.5f + sin(time.expr * 0.8f) * 0.12f,
                     ),
-                    "center"
+                    "center",
                 )
                 val focus = let(circleMask(uv, center = center, radius = radius.expr, feather = 0.16f), "focus")
                 val halo = let(
@@ -75,9 +73,9 @@ fun DemoBeacon() {
                         center = center,
                         radius = radius.expr + 0.06f,
                         width = 0.08f,
-                        feather = 0.05f
+                        feather = 0.05f,
                     ),
-                    "halo"
+                    "halo",
                 )
                 val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
                 val beamTint = let(color(float3(0.12f, 0.94f, 0.98f), base.a), "beam_tint")
@@ -91,7 +89,7 @@ fun DemoBeacon() {
             time = timeParam!!,
             speed = speedParam!!,
             radius = radiusParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -119,6 +117,6 @@ fun DemoBeacon() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

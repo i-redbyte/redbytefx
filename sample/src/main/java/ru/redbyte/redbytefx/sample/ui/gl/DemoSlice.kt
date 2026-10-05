@@ -16,8 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.roundToInt
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.gl.compose.GlAttrib
@@ -34,6 +32,8 @@ import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.roundToInt
 
 internal const val SLICE_QUADS: Int = 3
 

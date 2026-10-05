@@ -35,11 +35,11 @@ import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoSection
 import ru.redbyte.redbytefx.sample.model.Phrase
-import ru.redbyte.redbytefx.sample.model.catalogSearchText
 import ru.redbyte.redbytefx.sample.model.canonicalFamily
+import ru.redbyte.redbytefx.sample.model.catalogSearchText
 import ru.redbyte.redbytefx.sample.model.focusTags
-import ru.redbyte.redbytefx.sample.model.isCanonicalDemo
 import ru.redbyte.redbytefx.sample.model.isAnimated
+import ru.redbyte.redbytefx.sample.model.isCanonicalDemo
 import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.section
@@ -81,7 +81,7 @@ private data class StarterRoute(
 @Composable
 fun HomeScreen(
     demos: List<DemoInfo>,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -165,7 +165,7 @@ fun HomeScreen(
                     "Откройте плату и посмотрите, как те же примитивы складываются в более серьёзный пример.",
                 ),
                 demoId = DemoId.Circuit,
-            )
+            ),
         ).mapNotNull { route ->
             demos.firstOrNull { it.id == route.demoId }?.let { demo -> route to demo }
         }
@@ -198,7 +198,7 @@ fun HomeScreen(
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item(key = "search") {
             ShowcaseSearchPanel(
@@ -225,26 +225,26 @@ fun HomeScreen(
                             listState.animateScrollToItem(index)
                         }
                     }
-                }
+                },
             )
         }
 
         item {
             CyberPanel(
                 accent = MaterialTheme.colorScheme.secondary,
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CyberBadge(
                         text = say("AGSL // Kotlin DSL", "AGSL // описание на Kotlin"),
-                        accent = MaterialTheme.colorScheme.primary
+                        accent = MaterialTheme.colorScheme.primary,
                     )
                     CyberBadge(
                         text = say("Android runtime", "Запуск на Android"),
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 Text(
@@ -254,7 +254,7 @@ fun HomeScreen(
                     ),
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = 14.dp)
+                    modifier = Modifier.padding(top = 14.dp),
                 )
                 Text(
                     text = say(
@@ -263,11 +263,11 @@ fun HomeScreen(
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 10.dp)
+                    modifier = Modifier.padding(top = 10.dp),
                 )
                 Row(
                     modifier = Modifier.padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     ShowcaseMetric(
                         value = visibleDemos.size.toString(),
@@ -277,19 +277,19 @@ fun HomeScreen(
                             say("results", "найдено")
                         },
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.primary
+                        accent = MaterialTheme.colorScheme.primary,
                     )
                     ShowcaseMetric(
                         value = coreCount.toString(),
                         label = say("core", "ядро"),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.secondary
+                        accent = MaterialTheme.colorScheme.secondary,
                     )
                     ShowcaseMetric(
                         value = canonicalCount.toString(),
                         label = say("canonical", "основной путь"),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
@@ -299,13 +299,13 @@ fun HomeScreen(
             item(key = "starter-routes") {
                 StarterRoutesPanel(
                     routes = starterRoutes,
-                    onOpen = onOpen
+                    onOpen = onOpen,
                 )
             }
             item(key = "canonical-map") {
                 CanonicalMapPanel(
                     guides = canonicalGuides,
-                    onOpen = onOpen
+                    onOpen = onOpen,
                 )
             }
         }
@@ -314,16 +314,16 @@ fun HomeScreen(
             item(key = "empty") {
                 CyberPanel(
                     accent = MaterialTheme.colorScheme.tertiary,
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CyberBadge(
                             text = say("NO MATCHES", "НИЧЕГО НЕ НАЙДЕНО"),
-                            accent = MaterialTheme.colorScheme.tertiary
+                            accent = MaterialTheme.colorScheme.tertiary,
                         )
                         CyberBadge(
                             text = say("TRY TITLE OR SECTION", "ИЩИТЕ НАЗВАНИЕ ИЛИ РАЗДЕЛ"),
-                            accent = MaterialTheme.colorScheme.secondary
+                            accent = MaterialTheme.colorScheme.secondary,
                         )
                     }
                     Text(
@@ -333,7 +333,7 @@ fun HomeScreen(
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 10.dp)
+                        modifier = Modifier.padding(top = 10.dp),
                     )
                 }
             }
@@ -345,18 +345,18 @@ fun HomeScreen(
                 item(key = "section-${section.name}") {
                     ShowcaseSectionHeader(
                         section = section,
-                        count = sectionDemos.size
+                        count = sectionDemos.size,
                     )
                 }
 
                 items(
                     items = sectionDemos,
-                    key = { it.id.name }
+                    key = { it.id.name },
                 ) { demo ->
                     DemoCatalogCard(
                         index = demoIndexById.getValue(demo.id),
                         demo = demo,
-                        onOpen = onOpen
+                        onOpen = onOpen,
                     )
                 }
             }
@@ -378,23 +378,23 @@ private fun ShowcaseSearchPanel(
     onPathFilterChange: (PathFilter) -> Unit,
     onClearAll: () -> Unit,
     sectionAnchors: Map<DemoSection, Int>,
-    onJumpToSection: (DemoSection) -> Unit
+    onJumpToSection: (DemoSection) -> Unit,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("SEARCH", "ПОИСК"),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = "$resultCount / $totalCount",
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             if (
                 query.isNotBlank() ||
@@ -406,7 +406,7 @@ private fun ShowcaseSearchPanel(
                     text = say("CLEAR", "СБРОСИТЬ"),
                     modifier = Modifier.clickable { onClearAll() },
                     accent = MaterialTheme.colorScheme.primary,
-                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
+                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                 )
             }
         }
@@ -428,9 +428,9 @@ private fun ShowcaseSearchPanel(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
                 focusedIndicatorColor = MaterialTheme.colorScheme.tertiary,
                 unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
-                cursorColor = MaterialTheme.colorScheme.tertiary
+                cursorColor = MaterialTheme.colorScheme.tertiary,
             ),
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
         )
         ShowcaseQuickFilters(
             layerFilter = layerFilter,
@@ -439,13 +439,13 @@ private fun ShowcaseSearchPanel(
             onMotionFilterChange = onMotionFilterChange,
             pathFilter = pathFilter,
             onPathFilterChange = onPathFilterChange,
-            modifier = Modifier.padding(top = 14.dp)
+            modifier = Modifier.padding(top = 14.dp),
         )
         if (sectionAnchors.size > 1) {
             SectionJumpRow(
                 anchors = sectionAnchors,
                 onJumpToSection = onJumpToSection,
-                modifier = Modifier.padding(top = 14.dp)
+                modifier = Modifier.padding(top = 14.dp),
             )
         }
     }
@@ -459,29 +459,29 @@ private fun ShowcaseQuickFilters(
     onLayerFilterChange: (LayerFilter) -> Unit,
     onMotionFilterChange: (MotionFilter) -> Unit,
     onPathFilterChange: (PathFilter) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         FilterRow(
             title = Phrase("LAYER", "СЛОЙ"),
             options = LayerFilter.entries,
             selected = layerFilter,
-            onSelect = onLayerFilterChange
+            onSelect = onLayerFilterChange,
         )
         FilterRow(
             title = Phrase("MOTION", "ДВИЖЕНИЕ"),
             options = MotionFilter.entries,
             selected = motionFilter,
-            onSelect = onMotionFilterChange
+            onSelect = onMotionFilterChange,
         )
         FilterRow(
             title = Phrase("PATH", "ПУТЬ"),
             options = PathFilter.entries,
             selected = pathFilter,
-            onSelect = onPathFilterChange
+            onSelect = onPathFilterChange,
         )
     }
 }
@@ -508,7 +508,7 @@ private fun <T> FilterRow(
 
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CyberBadge(
             text = titleText,
@@ -522,7 +522,7 @@ private fun <T> FilterRow(
             } else {
                 MaterialTheme.colorScheme.tertiary
             },
-            fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f)
+            fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f),
         )
         options.drop(1).forEach { option ->
             val label = when (option) {
@@ -544,7 +544,7 @@ private fun <T> FilterRow(
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f)
                 } else {
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
-                }
+                },
             )
         }
     }
@@ -554,31 +554,31 @@ private fun <T> FilterRow(
 private fun SectionJumpRow(
     anchors: Map<DemoSection, Int>,
     onJumpToSection: (DemoSection) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("SECTIONS", "РАЗДЕЛЫ"),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = say(
                     "${anchors.size} JUMPS",
                     ruCount(anchors.size, "переход", "перехода", "переходов"),
                 ),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
         }
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             DemoSection.entries.forEach { section ->
                 if (section in anchors) {
@@ -586,7 +586,7 @@ private fun SectionJumpRow(
                         text = section.title.showUpper(),
                         modifier = Modifier.clickable { onJumpToSection(section) },
                         accent = MaterialTheme.colorScheme.tertiary,
-                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f)
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.86f),
                     )
                 }
             }
@@ -599,23 +599,23 @@ private fun ShowcaseMetric(
     value: String,
     label: String,
     modifier: Modifier = Modifier,
-    accent: androidx.compose.ui.graphics.Color
+    accent: androidx.compose.ui.graphics.Color,
 ) {
     CyberPanel(
         modifier = modifier,
         accent = accent,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = label.uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
@@ -623,26 +623,26 @@ private fun ShowcaseMetric(
 @Composable
 private fun StarterRoutesPanel(
     routes: List<Pair<StarterRoute, DemoInfo>>,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.primary,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = say(
                     "${routes.size} ROUTES",
                     ruCount(routes.size, "маршрут", "маршрута", "маршрутов"),
                 ),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
         }
         Text(
@@ -652,17 +652,17 @@ private fun StarterRoutesPanel(
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Column(
             modifier = Modifier.padding(top = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             routes.forEach { (route, demo) ->
                 StarterRouteCard(
                     route = route,
                     demo = demo,
-                    onOpen = onOpen
+                    onOpen = onOpen,
                 )
             }
         }
@@ -672,26 +672,26 @@ private fun StarterRoutesPanel(
 @Composable
 private fun CanonicalMapPanel(
     guides: List<Pair<CanonicalGuide, List<DemoInfo>>>,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("CANONICAL MAP", "КАРТА ОСНОВНОГО ПУТИ"),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = say(
                     "${guides.size} FAMILIES",
                     ruCount(guides.size, "семейство", "семейства", "семейств"),
                 ),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
         }
         Text(
@@ -701,17 +701,17 @@ private fun CanonicalMapPanel(
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Column(
             modifier = Modifier.padding(top = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             guides.forEach { (guide, demos) ->
                 CanonicalGuideCard(
                     guide = guide,
                     demos = demos,
-                    onOpen = onOpen
+                    onOpen = onOpen,
                 )
             }
         }
@@ -722,26 +722,26 @@ private fun CanonicalMapPanel(
 private fun CanonicalGuideCard(
     guide: CanonicalGuide,
     demos: List<DemoInfo>,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = guide.label.show(),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             demos.forEach { demo ->
                 CyberBadge(
                     text = demo.shownTitle().uppercase(),
                     modifier = Modifier.clickable { onOpen(demo.id) },
                     accent = MaterialTheme.colorScheme.tertiary,
-                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                    fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
                 )
             }
         }
@@ -749,13 +749,13 @@ private fun CanonicalGuideCard(
             text = guide.title.show(),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = guide.summary.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         )
         Text(
             text = guide.helperPreview,
@@ -763,7 +763,7 @@ private fun CanonicalGuideCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
     }
 }
@@ -772,35 +772,35 @@ private fun CanonicalGuideCard(
 private fun StarterRouteCard(
     route: StarterRoute,
     demo: DemoInfo,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     CyberPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onOpen(demo.id) },
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = route.label.show(),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = demo.shownTitle().uppercase(),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = demo.layer.label.show(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
                     text = shownFamily(family),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -808,13 +808,13 @@ private fun StarterRouteCard(
             text = route.title.show(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = route.summary.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         )
         Text(
             text = demo.shownFocus(),
@@ -822,13 +822,13 @@ private fun StarterRouteCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         DemoFocusTags(
             tags = demo.focusTags,
             modifier = Modifier.padding(top = 12.dp),
             accent = MaterialTheme.colorScheme.primary,
-            maxVisible = 3
+            maxVisible = 3,
         )
     }
 }
@@ -836,30 +836,30 @@ private fun StarterRouteCard(
 @Composable
 private fun ShowcaseSectionHeader(
     section: DemoSection,
-    count: Int
+    count: Int,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.primary,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = section.title.showUpper(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = say("$count demos", ruCount(count, "пример", "примера", "примеров")),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
         }
         Text(
             text = section.subtitle.show(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
     }
 }
@@ -868,7 +868,7 @@ private fun ShowcaseSectionHeader(
 private fun DemoCatalogCard(
     index: Int,
     demo: DemoInfo,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     CyberPanel(
         modifier = Modifier
@@ -879,23 +879,23 @@ private fun DemoCatalogCard(
         } else {
             MaterialTheme.colorScheme.secondary
         },
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = "#${(index + 1).toString().padStart(2, '0')}",
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = demo.shownTitle().uppercase(),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = demo.layer.label.show(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = if (demo.isAnimated) say("ANIMATED", "ЖИВОЙ") else say("STATIC", "НЕПОДВИЖНЫЙ"),
@@ -904,18 +904,18 @@ private fun DemoCatalogCard(
                 } else {
                     MaterialTheme.colorScheme.outline
                 },
-                modifier = Modifier.widthIn(max = 132.dp)
+                modifier = Modifier.widthIn(max = 132.dp),
             )
             if (demo.isStartHere) {
                 CyberBadge(
                     text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
-                    accent = MaterialTheme.colorScheme.tertiary
+                    accent = MaterialTheme.colorScheme.tertiary,
                 )
             }
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
                     text = shownFamily(family),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -925,7 +925,7 @@ private fun DemoCatalogCard(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 12.dp)
+            modifier = Modifier.padding(top = 12.dp),
         )
         Text(
             text = demo.shownFocus(),
@@ -933,13 +933,13 @@ private fun DemoCatalogCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         DemoFocusTags(
             tags = demo.focusTags,
             modifier = Modifier.padding(top = 12.dp),
             accent = MaterialTheme.colorScheme.tertiary,
-            maxVisible = 3
+            maxVisible = 3,
         )
     }
 }

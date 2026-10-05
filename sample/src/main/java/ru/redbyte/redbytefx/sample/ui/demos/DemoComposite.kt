@@ -1,35 +1,33 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.stdlib.alphaMask
 import ru.redbyte.redbytefx.stdlib.circleMask
 import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.rectMask
 import ru.redbyte.redbytefx.stdlib.ringMask
-import ru.redbyte.redbytefx.stdlib.alphaMask
-
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-
 
 private data class CompositeSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val radius: Uniform<Flt<High>>,
     val panelWidth: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -57,9 +55,9 @@ fun DemoComposite() {
                         uv,
                         center = float2(0.34f, 0.5f),
                         radius = radius.expr,
-                        feather = 0.16f
+                        feather = 0.16f,
                     ),
-                    "focus"
+                    "focus",
                 )
                 val halo = let(
                     ringMask(
@@ -67,26 +65,26 @@ fun DemoComposite() {
                         center = float2(0.34f, 0.5f),
                         radius = radius.expr + 0.05f,
                         width = 0.1f,
-                        feather = 0.05f
+                        feather = 0.05f,
                     ),
-                    "halo"
+                    "halo",
                 )
                 val panel = let(
                     rectMask(
                         uv,
                         center = float2(0.77f, 0.5f),
                         size = float2(panelWidth.expr, 0.62f),
-                        feather = 0.04f
+                        feather = 0.04f,
                     ),
-                    "panel"
+                    "panel",
                 )
                 val glowLayer = let(
                     alphaMask(color(float3(0.12f, 0.95f, 1f), 1f), halo, amount.expr),
-                    "glow_layer"
+                    "glow_layer",
                 )
                 val panelTint = let(
                     alphaMask(color(float3(1f, 0.79f, 0.3f), 1f), panel, amount.expr * 0.6f),
-                    "panel_tint"
+                    "panel_tint",
                 )
                 val screened = let(maskedScreen(base, glowLayer, halo, amount.expr), "screened")
                 val overlaid = let(maskedOverlay(screened, panelTint, panel, amount.expr), "overlaid")
@@ -98,7 +96,7 @@ fun DemoComposite() {
             effect = effect,
             radius = radiusParam!!,
             panelWidth = panelWidthParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -122,6 +120,6 @@ fun DemoComposite() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

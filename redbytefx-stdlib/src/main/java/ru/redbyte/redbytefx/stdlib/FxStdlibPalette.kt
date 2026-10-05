@@ -16,11 +16,11 @@ public fun cosinePalette(
     bias: Expr<Vec3<Flt<High>>> = float3(0.5f, 0.5f, 0.5f),
     amplitude: Expr<Vec3<Flt<High>>> = float3(0.5f, 0.5f, 0.5f),
     frequency: Expr<Vec3<Flt<High>>> = float3(1f, 1f, 1f),
-    phase: Expr<Vec3<Flt<High>>> = float3(0f, 0.33f, 0.67f)
+    phase: Expr<Vec3<Flt<High>>> = float3(0f, 0.33f, 0.67f),
 ): Expr<Vec3<Flt<High>>> = float3(
     bias.x + amplitude.x * cos(TAU * (frequency.x * tone + phase.x)),
     bias.y + amplitude.y * cos(TAU * (frequency.y * tone + phase.y)),
-    bias.z + amplitude.z * cos(TAU * (frequency.z * tone + phase.z))
+    bias.z + amplitude.z * cos(TAU * (frequency.z * tone + phase.z)),
 )
 
 /**
@@ -33,13 +33,13 @@ public fun cosinePalette(
     frequency: Expr<Vec3<Flt<High>>>,
     phaseX: Float,
     phaseY: Float,
-    phaseZ: Float
+    phaseZ: Float,
 ): Expr<Vec3<Flt<High>>> = cosinePalette(
     tone = tone,
     bias = bias,
     amplitude = amplitude,
     frequency = frequency,
-    phase = float3(phaseX, phaseY, phaseZ)
+    phase = float3(phaseX, phaseY, phaseZ),
 )
 
 /**
@@ -56,7 +56,7 @@ public fun FragmentDsl.chromaticOffset(
     offset: Expr<Flt<High>>,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     amount: Expr<Flt<High>> = float(1f),
-    coord: Expr<Vec2<Flt<High>>> = fragCoord
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec4<Flt<Med>>> {
     val safeDirectionLength = max(length(direction), 0.0001f)
     val delta = direction / safeDirectionLength * offset
@@ -65,7 +65,7 @@ public fun FragmentDsl.chromaticOffset(
         sample(coord - delta).r,
         base.g,
         sample(coord + delta).b,
-        base.a
+        base.a,
     )
     return mix(base, shifted, saturate(amount))
 }
@@ -77,12 +77,12 @@ public fun FragmentDsl.chromaticOffset(
     offset: Float,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     amount: Float = 1f,
-    coord: Expr<Vec2<Flt<High>>> = fragCoord
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec4<Flt<Med>>> = chromaticOffset(
     offset = float(offset),
     direction = direction,
     amount = float(amount),
-    coord = coord
+    coord = coord,
 )
 
 /**
@@ -92,12 +92,12 @@ public fun FragmentDsl.chromaticOffset(
     offset: Float,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     amount: Expr<Flt<High>>,
-    coord: Expr<Vec2<Flt<High>>> = fragCoord
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec4<Flt<Med>>> = chromaticOffset(
     offset = float(offset),
     direction = direction,
     amount = amount,
-    coord = coord
+    coord = coord,
 )
 
 /**
@@ -107,10 +107,10 @@ public fun FragmentDsl.chromaticOffset(
     offset: Expr<Flt<High>>,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     amount: Float,
-    coord: Expr<Vec2<Flt<High>>> = fragCoord
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec4<Flt<Med>>> = chromaticOffset(
     offset = offset,
     direction = direction,
     amount = float(amount),
-    coord = coord
+    coord = coord,
 )

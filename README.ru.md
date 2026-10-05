@@ -203,7 +203,7 @@ shader(ShaderTarget.Agsl) {
 
 ## Участие
 
-Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt. Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
+Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt с официальным кодстайлом Kotlin от JetBrains (`kotlin.code.style=official`, `detekt-formatting`). Автоформат: `./gradlew detekt -PdetektAutoCorrect=true`. Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
 
 Сайт API локально: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI публикует документацию на `https://i-redbyte.github.io/redbytefx/` при push в **`master`/`main`**. См. [docs/github-pages.md](docs/github-pages.md).
 

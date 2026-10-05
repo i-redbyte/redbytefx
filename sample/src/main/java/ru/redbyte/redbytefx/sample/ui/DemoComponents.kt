@@ -2,9 +2,9 @@
 
 package ru.redbyte.redbytefx.sample.ui
 
-import androidx.compose.animation.animateContentSize
 import android.content.ClipData
 import android.content.Intent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -12,9 +12,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,18 +37,18 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,12 +68,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.redbyte.redbytefx.compose.FxController
+import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.sample.model.DemoFollowUp
 import ru.redbyte.redbytefx.sample.model.DemoId
+import ru.redbyte.redbytefx.sample.model.DemoInfo
+import ru.redbyte.redbytefx.sample.model.DemoLayer
 import ru.redbyte.redbytefx.sample.model.DemoPathKind
 import ru.redbyte.redbytefx.sample.model.DemoPathSignal
-import ru.redbyte.redbytefx.sample.model.DemoLayer
-import ru.redbyte.redbytefx.sample.model.DemoInfo
 import ru.redbyte.redbytefx.sample.model.canonicalFamily
 import ru.redbyte.redbytefx.sample.model.focusTags
 import ru.redbyte.redbytefx.sample.model.isAnimated
@@ -81,8 +83,6 @@ import ru.redbyte.redbytefx.sample.model.isStartHere
 import ru.redbyte.redbytefx.sample.model.layer
 import ru.redbyte.redbytefx.sample.model.pathSignal
 import ru.redbyte.redbytefx.sample.model.section
-import ru.redbyte.redbytefx.compose.FxController
-import ru.redbyte.redbytefx.compose.redbyteFx
 
 val LocalDemoInfo = staticCompositionLocalOf<DemoInfo?> { null }
 val LocalDemoNavigation = staticCompositionLocalOf<DemoNavigation?> { null }
@@ -91,14 +91,14 @@ data class DemoNavigation(
     val previous: DemoInfo?,
     val next: DemoInfo?,
     val related: List<DemoFollowUp> = emptyList(),
-    val onOpen: (DemoId) -> Unit
+    val onOpen: (DemoId) -> Unit,
 )
 
 @Composable
 fun DemoLayout(
     generatedAgsl: String? = null,
     preview: @Composable () -> Unit,
-    controls: @Composable () -> Unit
+    controls: @Composable () -> Unit,
 ) {
     val demo = LocalDemoInfo.current
     val navigation = LocalDemoNavigation.current
@@ -114,7 +114,7 @@ fun DemoLayout(
             DemoInspectionDialog(
                 demo = demo,
                 generatedAgsl = generatedAgsl,
-                onDismiss = { showInspectionDialog = false }
+                onDismiss = { showInspectionDialog = false },
             )
         }
 
@@ -123,13 +123,13 @@ fun DemoLayout(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(outerPadding),
-            verticalArrangement = Arrangement.spacedBy(blockSpacing)
+            verticalArrangement = Arrangement.spacedBy(blockSpacing),
         ) {
             if (demo != null && !isCompactPhone) {
                 DemoInfoCard(
                     demo = demo,
                     generatedAgsl = generatedAgsl,
-                    compact = isCompactPhone
+                    compact = isCompactPhone,
                 )
             }
 
@@ -137,28 +137,28 @@ fun DemoLayout(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.Top,
                 ) {
                     Column(
                         modifier = Modifier.weight(1.15f),
-                        verticalArrangement = Arrangement.spacedBy(blockSpacing)
+                        verticalArrangement = Arrangement.spacedBy(blockSpacing),
                     ) {
                         DemoPreviewPanel(
                             preview = preview,
-                            compact = isCompactPhone
+                            compact = isCompactPhone,
                         )
 
                         if (navigation != null && (navigation.previous != null || navigation.next != null)) {
                             DemoNavigationStrip(
                                 navigation = navigation,
-                                compact = isCompactPhone
+                                compact = isCompactPhone,
                             )
                         }
                     }
 
                     Column(
                         modifier = Modifier.weight(0.85f),
-                        verticalArrangement = Arrangement.spacedBy(blockSpacing)
+                        verticalArrangement = Arrangement.spacedBy(blockSpacing),
                     ) {
                         DemoControlsPanel(
                             controls = controls,
@@ -167,14 +167,14 @@ fun DemoLayout(
                                 { showInspectionDialog = true }
                             } else {
                                 null
-                            }
+                            },
                         )
                     }
                 }
             } else {
                 DemoPreviewPanel(
                     preview = preview,
-                    compact = isCompactPhone
+                    compact = isCompactPhone,
                 )
                 DemoControlsPanel(
                     controls = controls,
@@ -183,7 +183,7 @@ fun DemoLayout(
                         { showInspectionDialog = true }
                     } else {
                         null
-                    }
+                    },
                 )
 
                 if (demo != null && isCompactPhone) {
@@ -191,14 +191,14 @@ fun DemoLayout(
                         demo = demo,
                         generatedAgsl = generatedAgsl,
                         compact = isCompactPhone,
-                        onOpenInspectionDialog = { showInspectionDialog = true }
+                        onOpenInspectionDialog = { showInspectionDialog = true },
                     )
                 }
 
                 if (navigation != null && (navigation.previous != null || navigation.next != null)) {
                     DemoNavigationStrip(
                         navigation = navigation,
-                        compact = isCompactPhone
+                        compact = isCompactPhone,
                     )
                 }
             }
@@ -207,7 +207,7 @@ fun DemoLayout(
                 DemoNextStepsPanel(
                     followUps = navigation.related,
                     onOpen = navigation.onOpen,
-                    compact = isCompactPhone
+                    compact = isCompactPhone,
                 )
             }
         }
@@ -217,11 +217,11 @@ fun DemoLayout(
 @Composable
 private fun DemoPreviewPanel(
     preview: @Composable () -> Unit,
-    compact: Boolean
+    compact: Boolean,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = PaddingValues(if (compact) 12.dp else 18.dp)
+        contentPadding = PaddingValues(if (compact) 12.dp else 18.dp),
     ) {
         preview()
     }
@@ -231,24 +231,24 @@ private fun DemoPreviewPanel(
 private fun DemoControlsPanel(
     controls: @Composable () -> Unit,
     compact: Boolean,
-    onOpenInspectionDialog: (() -> Unit)? = null
+    onOpenInspectionDialog: (() -> Unit)? = null,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.tertiary,
-        contentPadding = PaddingValues(if (compact) 10.dp else 18.dp)
+        contentPadding = PaddingValues(if (compact) 10.dp else 18.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 14.dp)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CyberBadge(
                     text = say("LIVE CONTROLS", "ЖИВЫЕ НАСТРОЙКИ"),
-                    accent = MaterialTheme.colorScheme.tertiary
+                    accent = MaterialTheme.colorScheme.tertiary,
                 )
                 CyberBadge(
                     text = say("RUNTIME BINDINGS", "ЖИВЫЕ ПАРАМЕТРЫ"),
-                    accent = MaterialTheme.colorScheme.secondary
+                    accent = MaterialTheme.colorScheme.secondary,
                 )
                 if (compact && onOpenInspectionDialog != null) {
                     CyberBadge(
@@ -257,7 +257,7 @@ private fun DemoControlsPanel(
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onOpenInspectionDialog() },
                         accent = MaterialTheme.colorScheme.primary,
-                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
                     )
                 }
             }
@@ -278,7 +278,7 @@ private fun DemoControlsPanel(
                 } else {
                     MaterialTheme.typography.bodySmall
                 },
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             controls()
         }
@@ -290,19 +290,19 @@ private fun DemoInfoCard(
     demo: DemoInfo,
     generatedAgsl: String?,
     compact: Boolean,
-    onOpenInspectionDialog: (() -> Unit)? = null
+    onOpenInspectionDialog: (() -> Unit)? = null,
 ) {
     val subtitleStyle = if (compact) {
         MaterialTheme.typography.titleLarge.copy(
             fontSize = 17.sp,
-            lineHeight = 22.sp
+            lineHeight = 22.sp,
         )
     } else {
         MaterialTheme.typography.titleLarge
     }
     CyberPanel(
         accent = MaterialTheme.colorScheme.primary,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 12.dp else 18.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 12.dp else 18.dp),
     ) {
         if (compact) {
             Text(
@@ -313,16 +313,16 @@ private fun DemoInfoCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             FlowRow(
                 modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CyberBadge(
                     text = demo.layer.label.show(),
-                    accent = MaterialTheme.colorScheme.secondary
+                    accent = MaterialTheme.colorScheme.secondary,
                 )
                 CyberBadge(
                     text = if (demo.isAnimated) "ANIMATED" else "STATIC",
@@ -330,22 +330,22 @@ private fun DemoInfoCard(
                         MaterialTheme.colorScheme.tertiary
                     } else {
                         MaterialTheme.colorScheme.outline
-                    }
+                    },
                 )
                 CyberBadge(
                     text = demo.section.title.showUpper(),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
                 if (demo.isStartHere) {
                     CyberBadge(
                         text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 demo.canonicalFamily?.let { family ->
                     CyberBadge(
                         text = shownFamily(family),
-                        accent = MaterialTheme.colorScheme.secondary
+                        accent = MaterialTheme.colorScheme.secondary,
                     )
                 }
             }
@@ -355,7 +355,7 @@ private fun DemoInfoCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 10.dp)
+                modifier = Modifier.padding(top = 10.dp),
             )
             Text(
                 text = demo.shownFocus(),
@@ -363,24 +363,24 @@ private fun DemoInfoCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 8.dp),
             )
             DemoPathSignalBlock(
                 signal = demo.pathSignal,
                 modifier = Modifier.padding(top = 10.dp),
-                compact = true
+                compact = true,
             )
             DemoFocusTags(
                 tags = demo.focusTags,
                 modifier = Modifier.padding(top = 10.dp),
                 accent = MaterialTheme.colorScheme.secondary,
-                maxVisible = 2
+                maxVisible = 2,
             )
             if (onOpenInspectionDialog != null) {
                 FlowRow(
                     modifier = Modifier.padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CyberBadge(
                         text = say("COMPARE CODE", "СРАВНИТЬ КОД"),
@@ -388,11 +388,11 @@ private fun DemoInfoCard(
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onOpenInspectionDialog() },
                         accent = MaterialTheme.colorScheme.primary,
-                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
                     )
                     CyberBadge(
                         text = if (generatedAgsl != null) "DSL + AGSL" else "DSL",
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
@@ -402,33 +402,33 @@ private fun DemoInfoCard(
         Column(modifier = Modifier.animateContentSize()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CyberBadge(
                     text = demo.shownTitle().uppercase(),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
                 CyberBadge(
                     text = say(
                         "sample://${demo.id.name.lowercase()}",
                         "пример://${demo.id.name.lowercase()}",
                     ),
-                    accent = MaterialTheme.colorScheme.secondary
+                    accent = MaterialTheme.colorScheme.secondary,
                 )
                 CyberBadge(
                     text = demo.section.title.showUpper(),
-                    accent = MaterialTheme.colorScheme.tertiary
+                    accent = MaterialTheme.colorScheme.tertiary,
                 )
             }
         }
         FlowRow(
             modifier = Modifier.padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = demo.layer.label.show(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = if (demo.isAnimated) "ANIMATED" else "STATIC",
@@ -436,18 +436,18 @@ private fun DemoInfoCard(
                     MaterialTheme.colorScheme.tertiary
                 } else {
                     MaterialTheme.colorScheme.outline
-                }
+                },
             )
             if (demo.isStartHere) {
                 CyberBadge(
                     text = say("START HERE", "С ЧЕГО НАЧАТЬ"),
-                    accent = MaterialTheme.colorScheme.tertiary
+                    accent = MaterialTheme.colorScheme.tertiary,
                 )
             }
             demo.canonicalFamily?.let { family ->
                 CyberBadge(
                     text = shownFamily(family),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -455,52 +455,52 @@ private fun DemoInfoCard(
             text = demo.shownSubtitle(),
             style = subtitleStyle,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = demo.shownFocus(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         )
         DemoPathSignalBlock(
             signal = demo.pathSignal,
             modifier = Modifier.padding(top = 12.dp),
-            compact = false
+            compact = false,
         )
         DemoFocusTags(
             tags = demo.focusTags,
             modifier = Modifier.padding(top = 10.dp),
             accent = MaterialTheme.colorScheme.secondary,
-            maxVisible = 4
+            maxVisible = 4,
         )
         Text(
             text = say("Inspection flow", "Как смотреть пример"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier.padding(top = 16.dp),
         )
         FlowRow(
             modifier = Modifier.padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("PREVIEW", "КАРТИНКА"),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = say("CONTROLS", "НАСТРОЙКИ"),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = say("DSL", "ОПИСАНИЕ"),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             if (generatedAgsl != null) {
                 CyberBadge(
                     text = say("AGSL", "AGSL"),
-                    accent = MaterialTheme.colorScheme.primary
+                    accent = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -511,19 +511,19 @@ private fun DemoInfoCard(
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         DebugChecklist(
             demo = demo,
             modifier = Modifier.padding(top = 14.dp),
-            compact = false
+            compact = false,
         )
         ExpandableCodeBlock(
             title = "DSL snippet",
             text = demo.snippet,
             collapsedLines = 10,
             stateKey = "${demo.id.name}-dsl",
-            modifier = Modifier.padding(top = 14.dp)
+            modifier = Modifier.padding(top = 14.dp),
         )
         if (generatedAgsl != null) {
             ExpandableCodeBlock(
@@ -531,7 +531,7 @@ private fun DemoInfoCard(
                 text = generatedAgsl,
                 collapsedLines = 18,
                 stateKey = "${demo.id.name}-agsl",
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = 12.dp),
             )
         }
     }
@@ -541,33 +541,33 @@ private fun DemoInfoCard(
 private fun DemoInspectionDialog(
     demo: DemoInfo,
     generatedAgsl: String?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 14.dp)
+                .padding(horizontal = 10.dp, vertical = 14.dp),
         ) {
             CyberPanel(
                 modifier = Modifier.fillMaxSize(),
                 accent = MaterialTheme.colorScheme.primary,
-                contentPadding = PaddingValues(12.dp)
+                contentPadding = PaddingValues(12.dp),
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CyberBadge(
                         text = say("CODE COMPARE", "СРАВНЕНИЕ КОДА"),
-                        accent = MaterialTheme.colorScheme.primary
+                        accent = MaterialTheme.colorScheme.primary,
                     )
                     CyberBadge(
                         text = demo.shownTitle().uppercase(),
-                        accent = MaterialTheme.colorScheme.secondary
+                        accent = MaterialTheme.colorScheme.secondary,
                     )
                     CyberBadge(
                         text = say("CLOSE", "ЗАКРЫТЬ"),
@@ -575,7 +575,7 @@ private fun DemoInspectionDialog(
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onDismiss() },
                         accent = MaterialTheme.colorScheme.tertiary,
-                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f)
+                        fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
                     )
                 }
                 Text(
@@ -585,31 +585,31 @@ private fun DemoInspectionDialog(
                     ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 10.dp)
+                    modifier = Modifier.padding(top = 10.dp),
                 )
                 DemoPathSignalBlock(
                     signal = demo.pathSignal,
                     modifier = Modifier.padding(top = 10.dp),
-                    compact = true
+                    compact = true,
                 )
                 FlowRow(
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CyberBadge(
                         text = say("DSL", "ОПИСАНИЕ"),
-                        accent = MaterialTheme.colorScheme.secondary
+                        accent = MaterialTheme.colorScheme.secondary,
                     )
                     if (generatedAgsl != null) {
                         CyberBadge(
                             text = say("AGSL", "AGSL"),
-                            accent = MaterialTheme.colorScheme.primary
+                            accent = MaterialTheme.colorScheme.primary,
                         )
                     }
                     CyberBadge(
                         text = say("COPY / SHARE", "КОПИРОВАТЬ / ПОДЕЛИТЬСЯ"),
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 Column(
@@ -617,20 +617,20 @@ private fun DemoInspectionDialog(
                         .padding(top = 12.dp)
                         .weight(1f)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     ExpandableCodeBlock(
                         title = "DSL snippet",
                         text = demo.snippet,
                         collapsedLines = 10,
-                        stateKey = "${demo.id.name}-dialog-dsl"
+                        stateKey = "${demo.id.name}-dialog-dsl",
                     )
                     if (generatedAgsl != null) {
                         ExpandableCodeBlock(
                             title = "Generated AGSL",
                             text = generatedAgsl,
                             collapsedLines = 18,
-                            stateKey = "${demo.id.name}-dialog-agsl"
+                            stateKey = "${demo.id.name}-dialog-agsl",
                         )
                     }
                 }
@@ -643,7 +643,7 @@ private fun DemoInspectionDialog(
 private fun DemoPathSignalBlock(
     signal: DemoPathSignal,
     modifier: Modifier = Modifier,
-    compact: Boolean
+    compact: Boolean,
 ) {
     val shape = RoundedCornerShape(if (compact) 14.dp else 16.dp)
     val accent = when (signal.kind) {
@@ -660,41 +660,41 @@ private fun DemoPathSignalBlock(
             .border(
                 width = 1.dp,
                 color = accent.copy(alpha = 0.36f),
-                shape = shape
+                shape = shape,
             )
-            .padding(horizontal = if (compact) 10.dp else 12.dp, vertical = if (compact) 10.dp else 12.dp)
+            .padding(horizontal = if (compact) 10.dp else 12.dp, vertical = if (compact) 10.dp else 12.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 10.dp)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CyberBadge(
                     text = say("PATH SIGNAL", "МЕТКА ПУТИ"),
-                    accent = accent
+                    accent = accent,
                 )
                 CyberBadge(
                     text = signal.badge.show(),
-                    accent = MaterialTheme.colorScheme.secondary
+                    accent = MaterialTheme.colorScheme.secondary,
                 )
                 signal.family?.let { family ->
                     CyberBadge(
                         text = shownFamily(family),
-                        accent = MaterialTheme.colorScheme.primary
+                        accent = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
             Text(
                 text = signal.title.show(),
                 style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = signal.body.show(),
                 style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (compact) 4 else Int.MAX_VALUE,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -706,7 +706,7 @@ private fun ExpandableCodeBlock(
     text: String,
     collapsedLines: Int,
     stateKey: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val totalLines = previewLineCount(text)
@@ -714,7 +714,7 @@ private fun ExpandableCodeBlock(
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
     var expanded by rememberSaveable(stateKey) { mutableStateOf(false) }
-    var copyFeedback by rememberSaveable("${stateKey}-copy") { mutableStateOf(0) }
+    var copyFeedback by rememberSaveable("$stateKey-copy") { mutableStateOf(0) }
     val shareWord = ui("SHARE")
 
     LaunchedEffect(copyFeedback) {
@@ -743,12 +743,12 @@ private fun ExpandableCodeBlock(
                         onClick = {
                             coroutineScope.launch {
                                 clipboard.setClipEntry(
-                                    ClipData.newPlainText("redbytefx-$title", text).toClipEntry()
+                                    ClipData.newPlainText("redbytefx-$title", text).toClipEntry(),
                                 )
                             }
                             copyFeedback += 1
-                        }
-                    )
+                        },
+                    ),
                 )
                 add(
                     CyberCodeAction(
@@ -760,20 +760,20 @@ private fun ExpandableCodeBlock(
                                 putExtra(Intent.EXTRA_SUBJECT, "RedByteFX - $title")
                             }
                             context.startActivity(
-                                Intent.createChooser(send, "$shareWord $title")
+                                Intent.createChooser(send, "$shareWord $title"),
                             )
-                        }
-                    )
+                        },
+                    ),
                 )
                 if (canExpand) {
                     add(
                         CyberCodeAction(
                             label = if (expanded) "COLLAPSE" else "EXPAND",
-                            onClick = { expanded = !expanded }
-                        )
+                            onClick = { expanded = !expanded },
+                        ),
                     )
                 }
-            }
+            },
         )
     }
 }
@@ -783,19 +783,19 @@ fun DemoFocusTags(
     tags: List<String>,
     modifier: Modifier = Modifier,
     accent: Color = MaterialTheme.colorScheme.primary,
-    maxVisible: Int = 4
+    maxVisible: Int = 4,
 ) {
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         tags.take(maxVisible).forEach { tag ->
             CyberBadge(
                 text = shownTag(tag).uppercase(),
                 accent = accent,
                 fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.82f),
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -805,21 +805,21 @@ fun DemoFocusTags(
 private fun DebugChecklist(
     demo: DemoInfo,
     modifier: Modifier = Modifier,
-    compact: Boolean = false
+    compact: Boolean = false,
 ) {
     val signal = demo.pathSignal
     CyberPanel(
         modifier = modifier,
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = PaddingValues(if (compact) 12.dp else 14.dp)
+        contentPadding = PaddingValues(if (compact) 12.dp else 14.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("DEBUG CHECKLIST", "СПИСОК ПРОВЕРКИ"),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = if (demo.layer == DemoLayer.Stdlib) {
@@ -827,7 +827,7 @@ private fun DebugChecklist(
                 } else {
                     say("DSL-FIRST", "СНАЧАЛА ОПИСАНИЕ")
                 },
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = signal.badge.show(),
@@ -836,7 +836,7 @@ private fun DebugChecklist(
                     DemoPathKind.Canonical -> MaterialTheme.colorScheme.primary
                     DemoPathKind.Exploratory -> MaterialTheme.colorScheme.secondary
                     DemoPathKind.Foundation -> MaterialTheme.colorScheme.outline
-                }
+                },
             )
         }
         DebugStep(
@@ -854,7 +854,7 @@ private fun DebugChecklist(
                 )
             },
             modifier = Modifier.padding(top = 12.dp),
-            compact = compact
+            compact = compact,
         )
         DebugStep(
             label = "2",
@@ -896,7 +896,7 @@ private fun DebugChecklist(
                 }
             },
             modifier = Modifier.padding(top = 12.dp),
-            compact = compact
+            compact = compact,
         )
         DebugStep(
             label = "3",
@@ -906,7 +906,7 @@ private fun DebugChecklist(
                 "Скопировав или отправив панель, проверьте параметры, вызовы выборки и ветки. Если картинка врёт, вернитесь к `sample()` и добавляйте куски заново.",
             ),
             modifier = Modifier.padding(top = 12.dp),
-            compact = compact
+            compact = compact,
         )
     }
 }
@@ -917,29 +917,29 @@ private fun DebugStep(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
-    compact: Boolean = false
+    compact: Boolean = false,
 ) {
     if (compact) {
         Column(
             modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
-                    text = ui(label),
+                text = ui(label),
                 accent = MaterialTheme.colorScheme.primary,
-                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
+                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
             )
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = body,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -947,24 +947,24 @@ private fun DebugStep(
         Row(
             modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
         ) {
             CyberBadge(
-                    text = ui(label),
+                text = ui(label),
                 accent = MaterialTheme.colorScheme.primary,
-                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
+                fill = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
             )
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = body,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -973,7 +973,7 @@ private fun DebugStep(
 
 internal fun previewShaderSource(
     source: String,
-    maxLines: Int = 18
+    maxLines: Int = 18,
 ): String {
     val lines = source.lineSequence().toList()
     if (lines.size <= maxLines) return source
@@ -988,23 +988,23 @@ private fun previewLineCount(source: String): Int = source.lineSequence().count(
 @Composable
 private fun DemoNavigationStrip(
     navigation: DemoNavigation,
-    compact: Boolean
+    compact: Boolean,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 14.dp else 18.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 14.dp else 18.dp),
     ) {
         if (compact) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 NavigationCard(
                     label = "PREV",
                     demo = navigation.previous,
-                    onOpen = navigation.onOpen
+                    onOpen = navigation.onOpen,
                 )
                 NavigationCard(
                     label = "NEXT",
                     demo = navigation.next,
-                    onOpen = navigation.onOpen
+                    onOpen = navigation.onOpen,
                 )
             }
         } else {
@@ -1013,13 +1013,13 @@ private fun DemoNavigationStrip(
                     label = "PREV",
                     demo = navigation.previous,
                     modifier = Modifier.weight(1f),
-                    onOpen = navigation.onOpen
+                    onOpen = navigation.onOpen,
                 )
                 NavigationCard(
                     label = "NEXT",
                     demo = navigation.next,
                     modifier = Modifier.weight(1f),
-                    onOpen = navigation.onOpen
+                    onOpen = navigation.onOpen,
                 )
             }
         }
@@ -1030,26 +1030,26 @@ private fun DemoNavigationStrip(
 private fun DemoNextStepsPanel(
     followUps: List<DemoFollowUp>,
     onOpen: (DemoId) -> Unit,
-    compact: Boolean
+    compact: Boolean,
 ) {
     CyberPanel(
         accent = MaterialTheme.colorScheme.primary,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 14.dp else 18.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (compact) 14.dp else 18.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = say("KEEP EXPLORING", "СМОТРЕТЬ ДАЛЬШЕ"),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = say(
                     "${followUps.size} NEXT DEMOS",
                     ruCount(followUps.size, "следующий пример", "следующих примера", "следующих примеров"),
                 ),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
         }
         Text(
@@ -1059,16 +1059,16 @@ private fun DemoNextStepsPanel(
             ),
             style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Column(
             modifier = Modifier.padding(top = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             followUps.forEach { followUp ->
                 DemoFollowUpCard(
                     followUp = followUp,
-                    onOpen = onOpen
+                    onOpen = onOpen,
                 )
             }
         }
@@ -1078,7 +1078,7 @@ private fun DemoNextStepsPanel(
 @Composable
 private fun DemoFollowUpCard(
     followUp: DemoFollowUp,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     val demo = followUp.demo
 
@@ -1088,36 +1088,36 @@ private fun DemoFollowUpCard(
             .clip(MaterialTheme.shapes.medium)
             .clickable { onOpen(demo.id) },
         accent = MaterialTheme.colorScheme.secondary,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = followUp.label.show(),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
             CyberBadge(
                 text = demo.section.title.showUpper(),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
             CyberBadge(
                 text = demo.layer.label.show(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
         }
         Text(
             text = demo.shownTitle(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = followUp.description.show(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         )
         Text(
             text = demo.shownFocus(),
@@ -1125,13 +1125,13 @@ private fun DemoFollowUpCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         DemoFocusTags(
             tags = demo.focusTags,
             modifier = Modifier.padding(top = 12.dp),
             accent = MaterialTheme.colorScheme.primary,
-            maxVisible = 3
+            maxVisible = 3,
         )
     }
 }
@@ -1141,7 +1141,7 @@ private fun NavigationCard(
     label: String,
     demo: DemoInfo?,
     modifier: Modifier = Modifier,
-    onOpen: (DemoId) -> Unit
+    onOpen: (DemoId) -> Unit,
 ) {
     if (demo == null) {
         Spacer(modifier = modifier)
@@ -1157,26 +1157,26 @@ private fun NavigationCard(
         } else {
             MaterialTheme.colorScheme.tertiary
         },
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = ui(label),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = demo.layer.label.show(),
-                accent = MaterialTheme.colorScheme.primary
+                accent = MaterialTheme.colorScheme.primary,
             )
         }
         Text(
             text = demo.shownTitle(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = demo.shownSubtitle(),
@@ -1184,7 +1184,7 @@ private fun NavigationCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         )
     }
 }
@@ -1195,17 +1195,17 @@ fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = ui(title),
             style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Switch(
             checked = checked,
             onCheckedChange = onChange,
-            modifier = if (compact) Modifier.scale(0.9f) else Modifier
+            modifier = if (compact) Modifier.scale(0.9f) else Modifier,
         )
     }
 }
@@ -1216,21 +1216,21 @@ fun SliderRow(
     value: Float,
     range: ClosedFloatingPointRange<Float>,
     formatValue: (Float) -> String = { it.toInt().toString() },
-    onChange: (Float) -> Unit
+    onChange: (Float) -> Unit,
 ) {
     val compact = LocalCompactChrome.current
     Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CyberBadge(
                 text = ui(title).uppercase(),
-                accent = MaterialTheme.colorScheme.secondary
+                accent = MaterialTheme.colorScheme.secondary,
             )
             CyberBadge(
                 text = formatValue(value),
-                accent = MaterialTheme.colorScheme.tertiary
+                accent = MaterialTheme.colorScheme.tertiary,
             )
         }
         Slider(value = value, onValueChange = onChange, valueRange = range)
@@ -1241,13 +1241,13 @@ fun SliderRow(
 fun RadioRow(
     title: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     RadioRow(
         title = title,
         selected = selected,
         modifier = Modifier,
-        onClick = onClick
+        onClick = onClick,
     )
 }
 
@@ -1256,7 +1256,7 @@ fun RadioRow(
     title: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val compact = LocalCompactChrome.current
     if (compact) {
@@ -1269,7 +1269,7 @@ fun RadioRow(
                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.92f)
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.74f)
-                    }
+                    },
                 )
                 .border(
                     width = 1.dp,
@@ -1278,23 +1278,23 @@ fun RadioRow(
                     } else {
                         MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                     },
-                    shape = shape
+                    shape = shape,
                 )
                 .clickable(onClick = onClick)
-                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
         ) {
             Text(
                 text = ui(title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     } else {
         Row(
             modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(selected = selected, onClick = onClick)
             Text(
@@ -1302,7 +1302,7 @@ fun RadioRow(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -1311,7 +1311,7 @@ fun RadioRow(
 @Composable
 fun DemoPreviewStage(
     modifier: Modifier = Modifier,
-    label: String = "RedByteFX"
+    label: String = "RedByteFX",
 ) {
     val shape = MaterialTheme.shapes.large
     val sweepTint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
@@ -1322,18 +1322,18 @@ fun DemoPreviewStage(
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 6_400, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            repeatMode = RepeatMode.Restart,
         ),
-        label = "preview_stage_sweep"
+        label = "preview_stage_sweep",
     )
     val pulse = transition.animateFloat(
         initialValue = 0.7f,
         targetValue = 1.18f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 2_800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            repeatMode = RepeatMode.Reverse,
         ),
-        label = "preview_stage_pulse"
+        label = "preview_stage_pulse",
     )
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -1346,7 +1346,7 @@ fun DemoPreviewStage(
         val titleStyle = if (compactPreview) {
             MaterialTheme.typography.displayLarge.copy(
                 fontSize = 26.sp,
-                lineHeight = 30.sp
+                lineHeight = 30.sp,
             )
         } else {
             MaterialTheme.typography.displayLarge
@@ -1363,14 +1363,14 @@ fun DemoPreviewStage(
                         colors = listOf(
                             MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
                             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.96f)
-                        )
-                    )
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.96f),
+                        ),
+                    ),
                 )
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
-                    shape = shape
+                    shape = shape,
                 )
                 .drawWithCache {
                     onDrawWithContent {
@@ -1379,12 +1379,12 @@ fun DemoPreviewStage(
                                 colors = listOf(
                                     Color.Transparent,
                                     sweepTint,
-                                    Color.Transparent
+                                    Color.Transparent,
                                 ),
                                 startX = size.width * (sweep.value - 0.18f),
-                                endX = size.width * (sweep.value + 0.18f)
+                                endX = size.width * (sweep.value + 0.18f),
                             ),
-                            blendMode = BlendMode.Screen
+                            blendMode = BlendMode.Screen,
                         )
                         var y = 0f
                         while (y < size.height) {
@@ -1392,14 +1392,14 @@ fun DemoPreviewStage(
                                 color = lineTint,
                                 start = androidx.compose.ui.geometry.Offset(0f, y),
                                 end = androidx.compose.ui.geometry.Offset(size.width, y),
-                                strokeWidth = 1f
+                                strokeWidth = 1f,
                             )
                             y += 16f
                         }
                         drawContent()
                     }
                 }
-                .padding(if (compactPreview) 18.dp else 24.dp)
+                .padding(if (compactPreview) 18.dp else 24.dp),
         ) {
             Box(
                 modifier = Modifier
@@ -1412,7 +1412,7 @@ fun DemoPreviewStage(
                         alpha = 0.22f + 0.08f * pulse.value
                     }
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f))
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f)),
             )
             Box(
                 modifier = Modifier
@@ -1420,7 +1420,7 @@ fun DemoPreviewStage(
                     .padding(end = 14.dp, bottom = 8.dp)
                     .size(width = if (compactPreview) 48.dp else 62.dp, height = if (compactPreview) 112.dp else 150.dp)
                     .clip(RoundedCornerShape(30.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.18f))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.18f)),
             )
             Box(
                 modifier = Modifier
@@ -1428,31 +1428,31 @@ fun DemoPreviewStage(
                     .width(if (compactPreview) 96.dp else 126.dp)
                     .height(26.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
             )
             Column(
                 modifier = Modifier
                     .align(Alignment.TopStart),
-                verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp)
+                verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp),
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CyberBadge(
                         text = say("SHADER PREVIEW", "ПРОСМОТР ШЕЙДЕРА"),
-                        accent = MaterialTheme.colorScheme.secondary
+                        accent = MaterialTheme.colorScheme.secondary,
                     )
                     CyberBadge(
                         text = say("LIVE UNIFORMS", "ЖИВЫЕ ПАРАМЕТРЫ"),
-                        accent = MaterialTheme.colorScheme.tertiary
+                        accent = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 Text(
                     text = ui(label),
                     style = titleStyle,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = if (compactPreview) 4.dp else 8.dp)
+                    modifier = Modifier.padding(top = if (compactPreview) 4.dp else 8.dp),
                 )
                 if (!compactPreview) {
                     Text(
@@ -1461,19 +1461,19 @@ fun DemoPreviewStage(
                             "описание // agsl // compose",
                         ),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         CyberBadge(
                             text = say("TYPE-SAFE", "СТРОГИЕ ТИПЫ"),
-                            accent = MaterialTheme.colorScheme.primary
+                            accent = MaterialTheme.colorScheme.primary,
                         )
                         CyberBadge(
                             text = say("HOT SIGNAL", "ЖИВОЙ СИГНАЛ"),
-                            accent = MaterialTheme.colorScheme.secondary
+                            accent = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
@@ -1489,7 +1489,7 @@ fun DemoPreviewStage(
 @Composable
 fun DemoLiquidGlassPreviewStage(
     fx: FxController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.large
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -1512,16 +1512,16 @@ fun DemoLiquidGlassPreviewStage(
                         colors = listOf(
                             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
                             MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.97f),
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
-                        )
-                    )
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f),
+                        ),
+                    ),
                 )
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
-                    shape = shape
+                    shape = shape,
                 )
-                .padding(horizontal = if (compactPreview) 16.dp else 24.dp, vertical = 20.dp)
+                .padding(horizontal = if (compactPreview) 16.dp else 24.dp, vertical = 20.dp),
         ) {
             Box(
                 modifier = Modifier
@@ -1531,22 +1531,22 @@ fun DemoLiquidGlassPreviewStage(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.08f),
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.07f)
-                            )
-                        )
-                    )
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.07f),
+                            ),
+                        ),
+                    ),
             )
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .widthIn(max = 300.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp)
+                verticalArrangement = Arrangement.spacedBy(if (compactPreview) 8.dp else 10.dp),
             ) {
                 Text(
                     text = say("Glass surface", "Стеклянная поверхность"),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Surface(
                     modifier = Modifier
@@ -1558,17 +1558,17 @@ fun DemoLiquidGlassPreviewStage(
                     shadowElevation = 0.dp,
                     border = BorderStroke(
                         width = 1.dp,
-                        color = Color.White.copy(alpha = 0.58f)
-                    )
+                        color = Color.White.copy(alpha = 0.58f),
+                    ),
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = say("Open", "Открыть"),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.94f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.94f),
                         )
                     }
                 }
@@ -1578,7 +1578,7 @@ fun DemoLiquidGlassPreviewStage(
                         "Полупрозрачная заливка и кромка: шейдер добавляет течение и цвет на краю",
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                 )
             }
         }

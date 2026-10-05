@@ -4,13 +4,14 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindFloat2
@@ -21,7 +22,6 @@ import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
-import ru.redbyte.redbytefx.*
 
 private data class TouchRippleSetup(
     val effect: ShaderProgram,
@@ -85,7 +85,7 @@ fun DemoTouchRipple() {
         generatedAgsl = rememberGeneratedAgsl(setup.effect),
         preview = {
             DemoPreviewStage(
-                modifier = pointerModifier.redbyteFx(fx)
+                modifier = pointerModifier.redbyteFx(fx),
             )
         },
         controls = {
@@ -95,6 +95,6 @@ fun DemoTouchRipple() {
             SliderRow("Strength", strengthUi, 0f..100f) {
                 strengthUi = it
             }
-        }
+        },
     )
 }

@@ -7,8 +7,8 @@ import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.abs
-import ru.redbyte.redbytefx.fract
 import ru.redbyte.redbytefx.div
+import ru.redbyte.redbytefx.fract
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.min
 import ru.redbyte.redbytefx.minus

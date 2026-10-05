@@ -14,7 +14,7 @@ public fun circleMask(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeFeather = max(feather, 0.0001f)
@@ -29,12 +29,12 @@ public fun circleMask(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = float(radius),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -44,12 +44,12 @@ public fun circleMask(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = circleMask(
     uv = uv,
     center = center,
     radius = radius,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -64,7 +64,7 @@ public fun ringMask(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeWidth = max(width, 0.0001f)
@@ -82,13 +82,13 @@ public fun ringMask(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = float(radius),
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -99,13 +99,13 @@ public fun ringMask(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
     width = width,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -116,13 +116,13 @@ public fun ringMask(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -136,7 +136,7 @@ public fun rectMask(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     size: Expr<Vec2<Flt<High>>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val halfSizeX = max(size.x * 0.5f, 0f)
     val halfSizeY = max(size.y * 0.5f, 0f)
@@ -154,10 +154,10 @@ public fun rectMask(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     size: Expr<Vec2<Flt<High>>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = rectMask(
     uv = uv,
     center = center,
     size = size,
-    feather = float(feather)
+    feather = float(feather),
 )

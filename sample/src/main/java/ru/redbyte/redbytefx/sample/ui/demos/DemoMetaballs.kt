@@ -1,6 +1,5 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -9,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
@@ -18,10 +18,10 @@ import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
-import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.smoothMin
 import ru.redbyte.redbytefx.stdlib.softFill
+import java.util.Locale
 
 private data class MetaballsSetup(
     val effect: ShaderProgram,
@@ -47,23 +47,23 @@ fun DemoMetaballs() {
                 val c1 = let(
                     float2(
                         0.35f + sin(timeUniform.expr * 0.7f) * 0.11f,
-                        0.42f + cos(timeUniform.expr * 0.52f) * 0.09f
+                        0.42f + cos(timeUniform.expr * 0.52f) * 0.09f,
                     ),
-                    "c1"
+                    "c1",
                 )
                 val c2 = let(
                     float2(
                         0.64f + cos(timeUniform.expr * 0.58f) * 0.1f,
-                        0.54f + sin(timeUniform.expr * 0.63f) * 0.08f
+                        0.54f + sin(timeUniform.expr * 0.63f) * 0.08f,
                     ),
-                    "c2"
+                    "c2",
                 )
                 val c3 = let(
                     float2(
                         0.48f + sin(timeUniform.expr * 0.33f) * 0.13f,
-                        0.74f + cos(timeUniform.expr * 0.41f) * 0.07f
+                        0.74f + cos(timeUniform.expr * 0.41f) * 0.07f,
                     ),
-                    "c3"
+                    "c3",
                 )
                 val r = 0.11f
                 val d1 = let(sdCircle(uv - c1, r), "d1")
@@ -99,10 +99,10 @@ fun DemoMetaballs() {
                 title = "Blend width",
                 value = blendUi,
                 range = 4f..22f,
-                formatValue = { v -> String.format(Locale.US, "%.2f", v / 100f) }
+                formatValue = { v -> String.format(Locale.US, "%.2f", v / 100f) },
             ) {
                 blendUi = it
             }
-        }
+        },
     )
 }

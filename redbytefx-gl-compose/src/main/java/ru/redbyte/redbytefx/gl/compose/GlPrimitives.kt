@@ -1,13 +1,13 @@
 package ru.redbyte.redbytefx.gl.compose
 
+import ru.redbyte.redbytefx.scene.SceneMesh
+import ru.redbyte.redbytefx.scene.sceneMeshAttribs
 import ru.redbyte.redbytefx.scene.MESH_NORMAL as SCENE_NORMAL
 import ru.redbyte.redbytefx.scene.MESH_POSITION as SCENE_POSITION
 import ru.redbyte.redbytefx.scene.MESH_STRIDE as SCENE_STRIDE
 import ru.redbyte.redbytefx.scene.MESH_UV as SCENE_UV
-import ru.redbyte.redbytefx.scene.SceneMesh
 import ru.redbyte.redbytefx.scene.box as sceneBox
 import ru.redbyte.redbytefx.scene.quad as sceneQuad
-import ru.redbyte.redbytefx.scene.sceneMeshAttribs
 import ru.redbyte.redbytefx.scene.sphere as sceneSphere
 import ru.redbyte.redbytefx.scene.torus as sceneTorus
 import ru.redbyte.redbytefx.scene.triangle as sceneTriangle

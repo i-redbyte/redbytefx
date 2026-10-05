@@ -9,12 +9,12 @@ import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.Vec3
+import ru.redbyte.redbytefx.a
 import ru.redbyte.redbytefx.lambert
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
-import ru.redbyte.redbytefx.a
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z

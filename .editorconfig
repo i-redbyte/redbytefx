@@ -10,6 +10,12 @@ trim_trailing_whitespace = true
 [*.{kt,kts}]
 indent_style = space
 indent_size = 4
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ktlint_code_style = intellij_idea
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+max_line_length = 320
 
 [*.md]
 trim_trailing_whitespace = false

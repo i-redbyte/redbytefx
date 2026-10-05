@@ -1,38 +1,36 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.angularSweep
 import ru.redbyte.redbytefx.stdlib.arcMask
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.polarCoordinates
-import ru.redbyte.redbytefx.stdlib.ringMask
 import ru.redbyte.redbytefx.stdlib.radialRamp
-
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
+import ru.redbyte.redbytefx.stdlib.ringMask
 
 private data class RadarSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val radius: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -66,9 +64,9 @@ fun DemoRadar() {
                         uv = uv,
                         angle = sweepAngle,
                         width = 0.12f,
-                        feather = 0.03f
+                        feather = 0.03f,
                     ),
-                    "sweep"
+                    "sweep",
                 )
                 val arc = let(
                     arcMask(
@@ -77,9 +75,9 @@ fun DemoRadar() {
                         ringWidth = 0.09f,
                         angle = sweepAngle,
                         arcWidth = 0.18f,
-                        feather = 0.03f
+                        feather = 0.03f,
                     ),
-                    "arc"
+                    "arc",
                 )
                 val outerRing = let(ringMask(uv, radius = radius.expr, width = 0.016f, feather = 0.012f), "outer_ring")
                 val innerRing = let(
@@ -87,17 +85,17 @@ fun DemoRadar() {
                         uv = uv,
                         radius = max(radius.expr * 0.58f, 0.08f),
                         width = 0.014f,
-                        feather = 0.012f
+                        feather = 0.012f,
                     ),
-                    "inner_ring"
+                    "inner_ring",
                 )
                 val beam = let(
                     radialRamp(
                         uv = uv,
                         innerRadius = float(0.06f),
-                        outerRadius = radius.expr + 0.18f
+                        outerRadius = radius.expr + 0.18f,
                     ),
-                    "beam"
+                    "beam",
                 )
                 val mask = let(max(max(sweep * beam, arc), max(outerRing, innerRing)), "mask")
                 val tint = let(
@@ -105,16 +103,16 @@ fun DemoRadar() {
                         mix(0.05f, 0.18f, polar.x * 1.4f),
                         mix(0.24f, 1f, sweep + arc * 0.55f),
                         mix(0.10f, 0.62f, polar.y * 0.45f + outerRing * 0.35f),
-                        base.a
+                        base.a,
                     ),
-                    "tint"
+                    "tint",
                 )
                 val screened = let(maskedScreen(base, tint, mask, amount.expr), "screened")
                 maskedOverlay(
                     base = screened,
                     blend = color(float3(0.82f, 1f, 0.72f), base.a),
                     mask = arc,
-                    amount = amount.expr * 0.32f
+                    amount = amount.expr * 0.32f,
                 )
             }
         }
@@ -123,7 +121,7 @@ fun DemoRadar() {
             time = timeParam!!,
             speed = speedParam!!,
             radius = radiusParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -138,7 +136,7 @@ fun DemoRadar() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Radar//Polar"
+                label = "Radar//Polar",
             )
         },
         controls = {
@@ -154,6 +152,6 @@ fun DemoRadar() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

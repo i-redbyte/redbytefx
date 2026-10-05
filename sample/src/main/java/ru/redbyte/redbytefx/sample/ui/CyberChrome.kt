@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,7 +47,7 @@ import ru.redbyte.redbytefx.sample.ui.theme.VoidBlack
 
 data class CyberCodeAction(
     val label: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
 )
 
 val LocalCompactChrome = staticCompositionLocalOf { false }
@@ -60,18 +60,18 @@ fun CyberBackdrop(modifier: Modifier = Modifier) {
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 18_000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            repeatMode = RepeatMode.Restart,
         ),
-        label = "cyber_backdrop_sweep"
+        label = "cyber_backdrop_sweep",
     )
     val pulse = transition.animateFloat(
         initialValue = 0.74f,
         targetValue = 1.14f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 3_800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            repeatMode = RepeatMode.Reverse,
         ),
-        label = "cyber_backdrop_pulse"
+        label = "cyber_backdrop_pulse",
     )
 
     Box(
@@ -82,8 +82,8 @@ fun CyberBackdrop(modifier: Modifier = Modifier) {
                     colors = listOf(
                         VoidBlack,
                         SurfaceOne,
-                        VoidBlack
-                    )
+                        VoidBlack,
+                    ),
                 )
                 onDrawBehind {
                     drawRect(brush = baseBrush)
@@ -93,35 +93,35 @@ fun CyberBackdrop(modifier: Modifier = Modifier) {
                         brush = Brush.radialGradient(
                             colors = listOf(
                                 TerminalGlow.copy(alpha = 0.18f * pulse.value),
-                                Color.Transparent
+                                Color.Transparent,
                             ),
                             center = Offset(size.width * 0.15f, size.height * 0.1f),
-                            radius = size.minDimension * 0.85f
+                            radius = size.minDimension * 0.85f,
                         ),
-                        blendMode = BlendMode.Screen
+                        blendMode = BlendMode.Screen,
                     )
                     drawRect(
                         brush = Brush.radialGradient(
                             colors = listOf(
                                 MatrixGreen.copy(alpha = 0.13f * pulse.value),
-                                Color.Transparent
+                                Color.Transparent,
                             ),
                             center = Offset(size.width * 0.84f, size.height * 0.24f),
-                            radius = size.minDimension * 0.52f
+                            radius = size.minDimension * 0.52f,
                         ),
-                        blendMode = BlendMode.Screen
+                        blendMode = BlendMode.Screen,
                     )
                     drawRect(
                         brush = Brush.horizontalGradient(
                             colors = listOf(
                                 Color.Transparent,
                                 NeonMint.copy(alpha = 0.16f),
-                                Color.Transparent
+                                Color.Transparent,
                             ),
                             startX = sweepX - size.width * 0.12f,
-                            endX = sweepX + size.width * 0.12f
+                            endX = sweepX + size.width * 0.12f,
                         ),
-                        blendMode = BlendMode.Screen
+                        blendMode = BlendMode.Screen,
                     )
 
                     val verticalStep = 72f
@@ -131,7 +131,7 @@ fun CyberBackdrop(modifier: Modifier = Modifier) {
                             color = GridLine.copy(alpha = 0.08f),
                             start = Offset(x, 0f),
                             end = Offset(x - size.height * 0.18f, size.height),
-                            strokeWidth = 1f
+                            strokeWidth = 1f,
                         )
                         x += verticalStep
                     }
@@ -143,12 +143,12 @@ fun CyberBackdrop(modifier: Modifier = Modifier) {
                             color = GridLine.copy(alpha = 0.06f),
                             start = Offset(0f, y),
                             end = Offset(size.width, y),
-                            strokeWidth = 1f
+                            strokeWidth = 1f,
                         )
                         y += horizontalStep
                     }
                 }
-            }
+            },
     )
 }
 
@@ -158,7 +158,7 @@ fun CyberPanel(
     accent: Color = MaterialTheme.colorScheme.primary,
     shape: Shape = MaterialTheme.shapes.large,
     contentPadding: PaddingValues = PaddingValues(18.dp),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
         modifier = modifier
@@ -168,14 +168,14 @@ fun CyberPanel(
                 Brush.verticalGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
-                    )
-                )
+                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                    ),
+                ),
             )
             .border(
                 width = 1.dp,
                 color = accent.copy(alpha = 0.24f),
-                shape = shape
+                shape = shape,
             )
             .drawWithCache {
                 onDrawWithContent {
@@ -184,22 +184,22 @@ fun CyberPanel(
                             colors = listOf(
                                 accent.copy(alpha = 0.18f),
                                 Color.Transparent,
-                                accent.copy(alpha = 0.08f)
-                            )
+                                accent.copy(alpha = 0.08f),
+                            ),
                         ),
-                        blendMode = BlendMode.Screen
+                        blendMode = BlendMode.Screen,
                     )
                     drawContent()
                     drawRoundRect(
                         color = accent.copy(alpha = 0.14f),
-                        style = Stroke(width = 1.2f)
+                        style = Stroke(width = 1.2f),
                     )
                 }
-            }
+            },
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
-            content = content
+            content = content,
         )
     }
 }
@@ -210,7 +210,7 @@ fun CyberBadge(
     modifier: Modifier = Modifier,
     accent: Color = MaterialTheme.colorScheme.primary,
     fill: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
-    textColor: Color = MaterialTheme.colorScheme.onSurface
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     val compact = LocalCompactChrome.current
     val shape = RoundedCornerShape(if (compact) 12.dp else 14.dp)
@@ -221,12 +221,12 @@ fun CyberBadge(
             .border(
                 width = 1.dp,
                 color = accent.copy(alpha = 0.28f),
-                shape = shape
+                shape = shape,
             )
             .padding(
                 horizontal = if (compact) 10.dp else 12.dp,
-                vertical = if (compact) 4.dp else 6.dp
-            )
+                vertical = if (compact) 4.dp else 6.dp,
+            ),
     ) {
         Text(
             text = text,
@@ -238,7 +238,7 @@ fun CyberBadge(
             color = textColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            softWrap = false
+            softWrap = false,
         )
     }
 }
@@ -250,7 +250,7 @@ fun CyberCodeBlock(
     modifier: Modifier = Modifier,
     maxLines: Int,
     meta: String? = null,
-    actions: List<CyberCodeAction> = emptyList()
+    actions: List<CyberCodeAction> = emptyList(),
 ) {
     val shape = RoundedCornerShape(18.dp)
     val compact = LocalCompactChrome.current
@@ -262,34 +262,34 @@ fun CyberCodeBlock(
                 Brush.verticalGradient(
                     colors = listOf(
                         SurfaceThree.copy(alpha = 0.56f),
-                        SurfaceTwo.copy(alpha = 0.92f)
-                    )
-                )
+                        SurfaceTwo.copy(alpha = 0.92f),
+                    ),
+                ),
             )
             .border(
                 width = 1.dp,
                 color = MatrixGreen.copy(alpha = 0.18f),
-                shape = shape
+                shape = shape,
             )
-            .padding(if (compact) 12.dp else 14.dp)
+            .padding(if (compact) 12.dp else 14.dp),
     ) {
         Column {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CyberBadge(
                     text = ui(title).uppercase(),
                     accent = NeonMint,
                     fill = SurfaceOne.copy(alpha = 0.92f),
-                    textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    textColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (meta != null) {
                     CyberBadge(
                         text = meta.uppercase(),
                         accent = MaterialTheme.colorScheme.secondary,
                         fill = SurfaceOne.copy(alpha = 0.9f),
-                        textColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        textColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 actions.forEach { action ->
@@ -298,7 +298,7 @@ fun CyberCodeBlock(
                         modifier = Modifier.clickable(onClick = action.onClick),
                         accent = MaterialTheme.colorScheme.tertiary,
                         fill = SurfaceOne.copy(alpha = 0.94f),
-                        textColor = MaterialTheme.colorScheme.onSurface
+                        textColor = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -307,7 +307,7 @@ fun CyberCodeBlock(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = maxLines,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = 12.dp),
             )
         }
     }

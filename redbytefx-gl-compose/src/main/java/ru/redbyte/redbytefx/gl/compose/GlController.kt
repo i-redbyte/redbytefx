@@ -20,10 +20,10 @@ import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
-import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.jvm.JvmName
 
 private const val MAX_QUEUED_GL_TASKS = 128
 

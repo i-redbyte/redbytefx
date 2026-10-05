@@ -1,31 +1,29 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.stdlib.gridMask
 import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.pulse
 import ru.redbyte.redbytefx.stdlib.scanlines
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-
-
 private data class SignalSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val density: Uniform<Flt<High>>,
     val lineWidth: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -55,7 +53,7 @@ fun DemoSignal() {
                 val scan = let(scanlines(fragCoord.y, 14f, 3f), "scan")
                 val pulse = let(
                     pulseBand(uv.y * densityUniform.expr * 0.5f + grid * 0.35f, 0.55f.lit),
-                    "pulse"
+                    "pulse",
                 )
                 val hardMask = let(step(0.45f, scan * pulse), "hard_mask")
                 val active = let((grid gt 0.05f) or (hardMask gt 0.5f), "active")
@@ -64,9 +62,9 @@ fun DemoSignal() {
                     mix(
                         base,
                         accent,
-                        min(grid * 0.85f + hardMask * 0.35f, 1f)
+                        min(grid * 0.85f + hardMask * 0.35f, 1f),
                     ),
-                    "mixed"
+                    "mixed",
                 )
                 ifElse(active, mix(base, mixed, amountUniform.expr), base)
             }
@@ -92,13 +90,13 @@ fun DemoSignal() {
                 title = "Line Width",
                 value = lineWidthUi,
                 range = 2f..20f,
-                formatValue = { "${it / 100f}" }
+                formatValue = { "${it / 100f}" },
             ) {
                 lineWidthUi = it
             }
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

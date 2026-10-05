@@ -8,12 +8,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import kotlinx.coroutines.isActive
+import ru.redbyte.redbytefx.sample.ui.russian
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.floor
 import kotlin.math.sin
-import kotlinx.coroutines.isActive
-import ru.redbyte.redbytefx.sample.ui.russian
 
 internal fun gameDsl(note: String): String = "// $note\n$PLAYFIELD_DSL"
 

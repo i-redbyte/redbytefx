@@ -4,7 +4,7 @@ import ru.redbyte.redbytefx.*
 
 private fun projectedUv(
     uv: Expr<Vec2<Flt<High>>>,
-    direction: Expr<Vec2<Flt<High>>>
+    direction: Expr<Vec2<Flt<High>>>,
 ): Expr<Flt<High>> {
     val safeLength = max(length(direction), 0.0001f)
     val dir = direction / safeLength
@@ -24,7 +24,7 @@ public fun linearRamp(
     uv: Expr<Vec2<Flt<High>>>,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     start: Expr<Flt<High>> = float(0f),
-    end: Expr<Flt<High>> = float(1f)
+    end: Expr<Flt<High>> = float(1f),
 ): Expr<Flt<High>> {
     val safeEnd = ifElse(abs(end - start) lt 0.0001f, start + 0.0001f, end)
     return saturate(remap(projectedUv(uv, direction), start, safeEnd, float(0f), float(1f)))
@@ -37,12 +37,12 @@ public fun linearRamp(
     uv: Expr<Vec2<Flt<High>>>,
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     start: Float,
-    end: Float
+    end: Float,
 ): Expr<Flt<High>> = linearRamp(
     uv = uv,
     direction = direction,
     start = float(start),
-    end = float(end)
+    end = float(end),
 )
 
 /**
@@ -55,7 +55,7 @@ public fun radialRamp(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     innerRadius: Expr<Flt<High>>,
-    outerRadius: Expr<Flt<High>>
+    outerRadius: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safeInner = max(innerRadius, 0f)
     val safeOuter = max(outerRadius, safeInner + 0.0001f)
@@ -69,12 +69,12 @@ public fun radialRamp(
     uv: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     innerRadius: Float,
-    outerRadius: Float
+    outerRadius: Float,
 ): Expr<Flt<High>> = radialRamp(
     uv = uv,
     center = center,
     innerRadius = float(innerRadius),
-    outerRadius = float(outerRadius)
+    outerRadius = float(outerRadius),
 )
 
 /**
@@ -90,12 +90,12 @@ public fun directionalSweep(
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     center: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.08f)
+    feather: Expr<Flt<High>> = float(0.08f),
 ): Expr<Flt<High>> = bandMask(
     position = projectedUv(uv, direction),
     center = center,
     width = width,
-    feather = feather
+    feather = feather,
 )
 
 /**
@@ -107,13 +107,13 @@ public fun directionalSweep(
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     center: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = center,
     width = width,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -125,13 +125,13 @@ public fun directionalSweep(
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     center: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.08f
+    feather: Float = 0.08f,
 ): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = center,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -142,11 +142,11 @@ public fun directionalSweep(
     direction: Expr<Vec2<Flt<High>>> = float2(1f, 0f),
     center: Float,
     width: Float,
-    feather: Float = 0.08f
+    feather: Float = 0.08f,
 ): Expr<Flt<High>> = directionalSweep(
     uv = uv,
     direction = direction,
     center = float(center),
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )

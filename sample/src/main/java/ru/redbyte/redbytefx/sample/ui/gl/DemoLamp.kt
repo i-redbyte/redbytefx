@@ -2,13 +2,13 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.gl.compose.sphere
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.cos
 import ru.redbyte.redbytefx.div
+import ru.redbyte.redbytefx.gl.compose.sphere
 import ru.redbyte.redbytefx.length
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.max

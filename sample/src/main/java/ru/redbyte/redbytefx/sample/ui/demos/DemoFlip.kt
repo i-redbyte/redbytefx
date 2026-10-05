@@ -1,17 +1,16 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
@@ -33,8 +32,8 @@ fun DemoFlip() {
                 sample(
                     flipY(
                         coord = flipX(amount = flipXAmount.expr),
-                        amount = flipYAmount.expr
-                    )
+                        amount = flipYAmount.expr,
+                    ),
                 )
             }
         }
@@ -57,6 +56,6 @@ fun DemoFlip() {
             SwitchRow("Flip Y", flipY) {
                 flipY = it
             }
-        }
+        },
     )
 }

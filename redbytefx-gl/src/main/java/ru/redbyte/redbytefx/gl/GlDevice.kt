@@ -108,7 +108,10 @@ public abstract class GlDevice {
     /** Device. `GL_MAX_UNIFORM_BUFFER_BINDINGS` for this context. */
     public abstract fun maxUniformBufferBindings(): Int
 
-    /** Device. `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS` for this context. */
+    /**
+     * Device. `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS` for this context.
+     * OpenGL ES 3.0 has no storage buffers; the port returns 0 and must not query that enum.
+     */
     public abstract fun maxShaderStorageBufferBindings(): Int
 
     public abstract fun shaderStorageData(buffer: Int, data: ByteArray)

@@ -1,30 +1,28 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.stdlib.blendScreen
-import ru.redbyte.redbytefx.stdlib.chromaticOffset
-import ru.redbyte.redbytefx.stdlib.cosinePalette
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
-
+import ru.redbyte.redbytefx.stdlib.blendScreen
+import ru.redbyte.redbytefx.stdlib.chromaticOffset
+import ru.redbyte.redbytefx.stdlib.cosinePalette
 
 private data class PrismSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val amount: Uniform<Flt<High>>,
     val spread: Uniform<Flt<High>>,
-    val shift: Uniform<Flt<High>>
+    val shift: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -53,9 +51,9 @@ fun DemoPrism() {
                     chromaticOffset(
                         offset = shift.expr,
                         direction = float2(1f, 0.3f),
-                        amount = amount.expr
+                        amount = amount.expr,
                     ),
-                    "refracted"
+                    "refracted",
                 )
                 blendScreen(refracted, tint, amount.expr)
             }
@@ -64,7 +62,7 @@ fun DemoPrism() {
             effect = effect,
             amount = amountParam!!,
             spread = spreadParam!!,
-            shift = shiftParam!!
+            shift = shiftParam!!,
         )
     }
 
@@ -88,6 +86,6 @@ fun DemoPrism() {
             SliderRow("Shift", shiftUi, 0f..24f) {
                 shiftUi = it
             }
-        }
+        },
     )
 }

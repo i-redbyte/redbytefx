@@ -54,7 +54,7 @@ private enum class CircuitNodeShape { Pad, Chip, Module, Capacitor }
 
 private data class CircuitPoint(
     val x: Float,
-    val y: Float
+    val y: Float,
 )
 
 private data class CircuitNodeSpec(
@@ -67,7 +67,7 @@ private data class CircuitNodeSpec(
     val halfSize: CircuitPoint = CircuitPoint(0.10f, 0.07f),
     val radius: Float = 0.07f,
     val cornerRadius: Float = 0.03f,
-    val feather: Float = 0.016f
+    val feather: Float = 0.016f,
 )
 
 private data class CircuitSegmentSpec(
@@ -79,18 +79,18 @@ private data class CircuitSegmentSpec(
     val bandWidth: Float = 0.22f,
     val bandFeather: Float = 0.08f,
     val pulseSpeed: Float = 0.36f,
-    val pulseOffset: Float = 0f
+    val pulseOffset: Float = 0f,
 )
 
 private data class CircuitConnectionSpec(
     val from: CircuitNode,
     val to: CircuitNode,
-    val segmentIds: List<String>
+    val segmentIds: List<String>,
 )
 
 private data class CircuitActivationSpec(
     val nodeIds: Set<CircuitNode>,
-    val segmentIds: Set<String>
+    val segmentIds: Set<String>,
 )
 
 private data class CircuitBoardSpec(
@@ -98,14 +98,14 @@ private data class CircuitBoardSpec(
     val segments: List<CircuitSegmentSpec>,
     val connections: List<CircuitConnectionSpec>,
     val viaPoints: List<CircuitPoint>,
-    val activations: Map<CircuitNode, CircuitActivationSpec>
+    val activations: Map<CircuitNode, CircuitActivationSpec>,
 )
 
 private data class CircuitSetup(
     val effect: ShaderProgram,
     val time: Uniform<Flt<High>>,
     val route: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 private const val CIRCUIT_BOARD_HALF_WIDTH = 0.86f
@@ -127,7 +127,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             shortLabel = "VIN",
             position = CircuitPoint(-0.66f, -0.12f),
             shape = CircuitNodeShape.Pad,
-            radius = 0.078f
+            radius = 0.078f,
         ),
         CircuitNodeSpec(
             id = CircuitNode.Oscillator,
@@ -137,7 +137,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             position = CircuitPoint(-0.38f, 0.20f),
             shape = CircuitNodeShape.Module,
             halfSize = CircuitPoint(0.11f, 0.06f),
-            cornerRadius = 0.028f
+            cornerRadius = 0.028f,
         ),
         CircuitNodeSpec(
             id = CircuitNode.Processor,
@@ -147,7 +147,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             position = CircuitPoint(0.02f, 0.00f),
             shape = CircuitNodeShape.Chip,
             halfSize = CircuitPoint(0.21f, 0.12f),
-            cornerRadius = 0.036f
+            cornerRadius = 0.036f,
         ),
         CircuitNodeSpec(
             id = CircuitNode.Capacitor,
@@ -157,7 +157,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             position = CircuitPoint(0.32f, -0.28f),
             shape = CircuitNodeShape.Capacitor,
             halfSize = CircuitPoint(0.055f, 0.105f),
-            cornerRadius = 0.014f
+            cornerRadius = 0.014f,
         ),
         CircuitNodeSpec(
             id = CircuitNode.Resistor,
@@ -167,7 +167,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             position = CircuitPoint(0.42f, 0.18f),
             shape = CircuitNodeShape.Module,
             halfSize = CircuitPoint(0.12f, 0.05f),
-            cornerRadius = 0.026f
+            cornerRadius = 0.026f,
         ),
         CircuitNodeSpec(
             id = CircuitNode.Output,
@@ -177,8 +177,8 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             position = CircuitPoint(0.68f, 0.02f),
             shape = CircuitNodeShape.Module,
             halfSize = CircuitPoint(0.12f, 0.085f),
-            cornerRadius = 0.028f
-        )
+            cornerRadius = 0.028f,
+        ),
     )
 
     val segments = listOf(
@@ -191,7 +191,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.34f,
-            pulseOffset = 0.00f
+            pulseOffset = 0.00f,
         ),
         CircuitSegmentSpec(
             id = "vin_a",
@@ -202,7 +202,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.34f,
-            pulseOffset = 0.04f
+            pulseOffset = 0.04f,
         ),
         CircuitSegmentSpec(
             id = "vin_b",
@@ -213,7 +213,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.34f,
-            pulseOffset = 0.12f
+            pulseOffset = 0.12f,
         ),
         CircuitSegmentSpec(
             id = "cpu_in_pin",
@@ -224,7 +224,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.34f,
-            pulseOffset = 0.18f
+            pulseOffset = 0.18f,
         ),
         CircuitSegmentSpec(
             id = "osc_pin",
@@ -235,7 +235,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.42f,
-            pulseOffset = 0.10f
+            pulseOffset = 0.10f,
         ),
         CircuitSegmentSpec(
             id = "osc_a",
@@ -246,7 +246,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.42f,
-            pulseOffset = 0.18f
+            pulseOffset = 0.18f,
         ),
         CircuitSegmentSpec(
             id = "osc_b",
@@ -257,7 +257,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.42f,
-            pulseOffset = 0.26f
+            pulseOffset = 0.26f,
         ),
         CircuitSegmentSpec(
             id = "osc_c",
@@ -268,7 +268,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.42f,
-            pulseOffset = 0.34f
+            pulseOffset = 0.34f,
         ),
         CircuitSegmentSpec(
             id = "cpu_clk_pin",
@@ -279,7 +279,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.42f,
-            pulseOffset = 0.40f
+            pulseOffset = 0.40f,
         ),
         CircuitSegmentSpec(
             id = "cpu_cap_pin",
@@ -290,7 +290,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.30f,
-            pulseOffset = 0.18f
+            pulseOffset = 0.18f,
         ),
         CircuitSegmentSpec(
             id = "cap_a",
@@ -301,7 +301,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.30f,
-            pulseOffset = 0.22f
+            pulseOffset = 0.22f,
         ),
         CircuitSegmentSpec(
             id = "cap_b",
@@ -312,7 +312,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.30f,
-            pulseOffset = 0.32f
+            pulseOffset = 0.32f,
         ),
         CircuitSegmentSpec(
             id = "cpu_res_pin",
@@ -323,7 +323,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.38f,
-            pulseOffset = 0.10f
+            pulseOffset = 0.10f,
         ),
         CircuitSegmentSpec(
             id = "res_a",
@@ -334,7 +334,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.38f,
-            pulseOffset = 0.16f
+            pulseOffset = 0.16f,
         ),
         CircuitSegmentSpec(
             id = "out_a",
@@ -345,7 +345,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.13f,
             bandFeather = 0.04f,
             pulseSpeed = 0.40f,
-            pulseOffset = 0.08f
+            pulseOffset = 0.08f,
         ),
         CircuitSegmentSpec(
             id = "res_out_a",
@@ -356,7 +356,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.44f,
-            pulseOffset = 0.28f
+            pulseOffset = 0.28f,
         ),
         CircuitSegmentSpec(
             id = "res_out_b",
@@ -367,7 +367,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.44f,
-            pulseOffset = 0.38f
+            pulseOffset = 0.38f,
         ),
         CircuitSegmentSpec(
             id = "res_out_c",
@@ -378,7 +378,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.44f,
-            pulseOffset = 0.46f
+            pulseOffset = 0.46f,
         ),
         CircuitSegmentSpec(
             id = "out_pin",
@@ -389,41 +389,41 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
             bandWidth = 0.12f,
             bandFeather = 0.04f,
             pulseSpeed = 0.40f,
-            pulseOffset = 0.18f
-        )
+            pulseOffset = 0.18f,
+        ),
     )
 
     val connections = listOf(
         CircuitConnectionSpec(
             from = CircuitNode.Source,
             to = CircuitNode.Processor,
-            segmentIds = listOf("source_pin", "vin_a", "vin_b", "cpu_in_pin")
+            segmentIds = listOf("source_pin", "vin_a", "vin_b", "cpu_in_pin"),
         ),
         CircuitConnectionSpec(
             from = CircuitNode.Oscillator,
             to = CircuitNode.Processor,
-            segmentIds = listOf("osc_pin", "osc_a", "osc_b", "osc_c", "cpu_clk_pin")
+            segmentIds = listOf("osc_pin", "osc_a", "osc_b", "osc_c", "cpu_clk_pin"),
         ),
         CircuitConnectionSpec(
             from = CircuitNode.Processor,
             to = CircuitNode.Capacitor,
-            segmentIds = listOf("cpu_cap_pin", "cap_a", "cap_b")
+            segmentIds = listOf("cpu_cap_pin", "cap_a", "cap_b"),
         ),
         CircuitConnectionSpec(
             from = CircuitNode.Processor,
             to = CircuitNode.Resistor,
-            segmentIds = listOf("cpu_res_pin", "res_a")
+            segmentIds = listOf("cpu_res_pin", "res_a"),
         ),
         CircuitConnectionSpec(
             from = CircuitNode.Processor,
             to = CircuitNode.Output,
-            segmentIds = listOf("out_a", "out_pin")
+            segmentIds = listOf("out_a", "out_pin"),
         ),
         CircuitConnectionSpec(
             from = CircuitNode.Resistor,
             to = CircuitNode.Output,
-            segmentIds = listOf("res_out_a", "res_out_b", "res_out_c", "out_pin")
-        )
+            segmentIds = listOf("res_out_a", "res_out_b", "res_out_c", "out_pin"),
+        ),
     )
 
     val nodeCenters = nodes.map { it.position }.toSet()
@@ -439,7 +439,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
         val incident = connections.filter { it.from == node.id || it.to == node.id }
         node.id to CircuitActivationSpec(
             nodeIds = incident.flatMap { listOf(it.from, it.to) }.toSet() + node.id,
-            segmentIds = incident.flatMap { it.segmentIds }.toSet()
+            segmentIds = incident.flatMap { it.segmentIds }.toSet(),
         )
     }
 
@@ -448,7 +448,7 @@ private fun buildCircuitBoardSpec(): CircuitBoardSpec {
         segments = segments,
         connections = connections,
         viaPoints = viaPoints,
-        activations = activations
+        activations = activations,
     )
 }
 
@@ -467,7 +467,7 @@ private fun circuitUnionMask(expressions: Iterable<Expr<Flt<High>>>): Expr<Flt<H
                 val middle = start + count / 2
                 max(
                     merge(start, middle),
-                    merge(middle, endExclusive)
+                    merge(middle, endExclusive),
                 )
             }
         }
@@ -486,19 +486,19 @@ private fun circuitRoundedMask(
     halfWidth: Float,
     halfHeight: Float,
     radius: Float,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = softFill(
     distance = sdRoundedBox(
         point = local - float2(centerX, centerY),
         halfSize = float2(halfWidth, halfHeight),
-        radius = radius
+        radius = radius,
     ),
-    feather = feather
+    feather = feather,
 )
 
 private fun circuitNodeMask(
     board: Expr<Vec2<Flt<High>>>,
-    node: CircuitNodeSpec
+    node: CircuitNodeSpec,
 ): Expr<Flt<High>> {
     val local = board - node.position.toExpr()
     return when (node.shape) {
@@ -508,7 +508,7 @@ private fun circuitNodeMask(
                     listOf(
                         softFill(
                             distance = sdCircle(local, radius = node.radius * 0.90f),
-                            feather = node.feather * 0.82f
+                            feather = node.feather * 0.82f,
                         ),
                         circuitRoundedMask(
                             local = local,
@@ -516,20 +516,21 @@ private fun circuitNodeMask(
                             halfWidth = 0.018f,
                             halfHeight = 0.014f,
                             radius = 0.008f,
-                            feather = node.feather * 0.56f
-                        )
-                    )
+                            feather = node.feather * 0.56f,
+                        ),
+                    ),
                 )
             } else {
                 softFill(
                     distance = sdCircle(local, radius = node.radius),
-                    feather = node.feather
+                    feather = node.feather,
                 )
             }
         }
 
         CircuitNodeShape.Chip,
-        CircuitNodeShape.Module -> {
+        CircuitNodeShape.Module,
+        -> {
             when (node.id) {
                 CircuitNode.Oscillator -> circuitUnionMask(
                     listOf(
@@ -538,7 +539,7 @@ private fun circuitNodeMask(
                             halfWidth = 0.086f,
                             halfHeight = 0.050f,
                             radius = 0.024f,
-                            feather = node.feather * 0.78f
+                            feather = node.feather * 0.78f,
                         ),
                         circuitRoundedMask(
                             local = local,
@@ -546,9 +547,9 @@ private fun circuitNodeMask(
                             halfWidth = 0.018f,
                             halfHeight = 0.016f,
                             radius = 0.009f,
-                            feather = node.feather * 0.56f
-                        )
-                    )
+                            feather = node.feather * 0.56f,
+                        ),
+                    ),
                 )
 
                 CircuitNode.Resistor -> circuitUnionMask(
@@ -558,7 +559,7 @@ private fun circuitNodeMask(
                             halfWidth = 0.064f,
                             halfHeight = 0.026f,
                             radius = 0.015f,
-                            feather = node.feather * 0.76f
+                            feather = node.feather * 0.76f,
                         ),
                         circuitRoundedMask(
                             local = local,
@@ -566,7 +567,7 @@ private fun circuitNodeMask(
                             halfWidth = 0.024f,
                             halfHeight = 0.018f,
                             radius = 0.010f,
-                            feather = node.feather * 0.56f
+                            feather = node.feather * 0.56f,
                         ),
                         circuitRoundedMask(
                             local = local,
@@ -574,9 +575,9 @@ private fun circuitNodeMask(
                             halfWidth = 0.024f,
                             halfHeight = 0.018f,
                             radius = 0.010f,
-                            feather = node.feather * 0.56f
-                        )
-                    )
+                            feather = node.feather * 0.56f,
+                        ),
+                    ),
                 )
 
                 CircuitNode.Output -> circuitUnionMask(
@@ -586,7 +587,7 @@ private fun circuitNodeMask(
                             halfWidth = 0.094f,
                             halfHeight = 0.068f,
                             radius = 0.024f,
-                            feather = node.feather * 0.80f
+                            feather = node.feather * 0.80f,
                         ),
                         circuitRoundedMask(
                             local = local,
@@ -594,18 +595,18 @@ private fun circuitNodeMask(
                             halfWidth = 0.022f,
                             halfHeight = 0.022f,
                             radius = 0.010f,
-                            feather = node.feather * 0.54f
-                        )
-                    )
+                            feather = node.feather * 0.54f,
+                        ),
+                    ),
                 )
 
                 else -> softFill(
                     distance = sdRoundedBox(
                         point = local,
                         halfSize = node.halfSize.toExpr(),
-                        radius = node.cornerRadius
+                        radius = node.cornerRadius,
                     ),
-                    feather = node.feather
+                    feather = node.feather,
                 )
             }
         }
@@ -617,7 +618,7 @@ private fun circuitNodeMask(
                     halfWidth = 0.042f,
                     halfHeight = 0.086f,
                     radius = 0.019f,
-                    feather = node.feather * 0.76f
+                    feather = node.feather * 0.76f,
                 ),
                 circuitRoundedMask(
                     local = local,
@@ -625,16 +626,16 @@ private fun circuitNodeMask(
                     halfWidth = 0.024f,
                     halfHeight = 0.018f,
                     radius = 0.010f,
-                    feather = node.feather * 0.56f
-                )
-            )
+                    feather = node.feather * 0.56f,
+                ),
+            ),
         )
     }
 }
 
 private fun circuitSegmentMask(
     board: Expr<Vec2<Flt<High>>>,
-    segment: CircuitSegmentSpec
+    segment: CircuitSegmentSpec,
 ): Expr<Flt<High>> = segmentMask(
     point = board,
     start = segment.start.toExpr(),
@@ -648,13 +649,13 @@ private fun circuitSegmentMask(
         segment.feather * CIRCUIT_TRACE_FEATHER_SCALE
     } else {
         CIRCUIT_TRACE_MIN_FEATHER
-    }
+    },
 )
 
 private fun circuitSegmentPulse(
     board: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>>,
-    segment: CircuitSegmentSpec
+    segment: CircuitSegmentSpec,
 ): Expr<Flt<High>> {
     val start = segment.start.toExpr()
     val end = segment.end.toExpr()
@@ -689,16 +690,16 @@ private fun circuitSegmentPulse(
         start = start,
         end = end,
         thickness = pulseThickness,
-        feather = pulseFeather
+        feather = pulseFeather,
     )
 }
 
 private fun circuitViaMask(
     board: Expr<Vec2<Flt<High>>>,
-    point: CircuitPoint
+    point: CircuitPoint,
 ): Expr<Flt<High>> = softFill(
     distance = sdCircle(board - point.toExpr(), radius = 0.0042f),
-    feather = 0.0030f
+    feather = 0.0030f,
 )
 
 private fun CircuitNodeSpec.uiXFraction(aspect: Float): Float =
@@ -712,7 +713,8 @@ private fun CircuitNodeSpec.uiWidth(maxWidth: Dp, aspect: Float): Dp {
         CircuitNodeShape.Pad -> radius * 2f
         CircuitNodeShape.Chip,
         CircuitNodeShape.Module,
-        CircuitNodeShape.Capacitor -> halfSize.x * 2f
+        CircuitNodeShape.Capacitor,
+        -> halfSize.x * 2f
     }
     return maxWidth * (boardWidth / aspect)
 }
@@ -722,7 +724,8 @@ private fun CircuitNodeSpec.uiHeight(maxHeight: Dp): Dp {
         CircuitNodeShape.Pad -> radius * 2f
         CircuitNodeShape.Chip,
         CircuitNodeShape.Module,
-        CircuitNodeShape.Capacitor -> halfSize.y * 2f
+        CircuitNodeShape.Capacitor,
+        -> halfSize.y * 2f
     }
     return maxHeight * boardHeight
 }
@@ -732,7 +735,7 @@ private fun CircuitPreviewStage(
     modifier: Modifier = Modifier,
     board: CircuitBoardSpec,
     selected: CircuitNode,
-    onSelect: (CircuitNode) -> Unit
+    onSelect: (CircuitNode) -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
 
@@ -753,15 +756,15 @@ private fun CircuitPreviewStage(
                         colors = listOf(
                             MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
                             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f)
-                        )
-                    )
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f),
+                        ),
+                    ),
                 )
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.26f),
-                    shape = shape
-                )
+                    shape = shape,
+                ),
         ) {
             val previewAspect = remember(maxWidth, maxHeight) {
                 (maxWidth.value / maxHeight.value).coerceAtLeast(1f)
@@ -770,7 +773,7 @@ private fun CircuitPreviewStage(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .then(modifier)
+                    .then(modifier),
             ) {
                 Box(
                     modifier = Modifier
@@ -779,10 +782,10 @@ private fun CircuitPreviewStage(
                             Brush.linearGradient(
                                 colors = listOf(
                                     MaterialTheme.colorScheme.surface.copy(alpha = 1f),
-                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f)
-                                )
-                            )
-                        )
+                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f),
+                                ),
+                            ),
+                        ),
                 )
             }
 
@@ -796,9 +799,9 @@ private fun CircuitPreviewStage(
                     height = targetHeight,
                     modifier = Modifier.offset(
                         x = maxWidth * node.uiXFraction(previewAspect) - targetWidth / 2f,
-                        y = maxHeight * node.uiYFraction() - targetHeight / 2f
+                        y = maxHeight * node.uiYFraction() - targetHeight / 2f,
                     ),
-                    onClick = { onSelect(node.id) }
+                    onClick = { onSelect(node.id) },
                 )
             }
         }
@@ -833,81 +836,87 @@ fun DemoCircuit() {
                         distance = sdRoundedBox(
                             point = board,
                             halfSize = float2(CIRCUIT_BOARD_HALF_WIDTH, CIRCUIT_BOARD_HALF_HEIGHT),
-                            radius = 0.06f
+                            radius = 0.06f,
                         ),
-                        feather = 0.03f
+                        feather = 0.03f,
                     ),
-                    "board_mask"
+                    "board_mask",
                 )
                 val nodeMasks = boardSpec.nodes.associate { node ->
                     node.id to let(
                         circuitNodeMask(board = board, node = node),
-                        "${node.id.name.lowercase()}_mask"
+                        "${node.id.name.lowercase()}_mask",
                     )
                 }
                 val traceMasks = boardSpec.segments.associate { segment ->
                     segment.id to let(
                         circuitSegmentMask(board = board, segment = segment),
-                        "${segment.id}_trace"
+                        "${segment.id}_trace",
                     )
                 }
                 val pulseMasks = boardSpec.segments.associate { segment ->
                     segment.id to let(
                         circuitSegmentPulse(board = board, time = time.expr, segment = segment),
-                        "${segment.id}_pulse"
+                        "${segment.id}_pulse",
                     )
                 }
                 val viaMask = let(
                     circuitUnionMask(boardSpec.viaPoints.map { circuitViaMask(board = board, point = it) }),
-                    "via_mask"
+                    "via_mask",
                 )
                 val passiveCopper = let(
                     circuitUnionMask(traceMasks.values) +
                         circuitUnionMask(nodeMasks.values) * 0.72f +
                         viaMask * 0.54f,
-                    "passive_copper"
+                    "passive_copper",
                 )
                 val activeNodeMask = let(
                     circuitUnionMask(
                         boardSpec.activations.map { (nodeId, activation) ->
                             ifElse(
                                 circuitSelection(route.expr, nodesById.getValue(nodeId)),
-                                circuitUnionMask(activation.nodeIds.map { activeNodeId ->
-                                    nodeMasks.getValue(activeNodeId)
-                                }),
-                                float(0f)
+                                circuitUnionMask(
+                                    activation.nodeIds.map { activeNodeId ->
+                                        nodeMasks.getValue(activeNodeId)
+                                    },
+                                ),
+                                float(0f),
                             )
-                        }
+                        },
                     ),
-                    "active_node_mask"
+                    "active_node_mask",
                 )
                 val activeTraceMask = let(
                     circuitUnionMask(
                         boardSpec.activations.map { (nodeId, activation) ->
                             ifElse(
                                 circuitSelection(route.expr, nodesById.getValue(nodeId)),
-                                circuitUnionMask(activation.segmentIds.map { segmentId ->
-                                    traceMasks.getValue(segmentId)
-                                }),
-                                float(0f)
+                                circuitUnionMask(
+                                    activation.segmentIds.map { segmentId ->
+                                        traceMasks.getValue(segmentId)
+                                    },
+                                ),
+                                float(0f),
                             )
-                        }
+                        },
                     ),
-                    "active_trace_mask"
+                    "active_trace_mask",
                 )
                 val activePulseMask = let(
                     circuitUnionMask(
                         boardSpec.activations.map { (nodeId, activation) ->
                             ifElse(
                                 circuitSelection(route.expr, nodesById.getValue(nodeId)),
-                                circuitUnionMask(activation.segmentIds.map { segmentId ->
-                                    pulseMasks.getValue(segmentId)
-                                }),
-                                float(0f)
+                                circuitUnionMask(
+                                    activation.segmentIds.map { segmentId ->
+                                        pulseMasks.getValue(segmentId)
+                                    },
+                                ),
+                                float(0f),
                             )
-                        }
+                        },
                     ),
-                    "active_pulse_mask"
+                    "active_pulse_mask",
                 )
                 val selectedNodeMask = let(
                     circuitUnionMask(
@@ -915,15 +924,15 @@ fun DemoCircuit() {
                             ifElse(
                                 circuitSelection(route.expr, node),
                                 nodeMasks.getValue(node.id),
-                                float(0f)
+                                float(0f),
                             )
-                        }
+                        },
                     ),
-                    "selected_node_mask"
+                    "selected_node_mask",
                 )
                 val relatedNodeMask = let(
                     max(activeNodeMask - selectedNodeMask * 0.55f, 0f),
-                    "related_node_mask"
+                    "related_node_mask",
                 )
                 val boardTint = let(color(float3(0.02f, 0.12f, 0.08f), 1f), "board_tint")
                 val copperTint = let(color(float3(0.12f, 0.48f, 0.28f), 1f), "copper_tint")
@@ -937,42 +946,42 @@ fun DemoCircuit() {
                         base = substrate,
                         revealed = copperTint,
                         mask = passiveCopper,
-                        amount = 0.74f
+                        amount = 0.74f,
                     ),
-                    "copper"
+                    "copper",
                 )
                 val energized = let(
                     maskedMix(
                         base = copper,
                         revealed = glowTint,
                         mask = activeTraceMask + relatedNodeMask * 0.24f,
-                        amount = amount.expr * 0.44f
+                        amount = amount.expr * 0.44f,
                     ),
-                    "energized"
+                    "energized",
                 )
                 val pulsed = let(
                     maskedMix(
                         base = energized,
                         revealed = signalTint,
                         mask = activePulseMask + activeTraceMask * 0.08f,
-                        amount = amount.expr * 0.92f
+                        amount = amount.expr * 0.92f,
                     ),
-                    "pulsed"
+                    "pulsed",
                 )
                 val sparked = let(
                     maskedMix(
                         base = pulsed,
                         revealed = sparkTint,
                         mask = activePulseMask * 0.74f,
-                        amount = amount.expr * 0.58f
+                        amount = amount.expr * 0.58f,
                     ),
-                    "sparked"
+                    "sparked",
                 )
                 maskedMix(
                     base = sparked,
                     revealed = hotTint,
                     mask = selectedNodeMask + activePulseMask * 0.14f,
-                    amount = amount.expr * 0.34f
+                    amount = amount.expr * 0.34f,
                 )
             }
         }
@@ -980,7 +989,7 @@ fun DemoCircuit() {
             effect = effect,
             time = timeParam!!,
             route = routeParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -988,7 +997,7 @@ fun DemoCircuit() {
     fx.bindTime(setup.time, isPlaying = playing)
     fx.bindFloat(
         setup.route,
-        nodesById.getValue(selected).shaderIndex
+        nodesById.getValue(selected).shaderIndex,
     )
     fx.bindFloat(setup.amount, amountUi / 100f)
 
@@ -999,7 +1008,7 @@ fun DemoCircuit() {
                 modifier = Modifier.redbyteFx(fx),
                 board = boardSpec,
                 selected = selected,
-                onSelect = { selected = it }
+                onSelect = { selected = it },
             )
         },
         controls = {
@@ -1013,19 +1022,19 @@ fun DemoCircuit() {
                     MaterialTheme.typography.labelLarge
                 } else {
                     MaterialTheme.typography.titleMedium
-                }
+                },
             )
             BoxWithConstraints {
                 if (maxWidth < 420.dp) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         boardSpec.nodes.forEach { node ->
                             RadioRow(
                                 title = node.title,
                                 selected = selected == node.id,
-                                onClick = { selected = node.id }
+                                onClick = { selected = node.id },
                             )
                         }
                     }
@@ -1035,14 +1044,14 @@ fun DemoCircuit() {
                         boardSpec.nodes.chunked(nodesPerRow).forEach { chunk ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 chunk.forEach { node ->
                                     RadioRow(
                                         title = node.title,
                                         selected = selected == node.id,
                                         onClick = { selected = node.id },
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f),
                                     )
                                 }
                                 repeat(nodesPerRow - chunk.size) {
@@ -1056,7 +1065,7 @@ fun DemoCircuit() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }
 
@@ -1067,7 +1076,7 @@ private fun CircuitTapTarget(
     width: Dp,
     height: Dp,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val textColor = if (selected) {
         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.96f)
@@ -1089,18 +1098,18 @@ private fun CircuitTapTarget(
         modifier = modifier
             .size(width = width, height = height)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontFamily = FontFamily.Monospace,
                 fontSize = fontSize,
-                letterSpacing = letterSpacing
+                letterSpacing = letterSpacing,
             ),
             textAlign = TextAlign.Center,
             softWrap = false,
-            color = textColor
+            color = textColor,
         )
     }
 }

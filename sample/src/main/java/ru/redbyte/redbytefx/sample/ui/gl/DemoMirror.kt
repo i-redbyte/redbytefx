@@ -15,9 +15,9 @@ import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.sample.ui.say
-import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.sin
+import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y

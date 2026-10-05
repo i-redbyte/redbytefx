@@ -3,7 +3,9 @@ package ru.redbyte.redbytefx.gl
 import android.opengl.EGL14
 import android.opengl.EGLExt
 
-internal class EglPbuffer : AutoCloseable {
+internal class EglPbuffer(
+    private val minors: IntArray = es3ContextMinors(),
+) : AutoCloseable {
     private val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
     private val context: android.opengl.EGLContext
     private val surface: android.opengl.EGLSurface
@@ -30,7 +32,7 @@ internal class EglPbuffer : AutoCloseable {
         }
         val config = configs[0]
         var created: android.opengl.EGLContext? = null
-        for (minor in es3ContextMinors()) {
+        for (minor in minors) {
             created = createEsContext(config, minor.takeIf { it > 0 })
             if (created != null) break
         }

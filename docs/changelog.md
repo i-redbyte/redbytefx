@@ -18,6 +18,8 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 
 ### GLES and 3D
 
+- **ES 3.0 link** no longer queries `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS` (invalid enum 0x500 on goldfish/GFXSTREAM).
+- **Detekt** formats with JetBrains official Kotlin style (`detekt-formatting`, ktlint `android: false`).
 - **`litTexturedMesh`**: fragment output respects texture alpha; KDoc explains model/normal matrix updates.
 - **`GlProgramRuntime.setLitModel`**: uploads model and matching `normalMatrix` together.
 - **`strictErrors`**: also checks the driver after uniform/storage block writes and `generateMipmap2D`.

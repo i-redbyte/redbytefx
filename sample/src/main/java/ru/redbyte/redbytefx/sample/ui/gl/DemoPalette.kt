@@ -2,7 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.gl.compose.torus
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.Fn4
 import ru.redbyte.redbytefx.High
@@ -13,6 +12,7 @@ import ru.redbyte.redbytefx.abs
 import ru.redbyte.redbytefx.cos
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.fract
+import ru.redbyte.redbytefx.gl.compose.torus
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.plus

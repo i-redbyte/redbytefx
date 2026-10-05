@@ -9,7 +9,7 @@ internal fun formatFloat(value: Float): String {
 internal fun sanitizeIdentifier(raw: String, prefix: String): String {
     val cleaned = sanitizeSuggestedIdentifier(raw, leadingDigitPrefix = prefix)
     val normalized = if (cleaned.firstOrNull()?.isDigit() == true) {
-        "${prefix}${cleaned}"
+        "${prefix}$cleaned"
     } else {
         cleaned
     }

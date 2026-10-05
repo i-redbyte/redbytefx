@@ -37,13 +37,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import java.io.IOException
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.roundToInt
-import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,6 +78,13 @@ import ru.redbyte.redbytefx.w
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 internal const val PLANET_MOON_LIMIT: Int = 5
 

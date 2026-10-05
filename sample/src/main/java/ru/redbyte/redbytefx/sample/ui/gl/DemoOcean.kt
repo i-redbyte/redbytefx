@@ -2,17 +2,17 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.gl.compose.GlMesh
-import ru.redbyte.redbytefx.gl.compose.glEs32LinkRequirement
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.TessPrimitive
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.glEs32LinkRequirement
 import ru.redbyte.redbytefx.lit
-import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.minus
+import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.sin

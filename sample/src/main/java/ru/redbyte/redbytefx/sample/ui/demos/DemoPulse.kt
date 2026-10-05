@@ -1,33 +1,32 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.stdlib.normalizedUv
-import ru.redbyte.redbytefx.stdlib.pulse
-import ru.redbyte.redbytefx.stdlib.sampleUv
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
+import ru.redbyte.redbytefx.stdlib.normalizedUv
+import ru.redbyte.redbytefx.stdlib.pulse
+import ru.redbyte.redbytefx.stdlib.sampleUv
 
 private data class PulseSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val grid: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -60,7 +59,7 @@ fun DemoPulse() {
                 val row = let(floor(uv.y * safeGrid), "row")
                 val wave = let(
                     pulse(timeUniform.expr, speedUniform.expr, row * 0.7f),
-                    "wave"
+                    "wave",
                 )
                 val glow = let(pow(wave, 3f), "glow")
                 val column = let(fract(uv.x * safeGrid + timeUniform.expr * 0.25f), "column")
@@ -70,11 +69,11 @@ fun DemoPulse() {
                         float3(
                             mix(0.08f, 0.25f, glow),
                             mix(0.22f, 0.95f, glow),
-                            mix(0.45f, 1f, glow)
+                            mix(0.45f, 1f, glow),
                         ),
-                        base.a
+                        base.a,
                     ),
-                    "accent"
+                    "accent",
                 )
                 mix(base, mix(pixelBase, accent, active * glow), amountUniform.expr)
             }
@@ -101,7 +100,7 @@ fun DemoPulse() {
                 title = "Speed",
                 value = speedUi,
                 range = 0f..300f,
-                formatValue = { "${it / 100f}x" }
+                formatValue = { "${it / 100f}x" },
             ) {
                 speedUi = it
             }
@@ -111,6 +110,6 @@ fun DemoPulse() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

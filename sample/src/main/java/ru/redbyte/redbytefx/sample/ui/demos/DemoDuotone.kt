@@ -1,26 +1,24 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 
-
 private data class DuotoneSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val amount: Uniform<Flt<High>>,
-    val warmth: Uniform<Flt<High>>
+    val warmth: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -42,7 +40,7 @@ fun DemoDuotone() {
                     float3(
                         0.24f + 0.45f * sin(phase + warmth * 0.90f + 0.10f),
                         0.30f + 0.42f * sin(phase + warmth * 1.50f + 2.10f),
-                        0.42f + 0.36f * sin(phase + warmth * 2.10f + 4.20f)
+                        0.42f + 0.36f * sin(phase + warmth * 2.10f + 4.20f),
                     )
                 }
                 val base = let(sample(), "base")
@@ -56,9 +54,9 @@ fun DemoDuotone() {
                         mix(0.08f, tone.r, luma),
                         mix(0.06f, tone.g, luma),
                         mix(0.10f, tone.b, luma),
-                        base.a
+                        base.a,
                     ),
-                    "lifted"
+                    "lifted",
                 )
                 mix(base, mix(mono, lifted, 0.85f), amountUniform.expr)
             }
@@ -79,17 +77,17 @@ fun DemoDuotone() {
             SliderRow(
                 title = "Amount",
                 value = amount * 100f,
-                range = 0f..100f
+                range = 0f..100f,
             ) {
                 amount = it / 100f
             }
             SliderRow(
                 title = "Warmth",
                 value = warmth * 100f,
-                range = 0f..100f
+                range = 0f..100f,
             ) {
                 warmth = it / 100f
             }
-        }
+        },
     )
 }

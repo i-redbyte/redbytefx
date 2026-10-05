@@ -1,17 +1,17 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.*
@@ -19,6 +19,12 @@ import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.RadioRow
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
+import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.easeInOutSine
 import ru.redbyte.redbytefx.stdlib.horizontalReveal
@@ -28,19 +34,12 @@ import ru.redbyte.redbytefx.stdlib.posterize
 import ru.redbyte.redbytefx.stdlib.radialReveal
 import ru.redbyte.redbytefx.stdlib.verticalReveal
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.ui
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.RadioRow
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
 private data class RevealSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val mode: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 private enum class RevealMode { Horizontal, Vertical, Radial }
@@ -77,17 +76,17 @@ fun DemoReveal() {
                     ifElse(
                         modeValue.expr lt 0.5f,
                         horizontal,
-                        ifElse(modeValue.expr lt 1.5f, vertical, radial)
+                        ifElse(modeValue.expr lt 1.5f, vertical, radial),
                     ),
-                    "reveal"
+                    "reveal",
                 )
                 val stylized = let(
                     blendScreen(
                         posterize(base, 5f),
                         color(float3(0.16f, 0.94f, 1f), base.a),
-                        0.55f
+                        0.55f,
                     ),
-                    "stylized"
+                    "stylized",
                 )
                 maskedMix(base, stylized, reveal, amount.expr)
             }
@@ -97,7 +96,7 @@ fun DemoReveal() {
             time = timeParam!!,
             speed = speedParam!!,
             mode = modeParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -110,7 +109,7 @@ fun DemoReveal() {
             RevealMode.Horizontal -> 0f
             RevealMode.Vertical -> 1f
             RevealMode.Radial -> 2f
-        }
+        },
     )
     fx.bindFloat(setup.amount, amountUi / 100f)
 
@@ -126,7 +125,7 @@ fun DemoReveal() {
             Text(text = ui("Mode"), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 RadioRow("Horizontal", selected = mode == RevealMode.Horizontal) {
                     mode = RevealMode.Horizontal
@@ -144,6 +143,6 @@ fun DemoReveal() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

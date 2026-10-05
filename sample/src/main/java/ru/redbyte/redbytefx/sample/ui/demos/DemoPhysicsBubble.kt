@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
-import ru.redbyte.redbytefx.sample.ui.say
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -60,13 +59,14 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.hypot
-import kotlin.math.roundToInt
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.FxController
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.stdlib.valueNoise
+import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 private object BubbleConfig {
     const val BOTTOM_ORB_RATIO = 0.92f
@@ -106,12 +106,12 @@ private object BubbleColors {
 
 private val SnapBackSpring = spring<Offset>(
     dampingRatio = 0.65f,
-    stiffness = Spring.StiffnessLow
+    stiffness = Spring.StiffnessLow,
 )
 
 private val UnlockedSnapSpring = spring<Offset>(
     dampingRatio = 0.45f,
-    stiffness = Spring.StiffnessLow
+    stiffness = Spring.StiffnessLow,
 )
 
 @Stable
@@ -155,7 +155,7 @@ private data class PhysicsBubbleFxSetup(
     val radius: Uniform<Flt<High>>,
     val deformation: Uniform<Vec2<Flt<High>>>,
     val popProgress: Uniform<Flt<High>>,
-    val time: Uniform<Flt<High>>
+    val time: Uniform<Flt<High>>,
 )
 
 private fun rgb(color: Expr<Vec4<Flt<Med>>>): Expr<Vec3<Flt<Med>>> = float3(color.r, color.g, color.b)
@@ -171,13 +171,13 @@ private fun safeSqrt(value: Expr<Flt<High>>): Expr<Flt<High>> =
 
 private fun reflect3(
     incident: Expr<Vec3<Flt<High>>>,
-    normal: Expr<Vec3<Flt<High>>>
+    normal: Expr<Vec3<Flt<High>>>,
 ): Expr<Vec3<Flt<High>>> = incident - 2f * dot(normal, incident) * normal
 
 @Composable
 private fun rememberBubbleState(
     screenWidthPx: Float,
-    screenHeightPx: Float
+    screenHeightPx: Float,
 ): PhysicsBubbleState {
     val density = LocalDensity.current
     val maxRadiusPx = with(density) { BubbleConfig.MAX_ORB_RADIUS.toPx() }
@@ -188,7 +188,7 @@ private fun rememberBubbleState(
             screenHeightPx = screenHeightPx,
             orbRadiusMaxPx = maxRadiusPx,
             orbRadiusMinPx = minRadiusPx,
-            centerX = screenWidthPx / 2f
+            centerX = screenWidthPx / 2f,
         )
     }
 }
@@ -221,9 +221,9 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                     ifElse(
                         speed gt 0.001f,
                         normalize2(bubbleDeformation.expr),
-                        float2(0f, 1f)
+                        float2(0f, 1f),
                     ),
-                    "move_dir"
+                    "move_dir",
                 )
                 val parallelDist = let(dot(rawUv, moveDir), "parallel_dist")
                 val perpVector = let(rawUv - moveDir * parallelDist, "perp_vector")
@@ -231,7 +231,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                 val squash = let(1f / safeSqrt(stretch), "squash")
                 val uv = let(
                     moveDir * (parallelDist / stretch) + perpVector / squash,
-                    "uv"
+                    "uv",
                 )
                 val dist = let(length(uv), "dist")
                 val activeRadius = let(bubbleRadius.expr * (1f + bubblePop.expr * 1.5f), "active_radius")
@@ -251,9 +251,9 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                     float3(
                         sampleUnclamped(refUvR).r,
                         sampleUnclamped(refUvG).g,
-                        sampleUnclamped(refUvB).b
+                        sampleUnclamped(refUvB).b,
                     ),
-                    "bg_color"
+                    "bg_color",
                 )
                 val reflectionDir = let(reflect3(-viewDir, normal), "reflection_dir")
                 val lightDir1 = let(normalize3(float3(0.6f, 0.7f, 0.8f)), "light_dir_1")
@@ -264,26 +264,26 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                 val r0 = let(float(0.02005931f), "r0")
                 val fresnel = let(
                     r0 + (1f - r0) * pow(1f - nDotV, 5f),
-                    "fresnel"
+                    "fresnel",
                 )
                 val sinThetaI = let(safeSqrt(1f - nDotV * nDotV), "sin_theta_i")
                 val sinThetaT = let(sinThetaI / nFilm, "sin_theta_t")
                 val cosThetaT = let(safeSqrt(1f - sinThetaT * sinThetaT), "cos_theta_t")
                 val swirl = let(
                     valueNoise(nUv * 3f + float2(bubbleTime.expr * 0.12f, bubbleTime.expr * 0.12f)),
-                    "swirl"
+                    "swirl",
                 )
                 val thicknessNoise = let(
                     valueNoise(nUv * 5f - float2(bubbleTime.expr * 0.08f, bubbleTime.expr * 0.08f)),
-                    "thickness_noise"
+                    "thickness_noise",
                 )
                 val thickness = let(
                     clamp(
                         300f + nUv.y * 120f + swirl * 100f + thicknessNoise * 40f,
                         80f,
-                        900f
+                        900f,
                     ),
-                    "thickness"
+                    "thickness",
                 )
                 val opd = let(2f * nFilm * thickness * cosThetaT, "opd")
                 val phase = let(6.2831855f * opd, "phase")
@@ -293,19 +293,19 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                 val interferenceColor = let(float3(oscR, oscG, oscB), "interference_color")
                 val interferenceStrength = let(
                     smoothstep(0f, 0.20f, nDotV),
-                    "interference_strength"
+                    "interference_strength",
                 )
                 val filmReflection = let(interferenceColor * fresnel * 2f, "film_reflection")
                 val whiteReflection = let(float3(fresnel, fresnel, fresnel), "white_reflection")
                 val thinFilmColor = let(
                     mix(whiteReflection, filmReflection, interferenceStrength),
-                    "thin_film_color"
+                    "thin_film_color",
                 )
                 val spec1 = let(pow(lightAlign1, 250f) * 2.5f, "spec_1")
                 val spec2 = let(pow(lightAlign2, 60f) * 0.5f, "spec_2")
                 val highlights = let(
                     float3(spec1 + spec2, spec1 + spec2, spec1 + spec2),
-                    "highlights"
+                    "highlights",
                 )
                 val reflectOffset = let(float2(normal.x, normal.y) * 50f, "reflect_offset")
                 val envCenter = let(fragCoord + reflectOffset, "env_center")
@@ -316,7 +316,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                         rgb(sampleUnclamped(envCenter - float2(blurStep, 0f))) * 0.15f +
                         rgb(sampleUnclamped(envCenter + float2(0f, blurStep))) * 0.15f +
                         rgb(sampleUnclamped(envCenter - float2(0f, blurStep))) * 0.15f,
-                    "env_sample"
+                    "env_sample",
                 )
                 val envReflection = let(envSample * fresnel * 0.4f, "env_reflection")
                 val rimShadow = let(smoothstep(0.92f, 1f, safeSqrt(distSq)), "rim_shadow")
@@ -327,7 +327,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                         thinFilmColor +
                         envReflection +
                         highlights,
-                    "final_color"
+                    "final_color",
                 )
                 val fadeOut = let(1f - safeSqrt(bubblePop.expr), "fade_out")
                 val mixedRgb = let(mix(rgb(rawBackground), finalColor, fadeOut), "mixed_rgb")
@@ -335,7 +335,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
                 ifElse(
                     outsideBubble,
                     rawBackground,
-                    color(mixedRgb, rawBackground.a)
+                    color(mixedRgb, rawBackground.a),
                 )
             }
         }
@@ -346,7 +346,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
             radius = radiusParam!!,
             deformation = deformationParam!!,
             popProgress = popParam!!,
-            time = timeParam!!
+            time = timeParam!!,
         )
     }
 
@@ -354,7 +354,7 @@ private fun rememberPhysicsBubbleFx(): PhysicsBubbleFxSetup =
 private fun BubbleFxBindingLoop(
     fx: FxController,
     setup: PhysicsBubbleFxSetup,
-    state: PhysicsBubbleState
+    state: PhysicsBubbleState,
 ) {
     LaunchedEffect(fx, setup, state) {
         val start = withFrameNanos { it }
@@ -368,7 +368,7 @@ private fun BubbleFxBindingLoop(
                     fx.setFloat2(
                         setup.deformation,
                         state.deformationAnim.value.x,
-                        state.deformationAnim.value.y
+                        state.deformationAnim.value.y,
                     )
                     fx.setFloat(setup.popProgress, state.popAnim.value)
                 }
@@ -379,7 +379,7 @@ private fun BubbleFxBindingLoop(
 
 @Composable
 fun DemoPhysicsBubble(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenWidthPx = constraints.maxWidth.toFloat()
@@ -394,7 +394,7 @@ fun DemoPhysicsBubble(
             state = state,
             screenWidthPx = screenWidthPx,
             screenHeightPx = screenHeightPx,
-            modifier = Modifier.redbyteFx(fx)
+            modifier = Modifier.redbyteFx(fx),
         )
     }
 }
@@ -404,7 +404,7 @@ private fun PhysicsBubbleContent(
     state: PhysicsBubbleState,
     screenWidthPx: Float,
     screenHeightPx: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -418,7 +418,7 @@ private fun PhysicsBubbleContent(
             center = BubbleColors.LIGHT_CENTER,
             mid1 = BubbleColors.LIGHT_MID1,
             mid2 = BubbleColors.LIGHT_MID2,
-            edge = BubbleColors.LIGHT_EDGE
+            edge = BubbleColors.LIGHT_EDGE,
         )
     }
     val darkBrush = remember(screenWidthPx, screenHeightPx) {
@@ -428,7 +428,7 @@ private fun PhysicsBubbleContent(
             center = BubbleColors.DARK_CENTER,
             mid1 = BubbleColors.DARK_MID,
             mid2 = BubbleColors.DARK_MID,
-            edge = BubbleColors.DARK_EDGE
+            edge = BubbleColors.DARK_EDGE,
         )
     }
 
@@ -438,17 +438,17 @@ private fun PhysicsBubbleContent(
     val mainTextColor by animateColorAsState(
         targetValue = if (isDarkTheme) BubbleColors.DARK_MAIN_TEXT else BubbleColors.LIGHT_MAIN_TEXT,
         animationSpec = textTween,
-        label = "bubble_main_text"
+        label = "bubble_main_text",
     )
     val titleColor by animateColorAsState(
         targetValue = if (isDarkTheme) BubbleColors.DARK_TITLE else BubbleColors.LIGHT_TITLE,
         animationSpec = textTween,
-        label = "bubble_title_text"
+        label = "bubble_title_text",
     )
     val subtitleColor by animateColorAsState(
         targetValue = if (isDarkTheme) BubbleColors.DARK_SUBTITLE else BubbleColors.LIGHT_SUBTITLE,
         animationSpec = textTween,
-        label = "bubble_subtitle_text"
+        label = "bubble_subtitle_text",
     )
 
     val revealClipPath = remember { Path() }
@@ -465,9 +465,9 @@ private fun PhysicsBubbleContent(
                     revealProgress = state.themeRevealProgress.value,
                     lightBrush = lightBrush,
                     darkBrush = darkBrush,
-                    reusablePath = revealClipPath
+                    reusablePath = revealClipPath,
                 )
-            }
+            },
     ) {
         ThemeToggleButton(
             isDarkTheme = isDarkTheme,
@@ -481,14 +481,14 @@ private fun PhysicsBubbleContent(
                         targetValue = 1f,
                         animationSpec = tween(
                             durationMillis = BubbleConfig.THEME_REVEAL_DURATION,
-                            easing = CubicBezierEasing(0.1f, 0.8f, 0.2f, 1f)
-                        )
+                            easing = CubicBezierEasing(0.1f, 0.8f, 0.2f, 1f),
+                        ),
                     )
                 }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 48.dp, end = 24.dp)
+                .padding(top = 48.dp, end = 24.dp),
         )
 
         Text(
@@ -503,27 +503,27 @@ private fun PhysicsBubbleContent(
                 .offset(y = (-80).dp)
                 .graphicsLayer {
                     alpha = 1f - (state.progress * 4f).coerceIn(0f, 1f)
-                }
+                },
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(0, state.textYOffsetPx.roundToInt()) },
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.graphicsLayer {
                     alpha = (state.progress * 3f).coerceIn(0f, 1f)
-                }
+                },
             ) {
                 Text(
                     text = say("RedByteFX Bubble", "Пузырь RedByteFX"),
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1).sp,
-                    color = titleColor
+                    color = titleColor,
                 )
                 Text(
                     text = say(
@@ -534,7 +534,7 @@ private fun PhysicsBubbleContent(
                     lineHeight = 26.sp,
                     textAlign = TextAlign.Center,
                     color = subtitleColor,
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }
@@ -545,12 +545,12 @@ private fun PhysicsBubbleContent(
 private fun ThemeToggleButton(
     isDarkTheme: Boolean,
     onToggle: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val progress by animateFloatAsState(
         targetValue = if (isDarkTheme) 1f else 0f,
         animationSpec = spring(dampingRatio = 0.75f, stiffness = 300f),
-        label = "bubble_theme_morph"
+        label = "bubble_theme_morph",
     )
     val scaleAnim = remember { Animatable(1f) }
 
@@ -558,7 +558,7 @@ private fun ThemeToggleButton(
         scaleAnim.snapTo(0.85f)
         scaleAnim.animateTo(
             targetValue = 1f,
-            animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f)
+            animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
         )
     }
 
@@ -575,14 +575,14 @@ private fun ThemeToggleButton(
             }
             .clip(CircleShape)
             .clickable(onClick = onToggle)
-            .padding(6.dp)
+            .padding(6.dp),
     ) {
         val center = Offset(size.width / 2f, size.height / 2f)
         val maxRadius = size.width / 2f
         val currentColor = lerp(
             Color(0xFFFDB813),
             Color(0xFFE5E5EA),
-            progress
+            progress,
         )
 
         rotate(degrees = progress * -90f, pivot = center) {
@@ -597,7 +597,7 @@ private fun ThemeToggleButton(
                             start = center.copy(y = center.y - rayOffset),
                             end = center.copy(y = center.y - rayOffset - rayLength),
                             strokeWidth = maxRadius * 0.15f,
-                            cap = StrokeCap.Round
+                            cap = StrokeCap.Round,
                         )
                     }
                 }
@@ -606,7 +606,7 @@ private fun ThemeToggleButton(
             val currentRadius = androidx.compose.ui.util.lerp(
                 maxRadius * 0.45f,
                 maxRadius * 0.85f,
-                progress
+                progress,
             )
             mainPath.reset()
             mainPath.addOval(
@@ -614,14 +614,14 @@ private fun ThemeToggleButton(
                     left = center.x - currentRadius,
                     top = center.y - currentRadius,
                     right = center.x + currentRadius,
-                    bottom = center.y + currentRadius
-                )
+                    bottom = center.y + currentRadius,
+                ),
             )
 
             val cutoutStartOffset = Offset(center.x + maxRadius * 2f, center.y - maxRadius * 2f)
             val cutoutEndOffset = Offset(
                 x = center.x + currentRadius * 0.3f,
-                y = center.y - currentRadius * 0.3f
+                y = center.y - currentRadius * 0.3f,
             )
             val cutoutX = androidx.compose.ui.util.lerp(cutoutStartOffset.x, cutoutEndOffset.x, progress)
             val cutoutY = androidx.compose.ui.util.lerp(cutoutStartOffset.y, cutoutEndOffset.y, progress)
@@ -633,8 +633,8 @@ private fun ThemeToggleButton(
                     left = cutoutX - cutoutRadius,
                     top = cutoutY - cutoutRadius,
                     right = cutoutX + cutoutRadius,
-                    bottom = cutoutY + cutoutRadius
-                )
+                    bottom = cutoutY + cutoutRadius,
+                ),
             )
 
             finalPath.reset()
@@ -664,19 +664,19 @@ private fun DeformationFrameLoop(state: PhysicsBubbleState) {
 
             smoothedVelocity = Offset(
                 x = smoothedVelocity.x + (rawVelocity.x - smoothedVelocity.x) * BubbleConfig.VELOCITY_SMOOTHING,
-                y = smoothedVelocity.y + (rawVelocity.y - smoothedVelocity.y) * BubbleConfig.VELOCITY_SMOOTHING
+                y = smoothedVelocity.y + (rawVelocity.y - smoothedVelocity.y) * BubbleConfig.VELOCITY_SMOOTHING,
             )
 
             if (state.popAnim.value == 0f) {
                 val targetDeformation = Offset(
                     x = (smoothedVelocity.x * BubbleConfig.DEFORMATION_FACTOR).coerceIn(
                         -BubbleConfig.DEFORMATION_CLAMP,
-                        BubbleConfig.DEFORMATION_CLAMP
+                        BubbleConfig.DEFORMATION_CLAMP,
                     ),
                     y = (smoothedVelocity.y * BubbleConfig.DEFORMATION_FACTOR).coerceIn(
                         -BubbleConfig.DEFORMATION_CLAMP,
-                        BubbleConfig.DEFORMATION_CLAMP
-                    )
+                        BubbleConfig.DEFORMATION_CLAMP,
+                    ),
                 )
 
                 val currentDef = state.deformationAnim.value
@@ -685,13 +685,13 @@ private fun DeformationFrameLoop(state: PhysicsBubbleState) {
 
                 defVelocity = Offset(
                     x = defVelocity.x + forceX * dt,
-                    y = defVelocity.y + forceY * dt
+                    y = defVelocity.y + forceY * dt,
                 )
                 state.deformationAnim.snapTo(
                     Offset(
                         x = currentDef.x + defVelocity.x * dt,
-                        y = currentDef.y + defVelocity.y * dt
-                    )
+                        y = currentDef.y + defVelocity.y * dt,
+                    ),
                 )
             } else {
                 state.deformationAnim.snapTo(Offset.Zero)
@@ -705,7 +705,7 @@ private fun DeformationFrameLoop(state: PhysicsBubbleState) {
 
 private fun Modifier.bubbleDragInput(
     state: PhysicsBubbleState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ): Modifier = pointerInput(Unit) {
     var isUnlocked = false
     detectDragGestures(
@@ -728,7 +728,7 @@ private fun Modifier.bubbleDragInput(
                     state.bubblePos.animateTo(Offset(state.centerX, targetY), SnapBackSpring)
                 }
             }
-        }
+        },
     ) { change, dragAmount ->
         if (state.popAnim.value > 0f) return@detectDragGestures
         change.consume()
@@ -742,15 +742,15 @@ private fun Modifier.bubbleDragInput(
                 state.bubblePos.snapTo(
                     Offset(
                         x = state.bubblePos.value.x + dragAmount.x,
-                        y = proposedY
-                    )
+                        y = proposedY,
+                    ),
                 )
             } else {
                 state.bubblePos.snapTo(
                     Offset(
                         x = state.centerX,
-                        y = proposedY.coerceAtMost(state.maxDragY)
-                    )
+                        y = proposedY.coerceAtMost(state.maxDragY),
+                    ),
                 )
             }
         }
@@ -759,7 +759,7 @@ private fun Modifier.bubbleDragInput(
 
 private fun Modifier.bubbleTapInput(
     state: PhysicsBubbleState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ): Modifier = pointerInput(Unit) {
     detectTapGestures(
         onTap = {
@@ -769,15 +769,15 @@ private fun Modifier.bubbleTapInput(
                         targetValue = 1f,
                         animationSpec = tween(
                             durationMillis = BubbleConfig.POP_DURATION,
-                            easing = FastOutLinearInEasing
-                        )
+                            easing = FastOutLinearInEasing,
+                        ),
                     )
                     delay(BubbleConfig.POP_DELAY)
                     state.popAnim.snapTo(0f)
                     state.bubblePos.snapTo(Offset(state.centerX, state.bottomOrbCenterY))
                 }
             }
-        }
+        },
     )
 }
 
@@ -787,15 +787,15 @@ private fun createRadialBrush(
     center: Color,
     mid1: Color,
     mid2: Color,
-    edge: Color
+    edge: Color,
 ): Brush = Brush.radialGradient(
     colorStops = arrayOf(
         0f to center,
         0.3f to mid1,
         0.7f to mid2,
-        1f to edge
+        1f to edge,
     ),
-    center = Offset(screenWidthPx / 2f, screenHeightPx * 0.4f)
+    center = Offset(screenWidthPx / 2f, screenHeightPx * 0.4f),
 )
 
 private fun DrawScope.drawThemeBackground(
@@ -804,7 +804,7 @@ private fun DrawScope.drawThemeBackground(
     revealProgress: Float,
     lightBrush: Brush,
     darkBrush: Brush,
-    reusablePath: Path
+    reusablePath: Path,
 ) {
     val currentBrush = if (isDarkTheme) darkBrush else lightBrush
     val previousBrush = if (previousIsDark) darkBrush else lightBrush
@@ -821,8 +821,8 @@ private fun DrawScope.drawThemeBackground(
                 left = epicenter.x - currentRevealRadius,
                 top = epicenter.y - currentRevealRadius,
                 right = epicenter.x + currentRevealRadius,
-                bottom = epicenter.y + currentRevealRadius
-            )
+                bottom = epicenter.y + currentRevealRadius,
+            ),
         )
 
         clipPath(reusablePath) {

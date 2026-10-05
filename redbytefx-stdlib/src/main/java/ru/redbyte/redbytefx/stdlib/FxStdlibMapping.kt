@@ -1,7 +1,7 @@
 package ru.redbyte.redbytefx.stdlib
 
-import kotlin.jvm.JvmName
 import ru.redbyte.redbytefx.*
+import kotlin.jvm.JvmName
 
 /**
  * Computes the normalized position of [value] inside the `[inputStart, inputEnd]` range.
@@ -21,7 +21,7 @@ import ru.redbyte.redbytefx.*
 public fun inverseLerp(
     inputStart: Float,
     inputEnd: Float,
-    value: Expr<Flt<High>>
+    value: Expr<Flt<High>>,
 ): Expr<Flt<High>> = inverseLerp(float(inputStart), float(inputEnd), value)
 
 /**
@@ -44,13 +44,13 @@ public fun remap(
     inputStart: Float,
     inputEnd: Float,
     outputStart: Float,
-    outputEnd: Float
+    outputEnd: Float,
 ): Expr<Flt<High>> = remap(
     value = value,
     inputStart = float(inputStart),
     inputEnd = float(inputEnd),
     outputStart = float(outputStart),
-    outputEnd = float(outputEnd)
+    outputEnd = float(outputEnd),
 )
 
 /**
@@ -75,7 +75,7 @@ public fun <P : Prec> posterize(
  */
 public fun posterize(
     value: Expr<Flt<High>>,
-    levels: Float
+    levels: Float,
 ): Expr<Flt<High>> = posterize(value, float(levels))
 
 /**

@@ -1,32 +1,30 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.stdlib.adjustSaturation
 import ru.redbyte.redbytefx.stdlib.blendMultiply
 import ru.redbyte.redbytefx.stdlib.blendOverlay
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.remap
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-
-
 private data class GradeSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val amount: Uniform<Flt<High>>,
     val warmth: Uniform<Flt<High>>,
-    val glow: Uniform<Flt<High>>
+    val glow: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -51,16 +49,16 @@ fun DemoGrade() {
                 val grade = remap(amount.expr, 0f, 1f, 0.55f, 1.55f)
                 val saturated = let(
                     adjustSaturation(base, grade),
-                    "saturated"
+                    "saturated",
                 )
                 val tint = let(
                     color(
                         mix(0.26f, 0.94f, warmth.expr),
                         mix(0.48f, 0.72f, warmth.expr),
                         mix(0.92f, 0.38f, warmth.expr),
-                        base.a
+                        base.a,
                     ),
-                    "tint"
+                    "tint",
                 )
                 val multiplied = let(blendMultiply(saturated, tint, 0.25f), "multiplied")
                 val screened = let(blendScreen(multiplied, tint, glow.expr), "screened")
@@ -71,7 +69,7 @@ fun DemoGrade() {
             effect = effect,
             amount = amountParam!!,
             warmth = warmthParam!!,
-            glow = glowParam!!
+            glow = glowParam!!,
         )
     }
 
@@ -95,6 +93,6 @@ fun DemoGrade() {
             SliderRow("Glow", glowUi, 0f..100f) {
                 glowUi = it
             }
-        }
+        },
     )
 }

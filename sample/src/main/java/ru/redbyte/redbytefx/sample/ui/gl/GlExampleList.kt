@@ -15,9 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import ru.redbyte.redbytefx.sample.model.Phrase
 import ru.redbyte.redbytefx.sample.ui.CyberBadge
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
-import ru.redbyte.redbytefx.sample.model.Phrase
 import ru.redbyte.redbytefx.sample.ui.demos.DemoGles
 import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.sample.ui.show

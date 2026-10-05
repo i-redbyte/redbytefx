@@ -2,17 +2,17 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import kotlin.math.cos
-import kotlin.math.sin
+import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gl.compose.GlMesh
 import ru.redbyte.redbytefx.gl.compose.setLitModel
 import ru.redbyte.redbytefx.gl.compose.sphere
-import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.scene.LitMesh
 import ru.redbyte.redbytefx.scene.MATRIX_FLOATS
 import ru.redbyte.redbytefx.scene.litTexturedMesh
 import ru.redbyte.redbytefx.scene.lookAt
 import ru.redbyte.redbytefx.scene.ortho
+import kotlin.math.cos
+import kotlin.math.sin
 
 private const val LIT_TEX: Int = 32
 

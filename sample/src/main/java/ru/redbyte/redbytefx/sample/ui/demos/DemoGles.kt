@@ -25,15 +25,15 @@ import ru.redbyte.redbytefx.gl.compose.GlSurface
 import ru.redbyte.redbytefx.gl.compose.rememberGlController
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.plus
+import ru.redbyte.redbytefx.sample.ui.gl.GlCodeCompare
+import ru.redbyte.redbytefx.sample.ui.gl.triangleDsl
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.sin
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
-import ru.redbyte.redbytefx.sample.ui.gl.GlCodeCompare
-import ru.redbyte.redbytefx.sample.ui.gl.triangleDsl
-import ru.redbyte.redbytefx.sample.ui.say
 
 internal class GlesTriangle(
     val program: ShaderProgram,

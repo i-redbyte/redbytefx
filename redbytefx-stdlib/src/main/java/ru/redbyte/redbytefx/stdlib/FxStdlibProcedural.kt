@@ -43,7 +43,7 @@ public fun valueNoise(point: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> {
 public fun grain(
     uv: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>> = float(0f),
-    scale: Expr<Flt<High>> = float(180f)
+    scale: Expr<Flt<High>> = float(180f),
 ): Expr<Flt<High>> {
     val safeScale = max(scale, 1f)
     val animatedUv = uv * safeScale + float2(time * 19.19f, time * 37.73f)
@@ -56,11 +56,11 @@ public fun grain(
 public fun grain(
     uv: Expr<Vec2<Flt<High>>>,
     time: Float,
-    scale: Float
+    scale: Float,
 ): Expr<Flt<High>> = grain(
     uv = uv,
     time = float(time),
-    scale = float(scale)
+    scale = float(scale),
 )
 
 /**
@@ -69,11 +69,11 @@ public fun grain(
 public fun grain(
     uv: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>>,
-    scale: Float
+    scale: Float,
 ): Expr<Flt<High>> = grain(
     uv = uv,
     time = time,
-    scale = float(scale)
+    scale = float(scale),
 )
 
 /**
@@ -85,7 +85,7 @@ public fun grain(
 public fun vignette(
     uv: Expr<Vec2<Flt<High>>>,
     innerRadius: Expr<Flt<High>>,
-    outerRadius: Expr<Flt<High>>
+    outerRadius: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safeInner = max(innerRadius, 0f)
     val safeOuter = max(outerRadius, safeInner + 0.0001f)
@@ -100,9 +100,9 @@ public fun vignette(
 public fun vignette(
     uv: Expr<Vec2<Flt<High>>>,
     innerRadius: Float,
-    outerRadius: Float
+    outerRadius: Float,
 ): Expr<Flt<High>> = vignette(
     uv = uv,
     innerRadius = float(innerRadius),
-    outerRadius = float(outerRadius)
+    outerRadius = float(outerRadius),
 )

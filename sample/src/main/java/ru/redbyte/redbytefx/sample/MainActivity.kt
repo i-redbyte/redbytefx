@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
             RedByteFxSampleTheme {
                 RedByteFxSampleApp(
                     initialDemo = launchDemo.value,
-                    launchDemoRequest = launchDemo.value
+                    launchDemoRequest = launchDemo.value,
                 )
             }
         }

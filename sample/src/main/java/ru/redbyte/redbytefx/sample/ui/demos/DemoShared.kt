@@ -7,4 +7,3 @@ import ru.redbyte.redbytefx.ShaderProgram
 @Composable
 internal fun rememberGeneratedAgsl(effect: ShaderProgram): String =
     remember(effect) { effect.agslSource() }
-

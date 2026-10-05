@@ -12,7 +12,7 @@ private const val TAU: Float = 6.2831855f
  */
 public fun radialDistance(
     uv: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Flt<High>> = length(uv - center)
 
 /**
@@ -24,7 +24,7 @@ public fun radialDistance(
  */
 public fun polarAngle01(
     uv: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Flt<High>> {
     val delta = uv - center
     return fract(atan(delta.y, delta.x) / TAU + 1f)
@@ -38,10 +38,10 @@ public fun polarAngle01(
  */
 public fun polarCoordinates(
     uv: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Vec2<Flt<High>>> = float2(
     radialDistance(uv, center),
-    polarAngle01(uv, center)
+    polarAngle01(uv, center),
 )
 
 /**
@@ -55,7 +55,7 @@ public fun angularSweep(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     angle: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val sweepAngle = polarAngle01(uv, center)
     val safeWidth = max(width, 0.0001f)
@@ -73,13 +73,13 @@ public fun angularSweep(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     angle: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = angularSweep(
     uv = uv,
     center = center,
     angle = angle,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -96,19 +96,19 @@ public fun arcMask(
     ringWidth: Expr<Flt<High>>,
     angle: Expr<Flt<High>>,
     arcWidth: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> = ringMask(
     uv = uv,
     center = center,
     radius = radius,
     width = ringWidth,
-    feather = feather
+    feather = feather,
 ) * angularSweep(
     uv = uv,
     center = center,
     angle = angle,
     width = arcWidth,
-    feather = feather
+    feather = feather,
 )
 
 /**
@@ -121,7 +121,7 @@ public fun arcMask(
     ringWidth: Float,
     angle: Expr<Flt<High>>,
     arcWidth: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = arcMask(
     uv = uv,
     center = center,
@@ -129,7 +129,7 @@ public fun arcMask(
     ringWidth = float(ringWidth),
     angle = angle,
     arcWidth = float(arcWidth),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -142,7 +142,7 @@ public fun arcMask(
     ringWidth: Float,
     angle: Expr<Flt<High>>,
     arcWidth: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = arcMask(
     uv = uv,
     center = center,
@@ -150,5 +150,5 @@ public fun arcMask(
     ringWidth = float(ringWidth),
     angle = angle,
     arcWidth = float(arcWidth),
-    feather = float(feather)
+    feather = float(feather),
 )

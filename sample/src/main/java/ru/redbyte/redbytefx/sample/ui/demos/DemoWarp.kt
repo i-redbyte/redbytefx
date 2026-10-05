@@ -1,33 +1,31 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.stdlib.domainWarp
-import ru.redbyte.redbytefx.stdlib.fbm
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
+import ru.redbyte.redbytefx.stdlib.domainWarp
+import ru.redbyte.redbytefx.stdlib.fbm
 
 private data class WarpSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val warpAmount: Uniform<Flt<High>>,
     val scale: Uniform<Flt<High>>,
-    val driftAmount: Uniform<Flt<High>>
+    val driftAmount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -55,7 +53,7 @@ fun DemoWarp() {
                 val uv = let(fragCoord / resolution, "uv")
                 val noiseUv = let(
                     uv * scale.expr + float2(time.expr * 0.06f, -time.expr * 0.04f),
-                    "noise_uv"
+                    "noise_uv",
                 )
                 val warpedUv = let(domainWarp(noiseUv, time.expr * 0.25f, warpAmount.expr), "warped_uv")
                 val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount.expr, "drift")
@@ -67,7 +65,7 @@ fun DemoWarp() {
             time = timeParam!!,
             warpAmount = warpAmountParam!!,
             scale = scaleParam!!,
-            driftAmount = driftAmountParam!!
+            driftAmount = driftAmountParam!!,
         )
     }
 
@@ -95,6 +93,6 @@ fun DemoWarp() {
             SliderRow("Drift", driftAmountUi, 0f..48f) {
                 driftAmountUi = it
             }
-        }
+        },
     )
 }

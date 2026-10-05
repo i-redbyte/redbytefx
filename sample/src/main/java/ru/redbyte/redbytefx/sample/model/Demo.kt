@@ -33,7 +33,7 @@ enum class DemoId {
     PhysicsBubble,
     TouchRipple,
     Metaballs,
-    CrtTerminal
+    CrtTerminal,
 }
 
 enum class DemoSection(
@@ -87,7 +87,7 @@ data class DemoInfo(
     val title: String,
     val subtitle: String,
     val focus: String,
-    val snippet: String
+    val snippet: String,
 )
 
 data class DemoFollowUp(
@@ -100,7 +100,7 @@ enum class DemoPathKind {
     StartHere,
     Canonical,
     Exploratory,
-    Foundation
+    Foundation,
 }
 
 data class DemoPathSignal(
@@ -128,7 +128,7 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Один раз приведите координаты к общему виду, явно решите, в каком пространстве идёт выборка, и уже от этого соберите локальные координаты света.",
         ),
         helperPreview = "normalizedUv(...), sampleUv(...), centeredUv(...), aspectCenteredUv(...)",
-        demoIds = listOf(DemoId.Halo)
+        demoIds = listOf(DemoId.Halo),
     ),
     CanonicalGuide(
         label = Phrase("MASKS / REVEAL", "МАСКИ И ПРОЯВЛЕНИЕ"),
@@ -138,7 +138,7 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Начинайте с именованных масок и проявления, а не переписывайте кромку и спад в каждом шейдере.",
         ),
         helperPreview = "circleMask(...), rectMask(...), ringMask(...), horizontalReveal(...), verticalReveal(...), radialReveal(...)",
-        demoIds = listOf(DemoId.Spotlight, DemoId.Reveal)
+        demoIds = listOf(DemoId.Spotlight, DemoId.Reveal),
     ),
     CanonicalGuide(
         label = Phrase("COMPOSITING", "СБОРКА"),
@@ -148,7 +148,7 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Держите основу, смешивание, маску и долю читаемыми, чтобы получившийся AGSL совпадал с задуманной сборкой.",
         ),
         helperPreview = "maskedMix(...), alphaMask(...), maskedScreen(...)",
-        demoIds = listOf(DemoId.Composite)
+        demoIds = listOf(DemoId.Composite),
     ),
     CanonicalGuide(
         label = Phrase("SHAPING / SDF", "ФОРМА И РАССТОЯНИЕ"),
@@ -158,7 +158,7 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Сначала превратите поле расстояния в заливку и обводку, потом собирайте из этих устойчивых кусков более крупные сцены.",
         ),
         helperPreview = "sdCircle(...), sdRoundedBox(...), softFill(...), softStroke(...)",
-        demoIds = listOf(DemoId.Sigil)
+        demoIds = listOf(DemoId.Sigil),
     ),
     CanonicalGuide(
         label = Phrase("SIGNAL / GRADIENTS / POLAR", "СИГНАЛ, ГРАДИЕНТЫ, ПОЛЯРНЫЕ"),
@@ -168,7 +168,7 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Время, проходы, наклоны и полярное сканирование - это именованные сигналы, а не одноразовые куски.",
         ),
         helperPreview = "pulse(...), bandMask(...), linearRamp(...), radialRamp(...), angularSweep(...)",
-        demoIds = listOf(DemoId.Signal, DemoId.Sweep, DemoId.Radar)
+        demoIds = listOf(DemoId.Signal, DemoId.Sweep, DemoId.Radar),
     ),
     CanonicalGuide(
         label = Phrase("ROUTING", "МАРШРУТЫ"),
@@ -178,8 +178,8 @@ val CanonicalGuideCatalog: List<CanonicalGuide> = listOf(
             "Собирайте маршрут из функций отрезка, прежде чем браться за тяжёлую математику конкретной сцены.",
         ),
         helperPreview = "segmentMask(...), segmentProgress(...), segmentPulse(...)",
-        demoIds = listOf(DemoId.Circuit)
-    )
+        demoIds = listOf(DemoId.Circuit),
+    ),
 )
 
 val DemoInfo.isStartHere: Boolean
@@ -187,7 +187,8 @@ val DemoInfo.isStartHere: Boolean
         DemoId.Wave,
         DemoId.Signal,
         DemoId.Composite,
-        DemoId.Circuit -> true
+        DemoId.Circuit,
+        -> true
 
         else -> false
     }
@@ -365,12 +366,14 @@ val DemoInfo.section: DemoSection
         DemoId.Rotate,
         DemoId.Scale,
         DemoId.Offset,
-        DemoId.Wave -> DemoSection.Foundations
+        DemoId.Wave,
+        -> DemoSection.Foundations
 
         DemoId.Pulse,
         DemoId.Beacon,
         DemoId.Sweep,
-        DemoId.AnimatedGradient -> DemoSection.Motion
+        DemoId.AnimatedGradient,
+        -> DemoSection.Motion
 
         DemoId.Signal,
         DemoId.Film,
@@ -380,12 +383,14 @@ val DemoInfo.section: DemoSection
         DemoId.Circuit,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> DemoSection.Procedural
+        DemoId.CrtTerminal,
+        -> DemoSection.Procedural
 
         DemoId.Posterize,
         DemoId.Grade,
         DemoId.Prism,
-        DemoId.Duotone -> DemoSection.Color
+        DemoId.Duotone,
+        -> DemoSection.Color
 
         DemoId.Spotlight,
         DemoId.Composite,
@@ -396,7 +401,8 @@ val DemoInfo.section: DemoSection
         DemoId.Reveal,
         DemoId.Aurora,
         DemoId.LiquidGlass,
-        DemoId.TouchRipple -> DemoSection.Compositing
+        DemoId.TouchRipple,
+        -> DemoSection.Compositing
     }
 
 val DemoInfo.layer: DemoLayer
@@ -409,7 +415,8 @@ val DemoInfo.layer: DemoLayer
         DemoId.Wave,
         DemoId.Duotone,
         DemoId.AnimatedGradient,
-        DemoId.TouchRipple -> DemoLayer.Core
+        DemoId.TouchRipple,
+        -> DemoLayer.Core
 
         DemoId.Pulse,
         DemoId.Signal,
@@ -434,7 +441,8 @@ val DemoInfo.layer: DemoLayer
         DemoId.LiquidGlass,
         DemoId.PhysicsBubble,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> DemoLayer.Stdlib
+        DemoId.CrtTerminal,
+        -> DemoLayer.Stdlib
     }
 
 val DemoInfo.isAnimated: Boolean
@@ -458,7 +466,8 @@ val DemoInfo.isAnimated: Boolean
         DemoId.PhysicsBubble,
         DemoId.TouchRipple,
         DemoId.Metaballs,
-        DemoId.CrtTerminal -> true
+        DemoId.CrtTerminal,
+        -> true
 
         DemoId.Flip,
         DemoId.Mirror,
@@ -472,7 +481,8 @@ val DemoInfo.isAnimated: Boolean
         DemoId.Prism,
         DemoId.Spotlight,
         DemoId.Composite,
-        DemoId.Duotone -> false
+        DemoId.Duotone,
+        -> false
     }
 
 val DemoCatalog: List<DemoInfo> = listOf(
@@ -485,7 +495,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val flipX = uniform("flip_x", 0f)
             val flipY = uniform("flip_y", 0f)
             sample(flipY(coord = flipX(amount = flipX), amount = flipY))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Mirror,
@@ -496,7 +506,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val enabled = uniform("mirror_x_enabled", 0f)
             val from = uniform("mirror_x_from", MirrorXFrom.Right.shaderValue)
             sample(mirrorX(amount = enabled, from = from))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Rotate,
@@ -511,7 +521,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
                 s * delta.x + c * delta.y
             )
             sample(rotated)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Scale,
@@ -521,7 +531,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         snippet = """
             val scale = uniformVec2("scale", 1f, 1f)
             sample(scale(scale = scale))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Offset,
@@ -531,7 +541,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
         snippet = """
             val delta = uniformVec2("offset", 0f, 0f)
             sample(offset(delta = delta))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Wave,
@@ -543,7 +553,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val freq = uniform("wave_frequency", 0.08f)
             val waveOffset = let(float2(0f, sin(fragCoord.x * freq) * amp), "wave_offset")
             sample(fragCoord + waveOffset)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Pulse,
@@ -555,7 +565,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val wave = pulse(time, speed, row * 0.7f)
             val glow = pow(wave, 3f)
             mix(base, mix(pixelBase, accent, active * glow), amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Signal,
@@ -566,7 +576,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val grid = let(gridMask(uv, density, lineWidth), "grid")
             val scan = let(scanlines(fragCoord.y, 14f, 3f), "scan")
             ifElse(active, mix(base, mixed, amount), base)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Posterize,
@@ -578,7 +588,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val amount = uniform("amount", 0.85f)
             val base = let(sample(), "base")
             mix(base, posterize(base, levels), amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Film,
@@ -589,7 +599,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val noise = let(grain(uv, time, grainScale), "grain")
             val drift = let(remap(valueNoise(uv * 6f + float2(time * 0.08f, 0f)), 0f, 1f, 0.92f, 1.05f), "drift")
             val mask = let(vignette(uv, 0.35f, 1.05f), "mask")
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Grade,
@@ -601,7 +611,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val tinted = let(blendMultiply(saturated, tint, 0.25f), "tinted")
             val lifted = let(blendScreen(tinted, tint, glow), "lifted")
             blendOverlay(base, lifted, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Warp,
@@ -612,7 +622,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val warpedUv = let(domainWarp(uv * scale, time * 0.25f, warpAmount), "warped_uv")
             val drift = let((fbm(warpedUv, octaves = 5) * 2f - 1f) * driftAmount, "drift")
             sample(fragCoord + float2(0f, drift))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Prism,
@@ -623,7 +633,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val palette = let(cosinePalette(luminance(base) + uv.x * spread), "palette")
             val refracted = let(chromaticOffset(offset = shift, direction = float2(1f, 0.3f), amount = amount), "refracted")
             blendScreen(refracted, color(palette, base.a), amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Spotlight,
@@ -635,7 +645,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val halo = ringMask(uv, center = center, radius = radius + 0.07f, width = 0.10f, feather = 0.05f)
             val panel = rectMask(uv, center = float2(0.78f, 0.5f), size = float2(0.26f, 0.58f), feather = 0.04f)
             blendOverlay(focused, panelTint, panel * amount * 0.35f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Beacon,
@@ -647,7 +657,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val travel = easeInOutSine(phase)
             val glow = easeInOutCubic(pingPong(time * speed + 0.22f, 1f))
             val center = float2(mix(0.18f, 0.82f, travel), 0.5f + sin(time * 0.8f) * 0.12f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Composite,
@@ -659,7 +669,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val screened = maskedScreen(base, glowLayer, halo, amount)
             val overlaid = maskedOverlay(screened, panelTint, panel, amount * 0.6f)
             maskedMix(base, overlaid, focus, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Frame,
@@ -671,7 +681,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val interior = edgeFade(uv, thickness + 0.08f)
             val sweep = directionalSweep(uv, direction = float2(1f, -0.24f), center = center, width = 0.20f, feather = 0.08f)
             maskedOverlay(screened, shellTint, frame + (1f - interior) * 0.28f, amount * 0.45f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Corner,
@@ -682,7 +692,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val corners = cornerMask(uv, size = size, thickness = thickness, feather = 0.03f)
             val sweep = directionalSweep(uv, direction = float2(1f, -0.20f), center = center, width = 0.16f, feather = 0.08f)
             maskedScreen(base, accent, corners * sweep, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Reveal,
@@ -694,7 +704,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val horizontal = horizontalReveal(uv, progress, feather = 0.07f)
             val vertical = verticalReveal(uv, progress, feather = 0.07f, fromTop = false)
             val radial = radialReveal(uv, progress, feather = 0.08f, maxRadius = 0.9f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Sweep,
@@ -706,7 +716,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val ramp = linearRamp(uv, direction = float2(1f, -0.35f), start = 0.08f, end = 0.92f)
             val sweep = directionalSweep(uv, direction = float2(1f, -0.35f), center = center, width = 0.22f, feather = 0.08f)
             val vignette = radialRamp(uv, innerRadius = 0.12f, outerRadius = 0.68f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Glitch,
@@ -718,7 +728,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val lock = bandMask(uv.y, center = 0.22f + pingPong(time * 0.12f, 1f) * 0.56f, width = 0.14f, feather = 0.08f)
             val driftUv = scanWarp(uv, time = time, amplitude = warp, density = density, speed = 2.2f, noiseAmount = 0.55f)
             maskedMix(base, glitched, max(bars, lock), amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Radar,
@@ -730,7 +740,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val sweep = angularSweep(uv, angle = sweepAngle, width = 0.12f, feather = 0.03f)
             val arc = arcMask(uv, radius = radius, ringWidth = 0.09f, angle = sweepAngle, arcWidth = 0.18f, feather = 0.03f)
             maskedScreen(base, tint, sweep * beam + arc, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Halo,
@@ -743,7 +753,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val dir = radialDirection(uv, resolution)
             val glow = centerGlow(uv, resolution, radius = radius * pulse, feather = 0.18f)
             val rim = rimLight(uv, resolution, radius = radius + 0.08f * pulse, width = 0.075f, feather = 0.024f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Circuit,
@@ -756,7 +766,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val pulse = segmentPulse(point = board, start = sourcePos, end = chipPos, phase = fract(time * 0.42f), bandWidth = 0.22f, thickness = 0.05f)
             val routeMask = ifElse(route lt 0.5f, sourceFlow, ifElse(route lt 1.5f, chipFlow, outputFlow))
             maskedOverlay(copper, signalTint, routeMask, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Sigil,
@@ -768,7 +778,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val frame = softStroke(sdRoundedBox(sigil, halfSize = float2(0.35f, 0.35f), radius = 0.16f), width = 0.028f, feather = 0.012f)
             val ring = softStroke(sdCircle(sigil, radius = 0.26f + pulse * 0.03f), width = 0.032f, feather = 0.014f)
             val spine = softFill(sdBox(sigil, halfSize = float2(0.05f, 0.22f + pulse * 0.05f)), feather = 0.012f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Duotone,
@@ -781,7 +791,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             }
             val luma = let(luminance(base), "luma")
             mix(base, mix(mono, lifted, 0.85f), amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Aurora,
@@ -796,7 +806,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val pal = cosinePalette(luma + uv.x * spectral + phase * 0.55f)
             val split = chromaticOffset(offset = chromaPx, direction = float2(1f, -0.25f), amount = amount)
             maskedMix(split, blendScreen(base, color(pal, base.a), mask * amount), mask, amount)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.LiquidGlass,
@@ -813,7 +823,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val chromaGlass = color(sampleUv(warpedUv - float2(px, 0f)).r, glass.g, sampleUv(warpedUv + float2(px, 0f)).b, glass.a)
             val edge = max(rim, shell)
             mix(glass, chromaGlass, edge * chromaMix)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.AnimatedGradient,
@@ -828,7 +838,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val g = let(0.5f + 0.5f * sin(3f * uv.y + t * 1.1f), "g")
             val b = let(0.5f + 0.5f * sin(3f * (uv.x + uv.y) + t * 0.9f), "b")
             color(float3(r, g, b), 1f)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.PhysicsBubble,
@@ -842,7 +852,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val uv = moveDir * (parallelDist / stretch) + perpVector / squash
             val thinFilmColor = mix(whiteReflection, filmReflection, interferenceStrength)
             ifElse(outsideBubble, rawBackground, color(mixedRgb, rawBackground.a))
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.TouchRipple,
@@ -855,7 +865,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val waves = sin(d * 32f - time * 2.4f) * 0.5f + 0.5f
             val ripple = waves / (1f + d * 14f)
             mix(base, tint, ripple * strength)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.Metaballs,
@@ -868,7 +878,7 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val field = smoothMin(m12, d3, blendK)
             val blob = softFill(field, feather = 0.035f)
             mix(bg, shaded, blob)
-        """.trimIndent()
+        """.trimIndent(),
     ),
     DemoInfo(
         id = DemoId.CrtTerminal,
@@ -881,8 +891,8 @@ val DemoCatalog: List<DemoInfo> = listOf(
             val base = sampleUv(warpedUv)
             val split = color(sampleUv(warpedUv - float2(px, 0f)).r, base.g, sampleUv(warpedUv + float2(px, 0f)).b, base.a)
             mix(base, split, edgeAmt * 0.88f) * scanMod * flicker * vignette
-        """.trimIndent()
-    )
+        """.trimIndent(),
+    ),
 )
 
 fun demoInfo(id: DemoId): DemoInfo = DemoCatalog.first { it.id == id }
@@ -890,7 +900,7 @@ fun demoInfo(id: DemoId): DemoInfo = DemoCatalog.first { it.id == id }
 fun recommendedFollowUps(
     id: DemoId,
     excludeIds: Set<DemoId> = emptySet(),
-    limit: Int = 3
+    limit: Int = 3,
 ): List<DemoFollowUp> {
     val current = demoInfo(id)
 
@@ -903,7 +913,7 @@ fun recommendedFollowUps(
         .filter { (_, score) -> score > 0 }
         .sortedWith(
             compareByDescending<Pair<DemoFollowUp, Int>> { it.second }
-                .thenBy { (followUp, _) -> DemoCatalog.indexOf(followUp.demo) }
+                .thenBy { (followUp, _) -> DemoCatalog.indexOf(followUp.demo) },
         )
         .take(limit)
         .map { (followUp, _) -> followUp }
@@ -912,7 +922,7 @@ fun recommendedFollowUps(
 
 private fun buildDemoFollowUp(
     current: DemoInfo,
-    candidate: DemoInfo
+    candidate: DemoInfo,
 ): Pair<DemoFollowUp, Int> {
     val sharedTags = current.focusTags.intersect(candidate.focusTags.toSet()).sorted()
     val sameSection = current.section == candidate.section
@@ -1031,6 +1041,6 @@ private fun buildDemoFollowUp(
     return DemoFollowUp(
         demo = candidate,
         label = label,
-        description = description
+        description = description,
     ) to score
 }

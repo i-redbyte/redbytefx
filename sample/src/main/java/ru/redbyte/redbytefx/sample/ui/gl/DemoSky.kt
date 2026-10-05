@@ -2,8 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import kotlin.math.cos
-import kotlin.math.sin
 import ru.redbyte.redbytefx.Mat4
 import ru.redbyte.redbytefx.SamplerCube
 import ru.redbyte.redbytefx.ShaderProgram
@@ -22,6 +20,8 @@ import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import kotlin.math.cos
+import kotlin.math.sin
 
 internal val skyDsl = """
 shader(ShaderTarget.Gles30) {

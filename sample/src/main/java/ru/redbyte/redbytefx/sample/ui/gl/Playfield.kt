@@ -1,16 +1,13 @@
 package ru.redbyte.redbytefx.sample.ui.gl
 
-import ru.redbyte.redbytefx.gl.compose.GlAttrib
-import ru.redbyte.redbytefx.gl.compose.GlMesh
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.div
+import ru.redbyte.redbytefx.gl.compose.GlAttrib
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.plus
@@ -21,6 +18,9 @@ import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 internal class Playfield(
     val program: ShaderProgram,

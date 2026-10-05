@@ -7,11 +7,11 @@ import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.demoInfo
 import ru.redbyte.redbytefx.sample.model.recommendedFollowUps
 import ru.redbyte.redbytefx.sample.ui.demos.DemoAnimatedGradient
-import ru.redbyte.redbytefx.sample.ui.demos.DemoCrtTerminal
 import ru.redbyte.redbytefx.sample.ui.demos.DemoAurora
 import ru.redbyte.redbytefx.sample.ui.demos.DemoBeacon
 import ru.redbyte.redbytefx.sample.ui.demos.DemoComposite
 import ru.redbyte.redbytefx.sample.ui.demos.DemoCorner
+import ru.redbyte.redbytefx.sample.ui.demos.DemoCrtTerminal
 import ru.redbyte.redbytefx.sample.ui.demos.DemoDuotone
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFilm
 import ru.redbyte.redbytefx.sample.ui.demos.DemoFlip
@@ -42,7 +42,7 @@ import ru.redbyte.redbytefx.sample.ui.demos.DemoWave
 @Composable
 fun DemoScreen(
     id: DemoId,
-    onOpenDemo: (DemoId) -> Unit
+    onOpenDemo: (DemoId) -> Unit,
 ) {
     val index = DemoCatalog.indexOfFirst { it.id == id }
     val previous = DemoCatalog.getOrNull(index - 1)
@@ -52,7 +52,7 @@ fun DemoScreen(
         excludeIds = buildSet {
             previous?.id?.let(::add)
             next?.id?.let(::add)
-        }
+        },
     )
 
     CompositionLocalProvider(
@@ -61,8 +61,8 @@ fun DemoScreen(
             previous = previous,
             next = next,
             related = related,
-            onOpen = onOpenDemo
-        )
+            onOpen = onOpenDemo,
+        ),
     ) {
         if (id.ordinal < DemoId.Frame.ordinal) {
             DemoCatalogFirst(id)

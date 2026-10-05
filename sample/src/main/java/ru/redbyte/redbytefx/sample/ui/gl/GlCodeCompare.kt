@@ -35,11 +35,11 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.sample.ui.CyberBadge
-import ru.redbyte.redbytefx.sample.ui.say
-import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.sample.ui.CyberCodeAction
 import ru.redbyte.redbytefx.sample.ui.CyberCodeBlock
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
+import ru.redbyte.redbytefx.sample.ui.say
+import ru.redbyte.redbytefx.sample.ui.ui
 
 internal fun glesListing(program: ShaderProgram): String = buildString {
     append("// vertex\n")

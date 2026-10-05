@@ -128,6 +128,26 @@ class Gles30DeviceTest {
     }
 
     @Test
+    fun shaderStorageBindingLimitIsZeroOnEs30WithoutDriverError() {
+        EglPbuffer(intArrayOf(0)).use {
+            drainGlError()
+            val version = IntArray(2)
+            GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, version, 0)
+            GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, version, 1)
+            assumeTrue(version[0] == 3 && version[1] == 0)
+            assertEquals(0, Gles30Device().maxShaderStorageBufferBindings())
+            val program = shader(ShaderTarget.Gles30) {
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+            val runtime = GlProgramRuntime(program, Gles30Device())
+            runtime.link()
+            runtime.destroy()
+            assertNoGlError("es 3.0 storage limit")
+        }
+    }
+
+    @Test
     fun driverLinksAUniformBlock() {
         EglPbuffer().use {
             drainGlError()

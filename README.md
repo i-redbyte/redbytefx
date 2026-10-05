@@ -203,7 +203,7 @@ Requires Sonatype Central Portal credentials (`mavenCentralUsername`, `mavenCent
 
 ## Contributing
 
-Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt. Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
+Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt with JetBrains official Kotlin style (`kotlin.code.style=official`, `detekt-formatting`). Reformat with `./gradlew detekt -PdetektAutoCorrect=true`. Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
 
 API site locally: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI publishes to `https://i-redbyte.github.io/redbytefx/` on push to **`master`/`main`**; other branches only verify the build. See [docs/github-pages.md](docs/github-pages.md).
 

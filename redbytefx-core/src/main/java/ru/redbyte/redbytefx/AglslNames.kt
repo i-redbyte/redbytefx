@@ -97,5 +97,5 @@ internal val RESERVED_USER_FUNCTION_NAMES: Set<String> = setOf(
     "trunc",
     "uniform",
     "void",
-    "while"
+    "while",
 )

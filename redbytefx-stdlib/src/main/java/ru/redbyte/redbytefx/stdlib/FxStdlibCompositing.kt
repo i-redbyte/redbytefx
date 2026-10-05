@@ -24,7 +24,7 @@ public fun maskedMix(
     base: Expr<Vec4<Flt<Med>>>,
     revealed: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Expr<Flt<High>> = float(1f)
+    amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> = mix(base, revealed, maskedAmount(mask, amount))
 
 /**
@@ -34,12 +34,12 @@ public fun maskedMix(
     base: Expr<Vec4<Flt<Med>>>,
     revealed: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Float
+    amount: Float,
 ): Expr<Vec4<Flt<Med>>> = maskedMix(
     base = base,
     revealed = revealed,
     mask = mask,
-    amount = float(amount)
+    amount = float(amount),
 )
 
 /**
@@ -52,12 +52,12 @@ public fun maskedMix(
 public fun alphaMask(
     color: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Expr<Flt<High>> = float(1f)
+    amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> = ru.redbyte.redbytefx.color(
     r = color.r,
     g = color.g,
     b = color.b,
-    a = color.a * maskedAmount(mask, amount).toMed()
+    a = color.a * maskedAmount(mask, amount).toMed(),
 )
 
 /**
@@ -66,11 +66,11 @@ public fun alphaMask(
 public fun alphaMask(
     color: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Float
+    amount: Float,
 ): Expr<Vec4<Flt<Med>>> = alphaMask(
     color = color,
     mask = mask,
-    amount = float(amount)
+    amount = float(amount),
 )
 
 /**
@@ -83,7 +83,7 @@ public fun maskedScreen(
     base: Expr<Vec4<Flt<Med>>>,
     blend: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Expr<Flt<High>> = float(1f)
+    amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> = blendScreen(base, blend, maskedAmount(mask, amount))
 
 /**
@@ -93,12 +93,12 @@ public fun maskedScreen(
     base: Expr<Vec4<Flt<Med>>>,
     blend: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Float
+    amount: Float,
 ): Expr<Vec4<Flt<Med>>> = maskedScreen(
     base = base,
     blend = blend,
     mask = mask,
-    amount = float(amount)
+    amount = float(amount),
 )
 
 /**
@@ -111,7 +111,7 @@ public fun maskedOverlay(
     base: Expr<Vec4<Flt<Med>>>,
     blend: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Expr<Flt<High>> = float(1f)
+    amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> = blendOverlay(base, blend, maskedAmount(mask, amount))
 
 /**
@@ -121,10 +121,10 @@ public fun maskedOverlay(
     base: Expr<Vec4<Flt<Med>>>,
     blend: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
-    amount: Float
+    amount: Float,
 ): Expr<Vec4<Flt<Med>>> = maskedOverlay(
     base = base,
     blend = blend,
     mask = mask,
-    amount = float(amount)
+    amount = float(amount),
 )

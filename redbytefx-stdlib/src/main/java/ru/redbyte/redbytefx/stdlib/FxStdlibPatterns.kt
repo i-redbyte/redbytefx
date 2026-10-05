@@ -11,7 +11,7 @@ import ru.redbyte.redbytefx.*
 public fun pulse(
     time: Expr<Flt<High>>,
     speed: Expr<Flt<High>> = float(1f),
-    phase: Expr<Flt<High>> = float(0f)
+    phase: Expr<Flt<High>> = float(0f),
 ): Expr<Flt<High>> = 0.5f + 0.5f * sin(time * speed + phase)
 
 /**
@@ -20,11 +20,11 @@ public fun pulse(
 public fun pulse(
     time: Expr<Flt<High>>,
     speed: Float = 1f,
-    phase: Float = 0f
+    phase: Float = 0f,
 ): Expr<Flt<High>> = pulse(
     time = time,
     speed = float(speed),
-    phase = float(phase)
+    phase = float(phase),
 )
 
 /**
@@ -38,7 +38,7 @@ public fun pulse(
 public fun gridMask(
     uv: Expr<Vec2<Flt<High>>>,
     density: Expr<Flt<High>>,
-    lineWidth: Expr<Flt<High>>
+    lineWidth: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safeDensity = max(density, 1f)
     val safeLineWidth = max(lineWidth, 0.0001f)
@@ -47,7 +47,7 @@ public fun gridMask(
     val edgeY = min(cell.y, 1f - cell.y)
     return max(
         1f - smoothstep(0f, safeLineWidth, edgeX),
-        1f - smoothstep(0f, safeLineWidth, edgeY)
+        1f - smoothstep(0f, safeLineWidth, edgeY),
     )
 }
 
@@ -57,11 +57,11 @@ public fun gridMask(
 public fun gridMask(
     uv: Expr<Vec2<Flt<High>>>,
     density: Float,
-    lineWidth: Float
+    lineWidth: Float,
 ): Expr<Flt<High>> = gridMask(
     uv = uv,
     density = float(density),
-    lineWidth = float(lineWidth)
+    lineWidth = float(lineWidth),
 )
 
 /**
@@ -74,7 +74,7 @@ public fun gridMask(
 public fun scanlines(
     position: Expr<Flt<High>>,
     spacing: Expr<Flt<High>>,
-    softness: Expr<Flt<High>>
+    softness: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safeSpacing = max(spacing, 1f)
     val safeSoftness = max(softness, 0.0001f)
@@ -87,9 +87,9 @@ public fun scanlines(
 public fun scanlines(
     position: Expr<Flt<High>>,
     spacing: Float,
-    softness: Float
+    softness: Float,
 ): Expr<Flt<High>> = scanlines(
     position = position,
     spacing = float(spacing),
-    softness = float(softness)
+    softness = float(softness),
 )

@@ -1,28 +1,27 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.ui
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.RadioRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
+import ru.redbyte.redbytefx.sample.ui.ui
 
 private enum class Axis { X, Y }
 
@@ -31,9 +30,8 @@ private data class MirrorSetup(
     val xEnabled: Uniform<Flt<High>>,
     val xFrom: Uniform<Flt<High>>,
     val yEnabled: Uniform<Flt<High>>,
-    val yFrom: Uniform<Flt<High>>
+    val yFrom: Uniform<Flt<High>>,
 )
-
 
 @Composable
 fun DemoMirror() {
@@ -62,11 +60,11 @@ fun DemoMirror() {
                     mirrorY(
                         coord = mirrorX(
                             amount = mirrorXEnabled.expr,
-                            from = mirrorXFrom.expr
+                            from = mirrorXFrom.expr,
                         ),
                         amount = mirrorYEnabled.expr,
-                        from = mirrorYFrom.expr
-                    )
+                        from = mirrorYFrom.expr,
+                    ),
                 )
             }
         }
@@ -93,7 +91,7 @@ fun DemoMirror() {
             Text(text = ui("Axis"), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 RadioRow("X", selected = axis == Axis.X) {
                     axis = Axis.X
@@ -107,7 +105,7 @@ fun DemoMirror() {
                 Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     RadioRow("Right", selected = fromX == MirrorXFrom.Right) {
                         fromX = MirrorXFrom.Right
@@ -120,7 +118,7 @@ fun DemoMirror() {
                 Text(text = ui("From"), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     RadioRow("Bottom", selected = fromY == MirrorYFrom.Bottom) {
                         fromY = MirrorYFrom.Bottom
@@ -130,6 +128,6 @@ fun DemoMirror() {
                     }
                 }
             }
-        }
+        },
     )
 }

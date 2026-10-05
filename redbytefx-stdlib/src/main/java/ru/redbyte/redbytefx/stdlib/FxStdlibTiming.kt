@@ -12,7 +12,7 @@ private const val PI: Float = 3.1415927f
  */
 public fun pingPong(
     value: Expr<Flt<High>>,
-    period: Expr<Flt<High>>
+    period: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safePeriod = max(period, 0.0001f)
     val phase = fract(value / safePeriod)
@@ -24,10 +24,10 @@ public fun pingPong(
  */
 public fun pingPong(
     value: Expr<Flt<High>>,
-    period: Float
+    period: Float,
 ): Expr<Flt<High>> = pingPong(
     value = value,
-    period = float(period)
+    period = float(period),
 )
 
 /**
@@ -50,6 +50,6 @@ public fun easeInOutCubic(value: Expr<Flt<High>>): Expr<Flt<High>> {
     return ifElse(
         t lt 0.5f,
         4f * t * t * t,
-        1f - pow(-2f * t + 2f, 3f) / 2f
+        1f - pow(-2f * t + 2f, 3f) / 2f,
     )
 }

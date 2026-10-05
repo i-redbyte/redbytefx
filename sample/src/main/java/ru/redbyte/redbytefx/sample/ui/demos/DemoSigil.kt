@@ -1,43 +1,41 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.easeInOutSine
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.pingPong
 import ru.redbyte.redbytefx.stdlib.pulse
-import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.sdBox
-import ru.redbyte.redbytefx.stdlib.sdSegment
+import ru.redbyte.redbytefx.stdlib.sdCircle
 import ru.redbyte.redbytefx.stdlib.sdRoundedBox
+import ru.redbyte.redbytefx.stdlib.sdSegment
 import ru.redbyte.redbytefx.stdlib.softFill
 import ru.redbyte.redbytefx.stdlib.softStroke
 import ru.redbyte.redbytefx.stdlib.stroke
-
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
 
 private data class SigilSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -67,47 +65,47 @@ fun DemoSigil() {
                         distance = sdRoundedBox(
                             point = sigil,
                             halfSize = float2(0.35f, 0.35f),
-                            radius = 0.16f
+                            radius = 0.16f,
                         ),
                         width = 0.028f,
-                        feather = 0.012f
+                        feather = 0.012f,
                     ),
-                    "frame"
+                    "frame",
                 )
                 val ring = let(
                     softStroke(
                         distance = sdCircle(sigil, radius = 0.26f + pulse * 0.03f),
                         width = 0.032f,
-                        feather = 0.014f
+                        feather = 0.014f,
                     ),
-                    "ring"
+                    "ring",
                 )
                 val core = let(
                     softFill(
                         distance = sdCircle(sigil, radius = 0.10f + pulse * 0.05f),
-                        feather = 0.015f
+                        feather = 0.015f,
                     ),
-                    "core"
+                    "core",
                 )
                 val spine = let(
                     softFill(
                         distance = sdBox(
                             point = sigil,
-                            halfSize = float2(0.05f, 0.22f + pulse * 0.05f)
+                            halfSize = float2(0.05f, 0.22f + pulse * 0.05f),
                         ),
-                        feather = 0.012f
+                        feather = 0.012f,
                     ),
-                    "spine"
+                    "spine",
                 )
                 val cross = let(
                     stroke(
                         distance = sdBox(
                             point = sigil,
-                            halfSize = float2(0.21f, 0.05f)
+                            halfSize = float2(0.21f, 0.05f),
                         ),
-                        width = 0.05f
+                        width = 0.05f,
                     ),
-                    "cross"
+                    "cross",
                 )
                 val slash = let(
                     softStroke(
@@ -127,16 +125,16 @@ fun DemoSigil() {
                         mix(0.06f, 0.18f, pulse),
                         mix(0.32f, 1f, ring + core * 0.25f),
                         mix(0.18f, 0.74f, frame + spine * 0.35f),
-                        base.a
+                        base.a,
                     ),
-                    "tint"
+                    "tint",
                 )
                 val screened = let(maskedScreen(base, tint, mask, amount.expr), "screened")
                 maskedOverlay(
                     base = screened,
                     blend = color(float3(0.90f, 1f, 0.80f), base.a),
                     mask = core + ring * 0.5f,
-                    amount = amount.expr * 0.26f
+                    amount = amount.expr * 0.26f,
                 )
             }
         }
@@ -144,7 +142,7 @@ fun DemoSigil() {
             effect = effect,
             time = timeParam!!,
             speed = speedParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -158,7 +156,7 @@ fun DemoSigil() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Sigil//SDF"
+                label = "Sigil//SDF",
             )
         },
         controls = {
@@ -171,6 +169,6 @@ fun DemoSigil() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

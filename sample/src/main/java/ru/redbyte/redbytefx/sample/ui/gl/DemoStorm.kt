@@ -2,11 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.gl.compose.GlFrame
-import ru.redbyte.redbytefx.gl.compose.GlMesh
-import ru.redbyte.redbytefx.gl.compose.screenMesh
-import kotlin.random.Random
-import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
@@ -15,11 +10,15 @@ import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.abs
 import ru.redbyte.redbytefx.floor
 import ru.redbyte.redbytefx.fract
+import ru.redbyte.redbytefx.gl.compose.GlFrame
+import ru.redbyte.redbytefx.gl.compose.GlMesh
+import ru.redbyte.redbytefx.gl.compose.screenMesh
 import ru.redbyte.redbytefx.length
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.mix
 import ru.redbyte.redbytefx.plus
+import ru.redbyte.redbytefx.sample.ui.say
 import ru.redbyte.redbytefx.saturate
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.sin
@@ -33,6 +32,7 @@ import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import kotlin.random.Random
 
 internal class StormScene(
     val program: ShaderProgram,

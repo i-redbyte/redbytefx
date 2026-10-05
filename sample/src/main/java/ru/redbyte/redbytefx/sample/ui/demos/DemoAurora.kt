@@ -1,18 +1,22 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.angularSweep
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.chromaticOffset
@@ -20,19 +24,13 @@ import ru.redbyte.redbytefx.stdlib.cosinePalette
 import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.rimLight
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
-
 private data class AuroraSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val amount: Uniform<Flt<High>>,
     val chromaPx: Uniform<Flt<High>>,
     val spectral: Uniform<Flt<High>>,
-    val speed: Uniform<Flt<High>>
+    val speed: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -70,9 +68,9 @@ fun DemoAurora() {
                         center = float2(0.5f, 0.5f),
                         angle = phase,
                         width = 0.26f,
-                        feather = 0.09f
+                        feather = 0.09f,
                     ),
-                    "sweep"
+                    "sweep",
                 )
                 val rim = let(
                     rimLight(
@@ -80,24 +78,24 @@ fun DemoAurora() {
                         resolution = resolution,
                         radius = 0.42f,
                         width = 0.085f,
-                        feather = 0.03f
+                        feather = 0.03f,
                     ),
-                    "rim"
+                    "rim",
                 )
                 val mask = let(saturate(max(rim, sweep * 0.72f)), "mask")
                 val luma = let(luminance(base), "luma")
                 val pal = let(
                     cosinePalette(luma + uv.x * spectral.expr + phase * 0.55f - rim * 0.12f),
-                    "pal"
+                    "pal",
                 )
                 val tint = let(color(pal, base.a), "tint")
                 val split = let(
                     chromaticOffset(
                         offset = chromaPx.expr,
                         direction = float2(1f, -0.25f),
-                        amount = amount.expr
+                        amount = amount.expr,
                     ),
-                    "split"
+                    "split",
                 )
                 val irid = let(blendScreen(base, tint, mask * amount.expr), "irid")
                 maskedMix(split, irid, mask, amount.expr)
@@ -109,7 +107,7 @@ fun DemoAurora() {
             amount = amountParam!!,
             chromaPx = chromaParam!!,
             spectral = spectralParam!!,
-            speed = speedParam!!
+            speed = speedParam!!,
         )
     }
 
@@ -125,7 +123,7 @@ fun DemoAurora() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Aurora//Showcase"
+                label = "Aurora//Showcase",
             )
         },
         controls = {
@@ -144,6 +142,6 @@ fun DemoAurora() {
             SliderRow("Flow", speedUi, 18f..95f) {
                 speedUi = it
             }
-        }
+        },
     )
 }

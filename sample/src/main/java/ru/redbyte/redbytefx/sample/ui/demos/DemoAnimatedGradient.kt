@@ -8,12 +8,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
@@ -81,10 +81,10 @@ fun DemoAnimatedGradient() {
                 title = "Speed",
                 value = speedUi,
                 range = 0f..300f,
-                formatValue = { "${it / 100f}x" }
+                formatValue = { "${it / 100f}x" },
             ) {
                 speedUi = it
             }
-        }
+        },
     )
 }

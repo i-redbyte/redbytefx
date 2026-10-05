@@ -1,34 +1,32 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindFloat2
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.stdlib.blendOverlay
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.circleMask
 import ru.redbyte.redbytefx.stdlib.rectMask
 import ru.redbyte.redbytefx.stdlib.ringMask
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-
-
 private data class SpotlightSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val center: Uniform<Vec2<Flt<High>>>,
     val radius: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -57,9 +55,9 @@ fun DemoSpotlight() {
                         uv,
                         center = center.expr,
                         radius = radius.expr,
-                        feather = 0.18f
+                        feather = 0.18f,
                     ),
-                    "focus"
+                    "focus",
                 )
                 val halo = let(
                     ringMask(
@@ -67,18 +65,18 @@ fun DemoSpotlight() {
                         center = center.expr,
                         radius = radius.expr + 0.07f,
                         width = 0.1f,
-                        feather = 0.05f
+                        feather = 0.05f,
                     ),
-                    "halo"
+                    "halo",
                 )
                 val panel = let(
                     rectMask(
                         uv,
                         center = float2(0.78f, 0.5f),
                         size = float2(0.26f, 0.58f),
-                        feather = 0.04f
+                        feather = 0.04f,
                     ),
-                    "panel"
+                    "panel",
                 )
                 val dimmed = let(base * mix(0.28f, 1f, focus), "dimmed")
                 val haloTint = let(color(float3(0.15f, 0.92f, 0.98f), base.a), "halo_tint")
@@ -91,7 +89,7 @@ fun DemoSpotlight() {
             effect = effect,
             center = centerParam!!,
             radius = radiusParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -118,6 +116,6 @@ fun DemoSpotlight() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

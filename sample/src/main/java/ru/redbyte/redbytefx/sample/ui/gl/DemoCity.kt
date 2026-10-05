@@ -2,10 +2,6 @@ package ru.redbyte.redbytefx.sample.ui.gl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import ru.redbyte.redbytefx.gl.GlProgramRuntime
-import ru.redbyte.redbytefx.gl.compose.GlMesh
-import kotlin.math.cos
-import kotlin.math.sin
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.Sampler2D
@@ -17,6 +13,8 @@ import ru.redbyte.redbytefx.abs
 import ru.redbyte.redbytefx.and
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.float2
+import ru.redbyte.redbytefx.gl.GlProgramRuntime
+import ru.redbyte.redbytefx.gl.compose.GlMesh
 import ru.redbyte.redbytefx.gt
 import ru.redbyte.redbytefx.ifElse
 import ru.redbyte.redbytefx.lit
@@ -25,12 +23,14 @@ import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.saturate
 import ru.redbyte.redbytefx.shader
-import ru.redbyte.redbytefx.sin as wave
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
+import kotlin.math.cos
+import kotlin.math.sin
+import ru.redbyte.redbytefx.sin as wave
 
 internal const val CITY_TEX: Int = 32
 
@@ -114,16 +114,19 @@ internal fun DemoCity() {
         val forwardZ = -eyeZ / length
         val rightX = forwardZ
         val rightZ = -forwardX
-        frame.runtime.set(scene.frameBlock, floatArrayOf(
-            frame.seconds,
-            eyeX,
-            eyeY,
-            eyeZ,
-            rightX,
-            rightZ,
-            forwardX,
-            forwardZ,
-        ))
+        frame.runtime.set(
+            scene.frameBlock,
+            floatArrayOf(
+                frame.seconds,
+                eyeX,
+                eyeY,
+                eyeZ,
+                rightX,
+                rightZ,
+                forwardX,
+                forwardZ,
+            ),
+        )
         frame.runtime.set(scene.aspect, frame.aspect)
         if (images.runtime !== frame.runtime) {
             images.facade = frame.runtime.uploadRgba(CITY_TEX, CITY_TEX, facadeRgba())

@@ -14,10 +14,10 @@ import ru.redbyte.redbytefx.*
  * space.
  */
 public fun FragmentDsl.normalizedUv(
-    coord: Expr<Vec2<Flt<High>>> = fragCoord
+    coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec2<Flt<High>>> = coord / float2(
     max(resolution.x, 0.0001f),
-    max(resolution.y, 0.0001f)
+    max(resolution.y, 0.0001f),
 )
 
 /**
@@ -31,12 +31,12 @@ public fun FragmentDsl.normalizedUv(
  * Do not pass pixel coordinates or `fragCoord` here - use core `sample(...)` instead.
  */
 public fun FragmentDsl.sampleUv(
-    uv: Expr<Vec2<Flt<High>>>
+    uv: Expr<Vec2<Flt<High>>>,
 ): Expr<Vec4<Flt<Med>>> = sample(
     uv * float2(
         max(resolution.x, 0.0001f),
-        max(resolution.y, 0.0001f)
-    )
+        max(resolution.y, 0.0001f),
+    ),
 )
 
 /**
@@ -47,7 +47,7 @@ public fun FragmentDsl.sampleUv(
  */
 public fun centeredUv(
     uv: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Vec2<Flt<High>>> = uv - center
 
 /**
@@ -60,7 +60,7 @@ public fun centeredUv(
 public fun aspectCenteredUv(
     uv: Expr<Vec2<Flt<High>>>,
     resolution: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Vec2<Flt<High>>> {
     val centered = centeredUv(uv, center)
     val safeHeight = max(resolution.y, 0.0001f)
@@ -77,7 +77,7 @@ public fun aspectCenteredUv(
 public fun radialDirection(
     uv: Expr<Vec2<Flt<High>>>,
     resolution: Expr<Vec2<Flt<High>>>,
-    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f)
+    center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Vec2<Flt<High>>> {
     val centered = aspectCenteredUv(uv, resolution, center)
     val safeLength = max(length(centered), 0.0001f)
@@ -94,7 +94,7 @@ public fun centerGlow(
     resolution: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeFeather = max(feather, 0.0001f)
@@ -110,13 +110,13 @@ public fun centerGlow(
     resolution: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = centerGlow(
     uv = uv,
     resolution = resolution,
     center = center,
     radius = float(radius),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -127,13 +127,13 @@ public fun centerGlow(
     resolution: Expr<Vec2<Flt<High>>>,
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = centerGlow(
     uv = uv,
     resolution = resolution,
     center = center,
     radius = radius,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -147,7 +147,7 @@ public fun rimLight(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val safeWidth = max(width, 0.0001f)
@@ -166,14 +166,14 @@ public fun rimLight(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Float,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = rimLight(
     uv = uv,
     resolution = resolution,
     center = center,
     radius = float(radius),
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -186,14 +186,14 @@ public fun rimLight(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = rimLight(
     uv = uv,
     resolution = resolution,
     center = center,
     radius = radius,
     width = width,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -206,14 +206,14 @@ public fun rimLight(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
     radius: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = rimLight(
     uv = uv,
     resolution = resolution,
     center = center,
     radius = radius,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**

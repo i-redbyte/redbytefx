@@ -1,37 +1,35 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
-import ru.redbyte.redbytefx.stdlib.maskedOverlay
-import ru.redbyte.redbytefx.stdlib.maskedScreen
-import ru.redbyte.redbytefx.stdlib.pingPong
-import ru.redbyte.redbytefx.stdlib.directionalSweep
-import ru.redbyte.redbytefx.stdlib.edgeFade
-import ru.redbyte.redbytefx.stdlib.frameMask
-
 import ru.redbyte.redbytefx.sample.ui.DemoLayout
 import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
 import ru.redbyte.redbytefx.sample.ui.SliderRow
 import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
+import ru.redbyte.redbytefx.stdlib.directionalSweep
+import ru.redbyte.redbytefx.stdlib.edgeFade
+import ru.redbyte.redbytefx.stdlib.frameMask
+import ru.redbyte.redbytefx.stdlib.maskedOverlay
+import ru.redbyte.redbytefx.stdlib.maskedScreen
+import ru.redbyte.redbytefx.stdlib.pingPong
 
 private data class FrameSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val speed: Uniform<Flt<High>>,
     val thickness: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -67,9 +65,9 @@ fun DemoFrame() {
                         direction = float2(1f, -0.24f),
                         center = sweepCenter,
                         width = 0.2f,
-                        feather = 0.08f
+                        feather = 0.08f,
                     ),
-                    "sweep"
+                    "sweep",
                 )
                 val shellTint = let(color(float3(0.12f, 0.96f, 0.72f), base.a), "shell_tint")
                 val innerTint = let(color(float3(0.08f, 0.24f, 0.16f), base.a), "inner_tint")
@@ -78,7 +76,7 @@ fun DemoFrame() {
                     base = screened,
                     blend = innerTint,
                     mask = frame + (1f - interior) * 0.28f,
-                    amount = amount.expr * 0.45f
+                    amount = amount.expr * 0.45f,
                 )
             }
         }
@@ -87,7 +85,7 @@ fun DemoFrame() {
             time = timeParam!!,
             speed = speedParam!!,
             thickness = thicknessParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -102,7 +100,7 @@ fun DemoFrame() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Frame//Shell"
+                label = "Frame//Shell",
             )
         },
         controls = {
@@ -118,6 +116,6 @@ fun DemoFrame() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

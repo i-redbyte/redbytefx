@@ -11,7 +11,7 @@ import ru.redbyte.redbytefx.*
  */
 public fun edgeDistance(uv: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> = min(
     min(uv.x, 1f - uv.x),
-    min(uv.y, 1f - uv.y)
+    min(uv.y, 1f - uv.y),
 )
 
 /**
@@ -23,7 +23,7 @@ public fun edgeDistance(uv: Expr<Vec2<Flt<High>>>): Expr<Flt<High>> = min(
  */
 public fun edgeFade(
     uv: Expr<Vec2<Flt<High>>>,
-    feather: Expr<Flt<High>>
+    feather: Expr<Flt<High>>,
 ): Expr<Flt<High>> = smoothstep(0f, max(feather, 0.0001f), edgeDistance(uv))
 
 /**
@@ -31,10 +31,10 @@ public fun edgeFade(
  */
 public fun edgeFade(
     uv: Expr<Vec2<Flt<High>>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = edgeFade(
     uv = uv,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -47,7 +47,7 @@ public fun edgeFade(
 public fun frameMask(
     uv: Expr<Vec2<Flt<High>>>,
     thickness: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeThickness = max(thickness, 0f)
     val safeFeather = max(feather, 0.0001f)
@@ -60,11 +60,11 @@ public fun frameMask(
 public fun frameMask(
     uv: Expr<Vec2<Flt<High>>>,
     thickness: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = frameMask(
     uv = uv,
     thickness = float(thickness),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -74,11 +74,11 @@ public fun frameMask(
 public fun frameMask(
     uv: Expr<Vec2<Flt<High>>>,
     thickness: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = frameMask(
     uv = uv,
     thickness = thickness,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -93,7 +93,7 @@ public fun cornerMask(
     uv: Expr<Vec2<Flt<High>>>,
     size: Expr<Flt<High>>,
     thickness: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val safeSize = max(size, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
@@ -104,7 +104,7 @@ public fun cornerMask(
     val bottom = 1f - smoothstep(safeSize, safeSize + safeFeather, 1f - uv.y)
     val corners = max(
         max(left * top, right * top),
-        max(left * bottom, right * bottom)
+        max(left * bottom, right * bottom),
     )
     return frame * corners
 }
@@ -116,12 +116,12 @@ public fun cornerMask(
     uv: Expr<Vec2<Flt<High>>>,
     size: Float,
     thickness: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = cornerMask(
     uv = uv,
     size = float(size),
     thickness = float(thickness),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -132,10 +132,10 @@ public fun cornerMask(
     uv: Expr<Vec2<Flt<High>>>,
     size: Expr<Flt<High>>,
     thickness: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = cornerMask(
     uv = uv,
     size = size,
     thickness = thickness,
-    feather = float(feather)
+    feather = float(feather),
 )

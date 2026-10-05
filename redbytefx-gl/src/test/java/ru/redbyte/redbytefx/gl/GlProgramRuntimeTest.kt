@@ -886,6 +886,46 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aRecycledBufferNameCanBeDeletedAgain() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val name = runtime.createBuffer()
+        runtime.deleteBuffer(name)
+        device.reuseBufferName(name)
+        val recycled = runtime.createBuffer()
+        assertEquals(name, recycled)
+        runtime.deleteBuffer(recycled)
+        assertEquals(2, device.deleteBufferCalls)
+    }
+
+    @Test
+    fun aGraphicsProgramDoesNotQueryShaderStorageBindings() {
+        val device = RecordingGlDevice()
+        GlProgramRuntime(passthrough(), device).link()
+        assertEquals(0, device.storageBindingQueries)
+        assertEquals(0, device.uniformBindingQueries)
+    }
+
+    @Test
+    fun aComputeProgramQueriesShaderStorageBindingsOnlyWhenItHasABlock() {
+        val empty = RecordingGlDevice()
+        GlProgramRuntime(
+            shader(ShaderTarget.Gles31) { compute(1) { } },
+            empty,
+        ).link()
+        assertEquals(0, empty.storageBindingQueries)
+
+        val program = shader(ShaderTarget.Gles31) {
+            storageBlock("cells") { float("value") }
+            compute(1) { }
+        }
+        val withBlock = RecordingGlDevice()
+        GlProgramRuntime(program, withBlock).link()
+        assertEquals(1, withBlock.storageBindingQueries)
+    }
+
+    @Test
     fun twoBlocksBindAtTheirDeclarationPointsAndTheLimitIsTheContext() {
         lateinit var frame: UniformBlock
         lateinit var color: UniformBlock
@@ -984,6 +1024,8 @@ private class RecordingGlDevice(
     private val uniformBindingLimit: Int = 24,
     private val storageBindingLimit: Int = 8,
 ) : GlDevice() {
+    var uniformBindingQueries = 0
+    var storageBindingQueries = 0
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
     val locationQueries = mutableMapOf<String, Int>()
@@ -1150,11 +1192,21 @@ private class RecordingGlDevice(
     var deleteBufferCalls = 0
     var failNextBufferName = false
     private var nextBuffer = 1
+    private var reusedName: Int? = null
+
+    fun reuseBufferName(name: Int) {
+        reusedName = name
+    }
 
     override fun createBuffer(): Int {
         if (failNextBufferName) {
             failNextBufferName = false
             return 0
+        }
+        val forced = reusedName
+        if (forced != null) {
+            reusedName = null
+            return forced
         }
         return nextBuffer++
     }
@@ -1188,9 +1240,15 @@ private class RecordingGlDevice(
         assignedBlockBindings += binding
     }
 
-    override fun maxUniformBufferBindings(): Int = uniformBindingLimit
+    override fun maxUniformBufferBindings(): Int {
+        uniformBindingQueries += 1
+        return uniformBindingLimit
+    }
 
-    override fun maxShaderStorageBufferBindings(): Int = storageBindingLimit
+    override fun maxShaderStorageBufferBindings(): Int {
+        storageBindingQueries += 1
+        return storageBindingLimit
+    }
 
     var storageDataCalls = 0
     var storageSubDataCalls = 0

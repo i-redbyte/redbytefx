@@ -11,7 +11,7 @@ import ru.redbyte.redbytefx.*
  */
 public fun sdCircle(
     point: Expr<Vec2<Flt<High>>>,
-    radius: Expr<Flt<High>>
+    radius: Expr<Flt<High>>,
 ): Expr<Flt<High>> = length(point) - max(radius, 0f)
 
 /**
@@ -19,10 +19,10 @@ public fun sdCircle(
  */
 public fun sdCircle(
     point: Expr<Vec2<Flt<High>>>,
-    radius: Float
+    radius: Float,
 ): Expr<Flt<High>> = sdCircle(
     point = point,
-    radius = float(radius)
+    radius = float(radius),
 )
 
 /**
@@ -33,7 +33,7 @@ public fun sdCircle(
  */
 public fun sdBox(
     point: Expr<Vec2<Flt<High>>>,
-    halfSize: Expr<Vec2<Flt<High>>>
+    halfSize: Expr<Vec2<Flt<High>>>,
 ): Expr<Flt<High>> {
     val dx = abs(point.x) - max(halfSize.x, 0f)
     val dy = abs(point.y) - max(halfSize.y, 0f)
@@ -51,7 +51,7 @@ public fun sdBox(
 public fun sdRoundedBox(
     point: Expr<Vec2<Flt<High>>>,
     halfSize: Expr<Vec2<Flt<High>>>,
-    radius: Expr<Flt<High>>
+    radius: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val safeRadius = max(radius, 0f)
     val dx = abs(point.x) - max(halfSize.x - safeRadius, 0f)
@@ -68,11 +68,11 @@ public fun sdRoundedBox(
 public fun sdRoundedBox(
     point: Expr<Vec2<Flt<High>>>,
     halfSize: Expr<Vec2<Flt<High>>>,
-    radius: Float
+    radius: Float,
 ): Expr<Flt<High>> = sdRoundedBox(
     point = point,
     halfSize = halfSize,
-    radius = float(radius)
+    radius = float(radius),
 )
 
 /**
@@ -81,7 +81,7 @@ public fun sdRoundedBox(
 public fun sdSegment(
     point: Expr<Vec2<Flt<High>>>,
     start: Expr<Vec2<Flt<High>>>,
-    end: Expr<Vec2<Flt<High>>>
+    end: Expr<Vec2<Flt<High>>>,
 ): Expr<Flt<High>> {
     val pa = point - start
     val ba = end - start
@@ -102,7 +102,7 @@ public fun fill(distance: Expr<Flt<High>>): Expr<Flt<High>> =
  */
 public fun softFill(
     distance: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> = 1f - smoothstep(0f, max(feather, 0.0001f), distance)
 
 /**
@@ -110,7 +110,7 @@ public fun softFill(
  */
 public fun softFill(
     distance: Expr<Flt<High>>,
-    feather: Float
+    feather: Float,
 ): Expr<Flt<High>> = softFill(distance, float(feather))
 
 /**
@@ -118,7 +118,7 @@ public fun softFill(
  */
 public fun stroke(
     distance: Expr<Flt<High>>,
-    width: Expr<Flt<High>>
+    width: Expr<Flt<High>>,
 ): Expr<Flt<High>> = 1f - step(max(width, 0.0001f) * 0.5f, abs(distance))
 
 /**
@@ -126,7 +126,7 @@ public fun stroke(
  */
 public fun stroke(
     distance: Expr<Flt<High>>,
-    width: Float
+    width: Float,
 ): Expr<Flt<High>> = stroke(distance, float(width))
 
 /**
@@ -158,7 +158,7 @@ public fun strokeScreen(
 public fun softStroke(
     distance: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.02f)
+    feather: Expr<Flt<High>> = float(0.02f),
 ): Expr<Flt<High>> {
     val halfWidth = max(width, 0.0001f) * 0.5f
     return 1f - smoothstep(halfWidth, halfWidth + max(feather, 0.0001f), abs(distance))
@@ -170,9 +170,9 @@ public fun softStroke(
 public fun softStroke(
     distance: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.02f
+    feather: Float = 0.02f,
 ): Expr<Flt<High>> = softStroke(
     distance = distance,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )

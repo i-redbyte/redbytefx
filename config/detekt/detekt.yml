@@ -1,6 +1,8 @@
 # Detekt for RedByteFX - Kotlin static analysis.
 # Shader DSL and stdlib use many numeric literals by design; rules are tuned for signal, not noise.
+# Formatting is JetBrains official Kotlin style (ktlint intellij_idea / android: false).
 # Run: ./gradlew detekt  |  Main sources only (tests excluded via Gradle).
+# Auto-format: ./gradlew detekt -PdetektAutoCorrect=true
 
 config:
   validation: true
@@ -28,6 +30,8 @@ complexity:
     active: true
     thresholdInFiles: 200
     thresholdInClasses: 120
+    thresholdInObjects: 120
+    thresholdInInterfaces: 120
 
 empty-blocks:
   EmptyFunctionBlock:
@@ -80,3 +84,34 @@ style:
     active: false
   UnusedImports:
     active: true
+
+formatting:
+  active: true
+  android: false
+  autoCorrect: true
+  Filename:
+    active: false
+  NoWildcardImports:
+    active: false
+  MaximumLineLength:
+    active: false
+  ArgumentListWrapping:
+    maxLineLength: 320
+  FunctionReturnTypeSpacing:
+    maxLineLength: 320
+  ParameterListWrapping:
+    maxLineLength: 320
+  ParameterWrapping:
+    maxLineLength: 320
+  PropertyWrapping:
+    maxLineLength: 320
+  Wrapping:
+    maxLineLength: 320
+  TrailingCommaOnCallSite:
+    active: true
+    autoCorrect: true
+    useTrailingCommaOnCallSite: true
+  TrailingCommaOnDeclarationSite:
+    active: true
+    autoCorrect: true
+    useTrailingCommaOnDeclarationSite: true

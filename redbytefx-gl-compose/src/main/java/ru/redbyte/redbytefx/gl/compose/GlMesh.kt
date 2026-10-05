@@ -6,8 +6,9 @@ import android.opengl.GLES30
  * Vertex layout uploaded on the GL thread when a [GlSurface] is created.
  *
  * Scene. [stride] and every [GlAttrib] count floats. Each attribute must fit inside one stride,
- * and every index must address a vertex. The host uploads [vertices] and [indices] once per EGL
- * context, so do not change those arrays afterward; use [GlFrame.replace] for the surface mesh.
+ * and every index must address a vertex. The host uploads [vertices] and [indices] on first draw.
+ * A later draw of the same object uploads them again, so an in-place edit is visible.
+ * Use [GlFrame.replace] for the surface mesh.
  */
 public class GlMesh(
     public val vertices: FloatArray,

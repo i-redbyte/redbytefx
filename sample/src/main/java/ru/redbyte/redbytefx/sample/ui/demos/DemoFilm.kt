@@ -1,36 +1,34 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.grain
 import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.remap
 import ru.redbyte.redbytefx.stdlib.valueNoise
 import ru.redbyte.redbytefx.stdlib.vignette
 
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
-
 private data class FilmSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val grainAmount: Uniform<Flt<High>>,
     val grainScale: Uniform<Flt<High>>,
-    val vignetteAmount: Uniform<Flt<High>>
+    val vignetteAmount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -64,9 +62,9 @@ fun DemoFilm() {
                         0f,
                         1f,
                         0.92f,
-                        1.05f
+                        1.05f,
                     ),
-                    "drift"
+                    "drift",
                 )
                 val mask = let(mix(1f, vignette(uv, 0.35f, 1.05f), vignetteAmount.expr), "mask")
                 val lift = let(noise * grainAmount.expr, "lift")
@@ -74,15 +72,15 @@ fun DemoFilm() {
                     float3(
                         saturate(base.r * drift + lift),
                         saturate(base.g * drift + lift),
-                        saturate(base.b * drift + lift)
+                        saturate(base.b * drift + lift),
                     ),
-                    "grain_rgb"
+                    "grain_rgb",
                 )
                 color(
                     grainRgb.x * mask,
                     grainRgb.y * mask,
                     grainRgb.z * mask,
-                    base.a
+                    base.a,
                 )
             }
         }
@@ -91,7 +89,7 @@ fun DemoFilm() {
             time = timeParam!!,
             grainAmount = grainAmountParam!!,
             grainScale = grainScaleParam!!,
-            vignetteAmount = vignetteAmountParam!!
+            vignetteAmount = vignetteAmountParam!!,
         )
     }
 
@@ -119,6 +117,6 @@ fun DemoFilm() {
             SliderRow("Vignette", vignetteAmountUi, 0f..100f) {
                 vignetteAmountUi = it
             }
-        }
+        },
     )
 }

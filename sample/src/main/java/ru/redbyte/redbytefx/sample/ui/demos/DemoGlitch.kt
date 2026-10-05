@@ -1,39 +1,38 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.bandMask
 import ru.redbyte.redbytefx.stdlib.chromaticOffset
 import ru.redbyte.redbytefx.stdlib.maskedMix
 import ru.redbyte.redbytefx.stdlib.maskedOverlay
 import ru.redbyte.redbytefx.stdlib.maskedScreen
 import ru.redbyte.redbytefx.stdlib.pingPong
+import ru.redbyte.redbytefx.stdlib.sampleUv
 import ru.redbyte.redbytefx.stdlib.scanWarp
 import ru.redbyte.redbytefx.stdlib.signalBars
-import ru.redbyte.redbytefx.stdlib.sampleUv
-
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
 
 private data class GlitchSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
     val time: Uniform<Flt<High>>,
     val density: Uniform<Flt<High>>,
     val warp: Uniform<Flt<High>>,
-    val amount: Uniform<Flt<High>>
+    val amount: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -67,9 +66,9 @@ fun DemoGlitch() {
                         amplitude = warp.expr,
                         density = density.expr,
                         speed = 2.2f,
-                        noiseAmount = 0.55f
+                        noiseAmount = 0.55f,
                     ),
-                    "drift_uv"
+                    "drift_uv",
                 )
                 val drifted = let(sampleUv(driftUv), "drifted")
                 val bars = let(
@@ -78,9 +77,9 @@ fun DemoGlitch() {
                         density = density.expr,
                         width = 0.28f,
                         phase = time.expr * 0.65f,
-                        feather = 0.1f
+                        feather = 0.1f,
                     ),
-                    "bars"
+                    "bars",
                 )
                 val lockCenter = let(0.22f + pingPong(time.expr * 0.12f, 1f) * 0.56f, "lock_center")
                 val lock = let(
@@ -88,17 +87,17 @@ fun DemoGlitch() {
                         position = uv.y,
                         center = lockCenter,
                         width = 0.14f,
-                        feather = 0.08f
+                        feather = 0.08f,
                     ),
-                    "lock"
+                    "lock",
                 )
                 val split = let(
                     chromaticOffset(
                         offset = 9f + bars * 12f,
                         direction = float2(1f, 0.12f),
-                        amount = amount.expr * (bars * 0.7f + lock * 0.3f)
+                        amount = amount.expr * (bars * 0.7f + lock * 0.3f),
                     ),
-                    "split"
+                    "split",
                 )
                 val tint = let(color(float3(0.08f, 0.96f, 0.68f), base.a), "tint")
                 val screened = let(
@@ -106,18 +105,18 @@ fun DemoGlitch() {
                         base = drifted,
                         blend = split + tint * 0.14f,
                         mask = bars,
-                        amount = amount.expr
+                        amount = amount.expr,
                     ),
-                    "screened"
+                    "screened",
                 )
                 val locked = let(
                     maskedOverlay(
                         base = screened,
                         blend = color(float3(0.52f, 1f, 0.24f), base.a),
                         mask = lock,
-                        amount = amount.expr * 0.45f
+                        amount = amount.expr * 0.45f,
                     ),
-                    "locked"
+                    "locked",
                 )
                 maskedMix(base, locked, max(bars, lock), amount.expr)
             }
@@ -127,7 +126,7 @@ fun DemoGlitch() {
             time = timeParam!!,
             density = densityParam!!,
             warp = warpParam!!,
-            amount = amountParam!!
+            amount = amountParam!!,
         )
     }
 
@@ -142,7 +141,7 @@ fun DemoGlitch() {
         preview = {
             DemoPreviewStage(
                 modifier = Modifier.redbyteFx(fx),
-                label = "Signal//Ghost"
+                label = "Signal//Ghost",
             )
         },
         controls = {
@@ -158,6 +157,6 @@ fun DemoGlitch() {
             SliderRow("Amount", amountUi, 0f..100f) {
                 amountUi = it
             }
-        }
+        },
     )
 }

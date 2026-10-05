@@ -24,6 +24,7 @@ import ru.redbyte.redbytefx.sample.ui.say
 
 internal class PointerState {
     @Volatile var x: Float = 0f
+
     @Volatile var y: Float = 0.2f
     private val ticks = java.util.concurrent.atomic.AtomicInteger(0)
 

@@ -14,7 +14,7 @@ public fun bandMask(
     position: Expr<Flt<High>>,
     center: Expr<Flt<High>>,
     width: Expr<Flt<High>>,
-    feather: Expr<Flt<High>> = float(0.05f)
+    feather: Expr<Flt<High>> = float(0.05f),
 ): Expr<Flt<High>> {
     val safeWidth = max(width, 0.0001f)
     val safeFeather = max(feather, 0.0001f)
@@ -30,12 +30,12 @@ public fun bandMask(
     position: Expr<Flt<High>>,
     center: Expr<Flt<High>>,
     width: Float,
-    feather: Float = 0.05f
+    feather: Float = 0.05f,
 ): Expr<Flt<High>> = bandMask(
     position = position,
     center = center,
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -45,12 +45,12 @@ public fun bandMask(
     position: Expr<Flt<High>>,
     center: Float,
     width: Float,
-    feather: Float = 0.05f
+    feather: Float = 0.05f,
 ): Expr<Flt<High>> = bandMask(
     position = position,
     center = float(center),
     width = float(width),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -66,7 +66,7 @@ public fun signalBars(
     density: Expr<Flt<High>>,
     width: Expr<Flt<High>> = float(0.18f),
     phase: Expr<Flt<High>> = float(0f),
-    feather: Expr<Flt<High>> = float(0.05f)
+    feather: Expr<Flt<High>> = float(0.05f),
 ): Expr<Flt<High>> {
     val safeDensity = max(density, 1f)
     val local = fract(position * safeDensity + phase)
@@ -74,7 +74,7 @@ public fun signalBars(
         position = local,
         center = float(0.5f),
         width = width,
-        feather = feather
+        feather = feather,
     )
 }
 
@@ -86,13 +86,13 @@ public fun signalBars(
     density: Float,
     width: Float = 0.18f,
     phase: Float = 0f,
-    feather: Float = 0.05f
+    feather: Float = 0.05f,
 ): Expr<Flt<High>> = signalBars(
     position = position,
     density = float(density),
     width = float(width),
     phase = float(phase),
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -103,13 +103,13 @@ public fun signalBars(
     density: Expr<Flt<High>>,
     width: Float = 0.18f,
     phase: Expr<Flt<High>> = float(0f),
-    feather: Float = 0.05f
+    feather: Float = 0.05f,
 ): Expr<Flt<High>> = signalBars(
     position = position,
     density = density,
     width = float(width),
     phase = phase,
-    feather = float(feather)
+    feather = float(feather),
 )
 
 /**
@@ -126,7 +126,7 @@ public fun scanWarp(
     amplitude: Expr<Flt<High>> = float(0.03f),
     density: Expr<Flt<High>> = float(10f),
     speed: Expr<Flt<High>> = float(1f),
-    noiseAmount: Expr<Flt<High>> = float(0.35f)
+    noiseAmount: Expr<Flt<High>> = float(0.35f),
 ): Expr<Vec2<Flt<High>>> {
     val safeAmplitude = max(amplitude, 0f)
     val safeDensity = max(density, 1f)
@@ -135,8 +135,8 @@ public fun scanWarp(
     val noise = valueNoise(
         float2(
             uv.y * safeDensity * 0.85f + time * speed * 0.21f,
-            time * speed * 0.13f + 4.7f
-        )
+            time * speed * 0.13f + 4.7f,
+        ),
     ) * 2f - 1f
     val offset = (wave * 0.65f + noise * noiseAmount) * safeAmplitude
     return uv + float2(offset, 0f)
@@ -152,14 +152,14 @@ public fun scanWarp(
     amplitude: Float = 0.03f,
     density: Float = 10f,
     speed: Float = 1f,
-    noiseAmount: Float = 0.35f
+    noiseAmount: Float = 0.35f,
 ): Expr<Vec2<Flt<High>>> = scanWarp(
     uv = uv,
     time = time,
     amplitude = float(amplitude),
     density = float(density),
     speed = float(speed),
-    noiseAmount = float(noiseAmount)
+    noiseAmount = float(noiseAmount),
 )
 
 /**
@@ -172,12 +172,12 @@ public fun scanWarp(
     amplitude: Expr<Flt<High>>,
     density: Expr<Flt<High>>,
     speed: Float = 1f,
-    noiseAmount: Float = 0.35f
+    noiseAmount: Float = 0.35f,
 ): Expr<Vec2<Flt<High>>> = scanWarp(
     uv = uv,
     time = time,
     amplitude = amplitude,
     density = density,
     speed = float(speed),
-    noiseAmount = float(noiseAmount)
+    noiseAmount = float(noiseAmount),
 )

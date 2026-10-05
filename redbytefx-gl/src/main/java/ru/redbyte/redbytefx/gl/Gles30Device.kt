@@ -1,9 +1,9 @@
 package ru.redbyte.redbytefx.gl
 
-import android.util.Log
 import android.opengl.GLES30
 import android.opengl.GLES31
 import android.opengl.GLES32
+import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -195,6 +195,7 @@ public class Gles30Device : GlDevice() {
     }
 
     override fun maxShaderStorageBufferBindings(): Int {
+        if (!esAtLeast(3, 1)) return 0
         GLES31.glGetIntegerv(GLES31.GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, statusSlot, 0)
         return statusSlot[0]
     }
@@ -471,6 +472,15 @@ public class Gles30Device : GlDevice() {
             error = GLES30.glGetError()
         }
         return found
+    }
+
+    /** GLES 3.1+ only. ES 3.0 must not query `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS`. */
+    private fun esAtLeast(major: Int, minor: Int): Boolean {
+        GLES30.glGetIntegerv(GLES30.GL_MAJOR_VERSION, statusSlot, 0)
+        val gotMajor = statusSlot[0]
+        GLES30.glGetIntegerv(GLES30.GL_MINOR_VERSION, statusSlot, 0)
+        val gotMinor = statusSlot[0]
+        return gotMajor > major || (gotMajor == major && gotMinor >= minor)
     }
 }
 

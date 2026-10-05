@@ -13,7 +13,7 @@ public fun fbm(
     point: Expr<Vec2<Flt<High>>>,
     octaves: Int = 4,
     lacunarity: Expr<Flt<High>> = float(2f),
-    gain: Expr<Flt<High>> = float(0.5f)
+    gain: Expr<Flt<High>> = float(0.5f),
 ): Expr<Flt<High>> {
     val safeOctaves = octaves.coerceIn(1, 6)
     var sum: Expr<Flt<High>> = float(0f)
@@ -36,12 +36,12 @@ public fun fbm(
     point: Expr<Vec2<Flt<High>>>,
     octaves: Int,
     lacunarity: Float,
-    gain: Float
+    gain: Float,
 ): Expr<Flt<High>> = fbm(
     point = point,
     octaves = octaves,
     lacunarity = float(lacunarity),
-    gain = float(gain)
+    gain = float(gain),
 )
 
 /**
@@ -54,11 +54,11 @@ public fun fbm(
 public fun domainWarp(
     point: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>> = float(0f),
-    amount: Expr<Flt<High>> = float(0.35f)
+    amount: Expr<Flt<High>> = float(0.35f),
 ): Expr<Vec2<Flt<High>>> {
     val q = float2(
         fbm(point + float2(time * 0.11f + 1.7f, 9.2f)),
-        fbm(point + float2(8.3f, time * 0.13f + 2.8f))
+        fbm(point + float2(8.3f, time * 0.13f + 2.8f)),
     )
     return point + (q * 2f - float2(1f, 1f)) * amount
 }
@@ -69,11 +69,11 @@ public fun domainWarp(
 public fun domainWarp(
     point: Expr<Vec2<Flt<High>>>,
     time: Float,
-    amount: Float
+    amount: Float,
 ): Expr<Vec2<Flt<High>>> = domainWarp(
     point = point,
     time = float(time),
-    amount = float(amount)
+    amount = float(amount),
 )
 
 /**
@@ -82,9 +82,9 @@ public fun domainWarp(
 public fun domainWarp(
     point: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>>,
-    amount: Float
+    amount: Float,
 ): Expr<Vec2<Flt<High>>> = domainWarp(
     point = point,
     time = time,
-    amount = float(amount)
+    amount = float(amount),
 )

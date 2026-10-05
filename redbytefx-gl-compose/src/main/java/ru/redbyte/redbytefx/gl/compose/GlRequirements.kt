@@ -1,8 +1,8 @@
 package ru.redbyte.redbytefx.gl.compose
 
-import java.util.Locale
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
+import java.util.Locale
 
 private const val ES_30_EN = "OpenGL ES 3.0 is required for this scene."
 private const val ES_30_RU = "Для этой сцены нужен OpenGL ES 3.0."

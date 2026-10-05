@@ -1,28 +1,26 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import ru.redbyte.redbytefx.*
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.rememberFxController
+import ru.redbyte.redbytefx.sample.ui.DemoLayout
+import ru.redbyte.redbytefx.sample.ui.DemoLiquidGlassPreviewStage
+import ru.redbyte.redbytefx.sample.ui.SliderRow
+import ru.redbyte.redbytefx.sample.ui.SwitchRow
 import ru.redbyte.redbytefx.stdlib.aspectCenteredUv
 import ru.redbyte.redbytefx.stdlib.blendScreen
 import ru.redbyte.redbytefx.stdlib.domainWarp
 import ru.redbyte.redbytefx.stdlib.normalizedUv
 import ru.redbyte.redbytefx.stdlib.rimLight
 import ru.redbyte.redbytefx.stdlib.sampleUv
-
-import ru.redbyte.redbytefx.sample.ui.DemoLayout
-import ru.redbyte.redbytefx.sample.ui.DemoLiquidGlassPreviewStage
-import ru.redbyte.redbytefx.sample.ui.SliderRow
-import ru.redbyte.redbytefx.sample.ui.SwitchRow
-
 
 private data class LiquidGlassSetup(
     val effect: ru.redbyte.redbytefx.ShaderProgram,
@@ -31,7 +29,7 @@ private data class LiquidGlassSetup(
     val speed: Uniform<Flt<High>>,
     val chromaPx: Uniform<Flt<High>>,
     val chromaMix: Uniform<Flt<High>>,
-    val edgeMix: Uniform<Flt<High>>
+    val edgeMix: Uniform<Flt<High>>,
 )
 
 @Composable
@@ -68,7 +66,7 @@ fun DemoLiquidGlass() {
                 val warp = let(domainWarp(uv * 3.2f, time.expr * speed.expr, refraction.expr), "warp")
                 val warpedUv = let(
                     float2(saturate(warp.x), saturate(warp.y)),
-                    "warped_uv"
+                    "warped_uv",
                 )
                 val glass = let(sampleUv(warpedUv), "glass")
                 val px = chromaPx.expr / max(resolution.x, 0.0001f)
@@ -84,9 +82,9 @@ fun DemoLiquidGlass() {
                         resolution = resolution,
                         radius = 0.4f,
                         width = 0.068f,
-                        feather = 0.032f
+                        feather = 0.032f,
                     ),
-                    "rim"
+                    "rim",
                 )
                 val edge = let(saturate(max(shell, rim)), "edge")
                 val spec = let(pow(edge, 1.75f), "spec")
@@ -102,7 +100,7 @@ fun DemoLiquidGlass() {
             speed = speedParam!!,
             chromaPx = chromaPxParam!!,
             chromaMix = chromaMixParam!!,
-            edgeMix = edgeMixParam!!
+            edgeMix = edgeMixParam!!,
         )
     }
 
@@ -138,6 +136,6 @@ fun DemoLiquidGlass() {
             SliderRow("Ice edge", edgeMixUi, 0f..100f) {
                 edgeMixUi = it
             }
-        }
+        },
     )
 }
