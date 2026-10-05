@@ -292,12 +292,14 @@ public fun FragmentDsl.rayMarch(
     val traveled = local(float(0f))
     val hit = local(float(far))
     val active = local(float(1f))
+    val sampledDistance = local(float(0f))
     val near = float(epsilon)
     val horizon = float(far)
     repeat(steps) {
         whenTrue((active.expr gt 0f) and (traveled.expr le horizon)) {
             val point = start.expr + dir.expr * traveled.expr
-            val dist = scene(point)
+            sampledDistance.set(scene(point))
+            val dist = sampledDistance.expr
             val close = dist lt near
             hit.set(ifElse(close, traveled.expr, hit.expr))
             active.set(ifElse(close, float(0f), active.expr))

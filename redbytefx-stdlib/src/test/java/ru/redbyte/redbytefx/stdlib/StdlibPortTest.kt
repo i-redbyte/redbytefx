@@ -223,6 +223,7 @@ class StdlibPortTest {
         assertTrue(source.indexOf("normalize(") < source.indexOf("for (int"))
         val loop = source.substringAfter("for (int")
         assertTrue(loop.indexOf("if (") < loop.indexOf("length("))
+        assertEquals(1, Regex("length\\(").findAll(loop).count())
     }
 
     @Test
