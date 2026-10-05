@@ -56,7 +56,7 @@ public fun adjustSaturation(
 ): Expr<Vec4<Flt<Med>>> = adjustSaturation(color, float(amount))
 
 /**
- * Multiplies two colors together, then mixes the result back into [base] by [amount].
+ * Multiplies premultiplied colors, preserving [base] alpha. [blend] alpha scales its influence.
  *
  * [amount] is saturated to the `[0, 1]` range so the helper behaves like a predictable blend
  * intensity rather than an extrapolated overshoot.
@@ -66,13 +66,13 @@ public fun blendMultiply(
     blend: Expr<Vec4<Flt<Med>>>,
     amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> {
-    val multiplied = ru.redbyte.redbytefx.color(
-        base.r * blend.r,
-        base.g * blend.g,
-        base.b * blend.b,
+    val strength = blendAmount(amount).toMed()
+    return ru.redbyte.redbytefx.color(
+        base.r * (1f - strength * (blend.a - blend.r)),
+        base.g * (1f - strength * (blend.a - blend.g)),
+        base.b * (1f - strength * (blend.a - blend.b)),
         base.a,
     )
-    return mix(base, multiplied, blendAmount(amount))
 }
 
 /**
@@ -85,7 +85,7 @@ public fun blendMultiply(
 ): Expr<Vec4<Flt<Med>>> = blendMultiply(base, blend, float(amount))
 
 /**
- * Applies screen blending and mixes the result back into [base] by [amount].
+ * Screens premultiplied colors, preserving [base] alpha. [blend] alpha scales its influence.
  *
  * [amount] is saturated to the `[0, 1]` range so screen intensity stays predictable.
  */
@@ -94,13 +94,13 @@ public fun blendScreen(
     blend: Expr<Vec4<Flt<Med>>>,
     amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> {
-    val screened = ru.redbyte.redbytefx.color(
-        1f - (1f - base.r) * (1f - blend.r),
-        1f - (1f - base.g) * (1f - blend.g),
-        1f - (1f - base.b) * (1f - blend.b),
+    val strength = blendAmount(amount).toMed()
+    return ru.redbyte.redbytefx.color(
+        base.r + strength * (base.a - base.r) * blend.r,
+        base.g + strength * (base.a - base.g) * blend.g,
+        base.b + strength * (base.a - base.b) * blend.b,
         base.a,
     )
-    return mix(base, screened, blendAmount(amount))
 }
 
 /**
@@ -113,7 +113,7 @@ public fun blendScreen(
 ): Expr<Vec4<Flt<Med>>> = blendScreen(base, blend, float(amount))
 
 /**
- * Applies overlay blending and mixes the result back into [base] by [amount].
+ * Overlays premultiplied colors, preserving [base] alpha. [blend] alpha scales its influence.
  *
  * [amount] is saturated to the `[0, 1]` range so the helper stays aligned with the rest of the
  * stdlib's blend-intensity convention.
@@ -123,20 +123,17 @@ public fun blendOverlay(
     blend: Expr<Vec4<Flt<Med>>>,
     amount: Expr<Flt<High>> = float(1f),
 ): Expr<Vec4<Flt<Med>>> {
-    fun <P : Prec> overlayChannel(baseChannel: Expr<Flt<P>>, blendChannel: Expr<Flt<P>>): Expr<Flt<P>> =
-        ifElse(
-            baseChannel lt 0.5f,
-            2f * baseChannel * blendChannel,
-            1f - 2f * (1f - baseChannel) * (1f - blendChannel),
-        )
-
-    val overlaid = ru.redbyte.redbytefx.color(
+    val strength = blendAmount(amount).toMed()
+    fun overlayChannel(baseChannel: Expr<Flt<Med>>, blendChannel: Expr<Flt<Med>>): Expr<Flt<Med>> {
+        val baseWeight = ifElse(baseChannel lt base.a * 0.5f, baseChannel, base.a - baseChannel)
+        return baseChannel + strength * baseWeight * (2f * blendChannel - blend.a)
+    }
+    return ru.redbyte.redbytefx.color(
         overlayChannel(base.r, blend.r),
         overlayChannel(base.g, blend.g),
         overlayChannel(base.b, blend.b),
         base.a,
     )
-    return mix(base, overlaid, blendAmount(amount))
 }
 
 /**

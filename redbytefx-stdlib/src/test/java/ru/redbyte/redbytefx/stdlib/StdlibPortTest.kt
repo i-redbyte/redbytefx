@@ -6,16 +6,19 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.ShaderTarget
+import ru.redbyte.redbytefx.a
+import ru.redbyte.redbytefx.b
 import ru.redbyte.redbytefx.color
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.float2
 import ru.redbyte.redbytefx.float3
+import ru.redbyte.redbytefx.g
 import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.r
 import ru.redbyte.redbytefx.scale
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.vec4
-import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.x
 import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
@@ -63,6 +66,27 @@ class StdlibPortTest {
         for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
             val generated = source(target)
             assertTrue(generated.contains("max("))
+            assertTrue(generated.contains("?"))
+        }
+    }
+
+    @Test
+    fun premultipliedBlendModesUseAlphaOnBothBackends() {
+        fun source(target: ShaderTarget) = shader(target) {
+            fragment {
+                val base = color(float3(0.2f, 0.1f, 0.05f), 0.25f)
+                val blend = color(float3(0.4f, 0.2f, 0.1f), 0.5f)
+                val multiplied = blendMultiply(base, blend, 0.8f)
+                val screened = blendScreen(base, blend, 0.8f)
+                val overlaid = blendOverlay(base, blend, 0.8f)
+                color(multiplied.r, screened.g, overlaid.b, base.a)
+            }
+        }.let { if (target == ShaderTarget.Agsl) it.agslSource() else it.fragmentSource() }
+
+        for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
+            val generated = source(target)
+            assertTrue(generated.contains("clamp("))
+            assertTrue(generated.contains(".a"))
             assertTrue(generated.contains("?"))
         }
     }

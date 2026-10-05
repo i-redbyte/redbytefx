@@ -101,6 +101,7 @@ public fun alphaMaskStraight(
 /**
  * Applies screen blending through a normalized [mask].
  *
+ * [base] and [blend] use premultiplied RGB, as in [blendScreen].
  * [amount] scales the effective mask intensity before blending. This works best when [blend] is
  * already a deliberate layer, not a replacement for first authoring the mask itself.
  */
@@ -129,6 +130,7 @@ public fun maskedScreen(
 /**
  * Applies overlay blending through a normalized [mask].
  *
+ * [base] and [blend] use premultiplied RGB, as in [blendOverlay].
  * [amount] scales the effective mask intensity before blending. Treat this as a more stylized
  * companion to [maskedMix] rather than the first compositing helper to teach.
  */
