@@ -14,12 +14,12 @@ public fun premultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> = ru.r
 )
 
 /**
- * Recovers straight RGB from a premultiplied color. Transparent pixels return black RGB so the
- * conversion remains finite; their original RGB cannot be recovered.
+ * Recovers straight RGB from a premultiplied color. Pixels with alpha at or below `0.000001`
+ * return black RGB so the conversion remains finite; their original RGB cannot be recovered.
  */
 public fun unpremultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
     val alpha = color.a
-    val nonzero = alpha gt 0f
+    val nonzero = alpha gt 0.000001f
     return ru.redbyte.redbytefx.color(
         r = ifElse(nonzero, color.r / max(alpha, 0.000001f), 0f.lit.toMed()),
         g = ifElse(nonzero, color.g / max(alpha, 0.000001f), 0f.lit.toMed()),

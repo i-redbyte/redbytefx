@@ -5,7 +5,7 @@ import ru.redbyte.redbytefx.*
 /**
  * Builds fractal Brownian motion from [valueNoise].
  *
- * [octaves] is clamped to the `1..6` range to keep generated shader code small and predictable.
+ * [octaves] must be in `1..6` to keep generated shader code small and predictable.
  * This helper is intentionally broader and more exploratory than the first canonical starter path:
  * it is useful once the author already understands the simpler coordinate/mask/compositing flow.
  */
@@ -15,12 +15,12 @@ public fun fbm(
     lacunarity: Expr<Flt<High>> = float(2f),
     gain: Expr<Flt<High>> = float(0.5f),
 ): Expr<Flt<High>> {
-    val safeOctaves = octaves.coerceIn(1, 6)
+    require(octaves in 1..6) { "fbm octaves must be 1..6, was $octaves" }
     var sum: Expr<Flt<High>> = float(0f)
     var amplitude: Expr<Flt<High>> = float(0.5f)
     var frequency: Expr<Flt<High>> = float(1f)
 
-    repeat(safeOctaves) {
+    repeat(octaves) {
         sum += valueNoise(point * frequency) * amplitude
         frequency *= lacunarity
         amplitude *= gain

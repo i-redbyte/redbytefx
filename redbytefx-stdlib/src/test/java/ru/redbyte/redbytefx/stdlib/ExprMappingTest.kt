@@ -22,4 +22,16 @@ class ExprMappingTest {
         assertTrue(source.contains("mix(0.2, 0.9,"))
         assertTrue(source.contains("((u_value - 0.0) / (1.0 - 0.0))"))
     }
+
+    @Test
+    fun remapClampedLimitsTheInterpolationBeforeMixingArbitraryOutputs() {
+        val source = shader(ShaderTarget.Agsl) {
+            val value = uniform("value", 1.5f)
+            fragment {
+                val mapped = remapClamped(value.expr, 0f, 1f, 2f, 4f)
+                vec4(mapped, mapped, mapped, 1f.lit)
+            }
+        }.agslSource()
+        assertTrue(source.contains("mix(2.0, 4.0, clamp("))
+    }
 }

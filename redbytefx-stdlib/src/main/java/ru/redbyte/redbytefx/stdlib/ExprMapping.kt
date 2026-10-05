@@ -6,6 +6,7 @@ import ru.redbyte.redbytefx.Prec
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.mix
+import ru.redbyte.redbytefx.saturate
 
 /**
  * Normalized position of [value] inside `[inputStart, inputEnd]`.
@@ -28,8 +29,8 @@ public fun <P : Prec> inverseLerp(
  * **Formula:** `mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))` - the only
  * canonical remapping path; literal overloads delegate here without a second formula.
  *
- * The interpolation amount is not clamped. Use [saturate] on the result when the output should
- * stay inside the destination range.
+ * The interpolation amount is not clamped. Use [remapClamped] to keep the result inside the
+ * destination range, including when its endpoints lie outside `[0, 1]`.
  */
 public fun <P : Prec> remap(
     value: Expr<Flt<P>>,
@@ -38,3 +39,15 @@ public fun <P : Prec> remap(
     outputStart: Expr<Flt<P>>,
     outputEnd: Expr<Flt<P>>,
 ): Expr<Flt<P>> = mix(outputStart, outputEnd, inverseLerp(inputStart, inputEnd, value))
+
+/**
+ * Like [remap], but clamps the interpolation amount to `[0, 1]` before mixing the output range.
+ * Collapsed input ranges remain undefined.
+ */
+public fun <P : Prec> remapClamped(
+    value: Expr<Flt<P>>,
+    inputStart: Expr<Flt<P>>,
+    inputEnd: Expr<Flt<P>>,
+    outputStart: Expr<Flt<P>>,
+    outputEnd: Expr<Flt<P>>,
+): Expr<Flt<P>> = mix(outputStart, outputEnd, saturate(inverseLerp(inputStart, inputEnd, value)))

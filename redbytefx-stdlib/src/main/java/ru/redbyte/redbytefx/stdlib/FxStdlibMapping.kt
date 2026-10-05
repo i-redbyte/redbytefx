@@ -29,6 +29,21 @@ public fun remap(
     outputEnd = float(outputEnd),
 )
 
+/** [remapClamped] with literal input and output ranges. */
+public fun remapClamped(
+    value: Expr<Flt<High>>,
+    inputStart: Float,
+    inputEnd: Float,
+    outputStart: Float,
+    outputEnd: Float,
+): Expr<Flt<High>> = remapClamped(
+    value = value,
+    inputStart = float(inputStart),
+    inputEnd = float(inputEnd),
+    outputStart = float(outputStart),
+    outputEnd = float(outputEnd),
+)
+
 /**
  * Posterizes a normalized scalar expression into [levels] discrete values.
  *
