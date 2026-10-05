@@ -95,9 +95,11 @@ internal fun linkGlsl(
     writes.forEach { collectUniforms(it.value, vertexUniforms) }
     if (position != null) collectUniforms(position, vertexUniforms)
     commandExprs(vertexStatements).forEach { collectUniforms(it, vertexUniforms) }
+    collectUniformsFromStageFunctions(functions, AuthoringPlace.Vertex, vertexUniforms)
     collectUniforms(fragmentBody, fragmentUniforms)
     fragmentWrites.forEach { collectUniforms(it.value, fragmentUniforms) }
     commandExprs(fragmentStatements).forEach { collectUniforms(it, fragmentUniforms) }
+    collectUniformsFromStageFunctions(functions, AuthoringPlace.Fragment, fragmentUniforms)
     bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.let { fragmentUniforms += it.uniform }
     val vertexExtra = spellCommands(
         vertexStatements,
@@ -385,6 +387,18 @@ private fun collectUniforms(expr: Expr<*>, into: MutableSet<Uniform<*>>) {
     }
 }
 
+private fun collectUniformsFromStageFunctions(
+    functions: List<UserFunction>,
+    stage: AuthoringPlace,
+    into: MutableSet<Uniform<*>>,
+) {
+    for (function in functions) {
+        if (function.stage != stage) continue
+        collectUniforms(function.body, into)
+        commandExprs(function.statements).forEach { collectUniforms(it, into) }
+    }
+}
+
 private fun walk(
     expr: Expr<*>,
     seen: MutableSet<UserFunction>,
@@ -643,7 +657,7 @@ internal fun spellCompute(
     shared: List<BlockMember>,
 ): ShaderProgram {
     val bindings = uniforms.map { uniform ->
-        UniformBinding(uniform, names.reserve(sanitizeIdentifier(uniform.name ?: "value", "u_")))
+        UniformBinding(uniform, spelledUniformName(uniform.name, names))
     }
     val uniformNames = bindings.associate { it.uniform to it.agslName }
     val occupied = names.snapshot()
@@ -653,6 +667,7 @@ internal fun spellCompute(
     val roots = commandExprs(statements)
     val used = linkedSetOf<Uniform<*>>()
     roots.forEach { collectUniforms(it, used) }
+    collectUniformsFromStageFunctions(functions, AuthoringPlace.Compute, used)
     val functionText = renderGlslFunctions(
         functionsForStage(functions, AuthoringPlace.Compute, roots),
         occupied,
@@ -853,6 +868,7 @@ private fun spellPrimitive(
     val roots = commandExprs(commands)
     val used = linkedSetOf<Uniform<*>>()
     roots.forEach { collectUniforms(it, used) }
+    collectUniformsFromStageFunctions(env.functions, env.stage, used)
     val emitter = GlslEmitter(
         IdentifierAllocator(env.occupied),
         env.uniformNames,

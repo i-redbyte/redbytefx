@@ -172,6 +172,20 @@ class GlslShaderTest {
     }
 
     @Test
+    fun uncalledFragmentFunctionStillDeclaresItsUniforms() {
+        lateinit var image: Uniform<Sampler2D>
+        val program = shader(ShaderTarget.Gles30) {
+            image = sampler2D("image")
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                fn(vec2(0f.lit, 0f.lit)) { uv -> this@fragment.texture(image, uv) }
+                vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        assertTrue(program.fragmentSource().contains("uniform highp sampler2D u_image"))
+    }
+
+    @Test
     fun gles32FragmentOnlyInjectsFullscreenCornerVertex() {
         val program = shader(ShaderTarget.Gles32) {
             fragment { vec4(0.2f.lit, 0.3f.lit, 0.4f.lit, 1f.lit) }

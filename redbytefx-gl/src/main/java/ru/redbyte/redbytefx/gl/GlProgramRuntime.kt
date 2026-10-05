@@ -195,8 +195,8 @@ public class GlProgramRuntime(
     }
 
     /**
-     * Writes `uResolution` from pixel width and height when the fragment reads `resolution`.
-     * No-op when that uniform is not on this program.
+     * Writes `uResolution` from pixel width and height when [ShaderProgram.resolution] is bound.
+     * No-op when that handle is absent (the fragment never read `resolution`).
      */
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         val uniform = program.resolution ?: return false
