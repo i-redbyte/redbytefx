@@ -23,6 +23,7 @@ English: [changelog.md](changelog.md).
 - **`wrapLambert`**: Ламберт с полом ambient.
 - **`resolution`**: законно на GLES как `uResolution`; Compose пишет размер кадра. На AGSL `ShaderProgram.resolution` всегда привязан (исходник уже объявлял uniform). Имя `uResolution` зарезервировано для авторского uniform.
 - **GLES только из фрагмента**: без `vertex { }` компилятор подставляет полноэкранный треугольник `a_corner`. Атрибут сохраняет написание `a_corner`, даже если пользовательский `fn` занимает этот идентификатор. Невызываемые fragment-функции, которые читают `resolution`, всё равно биндят `uResolution`.
+- **Стадийные `fn`**: uniform и члены `uniformBlock`, на которые ссылаются только невызываемые `fn` стадии, всё равно объявляются в GLSL этой стадии (тела всех owned-`fn` попадают в исходник).
 - Дополнительный SDF: `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, `sdCylinder`, `sdOctahedron`, `opRound`, `opOnion`, `sdfSmoothSubtract`, `sdfSmoothIntersect`, `rotate2d`.
 - Освещение и цвет: `fresnel`, `phong`, `hueShift`, `filmicTonemap`, `hash22`, `voronoi`.
 

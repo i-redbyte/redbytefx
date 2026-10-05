@@ -133,7 +133,11 @@ internal fun linkGlsl(
             outputValue = null,
             blockText = blockText(
                 blocks,
-                writes.map { it.value } + listOfNotNull(position) + commandExprs(vertexStatements),
+                exprRootsForStage(
+                    writes.map { it.value } + listOfNotNull(position) + commandExprs(vertexStatements),
+                    functions,
+                    AuthoringPlace.Vertex,
+                ),
                 version,
             ),
             version = version,
@@ -168,7 +172,11 @@ internal fun linkGlsl(
             outputValue = if (orderedWrites.isEmpty()) fragmentText else null,
             blockText = blockText(
                 blocks,
-                listOf(fragmentBody) + fragmentWrites.map { it.value },
+                exprRootsForStage(
+                    listOf(fragmentBody) + fragmentWrites.map { it.value },
+                    functions,
+                    AuthoringPlace.Fragment,
+                ),
                 version,
             ),
             version = version,
@@ -384,6 +392,19 @@ private fun isStageNode(node: ExprNode): Boolean = when (node) {
 private fun collectUniforms(expr: Expr<*>, into: MutableSet<Uniform<*>>) {
     walk(expr, linkedSetOf()) { node ->
         if (node is ExprNode.UniformRef) into += node.uniform
+    }
+}
+
+private fun exprRootsForStage(
+    roots: List<Expr<*>>,
+    functions: List<UserFunction>,
+    stage: AuthoringPlace,
+): List<Expr<*>> = buildList {
+    addAll(roots)
+    for (function in functions) {
+        if (function.stage != stage) continue
+        add(function.body)
+        addAll(commandExprs(function.statements))
     }
 }
 
@@ -682,7 +703,13 @@ internal fun spellCompute(
             append("uniform ").append(glslDeclaration(binding.uniform.shape)).append(' ')
                 .append(binding.agslName).append(";\n")
         }
-        append(blockText(blocks, roots, GLSL_310))
+        append(
+            blockText(
+                blocks,
+                exprRootsForStage(roots, functions, AuthoringPlace.Compute),
+                GLSL_310,
+            ),
+        )
         append(storageText(storage))
         for (member in shared) {
             append("shared ").append(glslDeclaration(member.shape)).append(' ')
@@ -920,7 +947,7 @@ private fun spellPrimitive(
             append("uniform ").append(glslDeclaration(uniform.key.shape)).append(' ')
                 .append(uniform.value).append(";\n")
         }
-        append(blockText(env.blocks, roots, GLSL_320))
+        append(blockText(env.blocks, exprRootsForStage(roots, env.functions, env.stage), GLSL_320))
         if (piped && writesGlPosition(commands)) {
             env.copy.perVertex.forEach { append(it).append('\n') }
         }

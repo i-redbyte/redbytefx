@@ -118,7 +118,7 @@ public fun signalBars(
  * The returned UVs stay in normalized space, which makes the helper easy to compose with
  * further sampling, masking, or color processing steps. This is intentionally a secondary
  * distortion helper: use it after the base `normalizedUv() -> sampleUv(...)` sampling path is
- * already explicit and readable.
+ * already explicit and readable. `sampleUv` is AGSL-only.
  */
 public fun scanWarp(
     uv: Expr<Vec2<Flt<High>>>,

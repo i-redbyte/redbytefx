@@ -42,6 +42,23 @@ class UniformBlockTest {
     }
 
     @Test
+    fun uncalledFragmentFunctionStillDeclaresItsUniformBlock() {
+        val program = shader(ShaderTarget.Gles30) {
+            uniformBlock("frame") {
+                val gain = float("gain")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    fn { vec4(gain, gain, gain, 1f.lit) }
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        val fragment = program.fragmentSource()
+        assertTrue(fragment.contains("layout(std140) uniform frame {"))
+        assertTrue(fragment.contains("b_frame.gain"))
+    }
+
+    @Test
     fun theBlockIsSpelledOnlyInTheStageThatReadsIt() {
         val program = shader(ShaderTarget.Gles30) {
             uniformBlock("frame") {

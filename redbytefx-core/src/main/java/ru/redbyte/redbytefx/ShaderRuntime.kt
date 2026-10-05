@@ -29,8 +29,6 @@ internal class ShaderRuntime(
     private val floatValues = java.util.IdentityHashMap<Uniform<*>, Float>()
     private val vectorValues = java.util.IdentityHashMap<Uniform<*>, FloatArray>()
     private val intValues = java.util.IdentityHashMap<Uniform<*>, Int>()
-    private var resolutionWidth: Float? = null
-    private var resolutionHeight: Float? = null
 
     init {
         batch {
@@ -94,27 +92,12 @@ internal class ShaderRuntime(
     internal fun set(uniform: Uniform<IntS>, value: Int): Boolean = setInt(uniform, value)
 
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
-        val width = sanitizeResolution(widthPx)
-        val height = sanitizeResolution(heightPx)
-        val handle = program.resolution
-        if (handle != null) {
-            return set(handle, width, height)
-        }
-        val previousWidth = resolutionWidth
-        val previousHeight = resolutionHeight
-        if (
-            previousWidth != null &&
-            previousHeight != null &&
-            sameFloatUniformValue(previousWidth, width) &&
-            sameFloatUniformValue(previousHeight, height)
-        ) {
-            return false
-        }
-        writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)
-        resolutionWidth = width
-        resolutionHeight = height
-        notifyChanged()
-        return true
+        val handle = program.resolution ?: return false
+        return set(
+            handle,
+            sanitizeResolution(widthPx),
+            sanitizeResolution(heightPx),
+        )
     }
 
     internal fun batch(block: () -> Unit) {
