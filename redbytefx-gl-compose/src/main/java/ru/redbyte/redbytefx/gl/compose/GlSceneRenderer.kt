@@ -117,6 +117,7 @@ internal class SceneRenderer(
     override fun onDrawFrame(gl: GL10?) {
         val runtime = slot.runtime ?: return
         val current = frame ?: return
+        refreshSurfaceMesh(runtime, current)
         frameNumber += 1
         current.seconds = (System.nanoTime() - startedNanos) / NANOS_PER_SECOND
         current.aspect = aspect
@@ -128,11 +129,19 @@ internal class SceneRenderer(
         val draws = current.drawList()
         draws.reset()
         onFrame(current)
+        refreshSurfaceMesh(runtime, current)
         requireOffscreenTarget(renderToTexture, draws.offscreen().size)
         runtime.use()
         execute(runtime, draws, current.material)
         draws.reset()
         evictIdleMeshes(runtime)
+    }
+
+    private fun refreshSurfaceMesh(runtime: GlProgramRuntime, current: GlFrame) {
+        val arrays = mesh.arrays
+        if (surface.sourceRevision == arrays.revision) return
+        fill(runtime, surface, mesh.stride, arrays.vertices, arrays.indices, arrays.revision)
+        current.syncSurfaceMesh(arrays)
     }
 
     private fun execute(

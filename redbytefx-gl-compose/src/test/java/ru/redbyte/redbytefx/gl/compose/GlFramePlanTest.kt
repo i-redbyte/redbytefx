@@ -273,6 +273,16 @@ class GlFramePlanTest {
         assertEquals(published.revision + 1, triangle.arrays.revision)
     }
 
+    @Test
+    fun replacingTheSurfaceMeshUpdatesFrameDrawBounds() {
+        val frame = GlFrame(runtime(), { _, _ -> }, triangle, null)
+        assertThrows(IllegalArgumentException::class.java) { frame.draw(count = 6) }
+        triangle.replace(FloatArray(4 * triangle.stride), intArrayOf(0, 1, 2, 0, 2, 3))
+        frame.syncSurfaceMesh(triangle.arrays)
+        frame.draw(count = 6)
+        assertEquals(6, frame.drawList().screen().single().count)
+    }
+
     private fun runtime(): GlProgramRuntime = GlProgramRuntime(
         shader(ShaderTarget.Gles30) {
             vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }

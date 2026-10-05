@@ -250,6 +250,15 @@ public class GlFrame internal constructor(
 
     private var surfaceVertices: Int = surfaceMesh?.let { it.vertices.size / it.stride } ?: 0
     private var surfaceIndices: IntArray? = surfaceMesh?.indices
+    private var surfaceRevision: Long = surfaceMesh?.arrays?.revision ?: -1L
+
+    internal fun syncSurfaceMesh(arrays: MeshArrays) {
+        val mesh = surfaceMesh ?: return
+        if (arrays.revision == surfaceRevision) return
+        surfaceVertices = arrays.vertices.size / mesh.stride
+        surfaceIndices = arrays.indices
+        surfaceRevision = arrays.revision
+    }
 
     /** Seconds since the surface was created on this context. */
     public var seconds: Float = 0f
