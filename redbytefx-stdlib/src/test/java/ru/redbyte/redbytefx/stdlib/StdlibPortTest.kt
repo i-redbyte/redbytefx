@@ -35,6 +35,39 @@ class StdlibPortTest {
     }
 
     @Test
+    fun alphaMaskScalesPremultipliedRgbAndAlpha() {
+        fun source(straight: Boolean) = shader(ShaderTarget.Agsl) {
+            fragment {
+                val base = color(float3(0.7f, 0.5f, 0.3f), 0.8f)
+                val mask = fragCoord.x / resolution.x
+                if (straight) alphaMaskStraight(base, mask) else alphaMask(base, mask)
+            }
+        }.agslSource()
+
+        fun maskCount(straight: Boolean) = Regex("clamp\\(")
+            .findAll(source(straight).substringAfter("half4 main("))
+            .count()
+        assertEquals(4, maskCount(straight = false))
+        assertEquals(1, maskCount(straight = true))
+    }
+
+    @Test
+    fun premultiplicationAndSafeUnpremultiplicationCompileForBothBackends() {
+        fun source(target: ShaderTarget) = shader(target) {
+            fragment {
+                val straight = color(float3(0.7f, 0.5f, 0.3f), fragCoord.x / resolution.x)
+                unpremultiply(premultiply(straight))
+            }
+        }.let { if (target == ShaderTarget.Agsl) it.agslSource() else it.fragmentSource() }
+
+        for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
+            val generated = source(target)
+            assertTrue(generated.contains("max("))
+            assertTrue(generated.contains("?"))
+        }
+    }
+
+    @Test
     fun screenFillAndStrokeUseFwidth() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {

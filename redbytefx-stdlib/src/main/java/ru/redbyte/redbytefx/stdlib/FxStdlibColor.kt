@@ -5,6 +5,29 @@ import kotlin.jvm.JvmName
 
 private fun blendAmount(amount: Expr<Flt<High>>): Expr<Flt<High>> = saturate(amount)
 
+/** Associates straight RGB with alpha for AGSL fragment output and premultiplied compositing. */
+public fun premultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> = ru.redbyte.redbytefx.color(
+    r = color.r * color.a,
+    g = color.g * color.a,
+    b = color.b * color.a,
+    a = color.a,
+)
+
+/**
+ * Recovers straight RGB from a premultiplied color. Transparent pixels return black RGB so the
+ * conversion remains finite; their original RGB cannot be recovered.
+ */
+public fun unpremultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
+    val alpha = color.a
+    val nonzero = alpha gt 0f
+    return ru.redbyte.redbytefx.color(
+        r = ifElse(nonzero, color.r / max(alpha, 0.000001f), 0f.lit.toMed()),
+        g = ifElse(nonzero, color.g / max(alpha, 0.000001f), 0f.lit.toMed()),
+        b = ifElse(nonzero, color.b / max(alpha, 0.000001f), 0f.lit.toMed()),
+        a = alpha,
+    )
+}
+
 /**
  * Adjusts RGB saturation while preserving alpha.
  *

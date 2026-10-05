@@ -43,25 +43,28 @@ public fun maskedMix(
 )
 
 /**
- * Preserves RGB while multiplying alpha by the normalized [mask].
+ * Multiplies premultiplied RGB and alpha by the normalized [mask].
  *
- * This is useful for building matte layers before compositing them back into the scene. Prefer it
- * when the shader wants to prepare a tinted or lit overlay before feeding that layer into
- * [maskedScreen], [maskedOverlay], or plain [maskedMix].
+ * AGSL fragment output uses premultiplied alpha. Pass a premultiplied [color], or call
+ * [premultiply] first if its RGB is straight. Use [alphaMaskStraight] while authoring a straight
+ * color and convert it with [premultiply] before returning it from an AGSL shader.
  */
 public fun alphaMask(
     color: Expr<Vec4<Flt<Med>>>,
     mask: Expr<Flt<High>>,
     amount: Expr<Flt<High>> = float(1f),
-): Expr<Vec4<Flt<Med>>> = ru.redbyte.redbytefx.color(
-    r = color.r,
-    g = color.g,
-    b = color.b,
-    a = color.a * maskedAmount(mask, amount).toMed(),
-)
+): Expr<Vec4<Flt<Med>>> {
+    val weight = maskedAmount(mask, amount).toMed()
+    return ru.redbyte.redbytefx.color(
+        r = color.r * weight,
+        g = color.g * weight,
+        b = color.b * weight,
+        a = color.a * weight,
+    )
+}
 
 /**
- * Preserves RGB while multiplying alpha by [mask] using a literal [amount].
+ * [alphaMask] with a literal [amount].
  */
 public fun alphaMask(
     color: Expr<Vec4<Flt<Med>>>,
@@ -72,6 +75,28 @@ public fun alphaMask(
     mask = mask,
     amount = float(amount),
 )
+
+/**
+ * Multiplies only alpha by [mask] while authoring a straight (unassociated) color.
+ * Call [premultiply] before returning the result from an AGSL fragment shader.
+ */
+public fun alphaMaskStraight(
+    color: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Expr<Flt<High>> = float(1f),
+): Expr<Vec4<Flt<Med>>> = ru.redbyte.redbytefx.color(
+    r = color.r,
+    g = color.g,
+    b = color.b,
+    a = color.a * maskedAmount(mask, amount).toMed(),
+)
+
+/** [alphaMaskStraight] with a literal [amount]. */
+public fun alphaMaskStraight(
+    color: Expr<Vec4<Flt<Med>>>,
+    mask: Expr<Flt<High>>,
+    amount: Float,
+): Expr<Vec4<Flt<Med>>> = alphaMaskStraight(color, mask, float(amount))
 
 /**
  * Applies screen blending through a normalized [mask].
