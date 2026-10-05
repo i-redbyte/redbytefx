@@ -126,8 +126,9 @@ public class Gles30Device : GlDevice() {
 
     override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) {
         require(width > 0 && height > 0) { "Texture size must be positive, was ${width}x$height" }
-        require(rgba.size == width * height * 4) {
-            "RGBA texture needs ${width * height * 4} bytes, was ${rgba.size}"
+        val expected = rgbaByteCount(width, height)
+        require(rgba.size == expected) {
+            "RGBA texture needs $expected bytes, was ${rgba.size}"
         }
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture)
         GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1)

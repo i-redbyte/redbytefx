@@ -90,9 +90,16 @@ internal class SceneRenderer(
                 return
             }
         }
-        fill(runtime, surface, mesh.stride, mesh.vertices, mesh.indices)
-        frame = GlFrame(runtime, upload, mesh, presentRuntime)
         slot.runtime = runtime
+        try {
+            fill(runtime, surface, mesh.stride, mesh.vertices, mesh.indices)
+            frame = GlFrame(runtime, upload, mesh, presentRuntime)
+        } catch (error: Throwable) {
+            releaseGpu(contextAlive = true)
+            slot.runtime = null
+            runtime.destroy()
+            throw error
+        }
         slot.releaseGl = { releaseGpu(contextAlive = true) }
         publish(GlLinkState.Linked)
         controller.attachRuntime(slot.queue, runtime)
@@ -174,7 +181,7 @@ internal class SceneRenderer(
         } else if (materialUniform != null) {
             runtime.set(materialUniform, MATERIAL_FROM_UV)
         }
-        val target = draw.mesh
+        val target = checkNotNull(draw.mesh)
         drawMesh(
             runtime,
             target,
@@ -277,7 +284,14 @@ internal class SceneRenderer(
         return created
     }
 
-    private fun fill(runtime: GlProgramRuntime, held: HeldMesh, stride: Int, vertices: FloatArray, indices: IntArray?) {
+    private fun fill(
+        runtime: GlProgramRuntime,
+        held: HeldMesh,
+        stride: Int,
+        vertices: FloatArray,
+        indices: IntArray?,
+        preserveIndices: Boolean = false,
+    ) {
         if (held.vao == 0) {
             GLES30.glGenVertexArrays(1, nameSlot, 0)
             held.vao = nameSlot[0]
@@ -286,8 +300,19 @@ internal class SceneRenderer(
         held.floats = runtime.replaceArrayBuffer(held.buffer, held.floats, vertices)
         held.vertexCount = vertices.size / stride
         held.sourceVertices = vertices
+        if (preserveIndices) return
         held.sourceIndices = indices
-        if (indices == null) return
+        if (indices == null) {
+            if (held.element != 0) {
+                GLES30.glBindVertexArray(held.vao)
+                GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0)
+                runtime.deleteBuffer(held.element)
+                held.element = 0
+            }
+            held.elements = null
+            held.indexCount = 0
+            return
+        }
         if (held.element == 0) held.element = runtime.createBuffer()
         held.elements = runtime.elementBufferData(held.element, indices)
         held.indexCount = indices.size
@@ -295,7 +320,7 @@ internal class SceneRenderer(
 
     private fun replaceSurface(vertices: FloatArray, indices: IntArray?) {
         val runtime = slot.runtime ?: return
-        fill(runtime, surface, mesh.stride, vertices, indices)
+        fill(runtime, surface, mesh.stride, vertices, indices, preserveIndices = indices == null)
     }
 
     private fun evictIdleMeshes(runtime: GlProgramRuntime) {

@@ -24,6 +24,8 @@ public const val MODEL_COLUMN_3: String = "a_model3"
 /** Uniform value that means "read material from mesh UV.x". */
 internal const val MATERIAL_FROM_UV: Float = -1f
 
+private const val MAX_POOLED_DRAWS = 128
+
 internal val MODEL_COLUMNS: Array<String> = arrayOf(
     MODEL_COLUMN_0,
     MODEL_COLUMN_1,
@@ -33,7 +35,7 @@ internal val MODEL_COLUMNS: Array<String> = arrayOf(
 
 /** One recorded draw. Instances are reused across frames by [DrawList]. */
 internal class RecordedDraw {
-    lateinit var mesh: GlMesh
+    var mesh: GlMesh? = null
     var first: Int = 0
     var count: Int = 0
     var instances: FloatArray? = null
@@ -134,6 +136,14 @@ internal class DrawList {
     fun reset() {
         screenDraws.clear()
         offscreenDraws.clear()
+        for (record in pool) {
+            record.mesh = null
+            record.instances = null
+            record.pipeline = GlPipeline.Default
+        }
+        if (pool.size > MAX_POOLED_DRAWS) {
+            pool.subList(MAX_POOLED_DRAWS, pool.size).clear()
+        }
         pooled = 0
         recordingOffscreen = false
     }

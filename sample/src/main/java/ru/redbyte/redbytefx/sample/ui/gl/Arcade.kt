@@ -50,6 +50,8 @@ internal class TunnelRun {
     var ship = 0f
     var distance = 0f
     var score = 0
+
+    @Volatile
     var flash = 0f
     private var gate = 4f
 
@@ -109,6 +111,8 @@ internal class MazeRun {
     var vx = 0f
     var vz = 0f
     var won = false
+
+    @Volatile
     var flash = 0f
 
     @Volatile var mesh: FloatArray = FloatArray(0)
@@ -206,6 +210,8 @@ internal class BreakoutRun {
     var paddle = 0f
     var score = 0
     var lives = 3
+
+    @Volatile
     var flash = 0f
     val alive = BooleanArray(COLS * ROWS) { true }
     private var pause = 0f
@@ -312,6 +318,8 @@ internal class StrafeRun {
     val foes = ArrayList<Foe>()
     var distance = 0f
     var score = 0
+
+    @Volatile
     var flash = 0f
     var beam = 0f
     var beamX = 0f
@@ -380,6 +388,8 @@ internal class DescentRun {
     var skier = 0f
     var distance = 0f
     var score = 0
+
+    @Volatile
     var flash = 0f
     private var gateZ = 5f
     private var gateIndex = 0

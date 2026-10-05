@@ -1,10 +1,10 @@
 package ru.redbyte.redbytefx.gl
 
 internal fun rgbaByteCount(width: Int, height: Int): Int {
-    require(width > 0 && height > 0) { "Pixel read size must be positive, was ${width}x$height" }
-    val bytes = width.toLong() * height.toLong() * 4L
-    require(bytes <= Int.MAX_VALUE) { "Pixel read of ${width}x$height is too large" }
-    return bytes.toInt()
+    require(width > 0 && height > 0) { "RGBA size must be positive, was ${width}x$height" }
+    val pixels = width.toLong() * height.toLong()
+    require(pixels <= Int.MAX_VALUE / 4) { "RGBA image of ${width}x$height is too large" }
+    return (pixels * 4L).toInt()
 }
 
 internal fun readFramebufferPixels(device: GlDevice, width: Int, height: Int, into: ByteArray) {

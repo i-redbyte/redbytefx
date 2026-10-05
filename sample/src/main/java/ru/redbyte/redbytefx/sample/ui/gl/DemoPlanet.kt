@@ -419,11 +419,16 @@ internal fun planetTapped(x: Float, y: Float, travel: Float): Boolean =
 
 internal fun decodePlanetPhoto(context: Context, uri: Uri, generation: Int): PlanetPhoto? {
     val decoded = openPlanetBitmap(context, uri) ?: return null
-    val scaled = scalePlanetBitmap(decoded, PLANET_PHOTO_EDGE)
-    val photo = PlanetPhoto(scaled.width, scaled.height, bitmapToRgba(scaled), generation)
-    if (scaled !== decoded) scaled.recycle()
-    decoded.recycle()
-    return photo
+    try {
+        val scaled = scalePlanetBitmap(decoded, PLANET_PHOTO_EDGE)
+        try {
+            return PlanetPhoto(scaled.width, scaled.height, bitmapToRgba(scaled), generation)
+        } finally {
+            if (scaled !== decoded) scaled.recycle()
+        }
+    } finally {
+        decoded.recycle()
+    }
 }
 
 @Composable

@@ -4,6 +4,7 @@ import android.opengl.GLES30
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -84,6 +85,22 @@ class GlFramePlanTest {
         list.draw(triangle, 0, 3, null, false, false, 3)
         assertSame(first, list.screen().single())
         assertTrue(list.offscreen().isEmpty())
+    }
+
+    @Test
+    fun resetReleasesTransientMeshesAndInstanceArrays() {
+        val list = DrawList()
+        val instances = FloatArray(MODEL_MATRIX_FLOATS)
+        repeat(200) { list.draw(triangle, 0, 3, instances, false, false, 3) }
+        val first = list.screen().first()
+        val last = list.screen().last()
+        list.reset()
+        assertNull(first.mesh)
+        assertNull(first.instances)
+        assertNull(last.mesh)
+        assertNull(last.instances)
+        list.draw(triangle, 0, 3, null, false, false, 3)
+        assertSame(first, list.screen().single())
     }
 
     @Test

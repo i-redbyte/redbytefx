@@ -22,7 +22,6 @@ import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import java.util.IdentityHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.jvm.JvmName
 
 private const val MAX_QUEUED_GL_TASKS = 128
@@ -53,7 +52,6 @@ public class GlController internal constructor(
             linkStateHolder.value = value
         }
 
-    @Volatile
     private var glQueue: ((() -> Unit) -> Unit)? = null
 
     @Volatile
@@ -65,11 +63,8 @@ public class GlController internal constructor(
     private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
     private val storageBlockWrites = CoalescedWrites<StorageBlock>()
     private val tasks = ArrayDeque<() -> Unit>()
-    private val drainQueued = AtomicBoolean(false)
-    private val drainTask: () -> Unit = {
-        drainQueued.set(false)
-        drainPending()
-    }
+    private var queueGeneration = 0L
+    private var drainQueued = false
 
     /**
      * Runs [block] on the GL thread.
@@ -97,7 +92,8 @@ public class GlController internal constructor(
         synchronized(lock) {
             glQueue = queue
             runtime = null
-            drainQueued.set(false)
+            queueGeneration++
+            drainQueued = false
         }
         scheduleDrain()
     }
@@ -111,7 +107,8 @@ public class GlController internal constructor(
         if (glQueue !== queue) return false
         glQueue = null
         runtime = null
-        drainQueued.set(false)
+        queueGeneration++
+        drainQueued = false
         true
     }
 
@@ -120,7 +117,7 @@ public class GlController internal constructor(
      * value to it, then drains. A view whose queue was replaced keeps its program to itself.
      */
     internal fun attachRuntime(queue: (() -> Unit) -> Unit, linked: GlProgramRuntime) {
-        synchronized(lock) {
+        val generation = synchronized(lock) {
             if (glQueue !== queue) return
             runtime = linked
             for (entry in latest) {
@@ -128,12 +125,13 @@ public class GlController internal constructor(
             }
             replay(uniformBlockWrites)
             replay(storageBlockWrites)
+            queueGeneration
         }
-        drainPending()
+        drainPending(queue, generation)
     }
 
     /** Whether [queue] belongs to the view this controller currently drives. */
-    internal fun ownsQueue(queue: (() -> Unit) -> Unit): Boolean = glQueue === queue
+    internal fun ownsQueue(queue: (() -> Unit) -> Unit): Boolean = synchronized(lock) { glQueue === queue }
 
     /** GL thread. [linked] is gone or about to be; writes wait for the next link. */
     internal fun detachRuntime(linked: GlProgramRuntime) {
@@ -143,8 +141,24 @@ public class GlController internal constructor(
     }
 
     private fun scheduleDrain() {
-        val queue = glQueue ?: return
-        if (drainQueued.compareAndSet(false, true)) queue(drainTask)
+        val scheduled = synchronized(lock) {
+            val queue = glQueue ?: return
+            if (drainQueued) return
+            drainQueued = true
+            queue to queueGeneration
+        }
+        val (queue, generation) = scheduled
+        queue {
+            val current = synchronized(lock) {
+                if (glQueue !== queue || queueGeneration != generation) {
+                    false
+                } else {
+                    drainQueued = false
+                    true
+                }
+            }
+            if (current) drainPending(queue, generation)
+        }
     }
 
     /**
@@ -152,9 +166,9 @@ public class GlController internal constructor(
      * Must run on the GL thread. A write or block that throws is not retried; everything still
      * queued is scheduled again, so one failure does not drop the rest of the drain.
      */
-    private fun drainPending() {
+    private fun drainPending(queue: (() -> Unit) -> Unit, generation: Long) {
         while (true) {
-            val action = nextDrainAction() ?: return
+            val action = nextDrainAction(queue, generation) ?: return
             try {
                 action()
             } catch (error: Throwable) {
@@ -164,7 +178,8 @@ public class GlController internal constructor(
         }
     }
 
-    private fun nextDrainAction(): (() -> Unit)? = synchronized(lock) {
+    private fun nextDrainAction(queue: (() -> Unit) -> Unit, generation: Long): (() -> Unit)? = synchronized(lock) {
+        if (glQueue !== queue || queueGeneration != generation) return null
         val linked = runtime ?: return null
         poll(pending)?.let { write -> return { write(linked) } }
         poll(uniformBlockWrites)?.let { write -> return { write(linked) } }
@@ -259,37 +274,42 @@ public class GlController internal constructor(
         enqueue(uniform, retained = false) { it.bind(uniform, texture) }
     }
 
-    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
+    /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat2(uniform: Uniform<Mat2>, values: FloatArray) {
-        enqueue(uniform, retained = true) { it.set(uniform, values) }
+        val snapshot = values.copyOf()
+        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
 
-    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
+    /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat3(uniform: Uniform<Mat3>, values: FloatArray) {
-        enqueue(uniform, retained = true) { it.set(uniform, values) }
+        val snapshot = values.copyOf()
+        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
 
-    /** Scene. [values] is read on the GL thread, after this call returns; do not change it afterward. */
+    /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
-        enqueue(uniform, retained = true) { it.set(uniform, values) }
+        val snapshot = values.copyOf()
+        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
 
     /**
      * Scene. Uploads [values] to [block] on the GL thread and keeps them for the next context.
-     * [values] is read on that thread; do not change it afterward.
+     * [values] is copied before the write is queued.
      */
     @JvmName("setUniformBlock")
     public fun set(block: UniformBlock, values: FloatArray) {
-        enqueueRetained(uniformBlockWrites, block) { it.set(block, values) }
+        val snapshot = values.copyOf()
+        enqueueRetained(uniformBlockWrites, block) { it.set(block, snapshot) }
     }
 
     /**
      * Scene. Uploads [values] to [block] on the GL thread and keeps them for the next context.
-     * [values] is read on that thread; do not change it afterward.
+     * [values] is copied before the write is queued.
      */
     @JvmName("setStorageBlock")
     public fun set(block: StorageBlock, values: FloatArray) {
-        enqueueRetained(storageBlockWrites, block) { it.set(block, values) }
+        val snapshot = values.copyOf()
+        enqueueRetained(storageBlockWrites, block) { it.set(block, snapshot) }
     }
 
     /**

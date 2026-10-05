@@ -61,7 +61,7 @@ public fun GlSurface(
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     val currentOnFrame by rememberUpdatedState(onFrame)
     Box(modifier = modifier) {
-        key(controller.program, mesh, present, renderToTexture) {
+        key(controller, mesh, present, renderToTexture) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
@@ -136,7 +136,7 @@ public fun GlSurface(
  */
 @Composable
 public fun Modifier.glPointerInput(onPointer: (x: Float, y: Float) -> Unit): Modifier =
-    pointerInput(Unit) {
+    pointerInput(onPointer) {
         awaitEachGesture {
             while (true) {
                 val event = awaitPointerEvent()

@@ -137,6 +137,23 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun failedUniformWriteCanBeRetriedWithTheSameValue() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 0f)
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(amount.expr, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        device.failNextFloatWrite = true
+        assertThrows(IllegalStateException::class.java) { runtime.set(amount, 0.5f) }
+        assertTrue(runtime.set(amount, 0.5f))
+        assertFalse(runtime.set(amount, 0.5f))
+    }
+
+    @Test
     fun strictUniformLocationsFailLinkWhenASpelledUniformIsInactive() {
         val device = RecordingGlDevice(missing = setOf("u_amount"))
         lateinit var amount: Uniform<Flt<High>>
@@ -149,6 +166,7 @@ class GlProgramRuntimeTest {
         val error = assertThrows(GlException::class.java) { runtime.link() }
         assertEquals(GlCode.MissingUniformLocation, error.code)
         assertTrue(error.message!!.contains("u_amount"))
+        assertTrue(device.livePrograms.isEmpty())
     }
 
     @Test
@@ -648,6 +666,22 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun failedTextureUploadDeletesTheAllocatedName() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        device.failNextTextureUpload = true
+        assertThrows(IllegalStateException::class.java) { runtime.uploadRgba(1, 1, ByteArray(4)) }
+        assertEquals(listOf(40), device.deletedTextures)
+        runtime.destroy()
+        assertEquals(listOf(40), device.deletedTextures)
+        assertThrows(IllegalArgumentException::class.java) {
+            GlProgramRuntime(passthrough(), RecordingGlDevice()).also { it.link() }
+                .uploadRgba(Int.MAX_VALUE, Int.MAX_VALUE, ByteArray(4))
+        }
+    }
+
+    @Test
     fun uploadRgbaStaysOnTheContextThread() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device, contextThread = Thread())
@@ -772,6 +806,18 @@ class GlProgramRuntimeTest {
         assertEquals(1, device.deletedTextures.size)
         assertEquals(1, device.deletedFramebuffers.size)
         assertTrue(device.boundFramebuffers.contains(0))
+    }
+
+    @Test
+    fun failedFramebufferAttachmentDeletesEveryAllocatedName() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        device.failNextDepthAttachment = true
+        assertThrows(IllegalStateException::class.java) { runtime.createColorTarget(4, 4) }
+        assertEquals(1, device.deletedTextures.size)
+        assertEquals(1, device.deletedFramebuffers.size)
+        assertEquals(1, device.deletedRenderbuffers.size)
     }
 
     @Test
@@ -1034,6 +1080,7 @@ private class RecordingGlDevice(
     var createShaderCalls = 0
     var createProgramCalls = 0
     var uniform1fCalls = 0
+    var failNextFloatWrite = false
     var uniform1iCalls = 0
     var deleteProgramCalls = 0
     val writes = mutableListOf<String>()
@@ -1088,6 +1135,10 @@ private class RecordingGlDevice(
     }
 
     override fun uniform1f(location: Int, value: Float) {
+        if (failNextFloatWrite) {
+            failNextFloatWrite = false
+            error("device write failed")
+        }
         writes += "uniform1f"
         uniform1fCalls += 1
     }
@@ -1145,6 +1196,7 @@ private class RecordingGlDevice(
     }
 
     var createdTextures = 0
+    var failNextTextureUpload = false
     val linearRepeat = mutableListOf<Int>()
     val uploadedWidths = mutableListOf<Int>()
     val uploadedHeights = mutableListOf<Int>()
@@ -1166,6 +1218,10 @@ private class RecordingGlDevice(
     }
 
     override fun texImage2DRgba(texture: Int, width: Int, height: Int, rgba: ByteArray) {
+        if (failNextTextureUpload) {
+            failNextTextureUpload = false
+            error("upload failed")
+        }
         uploadedWidths += width
         uploadedHeights += height
         uploadedBytes += rgba.copyOf()
@@ -1408,11 +1464,22 @@ private class RecordingGlDevice(
 
     override fun createRenderbuffer(): Int = nextRenderbuffer++
 
-    override fun deleteRenderbuffer(renderbuffer: Int) = Unit
+    val deletedRenderbuffers = mutableListOf<Int>()
+
+    override fun deleteRenderbuffer(renderbuffer: Int) {
+        deletedRenderbuffers += renderbuffer
+    }
 
     override fun framebufferColor(framebuffer: Int, texture: Int) = Unit
 
-    override fun framebufferDepth(framebuffer: Int, renderbuffer: Int, width: Int, height: Int) = Unit
+    var failNextDepthAttachment = false
+
+    override fun framebufferDepth(framebuffer: Int, renderbuffer: Int, width: Int, height: Int) {
+        if (failNextDepthAttachment) {
+            failNextDepthAttachment = false
+            error("depth attachment failed")
+        }
+    }
 
     override fun framebufferComplete(framebuffer: Int): Boolean = framebufferOk
 

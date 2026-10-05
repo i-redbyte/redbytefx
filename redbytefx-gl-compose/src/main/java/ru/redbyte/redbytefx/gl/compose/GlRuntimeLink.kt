@@ -43,7 +43,7 @@ internal fun linkProgram(
     )
     try {
         linked.link()
-    } catch (error: GlException) {
+    } catch (error: Throwable) {
         linked.destroy()
         throw error
     }

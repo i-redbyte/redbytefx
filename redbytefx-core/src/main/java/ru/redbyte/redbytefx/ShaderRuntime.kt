@@ -110,9 +110,9 @@ internal class ShaderRuntime(
         ) {
             return false
         }
+        writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)
         resolutionWidth = width
         resolutionHeight = height
-        writer.setFloat2(RB_RESOLUTION_UNIFORM, width, height)
         notifyChanged()
         return true
     }
@@ -134,8 +134,8 @@ internal class ShaderRuntime(
         val binding = program.binding(uniform)
         val previous = floatValues[uniform]
         if (previous != null && sameFloatUniformValue(previous, value)) return false
-        floatValues[uniform] = value
         writer.setFloat(binding.agslName, value)
+        floatValues[uniform] = value
         notifyChanged()
         return true
     }
@@ -169,13 +169,13 @@ internal class ShaderRuntime(
         val previous = vectorValues[uniform]
         if (previous != null && sameVector(previous, value)) return false
         val stored = value.copyOf()
-        vectorValues[uniform] = stored
         when (stored.size) {
             2 -> writer.setFloat2(binding.agslName, stored[0], stored[1])
             3 -> writer.setFloat3(binding.agslName, stored[0], stored[1], stored[2])
             4 -> writer.setFloat4(binding.agslName, stored[0], stored[1], stored[2], stored[3])
             else -> error("Vector uniform width must be 2, 3, or 4")
         }
+        vectorValues[uniform] = stored
         notifyChanged()
         return true
     }
@@ -184,8 +184,8 @@ internal class ShaderRuntime(
         val binding = program.binding(uniform)
         val previous = intValues[uniform]
         if (previous != null && previous == value) return false
-        intValues[uniform] = value
         writer.setInt(binding.agslName, value)
+        intValues[uniform] = value
         notifyChanged()
         return true
     }

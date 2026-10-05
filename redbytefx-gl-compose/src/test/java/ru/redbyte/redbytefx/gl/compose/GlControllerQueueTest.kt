@@ -116,6 +116,48 @@ class GlControllerQueueTest {
     }
 
     @Test
+    fun aTaskQueuedOnTheOldSurfaceCannotDrainTheNewRuntime() {
+        val (program, amount) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val oldTasks = mutableListOf<() -> Unit>()
+        val oldQueue: (() -> Unit) -> Unit = { oldTasks += it }
+        controller.attachQueue(oldQueue)
+        controller.set(amount, 0.2f)
+        assertEquals(1, oldTasks.size)
+
+        val newTasks = mutableListOf<() -> Unit>()
+        val newQueue: (() -> Unit) -> Unit = { newTasks += it }
+        controller.attachQueue(newQueue)
+        val device = FloatDevice()
+        controller.attachRuntime(newQueue, GlProgramRuntime(program, device).also { it.link() })
+        controller.set(amount, 0.7f)
+        val before = device.floatCalls
+        oldTasks.single().invoke()
+        assertEquals(before, device.floatCalls)
+        newTasks.forEach { it() }
+        assertEquals(0.7f, device.lastFloat)
+    }
+
+    @Test
+    fun blockValuesAreSnapshottedBeforeTheGlThreadReadsThem() {
+        lateinit var gain: UniformBlock
+        val program = shader(ShaderTarget.Gles30) {
+            gain = uniformBlock("frame") { float("gain") }
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val controller = GlController(program, GlSurfaceConfig())
+        val values = floatArrayOf(0.25f)
+        controller.set(gain, values)
+        values[0] = 0.75f
+        val queue: (() -> Unit) -> Unit = { it() }
+        controller.attachQueue(queue)
+        val device = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, device).also { it.link() })
+        assertEquals(0.25f, firstFloat(device.uniformPayloads.single()), 0f)
+    }
+
+    @Test
     fun aNewSurfaceNeverWritesThroughTheProgramOfTheOldOne() {
         val (program, amount) = amountProgram()
         val controller = GlController(program, GlSurfaceConfig())

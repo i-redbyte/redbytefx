@@ -47,7 +47,7 @@ public fun GlCompute(
     val linkState by controller.linkState
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     Box(modifier = modifier) {
-        key(controller.program) {
+        key(controller) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->

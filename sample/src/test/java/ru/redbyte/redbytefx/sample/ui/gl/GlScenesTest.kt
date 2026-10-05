@@ -41,7 +41,8 @@ class GlScenesTest {
             playfield(0.02f, 0.03f, 0.06f).program to gameDsl("descent"),
             litTexturedMesh().program to litTexturedDsl,
         )
-        assertEquals(GlExample.entries.size, pairs.size)
+        // The fragment-only Effect example has no vertex stage and is covered separately.
+        assertEquals(GlExample.entries.size - 1, pairs.size)
         pairs.forEach { (program, dsl) ->
             val glsl = glesListing(program)
             assertTrue(dsl.contains("shader("))

@@ -104,6 +104,32 @@ class AgslShaderTest {
     }
 
     @Test
+    fun failedAgslUniformWriteCanBeRetried() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { sample() }
+        }
+        val delegate = RecordingUniformWriter()
+        var failNext = false
+        val writer = object : UniformWriter by delegate {
+            override fun setFloat(name: String, value: Float) {
+                if (failNext) {
+                    failNext = false
+                    error("writer failed")
+                }
+                delegate.setFloat(name, value)
+            }
+        }
+        val runtime = ShaderRuntime(program, writer) {}
+        failNext = true
+        assertThrows(IllegalStateException::class.java) { runtime.set(amount, 0.5f) }
+        assertTrue(runtime.set(amount, 0.5f))
+        assertFalse(runtime.set(amount, 0.5f))
+        assertEquals(listOf(0f, 0.5f), delegate.floatValues("u_amount"))
+    }
+
+    @Test
     fun resolutionClampsNonPositiveComponents() {
         val program = shader(ShaderTarget.Agsl) {
             fragment { sample() }

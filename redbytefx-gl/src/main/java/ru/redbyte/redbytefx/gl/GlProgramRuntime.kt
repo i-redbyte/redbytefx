@@ -91,10 +91,23 @@ public class GlProgramRuntime(
         blocks.rejectExcess()
         val id = when (program.target) {
             ShaderTarget.Agsl -> reject(GlCode.WrongTarget, "GL runtime requires a GLES shader")
-            ShaderTarget.Gles30, ShaderTarget.Gles32 -> linkGraphicsProgram()
-            ShaderTarget.Gles31 -> linkComputeProgram()
+            ShaderTarget.Gles30, ShaderTarget.Gles32 -> linkGraphicsProgram(program, device)
+            ShaderTarget.Gles31 -> linkComputeProgram(program, device)
         }
         programId = id
+        try {
+            initializeUniforms(id)
+            linked = true
+            if (strictUniformLocations) {
+                device.flushGlErrors("link")
+            }
+        } catch (error: Throwable) {
+            destroy()
+            throw error
+        }
+    }
+
+    private fun initializeUniforms(id: Int) {
         for (slot in program.spelledUniforms()) {
             val location = device.uniformLocation(id, slot.name)
             locations[slot.uniform] = location
@@ -127,58 +140,6 @@ public class GlProgramRuntime(
                 writeInt(slot.uniform, location, if (boolDefault) 1 else 0)
             }
         }
-        linked = true
-        if (strictUniformLocations) {
-            device.flushGlErrors("link")
-        }
-    }
-
-    private fun linkGraphicsProgram(): Int {
-        val shaders = mutableListOf<Int>()
-        try {
-            shaders += compileStage(GlStage.Vertex, program.vertexSource())
-            if (program.hasTessellation()) {
-                shaders += compileStage(GlStage.TessControl, program.tessControlSource())
-                shaders += compileStage(GlStage.TessEval, program.tessEvalSource())
-            }
-            if (program.hasGeometry()) {
-                shaders += compileStage(GlStage.Geometry, program.geometrySource())
-            }
-            shaders += compileStage(GlStage.Fragment, program.fragmentSource())
-        } catch (error: GlException) {
-            shaders.forEach(device::deleteShader)
-            throw error
-        }
-        val id = device.createProgram()
-        if (id == 0) {
-            shaders.forEach(device::deleteShader)
-            reject(GlCode.LinkFailed, "Driver returned no program name")
-        }
-        shaders.forEach { device.attachShader(id, it) }
-        val linkedStatus = device.linkProgram(id)
-        shaders.forEach(device::deleteShader)
-        if (!linkedStatus.ok) {
-            device.deleteProgram(id)
-            reject(GlCode.LinkFailed, linkedStatus.infoLog)
-        }
-        return id
-    }
-
-    private fun linkComputeProgram(): Int {
-        val shader = compileStage(GlStage.Compute, program.computeSource())
-        val id = device.createProgram()
-        if (id == 0) {
-            device.deleteShader(shader)
-            reject(GlCode.LinkFailed, "Driver returned no program name")
-        }
-        device.attachShader(id, shader)
-        val linkedStatus = device.linkProgram(id)
-        device.deleteShader(shader)
-        if (!linkedStatus.ok) {
-            device.deleteProgram(id)
-            reject(GlCode.LinkFailed, linkedStatus.infoLog)
-        }
-        return id
     }
 
     /**
@@ -246,15 +207,22 @@ public class GlProgramRuntime(
     public fun uploadRgba(width: Int, height: Int, rgba: ByteArray): Int {
         checkReady()
         require(width > 0 && height > 0) { "Texture size must be positive, was ${width}x$height" }
-        require(rgba.size == width * height * 4) {
-            "RGBA texture needs ${width * height * 4} bytes, was ${rgba.size}"
+        val expected = rgbaByteCount(width, height)
+        require(rgba.size == expected) {
+            "RGBA texture needs $expected bytes, was ${rgba.size}"
         }
         val name = device.createTexture()
-        textureUnits.disturbActive()
-        device.texture2DLinearRepeat(name)
-        device.texImage2DRgba(name, width, height, rgba)
-        ownedTextures += name
-        checkDriver("upload")
+        try {
+            textureUnits.disturbActive()
+            device.texture2DLinearRepeat(name)
+            device.texImage2DRgba(name, width, height, rgba)
+            checkDriver("upload")
+            ownedTextures += name
+        } catch (error: Throwable) {
+            device.deleteTexture(name)
+            textureUnits.forget(name)
+            throw error
+        }
         return name
     }
 
@@ -300,11 +268,12 @@ public class GlProgramRuntime(
         require(x >= 0 && y >= 0 && width > 0 && height > 0) {
             "Texture update origin and size must be positive, was ($x, $y, $width, $height)"
         }
-        require(x + width <= textureWidth && y + height <= textureHeight) {
+        require(x.toLong() + width <= textureWidth && y.toLong() + height <= textureHeight) {
             "Texture update ($x, $y, $width, $height) is outside ${textureWidth}x$textureHeight"
         }
-        require(rgba.size == width * height * 4) {
-            "RGBA update needs ${width * height * 4} bytes, was ${rgba.size}"
+        val expected = rgbaByteCount(width, height)
+        require(rgba.size == expected) {
+            "RGBA update needs $expected bytes, was ${rgba.size}"
         }
         textureUnits.disturbActive()
         device.texSubImage2DRgba(texture, x, y, width, height, rgba)
@@ -319,8 +288,9 @@ public class GlProgramRuntime(
     public fun uploadCubeFace(texture: Int, face: CubeFace, width: Int, height: Int, rgba: ByteArray) {
         checkReady()
         require(width > 0 && height > 0) { "Cube face size must be positive, was ${width}x$height" }
-        require(rgba.size == width * height * 4) {
-            "Cube face needs ${width * height * 4} bytes, was ${rgba.size}"
+        val expected = rgbaByteCount(width, height)
+        require(rgba.size == expected) {
+            "Cube face needs $expected bytes, was ${rgba.size}"
         }
         textureUnits.disturbActive()
         device.textureCubeLinearClamp(texture)
@@ -363,24 +333,33 @@ public class GlProgramRuntime(
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         require(width > 0 && height > 0) { "Framebuffer size must be positive, was ${width}x$height" }
         val color = device.createTexture()
-        textureUnits.disturbActive()
-        device.texture2DLinearClamp(color)
-        device.texImage2DRgbaAlloc(color, width, height)
-        val depth = device.createRenderbuffer()
-        val framebuffer = device.createFramebuffer()
-        device.framebufferColor(framebuffer, color)
-        device.framebufferDepth(framebuffer, depth, width, height)
-        if (!device.framebufferComplete(framebuffer)) {
+        var depth = 0
+        var framebuffer = 0
+        var completed = false
+        try {
+            textureUnits.disturbActive()
+            device.texture2DLinearClamp(color)
+            device.texImage2DRgbaAlloc(color, width, height)
+            depth = device.createRenderbuffer()
+            framebuffer = device.createFramebuffer()
+            device.framebufferColor(framebuffer, color)
+            device.framebufferDepth(framebuffer, depth, width, height)
+            if (!device.framebufferComplete(framebuffer)) {
+                reject(GlCode.FramebufferIncomplete, "Framebuffer is incomplete")
+            }
             device.bindFramebuffer(0)
-            device.deleteFramebuffer(framebuffer)
-            device.deleteRenderbuffer(depth)
-            device.deleteTexture(color)
-            reject(GlCode.FramebufferIncomplete, "Framebuffer is incomplete")
+            framebufferColors[framebuffer] = color
+            boundFramebuffer = 0
+            completed = true
+            return GlColorTarget(framebuffer, color, depth, width, height)
+        } finally {
+            if (!completed) {
+                device.bindFramebuffer(0)
+                if (framebuffer != 0) device.deleteFramebuffer(framebuffer)
+                if (depth != 0) device.deleteRenderbuffer(depth)
+                device.deleteTexture(color)
+            }
         }
-        device.bindFramebuffer(0)
-        framebufferColors[framebuffer] = color
-        boundFramebuffer = 0
-        return GlColorTarget(framebuffer, color, depth, width, height)
     }
 
     /**
@@ -749,19 +728,19 @@ public class GlProgramRuntime(
     ): Boolean {
         require(width in 2..4) { "Vector uniform width must be 2, 3, or 4" }
         val previous = vectorValues[uniform]
-        val cached = if (previous != null && previous.size == width) previous else FloatArray(width)
-        if (cached === previous && sameComponents(cached, x, y, z, w)) return false
-        cached[0] = x
-        cached[1] = y
-        if (width > 2) cached[2] = z
-        if (width > 3) cached[3] = w
-        vectorValues[uniform] = cached
+        if (previous != null && previous.size == width && sameComponents(previous, x, y, z, w)) return false
         device.useProgram(programId)
         when (width) {
             2 -> device.uniform2f(location, x, y)
             3 -> device.uniform3f(location, x, y, z)
             else -> device.uniform4f(location, x, y, z, w)
         }
+        val cached = if (previous != null && previous.size == width) previous else FloatArray(width)
+        cached[0] = x
+        cached[1] = y
+        if (width > 2) cached[2] = z
+        if (width > 3) cached[3] = w
+        vectorValues[uniform] = cached
         return true
     }
 
@@ -775,9 +754,9 @@ public class GlProgramRuntime(
     private fun writeInt(uniform: Uniform<*>, location: Int, value: Int): Boolean {
         val previous = intValues[uniform]
         if (previous != null && previous == value) return false
-        intValues[uniform] = value
         device.useProgram(programId)
         device.uniform1i(location, value)
+        intValues[uniform] = value
         return true
     }
 
@@ -795,24 +774,25 @@ public class GlProgramRuntime(
     private fun writeMatrix(uniform: Uniform<*>, location: Int, values: FloatArray): Boolean {
         val previous = vectorValues[uniform]
         if (previous != null && sameVector(previous, values)) return false
-        val cached = values.copyOf()
-        vectorValues[uniform] = cached
         device.useProgram(programId)
-        when (cached.size) {
-            4 -> device.uniformMatrix2fv(location, cached)
-            9 -> device.uniformMatrix3fv(location, cached)
-            16 -> device.uniformMatrix4fv(location, cached)
+        when (values.size) {
+            4 -> device.uniformMatrix2fv(location, values)
+            9 -> device.uniformMatrix3fv(location, values)
+            16 -> device.uniformMatrix4fv(location, values)
             else -> error("Matrix uniform width must be 4, 9, or 16")
         }
+        val cached = if (previous != null && previous.size == values.size) previous else FloatArray(values.size)
+        values.copyInto(cached)
+        vectorValues[uniform] = cached
         return true
     }
 
     private fun writeFloat(uniform: Uniform<*>, location: Int, value: Float): Boolean {
         val previous = floatValues[uniform]
         if (previous != null && sameFloatUniformValue(previous, value)) return false
-        floatValues[uniform] = value
         device.useProgram(programId)
         device.uniform1f(location, value)
+        floatValues[uniform] = value
         return true
     }
 
@@ -820,17 +800,6 @@ public class GlProgramRuntime(
         val location = locations[uniform]
         require(location != null) { "Uniform does not belong to this shader" }
         return location
-    }
-
-    private fun compileStage(stage: GlStage, source: String): Int {
-        val shader = device.createShader(stage)
-        device.shaderSource(shader, source)
-        val status = device.compileShader(shader)
-        if (!status.ok) {
-            device.deleteShader(shader)
-            reject(GlCode.CompileFailed, status.infoLog)
-        }
-        return shader
     }
 
     private fun checkReady() {
