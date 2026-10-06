@@ -310,8 +310,6 @@ shader(ShaderTarget.Agsl) {
 
 Чтобы автоматически поправить форматирование, запустите `./gradlew detekt -PdetektAutoCorrect=true` и просмотрите изменения. Перед каждым коммитом стиль тоже проверяется. Если Git-хук не установился, добавьте его командой `./gradlew installGitHooks`.
 
-Для тестов OpenGL ES нужно устройство или эмулятор Android. Запускайте их отдельно: `./gradlew :redbytefx-gl:connectedDebugAndroidTest`.
-
 Документацию API можно [читать онлайн](https://i-redbyte.github.io/redbytefx/) или собрать локально командой `./gradlew dokkaHtmlSite`, а затем открыть `build/docs/site/index.html`. Онлайн-версия обновляется после изменений в `master` или `main`. Подробности — в [инструкции по публикации](docs/github-pages.md).
 
 ## Лицензия

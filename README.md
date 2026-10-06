@@ -310,8 +310,6 @@ Before opening a pull request, run `./gradlew qualityCheck`. It runs the unit te
 
 To fix formatting automatically, run `./gradlew detekt -PdetektAutoCorrect=true` and review the changes. The style check also runs before each commit. If the Git hook is missing, install it with `./gradlew installGitHooks`.
 
-OpenGL ES tests need an Android device or emulator. Run them separately with `./gradlew :redbytefx-gl:connectedDebugAndroidTest`.
-
 You can [read the API docs online](https://i-redbyte.github.io/redbytefx/) or build them locally with `./gradlew dokkaHtmlSite`, then open `build/docs/site/index.html`. The online docs update when changes reach `master` or `main`. See the [publishing guide](docs/github-pages.md) for details.
 
 ## License
