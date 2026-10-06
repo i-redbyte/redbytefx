@@ -4,7 +4,7 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 
 Русская версия: [changelog.ru.md](changelog.ru.md).
 
-## 1.1.0 — 2026-04-04
+## 1.1.0 — 2026-10-06
 
 ### Platform and docs
 
@@ -26,6 +26,8 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - **Stage-owned `fn`**: uniforms, `uniformBlock` members, and varyings referenced only in uncalled stage functions are still declared in that stage’s GLSL (all owned `fn` bodies are spelled).
 - SDF extras: `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, `sdCylinder`, `sdOctahedron`, `opRound`, `opOnion`, `sdfSmoothSubtract`, `sdfSmoothIntersect`, `rotate2d`.
 - Lighting/color extras: `fresnel`, `phong`, `hueShift`, `filmicTonemap`, `hash22`, `voronoi`.
+- **Premultiplied alpha**: `premultiply`, `unpremultiply`, and premultiplied `blendMultiply` / `blendScreen` / `blendOverlay`; `alphaMaskStraight` for straight RGB authoring. Nonlinear ops (`filmicTonemap`, `posterize`) keep premultiplied alpha.
+- **`topLeftUv`**: one helper for AGSL top-left vs GLES bottom-left fragment origin.
 
 ### GLES and 3D
 
@@ -42,6 +44,13 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - Scene matrices: `identity` / `IDENTITY`, `multiply`, `translation`, `rotationX`/`Y`/`Z`, `scale`.
 - Scene meshes: `disc`, `extrudePolygon`, `tubeAlong`, `transform`, `merge`, `tagUv`.
 - **`instanceModel()`**: `mat4` from instance attributes `a_model0`…`a_model3`.
+- **`rayMarch`**: evaluate the scene once per active step; normalize direction once; validate `steps` / `epsilon` / `far`; skip inactive steps. **`sdOctahedron`**: correct edge and vertex distances.
+- **Runtime hardening**: safer GL-thread task dispatch; release GPU units on failure; reject zero driver handles. **`GlFrame`**: refresh surface buffers after `replace`, use latest mesh bounds for recorded draws, release oversized draw/mesh pools.
+- **Scene CPU meshes**: polygon winding and geometry allocation fixes.
+
+### Tooling
+
+- Optional **detekt pre-commit** hook (`githooks/`, `./gradlew installGitHooks`).
 
 ### Compose
 

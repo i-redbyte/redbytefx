@@ -4,7 +4,7 @@
 
 English: [changelog.md](changelog.md).
 
-## 1.1.0 — 2026-04-04
+## 1.1.0 — 2026-10-06
 
 ### Платформа и документация
 
@@ -26,6 +26,8 @@ English: [changelog.md](changelog.md).
 - **Стадийные `fn`**: uniform, члены `uniformBlock` и varying, на которые ссылаются только невызываемые `fn` стадии, всё равно объявляются в GLSL этой стадии (тела всех owned-`fn` попадают в исходник).
 - Дополнительный SDF: `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, `sdCylinder`, `sdOctahedron`, `opRound`, `opOnion`, `sdfSmoothSubtract`, `sdfSmoothIntersect`, `rotate2d`.
 - Освещение и цвет: `fresnel`, `phong`, `hueShift`, `filmicTonemap`, `hash22`, `voronoi`.
+- **Premultiplied alpha**: `premultiply`, `unpremultiply`, premultiplied `blendMultiply` / `blendScreen` / `blendOverlay`; `alphaMaskStraight` для straight RGB. Нелинейные операции (`filmicTonemap`, `posterize`) сохраняют premultiplied alpha.
+- **`topLeftUv`**: один хелпер для AGSL (origin сверху) и GLES (origin снизу).
 
 ### GLES и 3D
 
@@ -42,6 +44,13 @@ English: [changelog.md](changelog.md).
 - Матрицы сцены: `identity` / `IDENTITY`, `multiply`, `translation`, `rotationX`/`Y`/`Z`, `scale`.
 - Меши сцены: `disc`, `extrudePolygon`, `tubeAlong`, `transform`, `merge`, `tagUv`.
 - **`instanceModel()`**: `mat4` из атрибутов экземпляра `a_model0`…`a_model3`.
+- **`rayMarch`**: сцена считается один раз на активный шаг; направление нормализуется один раз; проверяются `steps` / `epsilon` / `far`; неактивные шаги пропускаются. **`sdOctahedron`**: корректные расстояния до рёбер и вершин.
+- **Укрепление рантайма**: безопаснее очередь GL-потока; освобождение GPU-юнитов при ошибке; отказ от нулевых handle драйвера. **`GlFrame`**: обновление буферов после `replace`, актуальные границы меша для записанных draw, сброс разросшихся пулов draw/mesh.
+- **CPU-меши сцены**: winding полигонов и аллокации геометрии.
+
+### Инструменты
+
+- Опциональный **pre-commit detekt** (`githooks/`, `./gradlew installGitHooks`).
 
 ### Compose
 
