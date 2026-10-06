@@ -23,7 +23,7 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - **`wrapLambert`**: Lambert with an ambient floor.
 - **`resolution`**: legal on GLES as `uResolution`; Compose writes the view size. AGSL programs always bind `ShaderProgram.resolution` (the generated source already declared it). `uResolution` is reserved as an author uniform name.
 - **GLES fragment-only**: omit `vertex { }` and the compiler injects a fullscreen `a_corner` triangle. That attribute keeps the `a_corner` spelling even if a user `fn` reuses the identifier. Unused fragment functions that read `resolution` still bind `uResolution`.
-- **Stage-owned `fn`**: uniforms and `uniformBlock` members referenced only in uncalled stage functions are still declared in that stage’s GLSL (all owned `fn` bodies are spelled).
+- **Stage-owned `fn`**: uniforms, `uniformBlock` members, and varyings referenced only in uncalled stage functions are still declared in that stage’s GLSL (all owned `fn` bodies are spelled).
 - SDF extras: `sdHexagon`, `sdRhombus`, `sdEquilateralTriangle`, `sdCylinder`, `sdOctahedron`, `opRound`, `opOnion`, `sdfSmoothSubtract`, `sdfSmoothIntersect`, `rotate2d`.
 - Lighting/color extras: `fresnel`, `phong`, `hueShift`, `filmicTonemap`, `hash22`, `voronoi`.
 

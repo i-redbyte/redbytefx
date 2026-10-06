@@ -51,6 +51,7 @@ internal fun linkGlsl(
     collectVaryingUses(fragmentBody, readers)
     fragmentWrites.forEach { collectVaryingUses(it.value, readers) }
     commandExprs(fragmentStatements).forEach { collectVaryingUses(it, readers) }
+    collectVaryingUsesFromStageFunctions(functions, AuthoringPlace.Fragment, readers)
     listOfNotNull(geometry?.commands, tessControl?.commands, tessEval?.commands).forEach { commands ->
         commandExprs(commands).forEach { collectVaryingUses(it, readers) }
     }
@@ -395,14 +396,23 @@ private fun collectUniforms(expr: Expr<*>, into: MutableSet<Uniform<*>>) {
     }
 }
 
+private inline fun forEachStageFunction(
+    functions: List<UserFunction>,
+    stage: AuthoringPlace,
+    block: (UserFunction) -> Unit,
+) {
+    for (function in functions) {
+        if (function.stage == stage) block(function)
+    }
+}
+
 private fun exprRootsForStage(
     roots: List<Expr<*>>,
     functions: List<UserFunction>,
     stage: AuthoringPlace,
 ): List<Expr<*>> = buildList {
     addAll(roots)
-    for (function in functions) {
-        if (function.stage != stage) continue
+    forEachStageFunction(functions, stage) { function ->
         add(function.body)
         addAll(commandExprs(function.statements))
     }
@@ -413,10 +423,20 @@ private fun collectUniformsFromStageFunctions(
     stage: AuthoringPlace,
     into: MutableSet<Uniform<*>>,
 ) {
-    for (function in functions) {
-        if (function.stage != stage) continue
+    forEachStageFunction(functions, stage) { function ->
         collectUniforms(function.body, into)
         commandExprs(function.statements).forEach { collectUniforms(it, into) }
+    }
+}
+
+private fun collectVaryingUsesFromStageFunctions(
+    functions: List<UserFunction>,
+    stage: AuthoringPlace,
+    into: MutableSet<Varying<*>>,
+) {
+    forEachStageFunction(functions, stage) { function ->
+        collectVaryingUses(function.body, into)
+        commandExprs(function.statements).forEach { collectVaryingUses(it, into) }
     }
 }
 
