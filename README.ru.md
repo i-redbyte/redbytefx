@@ -306,9 +306,13 @@ shader(ShaderTarget.Agsl) {
 
 ## Участие
 
-Перед PR запускайте `./gradlew qualityCheck`. Эти ворота - модульные тесты, сборка sample и detekt с официальным кодстайлом Kotlin от JetBrains (`kotlin.code.style=official`, `detekt-formatting`). Автоформат: `./gradlew detekt -PdetektAutoCorrect=true`. Pre-commit хук в `githooks/` перед каждым коммитом запускает `./gradlew detekt` (Gradle копирует его в `.git/hooks`, либо `./gradlew installGitHooks`). Тесты GLES на устройстве - `./gradlew :redbytefx-gl:connectedDebugAndroidTest`, в `qualityCheck` они не входят.
+Перед отправкой PR запустите `./gradlew qualityCheck`. Команда выполнит модульные тесты, проверит компиляцию приложения-примера и стиль Kotlin-кода.
 
-Сайт API локально: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI публикует документацию на `https://i-redbyte.github.io/redbytefx/` при push в **`master`/`main`**. См. [docs/github-pages.md](docs/github-pages.md).
+Чтобы автоматически поправить форматирование, запустите `./gradlew detekt -PdetektAutoCorrect=true` и просмотрите изменения. Перед каждым коммитом стиль тоже проверяется. Если Git-хук не установился, добавьте его командой `./gradlew installGitHooks`.
+
+Для тестов OpenGL ES нужно устройство или эмулятор Android. Запускайте их отдельно: `./gradlew :redbytefx-gl:connectedDebugAndroidTest`.
+
+Документацию API можно [читать онлайн](https://i-redbyte.github.io/redbytefx/) или собрать локально командой `./gradlew dokkaHtmlSite`, а затем открыть `build/docs/site/index.html`. Онлайн-версия обновляется после изменений в `master` или `main`. Подробности — в [инструкции по публикации](docs/github-pages.md).
 
 ## Лицензия
 

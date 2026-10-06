@@ -306,9 +306,13 @@ Requires Sonatype Central Portal credentials (`mavenCentralUsername`, `mavenCent
 
 ## Contributing
 
-Run `./gradlew qualityCheck` before a PR. That gate is unit tests, sample compilation, and detekt with JetBrains official Kotlin style (`kotlin.code.style=official`, `detekt-formatting`). Reformat with `./gradlew detekt -PdetektAutoCorrect=true`. A pre-commit hook in `githooks/` runs `./gradlew detekt` on every commit (installed into `.git/hooks` by Gradle, or `./gradlew installGitHooks`). Device GLES tests are `./gradlew :redbytefx-gl:connectedDebugAndroidTest` and are not part of `qualityCheck`.
+Before opening a pull request, run `./gradlew qualityCheck`. It runs the unit tests, compiles the sample app, and checks Kotlin code style.
 
-API site locally: `./gradlew dokkaHtmlSite` (`build/docs/site/index.html`). CI publishes to `https://i-redbyte.github.io/redbytefx/` on push to **`master`/`main`**; other branches only verify the build. See [docs/github-pages.md](docs/github-pages.md).
+To fix formatting automatically, run `./gradlew detekt -PdetektAutoCorrect=true` and review the changes. The style check also runs before each commit. If the Git hook is missing, install it with `./gradlew installGitHooks`.
+
+OpenGL ES tests need an Android device or emulator. Run them separately with `./gradlew :redbytefx-gl:connectedDebugAndroidTest`.
+
+You can [read the API docs online](https://i-redbyte.github.io/redbytefx/) or build them locally with `./gradlew dokkaHtmlSite`, then open `build/docs/site/index.html`. The online docs update when changes reach `master` or `main`. See the [publishing guide](docs/github-pages.md) for details.
 
 ## License
 
