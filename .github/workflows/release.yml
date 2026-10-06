@@ -1,0 +1,66 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing git tag (e.g. v1.1.0)"
+        required: true
+        default: "v1.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.tag }}
+
+      - name: Build release notes
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          VER="${TAG#v}"
+          {
+            echo "## RedByteFX ${VER}"
+            echo ""
+            awk -v ver="$VER" '
+              $0 ~ "^## " ver " " { found=1; next }
+              found && /^## / { exit }
+              found { print }
+            ' docs/changelog.md
+            echo ""
+            echo "## Maven Central"
+            echo ""
+            echo '```kotlin'
+            for id in core gl gl-compose compose stdlib 3d; do
+              echo "implementation(\"io.github.i-redbyte:redbytefx-${id}:${VER}\")"
+            done
+            echo '```'
+            echo ""
+            echo "Full changelog: [docs/changelog.md](https://github.com/${{ github.repository }}/blob/${TAG}/docs/changelog.md) · [RU](https://github.com/${{ github.repository }}/blob/${TAG}/docs/changelog.ru.md)"
+          } > release-notes.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
+          body_path: release-notes.md
+          draft: false
+          generate_release_notes: false
