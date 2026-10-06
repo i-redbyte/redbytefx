@@ -27,6 +27,8 @@ val wave = shader(ShaderTarget.Agsl) {
 }
 ```
 
+The sine of `x` moves the sampling point up and down. `frequency` sets how often the wave repeats; `amplitude` sets its height.
+
 AGSL is fragment-only. The generated entry stays `half4 main(float2 fragCoord)`, which `RuntimeShader` requires. Inspect it with `wave.agslSource()`.
 
 A scene is the other surface. This lit box is OpenGL ES only: `shader(ShaderTarget.Agsl)` rejects `uniformMat4`, so AGSL cannot compile it.
@@ -46,6 +48,8 @@ val crate = shader(ShaderTarget.Gles30) {
 }
 ```
 
+Each vertex is multiplied by the view and projection matrices to put it on screen. The fragment stage gives every visible pixel the same orange color; this short snippet does not calculate lighting yet.
+
 A GLES **scene** needs both stages. Varyings written in the vertex stage are read in the fragment stage. Inspect them with `vertexSource()` and `fragmentSource()`.
 
 A GLES **effect** may omit `vertex { }`. The compiler injects a fullscreen triangle whose attribute is spelled `a_corner` (the same layout as `screenMesh`). Pair that program with GLES `redbyteFx`. Geometry or tessellation still needs an explicit vertex stage.
@@ -60,6 +64,8 @@ val pulse = shader(ShaderTarget.Gles30) {
 }
 ```
 
+`sin(time)` moves between −1 and 1; multiplying by 0.5 and adding 0.5 turns it into a red-channel value between 0 and 1.
+
 OpenGL ES 3.1 is a compute program. It has no vertex or fragment stage. Each `storageBlock` is std430, and `compute(localSizeX)` writes its fields. Several storage blocks are legal; the binding point is the declaration order starting at 0, and one block stays at 0. `compute(localSizeX, localSizeY, localSizeZ)` spells all three local sizes; `compute(n)` still spells only `local_size_x`. Inspect the text with `computeSource()`. The EGL context for that program is OpenGL ES 3.1. Inside compute, `globalId`, `localId`, and `workGroupId` are `ivec3` values spelled from `gl_GlobalInvocationID`, `gl_LocalInvocationID`, and `gl_WorkGroupID`. A storage block can also hold `floatArray`, `vec2Array`, `vec3Array`, and `vec4Array`. A sized array keeps its count. The last field may omit the count and is spelled `type name[]`; an unsized field anywhere else is rejected when the block is finished. Index an element with an `int` expression, such as `values[globalId.x]`, then `store` it. `packStd430` takes logical components, so a `vec3` contributes three floats and the packer inserts the std430 zero padding that makes the element stride 16 bytes. `GlProgramRuntime.dispatch(x, y, z)` runs the linked compute program. `shared` arrays and `barrier()` are legal only in compute. A `uniformBlock` can be read from compute; AGSL still rejects a uniform block. Several uniform blocks are legal on one program. The binding point is the declaration order. GLSL ES 3.10 and 3.20 spell `layout(std140, binding = N)`. GLSL ES 3.00 spells `layout(std140)` and the runtime sets the binding, because that language rejects `binding`. Its fields may be sized `floatArray`, `vec2Array`, `vec3Array`, `vec4Array`, `mat2`, `mat3`, and `mat4`. `packStd140` and `unpackStd140` use logical floats and skip std140 padding. An unsized array stays on `storageBlock`.
 
 ```kotlin
@@ -70,6 +76,8 @@ val cells = shader(ShaderTarget.Gles31) {
     }
 }
 ```
+
+This minimal compute example writes each value back unchanged. It demonstrates storage access without applying a mathematical transformation.
 
 OpenGL ES 3.2 keeps the vertex and fragment stages and adds optional geometry and tessellation. Tessellation is a control stage and an evaluation stage together. The EGL context for that program is OpenGL ES 3.2. Inspect the extra stages with `geometrySource()`, `tessControlSource()`, and `tessEvalSource()`.
 
@@ -93,9 +101,86 @@ val patch = shader(ShaderTarget.Gles32) {
 }
 ```
 
+The tessellation levels are all 1, so this patch is not subdivided. The later stages pass through one input position; the fragment stage paints it red.
+
 A varying written by the vertex and read by the fragment is declared on every stage between them: vertex, tessellation control, tessellation evaluation, geometry, then fragment. Missing stages are skipped. At each boundary the previous stage's `out` matches the next stage's `in` by name, type, and precision. When geometry or tessellation is present, those declarations are members of one interface block named `rb_pipe`. Every stage of that program lists the same members: varyings the vertex wrote and that the fragment or an intermediate stage reads, in declaration order. A varying that is declared and never written stays out of the block. Tessellation control copies `tc_in[gl_InvocationID]` to `tc_out[gl_InvocationID]`. Geometry copies the input vertex just written to `gl_Position`: one `gl_in[k]` in that position, including a `repeat` index, becomes `gs_in[k]` immediately before that `EmitVertex`. The same copy applies when that `gl_Position` was written before the `repeat` or `whenTrue` that emits, and it is not reused after an emit that already consumed it. Several indices, or a position that does not read `gl_in` while the varying is still unwritten, is an error whose message asks for `varying.set` before that emit. A `varying.set` between that `gl_Position` and the emit replaces the copy of that varying for that emit only. Tessellation evaluation interpolates with `gl_TessCoord` when the stage does not write the varying. One input vertex is copied from `te_in[0]`. Triangles weight the three patch vertices by `gl_TessCoord`. Isolines `mix` the two vertices by `gl_TessCoord.x`. Quads use a bilinear `mix` of corners `(0,0)`, `(1,0)`, `(1,1)`, and `(0,1)` by `gl_TessCoord.xy`. An explicit write replaces that interpolation. A stage that has `rb_pipe` and writes `gl_Position` redeclares `gl_PerVertex` with only `vec4 gl_Position` before the block. A uniform read in geometry or tessellation is declared in that stage. `glIn(index)` and `varying.at(index)` accept dynamic `int` expressions; only compile-time constant indices are bounds-checked against the input patch.
 
 `Modifier.redbyteFx` applies an AGSL `RenderEffect`. It does not run a GLES program. GLES `redbyteFx` is a different symbol in `ru.redbyte.redbytefx.gl.compose`: import one per file. The sample app opens AGSL examples and OpenGL examples from separate screens. Each OpenGL scene is a `GLSurfaceView` that links a `ShaderProgram`. The OpenGL list covers a fragment-only **Effect** (`redbyteFx`, stdlib SDF), buffers and indexed draws, textures and mipmaps, lighting, instancing, render-to-texture, a **Lit mesh** scene (`litTexturedMesh`, `setLitModel`), geometry, tessellation, and small games. **Planet** can use a gallery photo (runtime read permission on API 28 and below; system photo picker on API 33+). The sample UI is English or Russian from the device locale. Geometry and tessellation scenes need an OpenGL ES 3.2 context.
+
+## Math behind the sample examples
+
+Shaders work with coordinates: a pixel has a position, and a mesh has vertices. **UV** means a position scaled to roughly 0–1 across the image. Sampling reads the color at a UV position. A **mask** is a number from 0 to 1 that decides where an effect appears; `mix` uses such a number to blend two colors. A **normal** points away from a surface and helps calculate lighting. Many examples animate a value by adding time to a sine wave.
+
+### AGSL effects
+
+| Example | What the math does |
+| --- | --- |
+| Flip | Replaces a sampling coordinate with its distance from the opposite edge (`width - x` or `height - y`) to turn the image over. |
+| Mirror | Reflects coordinates on one side of the center, so both halves sample the same half of the image. |
+| Rotate | Moves coordinates around the center with sine and cosine, then samples the rotated position. |
+| Scale | Measures each coordinate from the center and divides that distance by the scale before sampling. |
+| Offset | Adds a two-dimensional offset to the sampling position, shifting the picture. |
+| Wave | Adds a sine wave to the vertical sampling coordinate; nearby columns shift by different amounts. |
+| Pulse | Rounds UVs onto a pixel grid and uses time, rows, and a moving column to light selected cells. |
+| Signal | Repeats coordinates into a grid; thresholds and smooth edges turn parts of it into scan lines. |
+| Posterize | Rounds colors to fewer levels, then blends that result with the original image. |
+| Film | Adds time-varying grain and darkens pixels near the edges with a vignette mask. |
+| Grade | Changes color strength and blends tinted versions of the original with standard color blend formulas. |
+| Warp | Uses layered noise to displace UVs, then samples the image at those bent coordinates. |
+| Prism | Samples color channels at slightly different positions and adds a repeating color palette. |
+| Spotlight | Measures distance from a chosen center; soft shape masks keep the center bright and the outside dim. |
+| Beacon | Moves a spotlight back and forth with time; easing slows it near the ends of its path. |
+| Composite | Uses masks as blend weights to combine the source with other colors or layers. |
+| Frame | Measures distance to the image edges and lights a narrow band to draw a frame. |
+| Corner | Combines small masks near the corners with a moving sweep to draw HUD brackets. |
+| Reveal | Compares pixel position with an animated cutoff; a soft boundary gradually shows a recolored version of the image. |
+| Sweep | Projects position along a chosen direction and makes a soft band that travels across the image. |
+| Glitch | Shifts selected horizontal bands and adds signal-like stripes to mimic a broken display. |
+| Radar | Converts position around a center to distance and angle, then draws arcs and a rotating scan sector. |
+| Halo | Measures distance from the center in aspect-corrected coordinates to brighten a ring and central glow. |
+| Circuit | Measures distance to line segments and circles; timed pulses travel along the chosen paths. |
+| Sigil | Uses signed distance to circles and boxes: negative is inside, and values near zero make soft outlines. |
+| Duotone | Computes brightness from the source color and uses it to blend between two chosen colors. |
+| Aurora | Layers a ring, a rotating angular sweep, a changing palette, and slightly separated color samples. |
+| Liquid Glass | Warps sampling coordinates for a flowing refraction effect, separates color channels at the edge, and brightens a rim. |
+| Animated Gradient | Uses sine waves over UV and time to change the red, green, and blue channels smoothly. |
+| Physics Bubble | Compose moves the bubble with drag and spring motion; the shader bends the background and colors the rim like a thin film. |
+| Touch Ripple | Uses distance from the touch point and elapsed time to draw expanding colored rings over the image. |
+| Metaballs | Computes distance to three moving circles and smoothly joins their fields so they merge into one blob. |
+| CRT Terminal | Curves sampling coordinates, offsets red and blue near the edge, and modulates brightness in thin scan lines. |
+
+### OpenGL ES scenes
+
+| Example | What the math does |
+| --- | --- |
+| Triangle | Sends three vertex positions to the screen; pixels inside their triangle receive a color. |
+| Effect | Draws a full-screen triangle; distance to a rotating hexagon gives it a soft edge, and time changes its color. |
+| Spheres | Updates each ball's position and velocity; boundary and ball collisions change its direction. Lighting uses the direction of each sphere's surface. |
+| Flag | Adds time-based sine waves to cloth vertices; their height and position set the folds. |
+| Neon floor | Uses perspective so distant grid cells shrink; repeated coordinates draw lines and time scrolls them toward the camera. |
+| Lamp | Rotates vertices and surface normals; the angle between a normal and the light controls brightness. |
+| City | Places textured blocks in 3D and moves the camera around them with sine and cosine. |
+| Lit crate | View and projection matrices place a textured box in the scene; the normal–light angle brightens faces turned toward the light. |
+| Planet | Sphere coordinates place the surface and orbiting moons; light direction, color mixing, and drag control their appearance. |
+| Slice | Uses one indexed mesh but draws only the first part of its index list, so a slider reveals more squares. |
+| Stamp | Converts a touch position to texture coordinates and changes a small rectangle of texture pixels. |
+| Sky | Uses a direction from the sphere to choose which of six cube-map faces supplies a color. |
+| Mirror | Renders a triangle into a texture, then maps that texture onto a second rectangle. |
+| Mips | Shows a checker texture with and without smaller precomputed copies; the smaller copies smooth distant detail. |
+| Glass orb | Solves where a viewing ray meets a sphere; the rim grows brighter when the surface faces away from the viewer. |
+| Iso bands | Adds moving sine waves into one field and compares it with thresholds to make colored bands. |
+| Palette | Maps height and time to a repeating rainbow; sine and cosine position the 3D arch. |
+| Hedgehog | Finds each triangle's center and outward normal, then adds a point along that normal to make a spike. |
+| Ocean | Interpolates positions inside a patch, then adds two sine waves to raise and lower its surface. |
+| Wireframe | Turns each triangle edge into a thin strip, making mesh edges visible. |
+| Electric sea | Combines thin sine-shaped lightning paths with a grid of flickering stars. |
+| red_byte | Updates letter positions over time: they fall, then the completed word changes color and rolls sideways. |
+| Tunnel | Perspective makes corridor rings approach; comparing the ship's position with a ring's opening detects a clean pass. |
+| Maze | Updates the ball from board tilt and checks it against box walls; lighting makes the ball look round. |
+| Breakout | Changes the ball's direction when it touches walls, the paddle, or a brick; hit bricks disappear. |
+| Raid | Moves the camera forward and tests shots against enemies at different depths; hits add a brief flash. |
+| Descent | Perspective places gates along the slope; comparing skier and gate positions decides whether a pass counts. |
+| Lit mesh | Rotates a textured sphere and uses the normal–light angle for diffuse brightness. |
 
 ## Install
 
