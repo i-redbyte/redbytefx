@@ -236,9 +236,9 @@ UV means a position on an image, usually from 0 to 1 in each direction. A *mask*
 
 ## Documentation
 
-- [API reference](https://i-redbyte.github.io/redbytefx/) — public classes and functions.
-- [Shader language reference](docs/language-reference.md) — expressions, types, uniforms, and stages.
-- [Changelog](docs/changelog.md) — releases and changes.
+- [API reference](https://i-redbyte.github.io/redbytefx/) - public classes and functions.
+- [Shader language reference](docs/language-reference.md) - expressions, types, uniforms, and stages.
+- [Changelog](docs/changelog.md) - releases and changes.
 
 ## License
 
