@@ -13,6 +13,8 @@ import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.lit
 import ru.redbyte.redbytefx.shader
 import ru.redbyte.redbytefx.vec4
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 
 class GlFramePlanTest {
     private val triangle = GlMesh(
@@ -181,6 +183,34 @@ class GlFramePlanTest {
         assertThrows(IllegalArgumentException::class.java) {
             GlMesh(FloatArray(6), 3, position, indices = intArrayOf())
         }
+    }
+
+    @Test
+    fun aConcurrentVertexReplacementKeepsTheLatestIndices() {
+        val mesh = GlMesh(FloatArray(9), 3, listOf(GlAttrib("a_position", 3, 0)), indices = intArrayOf(0, 1, 2))
+        val updatedIndices = intArrayOf(2, 1, 0)
+        val started = CountDownLatch(1)
+        var failure: Throwable? = null
+        lateinit var worker: Thread
+        synchronized(mesh) {
+            worker = thread {
+                started.countDown()
+                try {
+                    mesh.replace(FloatArray(9))
+                } catch (error: Throwable) {
+                    failure = error
+                }
+            }
+            started.await()
+            val deadline = System.nanoTime() + 5_000_000_000L
+            while (worker.state != Thread.State.BLOCKED && System.nanoTime() < deadline) Thread.yield()
+            assertEquals(Thread.State.BLOCKED, worker.state)
+            mesh.replace(FloatArray(9), updatedIndices)
+        }
+        worker.join(5_000)
+        assertFalse(worker.isAlive)
+        failure?.let { throw it }
+        assertSame(updatedIndices, mesh.indices)
     }
 
     @Test

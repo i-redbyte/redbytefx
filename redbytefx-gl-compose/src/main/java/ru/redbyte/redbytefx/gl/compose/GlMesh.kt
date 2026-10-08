@@ -2,6 +2,8 @@ package ru.redbyte.redbytefx.gl.compose
 
 import android.opengl.GLES30
 
+private val PRESERVE_MESH_INDICES = IntArray(0)
+
 /**
  * Vertex layout uploaded on the GL thread when a [GlSurface] is created.
  *
@@ -42,9 +44,11 @@ public class GlMesh(
      * GL thread may be reading it; prepare its contents before calling this method.
      */
     @Synchronized
-    public fun replace(vertices: FloatArray, indices: IntArray? = this.indices) {
-        requireLayout(vertices, indices)
-        arrays = MeshArrays(vertices, indices, arrays.revision + 1)
+    public fun replace(vertices: FloatArray, indices: IntArray? = PRESERVE_MESH_INDICES) {
+        val current = arrays
+        val nextIndices = if (indices === PRESERVE_MESH_INDICES) current.indices else indices
+        requireLayout(vertices, nextIndices)
+        arrays = MeshArrays(vertices, nextIndices, current.revision + 1)
     }
 
     private fun requireLayout(vertices: FloatArray, indices: IntArray?) {
