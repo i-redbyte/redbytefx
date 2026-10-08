@@ -68,10 +68,14 @@ public class GlProgramRuntime(
     private val textureUnits: GlTextureUnits = GlTextureUnits(),
     private val strictErrors: Boolean = false,
 ) {
+    private class FloatCache(var value: Float)
+
+    private class IntCache(var value: Int)
+
     private val locations = IdentityHashMap<Uniform<*>, Int>()
-    private val floatValues = IdentityHashMap<Uniform<*>, Float>()
+    private val floatValues = IdentityHashMap<Uniform<*>, FloatCache>()
     private val vectorValues = IdentityHashMap<Uniform<*>, FloatArray>()
-    private val intValues = IdentityHashMap<Uniform<*>, Int>()
+    private val intValues = IdentityHashMap<Uniform<*>, IntCache>()
     private val samplers = GlSamplerBindings(device, textureUnits) { programId }
     private var programId = 0
     private var linked = false
@@ -771,7 +775,7 @@ public class GlProgramRuntime(
         cached[1] = y
         if (width > 2) cached[2] = z
         if (width > 3) cached[3] = w
-        vectorValues[uniform] = cached
+        if (previous !== cached) vectorValues[uniform] = cached
         return true
     }
 
@@ -784,10 +788,10 @@ public class GlProgramRuntime(
 
     private fun writeInt(uniform: Uniform<*>, location: Int, value: Int): Boolean {
         val previous = intValues[uniform]
-        if (previous != null && previous == value) return false
+        if (previous != null && previous.value == value) return false
         device.useProgram(programId)
         device.uniform1i(location, value)
-        intValues[uniform] = value
+        if (previous == null) intValues[uniform] = IntCache(value) else previous.value = value
         return true
     }
 
@@ -814,16 +818,16 @@ public class GlProgramRuntime(
         }
         val cached = if (previous != null && previous.size == values.size) previous else FloatArray(values.size)
         values.copyInto(cached)
-        vectorValues[uniform] = cached
+        if (previous !== cached) vectorValues[uniform] = cached
         return true
     }
 
     private fun writeFloat(uniform: Uniform<*>, location: Int, value: Float): Boolean {
         val previous = floatValues[uniform]
-        if (previous != null && sameFloatUniformValue(previous, value)) return false
+        if (previous != null && sameFloatUniformValue(previous.value, value)) return false
         device.useProgram(programId)
         device.uniform1f(location, value)
-        floatValues[uniform] = value
+        if (previous == null) floatValues[uniform] = FloatCache(value) else previous.value = value
         return true
     }
 
