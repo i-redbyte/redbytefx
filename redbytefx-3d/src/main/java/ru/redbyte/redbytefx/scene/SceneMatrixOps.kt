@@ -111,7 +111,7 @@ public fun inverse(matrix: FloatArray, out: FloatArray = FloatArray(MATRIX_FLOAT
     return out
 }
 
-private fun fitsFloat(value: Double): Boolean = value.isFinite() && abs(value) <= Float.MAX_VALUE
+internal fun fitsFloat(value: Double): Boolean = value.isFinite() && abs(value) <= Float.MAX_VALUE
 
 /**
  * Transforms a point by a column-major 4×4 [matrix] and divides by homogeneous `w`.

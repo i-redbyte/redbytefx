@@ -121,10 +121,26 @@ class SceneMeshTest {
         assertThrows(IllegalArgumentException::class.java) { quad(Float.NaN, 1f) }
         assertThrows(IllegalArgumentException::class.java) { disc(1f, Float.POSITIVE_INFINITY) }
         assertThrows(IllegalArgumentException::class.java) {
+            box(Float.MAX_VALUE, 0f, 0f, Float.MAX_VALUE, 1f, 1f)
+        }
+        assertThrows(IllegalArgumentException::class.java) { torus(Float.MAX_VALUE, Float.MAX_VALUE, 3, 3) }
+        assertThrows(IllegalArgumentException::class.java) {
             tubeAlong(circlePath(8), 0.1f, z = Float.NaN)
         }
         val bad = SceneMesh(FloatArray(3 * MESH_STRIDE), MESH_STRIDE, sceneMeshAttribs(), intArrayOf(0, 1, 3))
         assertThrows(IllegalArgumentException::class.java) { merge(listOf(bad)) }
+    }
+
+    @Test
+    fun oversizedPrimitiveCountsFailBeforeArrayAllocation() {
+        assertThrows(IllegalArgumentException::class.java) { sphere(1f, stacks = Int.MAX_VALUE, slices = 3) }
+        assertThrows(IllegalArgumentException::class.java) {
+            torus(1f, 0.2f, majorSegments = Int.MAX_VALUE, minorSegments = 3)
+        }
+        assertThrows(IllegalArgumentException::class.java) { disc(1f, 0.1f, segments = Int.MAX_VALUE) }
+        assertThrows(IllegalArgumentException::class.java) {
+            tubeAlong(circlePath(8), 0.1f, rings = Int.MAX_VALUE)
+        }
     }
 
     @Test
@@ -182,6 +198,10 @@ class SceneMeshTest {
         val tube = tubeAlong(circlePath(8), 0.05f, rings = 4, z = 0.1f)
         assertEquals(MESH_STRIDE, tube.stride)
         assertTrue(tube.indices.isNotEmpty())
+        assertThrows(IllegalArgumentException::class.java) { tagUv(moved, Float.NaN) }
+        assertThrows(IllegalArgumentException::class.java) {
+            transform(moved, perspective(1f, 1f, 0.1f, 100f))
+        }
     }
 
     private fun circlePath(count: Int): List<Pair<Float, Float>> = List(count) { index ->

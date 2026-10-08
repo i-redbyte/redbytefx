@@ -141,20 +141,20 @@ public fun perspective(fovy: Float, aspect: Float, near: Float, far: Float, out:
     require(aspect > 0f) { "perspective aspect must be positive, was $aspect" }
     require(near > 0f) { "perspective near must be positive, was $near" }
     require(far > near) { "perspective far must be greater than near, was far=$far near=$near" }
-    val focal = 1f / tan(fovy * 0.5f)
-    val span = near - far
+    val focal = 1.0 / tan(fovy.toDouble() * 0.5)
+    val span = near.toDouble() - far
     val xScale = focal / aspect
-    val depthScale = (far + near) / span
-    val depthOffset = (2f * far * near) / span
-    require(xScale.isFinite() && focal.isFinite() && depthScale.isFinite() && depthOffset.isFinite()) {
+    val depthScale = (far.toDouble() + near) / span
+    val depthOffset = (2.0 * far * near) / span
+    require(fitsFloat(xScale) && fitsFloat(focal) && fitsFloat(depthScale) && fitsFloat(depthOffset)) {
         "perspective matrix coefficients must be finite"
     }
     out.fill(0f, 0, MATRIX_FLOATS)
-    out[0] = xScale
-    out[5] = focal
-    out[10] = depthScale
+    out[0] = xScale.toFloat()
+    out[5] = focal.toFloat()
+    out[10] = depthScale.toFloat()
     out[11] = -1f
-    out[14] = depthOffset
+    out[14] = depthOffset.toFloat()
     return out
 }
 
@@ -193,26 +193,26 @@ public fun ortho(
     require(left != right) { "ortho left and right must differ, was $left" }
     require(bottom != top) { "ortho bottom and top must differ, was $bottom" }
     require(far > near) { "ortho far must be greater than near, was far=$far near=$near" }
-    val width = right - left
-    val height = top - bottom
-    val depth = far - near
-    val xScale = 2f / width
-    val yScale = 2f / height
-    val zScale = -2f / depth
-    val xOffset = -(right + left) / width
-    val yOffset = -(top + bottom) / height
-    val zOffset = -(far + near) / depth
+    val width = right.toDouble() - left
+    val height = top.toDouble() - bottom
+    val depth = far.toDouble() - near
+    val xScale = 2.0 / width
+    val yScale = 2.0 / height
+    val zScale = -2.0 / depth
+    val xOffset = -(right.toDouble() + left) / width
+    val yOffset = -(top.toDouble() + bottom) / height
+    val zOffset = -(far.toDouble() + near) / depth
     require(
-        xScale.isFinite() && yScale.isFinite() && zScale.isFinite() &&
-            xOffset.isFinite() && yOffset.isFinite() && zOffset.isFinite(),
+        fitsFloat(xScale) && fitsFloat(yScale) && fitsFloat(zScale) &&
+            fitsFloat(xOffset) && fitsFloat(yOffset) && fitsFloat(zOffset),
     ) { "ortho matrix coefficients must be finite" }
     out.fill(0f, 0, MATRIX_FLOATS)
-    out[0] = xScale
-    out[5] = yScale
-    out[10] = zScale
-    out[12] = xOffset
-    out[13] = yOffset
-    out[14] = zOffset
+    out[0] = xScale.toFloat()
+    out[5] = yScale.toFloat()
+    out[10] = zScale.toFloat()
+    out[12] = xOffset.toFloat()
+    out[13] = yOffset.toFloat()
+    out[14] = zOffset.toFloat()
     out[15] = 1f
     return out
 }

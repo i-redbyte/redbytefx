@@ -1,7 +1,7 @@
 package ru.redbyte.redbytefx.scene
 
 /**
- * Scene. Moves [mesh] by a column-major [matrix]. Positions use the full 4×4.
+ * Scene. Moves [mesh] by a column-major affine [matrix]. Positions use translation and the upper 3×3.
  * Normals use the inverse-transpose 3×3 from [normalMatrix].
  */
 public fun transform(mesh: SceneMesh, matrix: FloatArray): SceneMesh {
@@ -23,6 +23,16 @@ public fun transform(mesh: SceneMesh, matrix: FloatArray): SceneMesh {
         out[index + 3] = normals[0] * nx + normals[3] * ny + normals[6] * nz
         out[index + 4] = normals[1] * nx + normals[4] * ny + normals[7] * nz
         out[index + 5] = normals[2] * nx + normals[5] * ny + normals[8] * nz
+        requireFiniteVertex(
+            out[index],
+            out[index + 1],
+            out[index + 2],
+            out[index + 3],
+            out[index + 4],
+            out[index + 5],
+            out[index + 6],
+            out[index + 7],
+        )
         index += MESH_STRIDE
     }
     return SceneMesh(out, mesh.stride, mesh.attribs, mesh.indices.copyOf())
@@ -31,6 +41,7 @@ public fun transform(mesh: SceneMesh, matrix: FloatArray): SceneMesh {
 /** Scene. Writes [u] (and optional [v]) into every vertex UV. */
 public fun tagUv(mesh: SceneMesh, u: Float, v: Float? = null): SceneMesh {
     require(mesh.stride == MESH_STRIDE) { "tagUv needs stride $MESH_STRIDE, was ${mesh.stride}" }
+    require(u.isFinite() && (v == null || v.isFinite())) { "UV coordinates must be finite" }
     val out = mesh.vertices.copyOf()
     var index = 6
     while (index < out.size) {
@@ -82,6 +93,7 @@ internal class MeshWriter {
     private var indexCount = 0
 
     fun vertex(x: Float, y: Float, z: Float, nx: Float, ny: Float, nz: Float, u: Float, v: Float): Int {
+        requireFiniteVertex(x, y, z, nx, ny, nz, u, v)
         if (vertexFloats + MESH_STRIDE > vertices.size) vertices = vertices.copyOf(vertices.size * 2)
         val id = vertexFloats / MESH_STRIDE
         vertices[vertexFloats] = x

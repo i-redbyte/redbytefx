@@ -82,4 +82,24 @@ class SceneLitTest {
         assertEquals(0.25f, scaleNormals[8], 0.00001f)
         assertEquals(0f, scaleNormals[1], 0.00001f)
     }
+
+    @Test
+    fun smallAffineScaleHasARepresentableNormalMatrix() {
+        val normals = normalMatrix(scale(0.001f, 0.001f, 0.001f))
+        assertEquals(1000f, normals[0], 0.001f)
+        assertEquals(1000f, normals[4], 0.001f)
+        assertEquals(1000f, normals[8], 0.001f)
+    }
+
+    @Test
+    fun projectiveAndUnrepresentableModelsDoNotChangeTheOutput() {
+        val out = FloatArray(9) { 7f }
+        assertThrows(IllegalArgumentException::class.java) {
+            normalMatrix(perspective(1f, 1f, 0.1f, 100f), out)
+        }
+        assertTrue(out.all { it == 7f })
+        val tooSmall = identity().also { it[0] = 1.0e-40f }
+        assertThrows(IllegalArgumentException::class.java) { normalMatrix(tooSmall, out) }
+        assertTrue(out.all { it == 7f })
+    }
 }

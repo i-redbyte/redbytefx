@@ -117,8 +117,10 @@ public fun sphere(radius: Float, stacks: Int = 16, slices: Int = 24): SceneMesh 
     require(radius.isFinite() && radius > 0f) { "sphere radius must be finite and positive, was $radius" }
     require(stacks >= 2) { "sphere stacks must be at least 2, was $stacks" }
     require(slices >= 3) { "sphere slices must be at least 3, was $slices" }
+    val vertexCount = checkedVertexCount((stacks.toLong() + 1) * (slices.toLong() + 1))
+    val indexCount = checkedIndexCount(slices.toLong() * (6L * stacks - 6))
     val columns = slices + 1
-    val builder = SceneBuilder(vertices = (stacks + 1) * columns, indices = slices * (6 * stacks - 6))
+    val builder = SceneBuilder(vertices = vertexCount, indices = indexCount)
     for (stack in 0..stacks) {
         val v = stack.toFloat() / stacks
         val theta = v * PI.toFloat()
@@ -162,10 +164,12 @@ public fun torus(
     require(minor.isFinite() && minor > 0f) { "torus minor radius must be finite and positive, was $minor" }
     require(majorSegments >= 3) { "torus major segments must be at least 3, was $majorSegments" }
     require(minorSegments >= 3) { "torus minor segments must be at least 3, was $minorSegments" }
+    val vertexCount = checkedVertexCount((majorSegments.toLong() + 1) * (minorSegments.toLong() + 1))
+    val indexCount = checkedIndexCount(majorSegments.toLong() * minorSegments * 6)
     val columns = minorSegments + 1
     val builder = SceneBuilder(
-        vertices = (majorSegments + 1) * columns,
-        indices = majorSegments * minorSegments * 6,
+        vertices = vertexCount,
+        indices = indexCount,
     )
     for (majorIndex in 0..majorSegments) {
         val u = majorIndex.toFloat() / majorSegments
@@ -222,6 +226,7 @@ private class SceneBuilder(vertices: Int, indices: Int) {
         u: Float,
         v: Float,
     ): Int {
+        requireFiniteVertex(x, y, z, nx, ny, nz, u, v)
         val id = floats / MESH_STRIDE
         data[floats] = x
         data[floats + 1] = y

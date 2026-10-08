@@ -17,6 +17,8 @@ public fun disc(radius: Float, halfZ: Float, segments: Int = 48): SceneMesh {
         "disc radius and halfZ must be finite and positive"
     }
     require(segments >= 8) { "disc segments must be at least 8, was $segments" }
+    checkedVertexCount(segments.toLong() * 6 + 2)
+    checkedIndexCount(segments.toLong() * 12)
     val writer = MeshWriter()
     val frontCenter = writer.vertex(0f, 0f, halfZ, 0f, 0f, 1f, 0.5f, 0.5f)
     val backCenter = writer.vertex(0f, 0f, -halfZ, 0f, 0f, -1f, 0.5f, 0.5f)
@@ -260,6 +262,8 @@ public fun tubeAlong(
     }
     require(path.all { it.first.isFinite() && it.second.isFinite() }) { "tubeAlong path points must be finite" }
     val count = path.size
+    checkedVertexCount(count.toLong() * rings)
+    checkedIndexCount(count.toLong() * rings * 6)
     val writer = MeshWriter()
     val ids = IntArray(count * rings)
     for (index in 0 until count) {

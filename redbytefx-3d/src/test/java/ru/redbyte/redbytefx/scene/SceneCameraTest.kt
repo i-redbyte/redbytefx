@@ -60,9 +60,19 @@ class SceneCameraTest {
         }
         assertTrue(destination.all { it == 7f })
         assertThrows(IllegalArgumentException::class.java) {
-            ortho(Float.MAX_VALUE / 2f, Float.MAX_VALUE, 0f, 1f, 0f, 1f, destination)
+            ortho(0f, Float.MIN_VALUE, 0f, 1f, 0f, 1f, destination)
         }
         assertTrue(destination.all { it == 7f })
+    }
+
+    @Test
+    fun projectionCalculationsAvoidIntermediateFloatOverflow() {
+        val perspective = perspective(1f, 1f, 1.0e20f, 2.0e20f)
+        assertEquals(-4.0e20f, perspective[14], 1.0e15f)
+        val ortho = ortho(2.0e38f, 3.0e38f, -1f, 1f, 1f, 2f)
+        assertEquals(-5f, ortho[12], 0.01f)
+        assertTrue(perspective.all { it.isFinite() })
+        assertTrue(ortho.all { it.isFinite() })
     }
 
     @Test
