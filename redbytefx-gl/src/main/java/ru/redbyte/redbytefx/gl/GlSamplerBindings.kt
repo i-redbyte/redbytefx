@@ -31,10 +31,10 @@ internal class GlSamplerBindings(
         require(uniform.shape == expected) { "GL sampler bind requires $expected" }
         if (location < 0) return false
         val unit = boundUnits[uniform] ?: assignUnit(uniform, location)
+        val changed = !textureUnits.holds(unit, texture)
+        if (changed) bindOnUnit(uniform, unit, texture)
         textureIds[uniform] = texture
-        if (textureUnits.holds(unit, texture)) return false
-        bindOnUnit(uniform, unit, texture)
-        return true
+        return changed
     }
 
     fun forget(texture: Int) {

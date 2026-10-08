@@ -14,6 +14,12 @@ internal class GlOwnedBlocks(
     private val device: GlDevice,
     private val program: ShaderProgram,
 ) {
+    private val ownedUniformBlocks = IdentityHashMap<UniformBlock, Boolean>().apply {
+        for (block in program.uniformBlocks) put(block, true)
+    }
+    private val ownedStorageBlocks = IdentityHashMap<StorageBlock, Boolean>().apply {
+        for (block in program.storageBlocks) put(block, true)
+    }
     private val uniformBuffers = IdentityHashMap<UniformBlock, GlBlockBuffer>()
     private val storageBuffers = IdentityHashMap<StorageBlock, GlBlockBuffer>()
 
@@ -43,14 +49,14 @@ internal class GlOwnedBlocks(
     }
 
     fun uniform(block: UniformBlock): GlBlockBuffer {
-        require(program.uniformBlocks.any { it === block }) { "Uniform block does not belong to this shader" }
+        require(ownedUniformBlocks.containsKey(block)) { "Uniform block does not belong to this shader" }
         return uniformBuffers.getOrPut(block) {
             GlBlockBuffer(device, storage = false, binding = block.binding)
         }
     }
 
     fun storage(block: StorageBlock): GlBlockBuffer {
-        require(program.storageBlocks.any { it === block }) { "Storage block does not belong to this shader" }
+        require(ownedStorageBlocks.containsKey(block)) { "Storage block does not belong to this shader" }
         return storageBuffers.getOrPut(block) {
             GlBlockBuffer(device, storage = true, binding = block.binding)
         }

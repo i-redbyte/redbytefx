@@ -162,6 +162,20 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun resolutionSanitizesNonFiniteDimensions() {
+        val program = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(resolution.x, resolution.y, 0f.lit, 1f.lit) }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        assertFalse(runtime.setResolution(Float.POSITIVE_INFINITY, Float.NaN))
+        assertTrue(runtime.setResolution(3f, Float.POSITIVE_INFINITY))
+        assertEquals(listOf(3f, 1f), device.uniform2fValues.takeLast(2))
+    }
+
+    @Test
     fun unchangedFloatAndTextureDoNotCallTheDeviceAgain() {
         val device = RecordingGlDevice()
         lateinit var amount: Uniform<Flt<High>>
@@ -193,6 +207,20 @@ class GlProgramRuntimeTest {
         assertEquals(1, device.uniform1iCalls)
         assertEquals(listOf(0, 0), device.textureUnits)
         assertEquals(listOf(7, 8), device.boundTextures)
+    }
+
+    @Test
+    fun failedSamplerBindKeepsThePreviousTexture() {
+        val device = RecordingGlDevice()
+        lateinit var image: Uniform<Sampler2D>
+        val program = imageProgram { image = it }
+        val runtime = GlProgramRuntime(program, device)
+        runtime.link()
+        assertTrue(runtime.bind(image, 7))
+        device.rejectTexture = 8
+        assertThrows(IllegalStateException::class.java) { runtime.bind(image, 8) }
+        runtime.use()
+        assertEquals(listOf(7), device.boundTextures)
     }
 
     @Test
@@ -1288,7 +1316,11 @@ private class RecordingGlDevice(
     var uniform3fCalls = 0
     val uniform3fValues = mutableListOf<Float>()
 
-    override fun uniform2f(location: Int, x: Float, y: Float) = Unit
+    val uniform2fValues = mutableListOf<Float>()
+    override fun uniform2f(location: Int, x: Float, y: Float) {
+        uniform2fValues += x
+        uniform2fValues += y
+    }
 
     override fun uniform3f(location: Int, x: Float, y: Float, z: Float) {
         uniform3fCalls += 1
@@ -1332,8 +1364,11 @@ private class RecordingGlDevice(
     }
 
     override fun bindTexture2D(texture: Int) {
+        if (texture == rejectTexture) error("texture bind failed")
         boundTextures += texture
     }
+
+    var rejectTexture: Int? = null
 
     val cubeTextures = mutableListOf<Int>()
 

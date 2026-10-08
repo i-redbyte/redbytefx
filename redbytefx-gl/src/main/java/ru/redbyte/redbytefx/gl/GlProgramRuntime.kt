@@ -165,8 +165,8 @@ public class GlProgramRuntime(
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean {
         checkReady()
         val uniform = program.resolution ?: return false
-        val width = if (widthPx > 0f) widthPx else 1f
-        val height = if (heightPx > 0f) heightPx else 1f
+        val width = if (widthPx.isFinite() && widthPx > 0f) widthPx else 1f
+        val height = if (heightPx.isFinite() && heightPx > 0f) heightPx else 1f
         return set(uniform, width, height)
     }
 
