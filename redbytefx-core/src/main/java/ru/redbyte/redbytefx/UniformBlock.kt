@@ -14,10 +14,17 @@ public class UniformBlock internal constructor(
     public val typeName: String,
     internal val instanceName: String,
     internal val members: List<BlockMember>,
-    public val offsets: IntArray,
+    offsets: IntArray,
     public val byteSize: Int,
     public val binding: Int,
-)
+) {
+    private val layoutOffsets = offsets.copyOf()
+
+    public val offsets: IntArray
+        get() = layoutOffsets.copyOf()
+
+    internal fun offsetAt(index: Int): Int = layoutOffsets[index]
+}
 
 internal class BlockMember(
     val instanceName: String,
@@ -128,7 +135,7 @@ public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
     val buffer = ByteBuffer.allocate(block.byteSize).order(ByteOrder.nativeOrder())
     var cursor = 0
     block.members.forEachIndexed { index, member ->
-        cursor = writeStd140(buffer, block.offsets[index], member, values, cursor)
+        cursor = writeStd140(buffer, block.offsetAt(index), member, values, cursor)
     }
     return buffer.array()
 }
@@ -148,7 +155,7 @@ public fun unpackStd140(block: UniformBlock, packed: ByteBuffer, into: FloatArra
     }
     var cursor = 0
     block.members.forEachIndexed { index, member ->
-        cursor = readStd140(view, block.offsets[index], member, into, cursor)
+        cursor = readStd140(view, block.offsetAt(index), member, into, cursor)
     }
     return cursor
 }

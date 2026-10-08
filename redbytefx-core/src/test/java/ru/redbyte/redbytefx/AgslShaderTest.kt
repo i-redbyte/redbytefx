@@ -7,8 +7,34 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicReference
 
 class AgslShaderTest {
+
+    @Test
+    fun runtimeRejectsWritesFromAnotherThreadBeforeChangingItsCache() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { sample() }
+        }
+        val writer = RecordingUniformWriter()
+        val runtime = ShaderRuntime(program, writer) {}
+        val failure = AtomicReference<Throwable?>()
+        val worker = Thread {
+            try {
+                runtime.set(amount, 1f)
+            } catch (error: Throwable) {
+                failure.set(error)
+            }
+        }
+        worker.start()
+        worker.join(5_000)
+        assertFalse(worker.isAlive)
+        assertTrue(failure.get() is IllegalStateException)
+        assertFalse(runtime.set(amount, 0f))
+        assertEquals(listOf(0f), writer.floatValues("u_amount"))
+    }
 
     @Test
     fun spellMapsClosedShapesToAgsl() {

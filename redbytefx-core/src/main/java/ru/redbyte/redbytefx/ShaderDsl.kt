@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx
 
+import java.util.Collections
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
 
@@ -15,14 +16,18 @@ public class ShaderProgram internal constructor(
     private val agsl: String? = null,
     private val vertex: String? = null,
     private val fragment: String? = null,
-    internal val bindings: List<UniformBinding>,
-    public val uniformBlocks: List<UniformBlock> = emptyList(),
-    public val storageBlocks: List<StorageBlock> = emptyList(),
+    bindings: List<UniformBinding>,
+    uniformBlocks: List<UniformBlock> = emptyList(),
+    storageBlocks: List<StorageBlock> = emptyList(),
     private val computeSourceText: String? = null,
     private val geometryText: String? = null,
     private val tessControlText: String? = null,
     private val tessEvalText: String? = null,
 ) {
+    internal val bindings: List<UniformBinding> = Collections.unmodifiableList(ArrayList(bindings))
+    public val uniformBlocks: List<UniformBlock> = Collections.unmodifiableList(ArrayList(uniformBlocks))
+    public val storageBlocks: List<StorageBlock> = Collections.unmodifiableList(ArrayList(storageBlocks))
+
     public fun agslSource(): String = agsl ?: error("This shader has no AGSL source")
 
     public fun vertexSource(): String = vertex ?: error("This shader has no GLES vertex source")

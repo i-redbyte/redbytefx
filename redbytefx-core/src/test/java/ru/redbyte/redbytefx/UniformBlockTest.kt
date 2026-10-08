@@ -11,6 +11,30 @@ import java.nio.ByteOrder
 class UniformBlockTest {
 
     @Test
+    fun publishedBlockLayoutAndProgramListCannotBeChanged() {
+        val program = shader(ShaderTarget.Gles30) {
+            uniformBlock("frame") {
+                float("time")
+                vec2("scale")
+            }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val block = requireNotNull(program.uniformBlock)
+        val exposedOffsets = block.offsets
+        exposedOffsets[1] = 0
+        assertEquals(8, block.offsets[1])
+        val packed = packStd140(block, floatArrayOf(1f, 2f, 3f))
+        val unpacked = FloatArray(3)
+        assertEquals(3, unpackStd140(block, ByteBuffer.wrap(packed), unpacked))
+        assertTrue(floatArrayOf(1f, 2f, 3f).contentEquals(unpacked))
+        assertThrows(UnsupportedOperationException::class.java) {
+            (program.uniformBlocks as MutableList<UniformBlock>).clear()
+        }
+        assertEquals(1, program.uniformBlocks.size)
+    }
+
+    @Test
     fun std140PlacesVectorsOnTheirBaseAlignment() {
         lateinit var frame: UniformBlock
         shader(ShaderTarget.Gles30) {

@@ -46,7 +46,10 @@ public class AgslInstance internal constructor(
         onChanged = ::refresh,
     )
 
-    public fun renderEffect(): RenderEffect = renderEffect
+    public fun renderEffect(): RenderEffect {
+        runtime.checkThread()
+        return renderEffect
+    }
 
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = runtime.set(uniform, value)
 

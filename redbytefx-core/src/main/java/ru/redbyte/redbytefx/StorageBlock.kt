@@ -14,10 +14,15 @@ public class StorageBlock internal constructor(
     public val typeName: String,
     internal val instanceName: String,
     internal val members: List<BlockMember>,
-    public val offsets: IntArray,
+    offsets: IntArray,
     private val fixedByteSize: Int,
     public val binding: Int,
 ) {
+    private val layoutOffsets = offsets.copyOf()
+
+    public val offsets: IntArray
+        get() = layoutOffsets.copyOf()
+
     public val byteSize: Int
         get() {
             check(members.none { it.unsized }) {

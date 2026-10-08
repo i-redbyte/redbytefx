@@ -9,6 +9,24 @@ import org.junit.Test
 class ComputeShaderTest {
 
     @Test
+    fun publishedStorageLayoutAndProgramListCannotBeChanged() {
+        val program = shader(ShaderTarget.Gles31) {
+            storageBlock("cells") {
+                vec3("rgb")
+                float("gain")
+            }
+            compute(1) { }
+        }
+        val block = requireNotNull(program.storageBlock)
+        block.offsets[1] = 0
+        assertEquals(12, block.offsets[1])
+        assertThrows(UnsupportedOperationException::class.java) {
+            (program.storageBlocks as MutableList<StorageBlock>).clear()
+        }
+        assertEquals(1, program.storageBlocks.size)
+    }
+
+    @Test
     fun std430DoesNotRoundAScalarBlockUpToVec4() {
         lateinit var cells: StorageBlock
         shader(ShaderTarget.Gles31) {

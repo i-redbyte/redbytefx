@@ -24,6 +24,14 @@ internal class ShaderRuntime(
     private val writer: UniformWriter,
     private val onChanged: () -> Unit,
 ) {
+    private val ownerThread = Thread.currentThread()
+
+    internal fun checkThread() {
+        check(Thread.currentThread() === ownerThread) {
+            "AGSL runtime must be used from the thread that created it"
+        }
+    }
+
     private class UniformSlot(val binding: UniformBinding) {
         var floatValue = 0f
         var hasFloat = false
@@ -100,6 +108,7 @@ internal class ShaderRuntime(
     internal fun set(uniform: Uniform<IntS>, value: Int): Boolean = setInt(uniform, value)
 
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
+        checkThread()
         val handle = resolution ?: return false
         return set(
             handle,
@@ -109,6 +118,7 @@ internal class ShaderRuntime(
     }
 
     internal fun batch(block: () -> Unit) {
+        checkThread()
         batchDepth += 1
         try {
             block()
@@ -119,6 +129,7 @@ internal class ShaderRuntime(
     }
 
     private fun setFloat(uniform: Uniform<*>, value: Float): Boolean {
+        checkThread()
         val slot = slot(uniform)
         if (slot.hasFloat && sameFloatUniformValue(slot.floatValue, value)) return flushPending()
         writer.setFloat(slot.binding.agslName, value)
@@ -153,6 +164,7 @@ internal class ShaderRuntime(
     }
 
     private fun setVector2(uniform: Uniform<*>, x: Float, y: Float): Boolean {
+        checkThread()
         val slot = slot(uniform)
         val previous = slot.vectorValues
         if (sameStored2(previous, x, y)) return flushPending()
@@ -165,6 +177,7 @@ internal class ShaderRuntime(
     }
 
     private fun setVector3(uniform: Uniform<*>, x: Float, y: Float, z: Float): Boolean {
+        checkThread()
         val slot = slot(uniform)
         val previous = slot.vectorValues
         if (sameStored3(previous, x, y, z)) return flushPending()
@@ -178,6 +191,7 @@ internal class ShaderRuntime(
     }
 
     private fun setVector4(uniform: Uniform<*>, x: Float, y: Float, z: Float, w: Float): Boolean {
+        checkThread()
         val slot = slot(uniform)
         val previous = slot.vectorValues
         if (sameStored4(previous, x, y, z, w)) return flushPending()
@@ -192,6 +206,7 @@ internal class ShaderRuntime(
     }
 
     private fun setInt(uniform: Uniform<*>, value: Int): Boolean {
+        checkThread()
         val slot = slot(uniform)
         if (slot.hasInt && slot.intValue == value) return flushPending()
         writer.setInt(slot.binding.agslName, value)
