@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx.gl
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,6 +29,21 @@ import ru.redbyte.redbytefx.y
 import ru.redbyte.redbytefx.z
 
 class GlProgramRuntimeTest {
+
+    @Test
+    fun blockUploadReusesThePreviousByteBuffer() {
+        val device = RecordingGlDevice()
+        val buffer = GlBlockBuffer(device, storage = false, binding = 0)
+        val first = buffer.writableBytes(4)
+        first.fill(1)
+        assertTrue(buffer.write(first))
+        val second = buffer.writableBytes(4)
+        second.fill(2)
+        assertTrue(buffer.write(second))
+        assertSame(first, buffer.writableBytes(4))
+        assertEquals(1, device.bufferDataCalls)
+        assertEquals(1, device.bufferSubDataCalls)
+    }
 
     @Test
     fun linkKeepsTheProgramOnlyWhenTheDeviceReportsSuccess() {

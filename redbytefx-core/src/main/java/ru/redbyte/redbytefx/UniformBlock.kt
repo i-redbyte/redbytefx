@@ -20,6 +20,9 @@ public class UniformBlock internal constructor(
 ) {
     private val layoutOffsets = offsets.copyOf()
 
+    /** Number of logical float values accepted by [packStd140] and [packStd140Into]. */
+    public val floatCount: Int = members.sumOf { logicalUniformLanes(it) }
+
     public val offsets: IntArray
         get() = layoutOffsets.copyOf()
 
@@ -121,23 +124,41 @@ internal fun std140BlockLayout(members: List<BlockMember>): Std140Layout {
     members.forEachIndexed { index, member ->
         cursor = roundUp(cursor, std140MemberAlignment(member))
         offsets[index] = cursor
-        cursor += std140MemberSize(member)
+        cursor = checkedLayoutAdd(cursor, std140MemberSize(member))
     }
     return Std140Layout(offsets, roundUp(cursor, VEC4_ALIGNMENT))
 }
 
 public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
-    val lanes = block.members.sumOf { logicalUniformLanes(it) }
-    require(values.size == lanes) {
-        "Uniform block \"${block.name}\" expects $lanes floats, was ${values.size}"
+    validateStd140Values(block, values)
+    val packed = ByteArray(block.byteSize)
+    writeStd140Into(block, values, packed)
+    return packed
+}
+
+/** Packs into an existing buffer, including zeroing std140 padding before each write. */
+public fun packStd140Into(block: UniformBlock, values: FloatArray, into: ByteArray) {
+    validateStd140Values(block, values)
+    require(into.size == block.byteSize) {
+        "Uniform block \"${block.name}\" needs ${block.byteSize} bytes, was ${into.size}"
+    }
+    into.fill(0)
+    writeStd140Into(block, values, into)
+}
+
+private fun validateStd140Values(block: UniformBlock, values: FloatArray) {
+    require(values.size == block.floatCount) {
+        "Uniform block \"${block.name}\" expects ${block.floatCount} floats, was ${values.size}"
     }
     require(values.all { it.isFinite() }) { "Uniform block values must be finite" }
-    val buffer = ByteBuffer.allocate(block.byteSize).order(ByteOrder.nativeOrder())
+}
+
+private fun writeStd140Into(block: UniformBlock, values: FloatArray, into: ByteArray) {
+    val buffer = ByteBuffer.wrap(into).order(ByteOrder.nativeOrder())
     var cursor = 0
     block.members.forEachIndexed { index, member ->
         cursor = writeStd140(buffer, block.offsetAt(index), member, values, cursor)
     }
-    return buffer.array()
 }
 
 /**
@@ -145,9 +166,8 @@ public fun packStd140(block: UniformBlock, values: FloatArray): ByteArray {
  * Padding between `vec3` lanes and between matrix columns is skipped.
  */
 public fun unpackStd140(block: UniformBlock, packed: ByteBuffer, into: FloatArray): Int {
-    val lanes = block.members.sumOf { logicalUniformLanes(it) }
-    require(into.size >= lanes) {
-        "Uniform block \"${block.name}\" needs $lanes floats, was ${into.size}"
+    require(into.size >= block.floatCount) {
+        "Uniform block \"${block.name}\" needs ${block.floatCount} floats, was ${into.size}"
     }
     val view = packed.duplicate().order(ByteOrder.nativeOrder())
     require(view.limit() >= block.byteSize) {
@@ -174,7 +194,7 @@ internal fun std140MemberAlignment(member: BlockMember): Int = when {
 }
 
 internal fun std140MemberSize(member: BlockMember): Int = when {
-    member.arraySize > 0 -> std140ElementStride(member.shape) * member.arraySize
+    member.arraySize > 0 -> checkedLayoutMultiply(std140ElementStride(member.shape), member.arraySize)
     else -> std140ElementSize(member.shape)
 }
 
@@ -286,7 +306,7 @@ internal fun std430ArrayStride(shape: Shape): Int = roundUp(std140Size(shape), s
 internal fun logicalLanes(member: BlockMember): Int = when {
     member.unsized -> laneCount(member.shape)
     member.arraySize == 0 -> laneCount(member.shape)
-    else -> member.arraySize * laneCount(member.shape)
+    else -> checkedLayoutMultiply(member.arraySize, laneCount(member.shape))
 }
 
 internal fun std430Layout(members: List<BlockMember>): Std140Layout {
@@ -300,8 +320,8 @@ internal fun std430Layout(members: List<BlockMember>): Std140Layout {
         cursor = roundUp(cursor, memberAlignment)
         offsets[index] = cursor
         val count = if (member.unsized) 0 else member.arraySize
-        val size = if (arrayLike) std430ArrayStride(member.shape) * count else std140Size(member.shape)
-        cursor += size
+        val size = if (arrayLike) checkedLayoutMultiply(std430ArrayStride(member.shape), count) else std140Size(member.shape)
+        cursor = checkedLayoutAdd(cursor, size)
     }
     return Std140Layout(offsets, roundUp(cursor, alignment))
 }
@@ -320,7 +340,24 @@ internal fun std140Alignment(shape: Shape): Int = when (laneCount(shape)) {
 
 internal fun std140Size(shape: Shape): Int = laneCount(shape) * FLOAT_ALIGNMENT
 
-internal fun roundUp(value: Int, alignment: Int): Int = (value + alignment - 1) / alignment * alignment
+internal fun roundUp(value: Int, alignment: Int): Int {
+    require(value >= 0 && alignment > 0) { "Layout size must be non-negative and alignment positive" }
+    val rounded = ((value.toLong() + alignment - 1) / alignment) * alignment
+    require(rounded <= Int.MAX_VALUE) { "Shader block layout is too large" }
+    return rounded.toInt()
+}
+
+internal fun checkedLayoutAdd(left: Int, right: Int): Int {
+    val result = left.toLong() + right
+    require(result <= Int.MAX_VALUE) { "Shader block layout is too large" }
+    return result.toInt()
+}
+
+internal fun checkedLayoutMultiply(left: Int, right: Int): Int {
+    val result = left.toLong() * right
+    require(result <= Int.MAX_VALUE) { "Shader block layout is too large" }
+    return result.toInt()
+}
 
 private const val FLOAT_ALIGNMENT = 4
 private const val VEC4_ALIGNMENT = 16

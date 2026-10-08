@@ -20,7 +20,6 @@ import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
-import ru.redbyte.redbytefx.packStd140
 import ru.redbyte.redbytefx.packStd430
 import ru.redbyte.redbytefx.sameFloatUniformValue
 import ru.redbyte.redbytefx.unpackStd430
@@ -629,7 +628,7 @@ public class GlProgramRuntime(
             device.uniformBlockBinding(programId, index, block.binding)
         }
         if (!buffer.pending(values)) return false
-        val wrote = buffer.write(packStd140(block, values))
+        val wrote = buffer.writeStd140(block, values)
         if (wrote) {
             try {
                 buffer.bind()

@@ -9,6 +9,23 @@ import org.junit.Test
 class ComputeShaderTest {
 
     @Test
+    fun oversizedStd430ArrayIsRejectedBeforePacking() {
+        assertThrows(IllegalArgumentException::class.java) {
+            shader(ShaderTarget.Gles31) {
+                storageBlock("cells") { vec4Array("values", Int.MAX_VALUE) }
+                compute(1) { }
+            }
+        }
+        val program = shader(ShaderTarget.Gles31) {
+            storageBlock("cells") { floatArray("values") }
+            compute(1) { }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            requireNotNull(program.storageBlock).byteSize(Int.MAX_VALUE)
+        }
+    }
+
+    @Test
     fun publishedStorageLayoutAndProgramListCannotBeChanged() {
         val program = shader(ShaderTarget.Gles31) {
             storageBlock("cells") {

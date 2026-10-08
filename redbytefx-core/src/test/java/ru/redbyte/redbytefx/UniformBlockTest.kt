@@ -11,6 +11,39 @@ import java.nio.ByteOrder
 class UniformBlockTest {
 
     @Test
+    fun packingIntoReusedBufferClearsPadding() {
+        val program = shader(ShaderTarget.Gles30) {
+            uniformBlock("frame") {
+                float("time")
+                vec4("color")
+            }
+            vertex { glPosition(attributeVec4("position")) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val block = requireNotNull(program.uniformBlock)
+        val packed = ByteArray(block.byteSize) { 0x7f.toByte() }
+        val values = floatArrayOf(1f, 0.2f, 0.4f, 0.6f, 0.8f)
+        packStd140Into(block, values, packed)
+        assertTrue(packStd140(block, values).contentEquals(packed))
+        assertTrue(packed.sliceArray(4 until 16).all { it == 0.toByte() })
+        val changed = floatArrayOf(2f, 0.8f, 0.6f, 0.4f, 0.2f)
+        packStd140Into(block, changed, packed)
+        assertTrue(packStd140(block, changed).contentEquals(packed))
+    }
+
+    @Test
+    fun oversizedStd140ArrayIsRejectedBeforePacking() {
+        assertThrows(IllegalArgumentException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                uniformBlock("frame") { floatArray("samples", Int.MAX_VALUE) }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) { roundUp(Int.MAX_VALUE, 16) }
+    }
+
+    @Test
     fun publishedBlockLayoutAndProgramListCannotBeChanged() {
         val program = shader(ShaderTarget.Gles30) {
             uniformBlock("frame") {

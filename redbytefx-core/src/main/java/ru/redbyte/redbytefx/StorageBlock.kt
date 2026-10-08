@@ -220,7 +220,7 @@ private fun elementCounts(block: StorageBlock, valueCount: Int): IntArray {
             unsizedAt = index
         } else {
             counts[index] = if (member.arraySize == 0) 1 else member.arraySize
-            fixed += logicalLanes(member)
+            fixed = checkedLayoutAdd(fixed, logicalLanes(member))
         }
     }
     if (unsizedAt < 0) {

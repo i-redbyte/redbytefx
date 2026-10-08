@@ -1,5 +1,8 @@
 package ru.redbyte.redbytefx.gl
 
+import ru.redbyte.redbytefx.UniformBlock
+import ru.redbyte.redbytefx.packStd140Into
+
 /**
  * One uniform or storage block buffer at [binding].
  *
@@ -14,7 +17,22 @@ internal class GlBlockBuffer(
     var name: Int = 0
         private set
     private var bytes: ByteArray? = null
+    private var scratch: ByteArray? = null
     private var floats: FloatArray? = null
+
+    fun writableBytes(size: Int): ByteArray {
+        val available = scratch
+        return if (available != null && available.size == size) available else ByteArray(size).also { scratch = it }
+    }
+
+    fun writeStd140(block: UniformBlock, values: FloatArray): Boolean {
+        require(values.size == block.floatCount) {
+            "Uniform block \"${block.name}\" expects ${block.floatCount} floats, was ${values.size}"
+        }
+        val packed = writableBytes(block.byteSize)
+        packStd140Into(block, values, packed)
+        return write(packed)
+    }
 
     /** True when [values] differ from the last upload the device accepted. */
     fun pending(values: FloatArray): Boolean {
@@ -48,6 +66,7 @@ internal class GlBlockBuffer(
             require(name != 0) { "Driver returned no buffer name" }
         }
         upload(packed, full)
+        scratch = previous
         bytes = packed
         return true
     }
@@ -68,6 +87,7 @@ internal class GlBlockBuffer(
             name = 0
         }
         bytes = null
+        scratch = null
         floats = null
     }
 
