@@ -65,8 +65,9 @@ import android.graphics.RenderEffect as AndroidRenderEffect
 public class FxController internal constructor(
     internal val control: ShaderControl,
 ) {
+    private val ownerThread = Thread.currentThread()
     private var controllerBatchDepth: Int = 0
-    private val runtimeInvalidationListeners = LinkedHashSet<() -> Unit>()
+    private var runtimeInvalidationListeners = emptyArray<() -> Unit>()
     private var pendingHostInvalidate: Boolean = false
     internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
         private set
@@ -74,6 +75,7 @@ public class FxController internal constructor(
     private var cachedComposeRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
     internal val composeRenderEffect: androidx.compose.ui.graphics.RenderEffect
         get() {
+            checkThread()
             val platformRenderEffect = control.renderEffect()
             if (cachedPlatformRenderEffect !== platformRenderEffect) {
                 cachedPlatformRenderEffect = platformRenderEffect
@@ -92,12 +94,12 @@ public class FxController internal constructor(
      * after recomposition instead of inline during composition.
      */
     public fun setFloat(param: Uniform<Flt<High>>, value: Float) {
-        maybeInvalidateAfterUniformChange(control.setFloat(param, value))
+        writeUniform { control.setFloat(param, value) }
     }
 
     @JvmName("setMedFloat")
     public fun setFloat(param: Uniform<Flt<Med>>, value: Float) {
-        maybeInvalidateAfterUniformChange(control.setMedFloat(param, value))
+        writeUniform { control.setMedFloat(param, value) }
     }
 
     /**
@@ -108,12 +110,12 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat2].
      */
     public fun setFloat2(param: Uniform<Vec2<Flt<High>>>, x: Float, y: Float) {
-        maybeInvalidateAfterUniformChange(control.setFloat2(param, x, y))
+        writeUniform { control.setFloat2(param, x, y) }
     }
 
     @JvmName("setMedFloat2")
     public fun setFloat2(param: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float) {
-        maybeInvalidateAfterUniformChange(control.setMedFloat2(param, x, y))
+        writeUniform { control.setMedFloat2(param, x, y) }
     }
 
     /**
@@ -124,12 +126,12 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat3].
      */
     public fun setFloat3(param: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float) {
-        maybeInvalidateAfterUniformChange(control.setFloat3(param, x, y, z))
+        writeUniform { control.setFloat3(param, x, y, z) }
     }
 
     @JvmName("setMedFloat3")
     public fun setFloat3(param: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float) {
-        maybeInvalidateAfterUniformChange(control.setMedFloat3(param, x, y, z))
+        writeUniform { control.setMedFloat3(param, x, y, z) }
     }
 
     /**
@@ -140,12 +142,12 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindFloat4].
      */
     public fun setFloat4(param: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float) {
-        maybeInvalidateAfterUniformChange(control.setFloat4(param, x, y, z, w))
+        writeUniform { control.setFloat4(param, x, y, z, w) }
     }
 
     @JvmName("setMedFloat4")
     public fun setFloat4(param: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float) {
-        maybeInvalidateAfterUniformChange(control.setMedFloat4(param, x, y, z, w))
+        writeUniform { control.setMedFloat4(param, x, y, z, w) }
     }
 
     /**
@@ -156,7 +158,7 @@ public class FxController internal constructor(
      * Compose callers should usually prefer [bindInt].
      */
     public fun setInt(param: Uniform<IntS>, value: Int) {
-        maybeInvalidateAfterUniformChange(control.setInt(param, value))
+        writeUniform { control.setInt(param, value) }
     }
 
     /**
@@ -169,7 +171,7 @@ public class FxController internal constructor(
     public fun setResolution(widthPx: Float, heightPx: Float) {
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
-        maybeInvalidateAfterUniformChange(control.setResolution(safeWidth, safeHeight))
+        writeUniform { control.setResolution(safeWidth, safeHeight) }
     }
 
     /**
@@ -184,6 +186,7 @@ public class FxController internal constructor(
      */
     @MainThread
     public fun runBatch(block: () -> Unit) {
+        checkThread()
         controllerBatchDepth++
         try {
             control.runBatch(block)
@@ -197,11 +200,23 @@ public class FxController internal constructor(
     }
 
     internal fun syncResolution(widthPx: Float, heightPx: Float) {
+        checkThread()
         // Size changes already re-enter the draw path, so this keeps the shader resolution current
         // without triggering an extra invalidation loop from inside drawing.
         val safeWidth = sanitizeControllerResolution(widthPx)
         val safeHeight = sanitizeControllerResolution(heightPx)
         control.setResolution(safeWidth, safeHeight)
+    }
+
+    private inline fun writeUniform(change: () -> Boolean) {
+        checkThread()
+        maybeInvalidateAfterUniformChange(change())
+    }
+
+    private fun checkThread() {
+        check(Thread.currentThread() === ownerThread) {
+            "AGSL Compose controller must be used from the thread that created it"
+        }
     }
 
     private fun maybeInvalidateAfterUniformChange(changed: Boolean) {
@@ -215,15 +230,20 @@ public class FxController internal constructor(
 
     private fun invalidateRuntime() {
         runtimeInvalidationTick += 1
-        for (listener in runtimeInvalidationListeners) listener()
+        val listeners = runtimeInvalidationListeners
+        for (listener in listeners) listener()
     }
 
     internal fun addRuntimeInvalidationListener(listener: () -> Unit) {
-        runtimeInvalidationListeners += listener
+        checkThread()
+        if (runtimeInvalidationListeners.none { it === listener }) {
+            runtimeInvalidationListeners += listener
+        }
     }
 
     internal fun removeRuntimeInvalidationListener(listener: () -> Unit) {
-        runtimeInvalidationListeners -= listener
+        checkThread()
+        runtimeInvalidationListeners = runtimeInvalidationListeners.filterNot { it === listener }.toTypedArray()
     }
 }
 

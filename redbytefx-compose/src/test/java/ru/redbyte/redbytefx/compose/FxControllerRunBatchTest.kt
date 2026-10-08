@@ -2,7 +2,10 @@ package ru.redbyte.redbytefx.compose
 
 import android.graphics.RenderEffect
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicReference
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
@@ -19,6 +22,43 @@ import ru.redbyte.redbytefx.shader
  * in one block (see [FxController.maybeInvalidateAfterUniformChange]).
  */
 class FxControllerRunBatchTest {
+
+    @Test
+    fun backgroundWriteCannotChangeControllerState() {
+        val instance = TrackingFxInstance()
+        val controller = FxController(instance)
+        val param = testFloatParam()
+        val failure = AtomicReference<Throwable?>()
+        val worker = Thread {
+            try {
+                controller.setFloat(param, 1f)
+            } catch (error: Throwable) {
+                failure.set(error)
+            }
+        }
+        worker.start()
+        worker.join(5_000)
+        assertFalse(worker.isAlive)
+        assertTrue(failure.get() is IllegalStateException)
+        assertEquals(0, instance.floatCalls)
+        assertEquals(0, controller.runtimeInvalidationTick)
+    }
+
+    @Test
+    fun listenerCanUnsubscribeDuringInvalidation() {
+        val controller = FxController(TrackingFxInstance())
+        val param = testFloatParam()
+        var calls = 0
+        lateinit var listener: () -> Unit
+        listener = {
+            calls++
+            controller.removeRuntimeInvalidationListener(listener)
+        }
+        controller.addRuntimeInvalidationListener(listener)
+        controller.setFloat(param, 1f)
+        controller.setFloat(param, 2f)
+        assertEquals(1, calls)
+    }
 
     @Test
     fun runBatchCoalescesRuntimeInvalidationTick() {
