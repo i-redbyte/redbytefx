@@ -19,6 +19,10 @@ internal fun eglClientMinor(program: ShaderProgram): Int = when (program.target)
     ShaderTarget.Gles30, ShaderTarget.Agsl -> 0
 }
 
+/** Both scene programs share one context, so request the newer version they need. */
+internal fun eglClientMinor(program: ShaderProgram, present: ShaderProgram?): Int =
+    maxOf(eglClientMinor(program), present?.let(::eglClientMinor) ?: 0)
+
 /**
  * Creates an ES 3 context at [preferredMinor], then lower minor versions if the driver refuses.
  *

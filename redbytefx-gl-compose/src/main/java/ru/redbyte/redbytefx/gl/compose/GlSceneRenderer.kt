@@ -87,6 +87,9 @@ internal class SceneRenderer(
                 runtime.destroy()
                 fail(error)
                 return
+            } catch (error: Throwable) {
+                runtime.destroy()
+                throw error
             }
         }
         slot.runtime = runtime
@@ -128,12 +131,15 @@ internal class SceneRenderer(
         current.colorTarget = if (renderToTexture) ensureColorTarget(runtime) else null
         val draws = current.drawList()
         draws.reset()
-        onFrame(current)
-        refreshSurfaceMesh(runtime, current)
-        requireOffscreenTarget(renderToTexture, draws.offscreen().size)
-        runtime.use()
-        execute(runtime, draws, current.material)
-        draws.reset()
+        try {
+            onFrame(current)
+            refreshSurfaceMesh(runtime, current)
+            requireOffscreenTarget(renderToTexture, draws.offscreen().size)
+            runtime.use()
+            execute(runtime, draws, current.material)
+        } finally {
+            draws.reset()
+        }
         evictIdleMeshes(runtime)
     }
 
@@ -153,9 +159,12 @@ internal class SceneRenderer(
         requireOffscreenTarget(renderToTexture, offscreen.size)
         if (offscreen.isNotEmpty()) {
             runtime.bindFramebuffer(ensureColorTarget(runtime).framebuffer)
-            clear()
-            for (index in offscreen.indices) drawRecorded(runtime, offscreen[index], materialUniform)
-            runtime.bindFramebuffer(0)
+            try {
+                clear()
+                for (index in offscreen.indices) drawRecorded(runtime, offscreen[index], materialUniform)
+            } finally {
+                runtime.bindFramebuffer(0)
+            }
         }
         clear()
         if (draws.recordedCount() == 0) {
@@ -175,7 +184,7 @@ internal class SceneRenderer(
         for (index in screen.indices) {
             val draw = screen[index]
             val active = if (draw.present) checkNotNull(presentRuntime) else runtime
-            drawRecorded(active, draw, materialUniform)
+            drawRecorded(active, draw, if (draw.present) null else materialUniform)
         }
     }
 
@@ -242,17 +251,20 @@ internal class SceneRenderer(
         attribScratch.copyInto(held.enabledAttribs, 0, 0, nextCount)
         held.enabledAttribCount = nextCount
         if (held.element != 0) GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, held.element)
-        if (instances != null) bindInstances(runtime, instances)
-        if (target.patchVertices > 0) GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, target.patchVertices)
-        runtime.drawRange(
-            mode = target.mode,
-            vertexCount = held.vertexCount,
-            first = first,
-            count = executed,
-            elements = held.elements,
-            instanceCount = instances?.let { it.size / MODEL_MATRIX_FLOATS },
-        )
-        if (instances != null) clearInstances(runtime)
+        try {
+            if (instances != null) bindInstances(runtime, instances)
+            if (target.patchVertices > 0) GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, target.patchVertices)
+            runtime.drawRange(
+                mode = target.mode,
+                vertexCount = held.vertexCount,
+                first = first,
+                count = executed,
+                elements = held.elements,
+                instanceCount = instances?.let { it.size / MODEL_MATRIX_FLOATS },
+            )
+        } finally {
+            if (instances != null) clearInstances(runtime)
+        }
     }
 
     private fun bindInstances(runtime: GlProgramRuntime, instances: FloatArray) {
@@ -287,10 +299,10 @@ internal class SceneRenderer(
             return existing
         }
         val created = HeldMesh()
-        fill(runtime, created, target.stride, arrays.vertices, arrays.indices, arrays.revision)
         created.drawnFrame = frameNumber
         heldMeshes[target] = created
         heldOrder += target
+        fill(runtime, created, target.stride, arrays.vertices, arrays.indices, arrays.revision)
         return created
     }
 
@@ -310,8 +322,10 @@ internal class SceneRenderer(
         if (held.buffer == 0) held.buffer = runtime.createBuffer()
         held.floats = runtime.replaceArrayBuffer(held.buffer, held.floats, vertices)
         held.vertexCount = vertices.size / stride
-        held.sourceRevision = revision
-        if (preserveIndices) return
+        if (preserveIndices) {
+            held.sourceRevision = revision
+            return
+        }
         if (indices == null) {
             if (held.element != 0) {
                 GLES30.glBindVertexArray(held.vao)
@@ -321,11 +335,13 @@ internal class SceneRenderer(
             }
             held.elements = null
             held.indexCount = 0
+            held.sourceRevision = revision
             return
         }
         if (held.element == 0) held.element = runtime.createBuffer()
         held.elements = runtime.elementBufferData(held.element, indices)
         held.indexCount = indices.size
+        held.sourceRevision = revision
     }
 
     private fun replaceSurface(vertices: FloatArray, indices: IntArray?) {
@@ -402,6 +418,7 @@ internal class SceneRenderer(
         val height = viewHeight.coerceAtLeast(1)
         val current = colorTarget
         if (current != null && current.width == width && current.height == height) return current
+        colorTarget = null
         if (current != null) runtime.deleteColorTarget(current)
         val created = runtime.createColorTarget(width, height)
         colorTarget = created

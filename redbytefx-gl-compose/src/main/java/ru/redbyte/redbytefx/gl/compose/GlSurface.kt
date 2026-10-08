@@ -28,7 +28,8 @@ import ru.redbyte.redbytefx.ShaderProgram
  * uniforms and [GlFrame.runtime] for direct [ru.redbyte.redbytefx.gl.GlProgramRuntime] calls.
  *
  * Rendering follows the host [androidx.lifecycle.Lifecycle] (`onResume` / `onPause` on the surface).
- * The EGL context is OpenGL ES 3.x, with a minor version matching [controller]'s program (3.2, 3.1, or 3.0).
+ * The EGL context is OpenGL ES 3.x, with a minor version matching the newer of the surface
+ * and present programs (3.2, 3.1, or 3.0).
  *
  * When [onFrame] records no draws, the mesh is drawn once. The first recorded draw suppresses that
  * automatic draw. A draw with no triangles or no instances is not recorded.
@@ -68,7 +69,7 @@ public fun GlSurface(
                     val slot = GlSlot()
                     val surfaceView = GLSurfaceView(context).apply {
                         setEGLContextClientVersion(3)
-                        setEGLContextFactory(Es3ContextFactory(eglClientMinor(controller.program)))
+                        setEGLContextFactory(Es3ContextFactory(eglClientMinor(controller.program, present)))
                         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
                         slot.post = { block -> post { block() } }
                         slot.queue = { block -> queueEvent(block) }

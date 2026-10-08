@@ -161,6 +161,7 @@ internal class DrawList {
     ) {
         require(!present || !recordingOffscreen) { "An offscreen draw uses the surface program" }
         check(!present || presentReady) { "This surface has no present program" }
+        require(!present || material == null) { "A present draw cannot use the surface material uniform" }
         require(model == null || instances == null) { "draw takes model or instances, not both" }
         if (model != null) {
             require(model.size >= MODEL_MATRIX_FLOATS) {
@@ -319,8 +320,9 @@ public class GlFrame internal constructor(
      * [onFrame][GlSurface] returns, so do not change it during this frame. [model] is one such
      * matrix, copied immediately, so the same scratch array may be reused for the next draw in this
      * frame. [model] and [instances] together are an argument error. [material] is written to
-     * [GlFrame.material] on the GL thread just before this draw; omit it to write `-1`. [present]
-     * selects [presentRuntime] and is only valid for a screen draw. [pipeline] is applied on the GL
+     * [GlFrame.material] on the GL thread just before a surface draw; omit it to write `-1`.
+     * [present] selects [presentRuntime], is only valid for a screen draw, and cannot take
+     * [material]. [pipeline] is applied on the GL
      * thread for this draw only. The next draw applies its own, and the default leaves blend off,
      * scissor off, every color channel written, depth writes on, and culling off. The depth test is
      * unchanged.

@@ -28,6 +28,9 @@ class GlFramePlanTest {
         assertThrows(IllegalArgumentException::class.java) {
             list.offscreen { list.draw(triangle, 0, 3, null, true, true, 3) }
         }
+        assertThrows(IllegalArgumentException::class.java) {
+            list.draw(triangle, 0, 3, null, true, true, 3, material = 2f)
+        }
         list.draw(triangle, 0, 3, null, true, true, 3)
         assertTrue(list.screen().single().present)
     }

@@ -46,6 +46,12 @@ class GlRequirementsTest {
         }
         assertEquals(glEs32LinkRequirement(), program.glLinkRequirementHint())
         assertEquals(2, eglClientMinor(program))
+        val scene = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertEquals(2, eglClientMinor(scene, program))
+        assertEquals(2, eglClientMinor(program, scene))
     }
 
     @Test
