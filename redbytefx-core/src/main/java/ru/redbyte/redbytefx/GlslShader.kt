@@ -307,17 +307,18 @@ internal fun reachableFunctions(
     functions: List<UserFunction>,
     roots: List<Expr<*>>,
 ): List<UserFunction> {
+    val called = calledFunctions(roots)
+    return functions.filter { it in called }
+}
+
+private fun calledFunctions(roots: List<Expr<*>>): Set<UserFunction> {
     val reachable = linkedSetOf<UserFunction>()
     roots.forEach { root ->
         walk(root, linkedSetOf()) { node ->
             if (node is ExprNode.UserCall) reachable += node.function
         }
     }
-    return functions.filter { it in reachable }
-}
-
-internal fun collectVaryings(expr: Expr<*>, into: MutableSet<Varying<*>>) {
-    collectVaryingUses(expr, into)
+    return reachable
 }
 
 internal fun collectVaryingUses(expr: Expr<*>, into: MutableSet<Varying<*>>) {
@@ -361,12 +362,7 @@ private fun functionsForStage(
     stage: AuthoringPlace,
     roots: List<Expr<*>>,
 ): List<UserFunction> {
-    val reachable = linkedSetOf<UserFunction>()
-    roots.forEach { root ->
-        walk(root, linkedSetOf()) { node ->
-            if (node is ExprNode.UserCall) reachable += node.function
-        }
-    }
+    val reachable = calledFunctions(roots)
     val owned = functions.filter { it.stage == stage }
     val copies = reachable.filter { it.stage != stage && !isStageDependent(it) }
     return owned + copies

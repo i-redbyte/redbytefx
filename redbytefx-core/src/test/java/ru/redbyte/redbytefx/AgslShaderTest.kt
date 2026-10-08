@@ -291,6 +291,31 @@ class AgslShaderTest {
     }
 
     @Test
+    fun vectorAndIntDefaultsSkipRepeatedWrites() {
+        lateinit var position: Uniform<Vec3<Flt<High>>>
+        lateinit var color: Uniform<Vec4<Flt<High>>>
+        lateinit var mode: Uniform<IntS>
+        val program = shader(ShaderTarget.Agsl) {
+            position = uniformVec3("position", 1f, 2f, 3f)
+            color = uniformVec4("color", 0f, 0f, 0f, 1f)
+            mode = uniformInt("mode", 2)
+            fragment { sample() }
+        }
+        val writer = RecordingUniformWriter()
+        val runtime = ShaderRuntime(program, writer) {}
+
+        assertFalse(runtime.set(position, 1f, 2f, 3f))
+        assertFalse(runtime.set(color, 0f, 0f, 0f, 1f))
+        assertFalse(runtime.set(mode, 2))
+        assertTrue(runtime.set(position, 1f, 2f, 4f))
+        assertTrue(runtime.set(color, 1f, 0f, 0f, 1f))
+        assertTrue(runtime.set(mode, 3))
+        assertEquals(2, writer.float3Calls)
+        assertEquals(2, writer.float4Calls)
+        assertEquals(listOf("u_mode" to 2, "u_mode" to 3), writer.ints)
+    }
+
+    @Test
     fun proceduralShaderOmitsUnusedSamplingCodeAndFunctions() {
         val program = shader(ShaderTarget.Agsl) {
             fragment {
@@ -310,6 +335,8 @@ class AgslShaderTest {
 internal class RecordingUniformWriter : UniformWriter {
     val floats = mutableListOf<Pair<String, Float>>()
     val float2s = mutableListOf<Triple<String, Float, Float>>()
+    var float3Calls = 0
+    var float4Calls = 0
 
     override fun setFloat(name: String, value: Float) {
         floats += name to value
@@ -319,9 +346,13 @@ internal class RecordingUniformWriter : UniformWriter {
         float2s += Triple(name, x, y)
     }
 
-    override fun setFloat3(name: String, x: Float, y: Float, z: Float) = Unit
+    override fun setFloat3(name: String, x: Float, y: Float, z: Float) {
+        float3Calls++
+    }
 
-    override fun setFloat4(name: String, x: Float, y: Float, z: Float, w: Float) = Unit
+    override fun setFloat4(name: String, x: Float, y: Float, z: Float, w: Float) {
+        float4Calls++
+    }
 
     override fun setInt(name: String, value: Int) {
         ints += name to value

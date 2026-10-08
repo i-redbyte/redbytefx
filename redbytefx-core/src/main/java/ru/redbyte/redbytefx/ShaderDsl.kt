@@ -59,15 +59,13 @@ public class ShaderProgram internal constructor(
      * and always on AGSL (the generated source always declares it).
      * Compose writes it from the draw size.
      */
-    public val resolution: HighVec2Uniform?
-        get() {
-            val found = bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.uniform
-                ?: return null
-            val expected = Shape.Vector(ScalarKind.Float, Precision.High, 2)
-            if (found.shape != expected) return null
-            @Suppress("UNCHECKED_CAST")
-            return found as HighVec2Uniform
-        }
+    public val resolution: HighVec2Uniform? = run {
+        val found = bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.uniform
+            ?: return@run null
+        if (found.shape != Shape.Vector(ScalarKind.Float, Precision.High, 2)) return@run null
+        @Suppress("UNCHECKED_CAST")
+        found as HighVec2Uniform
+    }
 
     public fun floatUniform(name: String): HighFloatUniform = lookup(name, highFloatShape())
 
@@ -103,10 +101,6 @@ public class ShaderProgram internal constructor(
         @Suppress("UNCHECKED_CAST")
         return found as Uniform<T>
     }
-
-    internal fun binding(uniform: Uniform<*>): UniformBinding =
-        bindings.firstOrNull { it.uniform === uniform }
-            ?: throw IllegalArgumentException("Uniform does not belong to this shader")
 }
 
 /** GLES/AGSL name paired with the [Uniform] handle declared in Kotlin. */
@@ -360,7 +354,7 @@ public class ShaderDsl internal constructor(
             "Matrix uniform \"$name\" expects ${lanes * lanes} floats, was ${default.size}"
         }
         require(default.all { it.isFinite() }) { "Uniform default must be finite" }
-        val handle = createVectorUniform<T>(name, Shape.Matrix(lanes), default.copyOf())
+        val handle = createVectorUniform<T>(name, Shape.Matrix(lanes), default)
         uniforms += handle
         return handle
     }
@@ -705,9 +699,9 @@ public class ShaderDsl internal constructor(
             }
         }
         val reads = linkedSetOf<Varying<*>>()
-        collectVaryings(body, reads)
-        fragmentWrites.forEach { collectVaryings(it.value, reads) }
-        commandExprs(fragmentStatements).forEach { collectVaryings(it, reads) }
+        collectVaryingUses(body, reads)
+        fragmentWrites.forEach { collectVaryingUses(it.value, reads) }
+        commandExprs(fragmentStatements).forEach { collectVaryingUses(it, reads) }
         collectVaryingUsesFromStageFunctions(functions, AuthoringPlace.Fragment, reads)
         for (varying in reads) {
             if (varyingWrites.none { it.varying === varying }) {

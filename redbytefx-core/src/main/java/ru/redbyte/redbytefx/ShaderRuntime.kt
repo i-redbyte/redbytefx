@@ -20,15 +20,23 @@ internal class UniformBinding(
  * [batch] collapses several successful writes into one notification.
  */
 internal class ShaderRuntime(
-    private val program: ShaderProgram,
+    program: ShaderProgram,
     private val writer: UniformWriter,
     private val onChanged: () -> Unit,
 ) {
+    private class UniformSlot(val binding: UniformBinding) {
+        var floatValue = 0f
+        var hasFloat = false
+        var vectorValues: FloatArray? = null
+        var intValue = 0
+        var hasInt = false
+    }
+
     private var batchDepth = 0
     private var pending = false
-    private val floatValues = java.util.IdentityHashMap<Uniform<*>, Float>()
-    private val vectorValues = java.util.IdentityHashMap<Uniform<*>, FloatArray>()
-    private val intValues = java.util.IdentityHashMap<Uniform<*>, Int>()
+    private val slots = java.util.IdentityHashMap<Uniform<*>, UniformSlot>().apply {
+        for (binding in program.bindings) put(binding.uniform, UniformSlot(binding))
+    }
     private val resolution = program.resolution
 
     init {
@@ -111,32 +119,32 @@ internal class ShaderRuntime(
     }
 
     private fun setFloat(uniform: Uniform<*>, value: Float): Boolean {
-        val binding = program.binding(uniform)
-        val previous = floatValues[uniform]
-        if (previous != null && sameFloatUniformValue(previous, value)) return flushPending()
-        writer.setFloat(binding.agslName, value)
-        floatValues[uniform] = value
+        val slot = slot(uniform)
+        if (slot.hasFloat && sameFloatUniformValue(slot.floatValue, value)) return flushPending()
+        writer.setFloat(slot.binding.agslName, value)
+        slot.floatValue = value
+        slot.hasFloat = true
         notifyChanged()
         return true
     }
 
-    private fun sameStored2(uniform: Uniform<*>, x: Float, y: Float): Boolean {
-        val previous = vectorValues[uniform] ?: return false
+    private fun sameStored2(previous: FloatArray?, x: Float, y: Float): Boolean {
+        previous ?: return false
         return previous.size == 2 &&
             sameFloatUniformValue(previous[0], x) &&
             sameFloatUniformValue(previous[1], y)
     }
 
-    private fun sameStored3(uniform: Uniform<*>, x: Float, y: Float, z: Float): Boolean {
-        val previous = vectorValues[uniform] ?: return false
+    private fun sameStored3(previous: FloatArray?, x: Float, y: Float, z: Float): Boolean {
+        previous ?: return false
         return previous.size == 3 &&
             sameFloatUniformValue(previous[0], x) &&
             sameFloatUniformValue(previous[1], y) &&
             sameFloatUniformValue(previous[2], z)
     }
 
-    private fun sameStored4(uniform: Uniform<*>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        val previous = vectorValues[uniform] ?: return false
+    private fun sameStored4(previous: FloatArray?, x: Float, y: Float, z: Float, w: Float): Boolean {
+        previous ?: return false
         return previous.size == 4 &&
             sameFloatUniformValue(previous[0], x) &&
             sameFloatUniformValue(previous[1], y) &&
@@ -145,11 +153,11 @@ internal class ShaderRuntime(
     }
 
     private fun setVector2(uniform: Uniform<*>, x: Float, y: Float): Boolean {
-        if (sameStored2(uniform, x, y)) return flushPending()
-        val binding = program.binding(uniform)
-        val previous = vectorValues[uniform]
-        writer.setFloat2(binding.agslName, x, y)
-        val stored = previous ?: FloatArray(2).also { vectorValues[uniform] = it }
+        val slot = slot(uniform)
+        val previous = slot.vectorValues
+        if (sameStored2(previous, x, y)) return flushPending()
+        writer.setFloat2(slot.binding.agslName, x, y)
+        val stored = previous ?: FloatArray(2).also { slot.vectorValues = it }
         stored[0] = x
         stored[1] = y
         notifyChanged()
@@ -157,11 +165,11 @@ internal class ShaderRuntime(
     }
 
     private fun setVector3(uniform: Uniform<*>, x: Float, y: Float, z: Float): Boolean {
-        if (sameStored3(uniform, x, y, z)) return flushPending()
-        val binding = program.binding(uniform)
-        val previous = vectorValues[uniform]
-        writer.setFloat3(binding.agslName, x, y, z)
-        val stored = previous ?: FloatArray(3).also { vectorValues[uniform] = it }
+        val slot = slot(uniform)
+        val previous = slot.vectorValues
+        if (sameStored3(previous, x, y, z)) return flushPending()
+        writer.setFloat3(slot.binding.agslName, x, y, z)
+        val stored = previous ?: FloatArray(3).also { slot.vectorValues = it }
         stored[0] = x
         stored[1] = y
         stored[2] = z
@@ -170,11 +178,11 @@ internal class ShaderRuntime(
     }
 
     private fun setVector4(uniform: Uniform<*>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        if (sameStored4(uniform, x, y, z, w)) return flushPending()
-        val binding = program.binding(uniform)
-        val previous = vectorValues[uniform]
-        writer.setFloat4(binding.agslName, x, y, z, w)
-        val stored = previous ?: FloatArray(4).also { vectorValues[uniform] = it }
+        val slot = slot(uniform)
+        val previous = slot.vectorValues
+        if (sameStored4(previous, x, y, z, w)) return flushPending()
+        writer.setFloat4(slot.binding.agslName, x, y, z, w)
+        val stored = previous ?: FloatArray(4).also { slot.vectorValues = it }
         stored[0] = x
         stored[1] = y
         stored[2] = z
@@ -184,14 +192,17 @@ internal class ShaderRuntime(
     }
 
     private fun setInt(uniform: Uniform<*>, value: Int): Boolean {
-        val binding = program.binding(uniform)
-        val previous = intValues[uniform]
-        if (previous != null && previous == value) return flushPending()
-        writer.setInt(binding.agslName, value)
-        intValues[uniform] = value
+        val slot = slot(uniform)
+        if (slot.hasInt && slot.intValue == value) return flushPending()
+        writer.setInt(slot.binding.agslName, value)
+        slot.intValue = value
+        slot.hasInt = true
         notifyChanged()
         return true
     }
+
+    private fun slot(uniform: Uniform<*>): UniformSlot =
+        slots[uniform] ?: throw IllegalArgumentException("Uniform does not belong to this shader")
 
     private fun notifyChanged() {
         pending = true
