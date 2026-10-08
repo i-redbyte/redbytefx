@@ -30,6 +30,7 @@ internal enum class ProgramCode {
     MissingCompute,
     TessStageMissing,
     ForeignUniform,
+    ForeignFunction,
     EmitVertexWithoutPosition,
     VaryingForward,
     TessInterpolation,

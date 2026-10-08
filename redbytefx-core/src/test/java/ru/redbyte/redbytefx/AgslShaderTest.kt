@@ -130,6 +130,86 @@ class AgslShaderTest {
     }
 
     @Test
+    fun failedEffectRefreshCanBeRetriedWithoutRewritingTheUniform() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { sample() }
+        }
+        val writer = RecordingUniformWriter()
+        var failNextRefresh = false
+        var refreshes = 0
+        val runtime = ShaderRuntime(program, writer) {
+            if (failNextRefresh) {
+                failNextRefresh = false
+                error("effect refresh failed")
+            }
+            refreshes++
+        }
+        failNextRefresh = true
+        assertThrows(IllegalStateException::class.java) { runtime.set(amount, 0.5f) }
+        assertTrue(runtime.set(amount, 0.5f))
+        assertFalse(runtime.set(amount, 0.5f))
+        assertEquals(listOf(0f, 0.5f), writer.floatValues("u_amount"))
+        assertEquals(2, refreshes)
+    }
+
+    @Test
+    fun aBatchRetryReportsThePendingEffectRefresh() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { sample() }
+        }
+        var failNextRefresh = false
+        val runtime = ShaderRuntime(program, RecordingUniformWriter()) {
+            if (failNextRefresh) {
+                failNextRefresh = false
+                error("effect refresh failed")
+            }
+        }
+        failNextRefresh = true
+        assertThrows(IllegalStateException::class.java) {
+            runtime.batch { runtime.set(amount, 0.5f) }
+        }
+        runtime.batch { assertTrue(runtime.set(amount, 0.5f)) }
+        assertFalse(runtime.set(amount, 0.5f))
+    }
+
+    @Test
+    fun agslRejectsHandlesFromAnotherProgram() {
+        lateinit var foreignUniform: HighFloatUniform
+        lateinit var foreignFunction: Fn1<Flt<High>, Flt<High>>
+        shader(ShaderTarget.Agsl) {
+            foreignUniform = uniform("gain", 1f)
+            fragment {
+                foreignFunction = fn(0f.lit, "boost") { value -> value + 1f.lit }
+                sample()
+            }
+        }
+
+        val uniformError = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    val gain = foreignUniform.expr
+                    vec4(gain, gain, gain, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.ForeignUniform, uniformError.code)
+
+        val functionError = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Agsl) {
+                fragment {
+                    local(foreignFunction(0f.lit))
+                    sample()
+                }
+            }
+        }
+        assertEquals(ProgramCode.ForeignFunction, functionError.code)
+    }
+
+    @Test
     fun resolutionClampsNonPositiveComponents() {
         val program = shader(ShaderTarget.Agsl) {
             fragment { sample() }

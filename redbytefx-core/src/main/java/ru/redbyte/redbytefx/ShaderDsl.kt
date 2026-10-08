@@ -579,7 +579,7 @@ public class ShaderDsl internal constructor(
         }
         val occupied = names.snapshot()
         val functionText = renderAgslFunctions(functions, occupied, uniformNames, varyingNames)
-        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames)
+        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, functions)
         val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
         val rendered = emitter.emit(body)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
@@ -1195,6 +1195,7 @@ internal fun emitAgsl(expr: Expr<*>): String =
 private class AgslEmitter(
     private val allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, UniformBinding>,
+    private val functions: List<UserFunction>? = null,
 ) : CodeEmitter {
     private val localNames = IdentityHashMap<ExprNode.Local, String>()
     private var localIndex = 0
@@ -1218,7 +1219,10 @@ private class AgslEmitter(
         }
         is ExprNode.Local -> local(node, expr.shape)
         is ExprNode.SlotRef -> slotName(node.slot)
-        is ExprNode.UniformRef -> uniforms.getValue(node.uniform).agslName
+        is ExprNode.UniformRef -> uniforms[node.uniform]?.agslName ?: throw ProgramException(
+            ProgramCode.ForeignUniform,
+            "Uniform \"${node.uniform.name}\" does not belong to this shader",
+        )
         ExprNode.FragCoord -> "fragCoord"
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
@@ -1227,7 +1231,15 @@ private class AgslEmitter(
         is ExprNode.Param -> node.name
         is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
-        is ExprNode.UserCall -> call(ExprNode.Call(node.function.name, node.args))
+        is ExprNode.UserCall -> {
+            if (functions != null && functions.none { it === node.function }) {
+                throw ProgramException(
+                    ProgramCode.ForeignFunction,
+                    "Function \"${node.function.name}\" does not belong to this shader",
+                )
+            }
+            call(ExprNode.Call(node.function.name, node.args))
+        }
         is ExprNode.Texture,
         is ExprNode.TextureCube,
         is ExprNode.AttributeRef,
@@ -1311,7 +1323,7 @@ private fun renderAgslFunctions(
 ): String = buildString {
     for (function in functions) {
         val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
-        val emitter = AgslEmitter(locals, uniforms)
+        val emitter = AgslEmitter(locals, uniforms, functions)
         val statements = spellStageStatements(function.statements, emitter, varyingNames)
         val body = emitter.emit(function.body)
         val signature = function.parameters.joinToString(", ") {

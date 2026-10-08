@@ -57,35 +57,35 @@ internal class ShaderRuntime(
     internal fun set(uniform: Uniform<Flt<Med>>, value: Float): Boolean = setFloat(uniform, value)
 
     internal fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean {
-        if (sameStored2(uniform, x, y)) return false
+        if (sameStored2(uniform, x, y)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y))
     }
 
     internal fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean {
-        if (sameStored3(uniform, x, y, z)) return false
+        if (sameStored3(uniform, x, y, z)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y, z))
     }
 
     internal fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        if (sameStored4(uniform, x, y, z, w)) return false
+        if (sameStored4(uniform, x, y, z, w)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y, z, w))
     }
 
     @JvmName("setMedVec2")
     internal fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean {
-        if (sameStored2(uniform, x, y)) return false
+        if (sameStored2(uniform, x, y)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y))
     }
 
     @JvmName("setMedVec3")
     internal fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean {
-        if (sameStored3(uniform, x, y, z)) return false
+        if (sameStored3(uniform, x, y, z)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y, z))
     }
 
     @JvmName("setMedVec4")
     internal fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        if (sameStored4(uniform, x, y, z, w)) return false
+        if (sameStored4(uniform, x, y, z, w)) return flushPending()
         return writeVector(uniform, floatArrayOf(x, y, z, w))
     }
 
@@ -106,17 +106,14 @@ internal class ShaderRuntime(
             block()
         } finally {
             batchDepth -= 1
-            if (batchDepth == 0 && pending) {
-                pending = false
-                onChanged()
-            }
+            flushPending()
         }
     }
 
     private fun setFloat(uniform: Uniform<*>, value: Float): Boolean {
         val binding = program.binding(uniform)
         val previous = floatValues[uniform]
-        if (previous != null && sameFloatUniformValue(previous, value)) return false
+        if (previous != null && sameFloatUniformValue(previous, value)) return flushPending()
         writer.setFloat(binding.agslName, value)
         floatValues[uniform] = value
         notifyChanged()
@@ -150,7 +147,7 @@ internal class ShaderRuntime(
     private fun writeVector(uniform: Uniform<*>, value: FloatArray): Boolean {
         val binding = program.binding(uniform)
         val previous = vectorValues[uniform]
-        if (previous != null && sameVector(previous, value)) return false
+        if (previous != null && sameVector(previous, value)) return flushPending()
         val stored = value.copyOf()
         when (stored.size) {
             2 -> writer.setFloat2(binding.agslName, stored[0], stored[1])
@@ -166,7 +163,7 @@ internal class ShaderRuntime(
     private fun setInt(uniform: Uniform<*>, value: Int): Boolean {
         val binding = program.binding(uniform)
         val previous = intValues[uniform]
-        if (previous != null && previous == value) return false
+        if (previous != null && previous == value) return flushPending()
         writer.setInt(binding.agslName, value)
         intValues[uniform] = value
         notifyChanged()
@@ -174,11 +171,16 @@ internal class ShaderRuntime(
     }
 
     private fun notifyChanged() {
-        if (batchDepth > 0) {
-            pending = true
-        } else {
-            onChanged()
-        }
+        pending = true
+        flushPending()
+    }
+
+    private fun flushPending(): Boolean {
+        if (!pending) return false
+        if (batchDepth > 0) return true
+        onChanged()
+        pending = false
+        return true
     }
 
     private fun sanitizeResolution(value: Float): Float = if (value > 0f) value else 1f
