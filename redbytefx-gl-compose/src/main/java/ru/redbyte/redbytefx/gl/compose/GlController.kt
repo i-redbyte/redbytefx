@@ -58,6 +58,9 @@ public class GlController internal constructor(
     internal var runtime: GlProgramRuntime? = null
         private set
     private val lock = Any()
+    private val ownedUniforms = IdentityHashMap<Uniform<*>, Boolean>().apply {
+        for (entry in program.spelledUniforms()) put(entry.uniform, true)
+    }
     private val latest = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
@@ -230,11 +233,24 @@ public class GlController internal constructor(
     }
 
     private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {
+        requireUniform(uniform)
         synchronized(lock) {
             pending[uniform] = write
             if (retained) latest[uniform] = write else latest.remove(uniform)
         }
         scheduleDrain()
+    }
+
+    private fun requireUniform(uniform: Uniform<*>) {
+        require(ownedUniforms.containsKey(uniform)) { "Uniform does not belong to this shader" }
+    }
+
+    private fun requireUniformBlock(block: UniformBlock) {
+        require(program.uniformBlocks.any { it === block }) { "Uniform block does not belong to this shader" }
+    }
+
+    private fun requireStorageBlock(block: StorageBlock) {
+        require(program.storageBlocks.any { it === block }) { "Storage block does not belong to this shader" }
     }
 
     @JvmName("setHighFloat")
@@ -294,18 +310,21 @@ public class GlController internal constructor(
 
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat2(uniform: Uniform<Mat2>, values: FloatArray) {
+        requireUniform(uniform)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
 
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat3(uniform: Uniform<Mat3>, values: FloatArray) {
+        requireUniform(uniform)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
 
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
+        requireUniform(uniform)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
@@ -316,6 +335,7 @@ public class GlController internal constructor(
      */
     @JvmName("setUniformBlock")
     public fun set(block: UniformBlock, values: FloatArray) {
+        requireUniformBlock(block)
         val snapshot = values.copyOf()
         enqueueRetained(uniformBlockWrites, block) { it.set(block, snapshot) }
     }
@@ -326,6 +346,7 @@ public class GlController internal constructor(
      */
     @JvmName("setStorageBlock")
     public fun set(block: StorageBlock, values: FloatArray) {
+        requireStorageBlock(block)
         val snapshot = values.copyOf()
         enqueueRetained(storageBlockWrites, block) { it.set(block, snapshot) }
     }
@@ -346,6 +367,7 @@ public class GlController internal constructor(
      * [onResult] runs on that thread with the float count after [into] has been filled.
      */
     public fun read(block: StorageBlock, into: FloatArray, onResult: (Int) -> Unit) {
+        requireStorageBlock(block)
         enqueueTask { linked ->
             onResult(linked.read(block, into))
         }

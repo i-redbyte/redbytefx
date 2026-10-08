@@ -24,6 +24,39 @@ import ru.redbyte.redbytefx.x
 
 class GlControllerQueueTest {
     @Test
+    fun foreignHandlesAreRejectedBeforeTheyEnterTheQueue() {
+        val owner = shader(ShaderTarget.Gles31) {
+            uniform("amount", 0f)
+            uniformBlock("frame") { float("gain") }
+            storageBlock("cells") { float("value") }
+            compute(1) { }
+        }
+        val foreign = shader(ShaderTarget.Gles31) {
+            uniform("amount", 0f)
+            uniformBlock("frame") { float("gain") }
+            storageBlock("cells") { float("value") }
+            compute(1) { }
+        }
+        val queued = mutableListOf<() -> Unit>()
+        val controller = GlController(owner, GlSurfaceConfig())
+        controller.attachQueue { queued += it }
+        val queuedBeforeWrites = queued.size
+        assertThrows(IllegalArgumentException::class.java) {
+            controller.set(foreign.floatUniform("u_amount"), 1f)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            controller.set(requireNotNull(foreign.uniformBlock), floatArrayOf(1f))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            controller.set(requireNotNull(foreign.storageBlock), floatArrayOf(1f))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            controller.read(requireNotNull(foreign.storageBlock), FloatArray(1)) { }
+        }
+        assertEquals(queuedBeforeWrites, queued.size)
+    }
+
+    @Test
     fun uniformWritesBeforeLinkAreCoalescedAndAppliedOnDrain() {
         lateinit var amount: Uniform<Flt<High>>
         val program = shader(ShaderTarget.Gles30) {
