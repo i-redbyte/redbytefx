@@ -22,19 +22,17 @@ import ru.redbyte.redbytefx.gl.compose.glPointerInput
 import ru.redbyte.redbytefx.gl.compose.rememberGlController
 import ru.redbyte.redbytefx.sample.ui.say
 
+internal data class PointerSnapshot(val x: Float, val y: Float, val serial: Int)
+
 internal class PointerState {
-    @Volatile var x: Float = 0f
+    @Volatile private var latest = PointerSnapshot(0f, 0.2f, 0)
 
-    @Volatile var y: Float = 0.2f
-    private val ticks = java.util.concurrent.atomic.AtomicInteger(0)
-
+    @Synchronized
     fun mark(x: Float, y: Float) {
-        this.x = x
-        this.y = y
-        ticks.incrementAndGet()
+        latest = PointerSnapshot(x, y, latest.serial + 1)
     }
 
-    fun serial(): Int = ticks.get()
+    fun snapshot(): PointerSnapshot = latest
 }
 
 @Composable

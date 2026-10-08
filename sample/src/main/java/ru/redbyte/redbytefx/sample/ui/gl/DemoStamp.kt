@@ -117,9 +117,10 @@ internal fun DemoStamp() {
             images.runtime = frame.runtime
             images.serial = -1
         }
-        val serial = pointer.serial()
+        val touch = pointer.snapshot()
+        val serial = touch.serial
         if (serial != 0 && serial != images.serial) {
-            val (column, row) = stampCell(pointer.x, pointer.y)
+            val (column, row) = stampCell(touch.x, touch.y)
             val cell = STAMP_SIZE / STAMP_CELLS
             val ink = if (serial % 2 == 0) stampFill(cell, 220, 70, 40) else stampFill(cell, 240, 200, 60)
             frame.runtime.texSubImage2DRgba(

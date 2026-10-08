@@ -150,11 +150,11 @@ private class StormClock {
     private var heldY = -0.2f
 
     fun publish(scene: StormScene, pointer: PointerState, frame: GlFrame) {
-        val serial = pointer.serial()
-        if (serial != seen) {
-            seen = serial
-            heldX = pointer.x
-            heldY = pointer.y
+        val touch = pointer.snapshot()
+        if (touch.serial != seen) {
+            seen = touch.serial
+            heldX = touch.x
+            heldY = touch.y
             touchAt = frame.seconds
         }
         if (frame.seconds >= nextBurst) {

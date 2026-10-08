@@ -461,7 +461,7 @@ internal fun DemoTunnel() {
         flash = { run.flash },
         mesh = { run.mesh },
     ) { dt, pointer ->
-        run.step(dt, pointer.x)
+        run.step(dt, pointer.snapshot().x)
         caption = run.caption(ru)
     }
 }
@@ -479,8 +479,9 @@ internal fun DemoMaze() {
         flash = { run.flash },
         mesh = { run.mesh },
     ) { dt, pointer ->
-        val tiltY = if (pointer.serial() == 0) 0f else pointer.y
-        run.step(dt, pointer.x, tiltY)
+        val touch = pointer.snapshot()
+        val tiltY = if (touch.serial == 0) 0f else touch.y
+        run.step(dt, touch.x, tiltY)
         caption = run.caption(ru)
     }
 }
@@ -498,7 +499,7 @@ internal fun DemoBreakout() {
         flash = { run.flash },
         mesh = { run.mesh },
     ) { dt, pointer ->
-        run.step(dt, pointer.x)
+        run.step(dt, pointer.snapshot().x)
         caption = run.caption(ru)
     }
 }
@@ -516,7 +517,8 @@ internal fun DemoStrafe() {
         flash = { run.flash },
         mesh = { run.mesh },
     ) { dt, pointer ->
-        run.step(dt, pointer.x, pointer.serial())
+        val touch = pointer.snapshot()
+        run.step(dt, touch.x, touch.serial)
         caption = run.caption(ru)
     }
 }
@@ -534,7 +536,7 @@ internal fun DemoDescent() {
         flash = { run.flash },
         mesh = { run.mesh },
     ) { dt, pointer ->
-        run.step(dt, pointer.x)
+        run.step(dt, pointer.snapshot().x)
         caption = run.caption(ru)
     }
 }

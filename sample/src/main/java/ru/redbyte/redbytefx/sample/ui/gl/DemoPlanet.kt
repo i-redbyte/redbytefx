@@ -146,12 +146,12 @@ internal class PlanetPhoto(
     val generation: Int,
 )
 
+private data class PlanetPointer(val x: Float, val y: Float, val serial: Int, val anchor: Int)
+
 internal class PlanetRig {
     val camera = CameraMatrices()
 
-    @Volatile var px: Float = 0f
-
-    @Volatile var py: Float = 0f
+    @Volatile private var pointer = PlanetPointer(0f, 0f, 0, 0)
 
     @Volatile var photo: PlanetPhoto? = null
 
@@ -164,10 +164,6 @@ internal class PlanetRig {
     var pitch: Float = 0.15f
 
     var heat: Float = 0.12f
-
-    private val ticks = AtomicInteger(0)
-
-    private val anchors = AtomicInteger(0)
 
     private var seenSerial: Int = -1
 
@@ -187,37 +183,36 @@ internal class PlanetRig {
 
     var uploadedGeneration: Int = -1
 
+    @Synchronized
     fun begin(x: Float, y: Float) {
-        px = x
-        py = y
-        anchors.incrementAndGet()
+        pointer = PlanetPointer(x, y, pointer.serial, pointer.anchor + 1)
     }
 
+    @Synchronized
     fun mark(x: Float, y: Float) {
-        px = x
-        py = y
-        ticks.incrementAndGet()
+        pointer = PlanetPointer(x, y, pointer.serial + 1, pointer.anchor)
     }
 
     fun advance(seconds: Float) {
         val dt = if (lastSeconds == 0f) 0f else (seconds - lastSeconds).coerceIn(0f, 0.05f)
         lastSeconds = seconds
-        val anchorStamp = anchors.get()
-        val stamp = ticks.get()
+        val touch = pointer
+        val anchorStamp = touch.anchor
+        val stamp = touch.serial
         var drag = 0f
         if (seenSerial < 0 || anchorStamp != seenAnchor) {
-            lastX = px
-            lastY = py
+            lastX = touch.x
+            lastY = touch.y
             seenSerial = stamp
             seenAnchor = anchorStamp
         } else if (stamp != seenSerial) {
-            val dx = px - lastX
-            val dy = py - lastY
+            val dx = touch.x - lastX
+            val dy = touch.y - lastY
             yaw += dx * 2.4f
             pitch = (pitch - dy * 1.1f).coerceIn(-0.85f, 1.1f)
             drag = abs(dx) + abs(dy)
-            lastX = px
-            lastY = py
+            lastX = touch.x
+            lastY = touch.y
             seenSerial = stamp
         }
         heat = nextPlanetHeat(heat, drag, dt)
