@@ -2,6 +2,8 @@
 
 # RedByteFX
 
+[![Версия в Maven Central](https://img.shields.io/maven-central/v/io.github.i-redbyte/redbytefx-core?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core)
+
 **RedByteFX** - библиотека для создания графических эффектов и сцен на Android с помощью Kotlin. Вместо длинной строки на AGSL или GLSL вы описываете координаты, цвета, время, текстуры и фигуры в типизированном Kotlin DSL. Библиотека превращает это описание в программу для видеочипа. Получившийся код можно посмотреть через `agslSource()`, `vertexSource()` или `fragmentSource()`.
 
 Есть два пути. **Эффекты** меняют уже готовую картинку: создают волну, свечение, цветовой фильтр или переход. AGSL применяет такой эффект к содержимому Android, а OpenGL ES может нарисовать его на весь экран. **Сцены** рисуют свои объекты с вершинами, камерой, текстурами и освещением через OpenGL ES.
@@ -27,7 +29,7 @@
 
 ## Подключение к новому проекту
 
-Убедитесь, что проект использует `mavenCentral()`. Добавьте нужные модули в `build.gradle.kts` приложения (текущая версия - **1.1.1**):
+Убедитесь, что проект использует `mavenCentral()`. Добавьте нужные модули в `build.gradle.kts` приложения (пример для **1.1.1**; актуальная опубликованная версия показана на бейджике выше). Список выпусков есть на [Maven Central](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core):
 
 ```kotlin
 dependencies {
