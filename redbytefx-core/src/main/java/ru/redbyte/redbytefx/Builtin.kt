@@ -47,6 +47,26 @@ public fun transpose(matrix: Expr<Mat3>): Expr<Mat3> = transposeOf(matrix)
 @JvmName("transposeMat4")
 public fun transpose(matrix: Expr<Mat4>): Expr<Mat4> = transposeOf(matrix)
 
+/** Matrix inverse; the result is undefined for singular matrices, as in the shader languages. */
+@JvmName("inverseMat2")
+public fun inverse(matrix: Expr<Mat2>): Expr<Mat2> = matrixUnary("inverse", matrix)
+
+@JvmName("inverseMat3")
+public fun inverse(matrix: Expr<Mat3>): Expr<Mat3> = matrixUnary("inverse", matrix)
+
+@JvmName("inverseMat4")
+public fun inverse(matrix: Expr<Mat4>): Expr<Mat4> = matrixUnary("inverse", matrix)
+
+/** Multiplies matching matrix components; use `*` for the usual matrix product. */
+@JvmName("matrixCompMultMat2")
+public fun matrixCompMult(left: Expr<Mat2>, right: Expr<Mat2>): Expr<Mat2> = matrixCompMultOf(left, right)
+
+@JvmName("matrixCompMultMat3")
+public fun matrixCompMult(left: Expr<Mat3>, right: Expr<Mat3>): Expr<Mat3> = matrixCompMultOf(left, right)
+
+@JvmName("matrixCompMultMat4")
+public fun matrixCompMult(left: Expr<Mat4>, right: Expr<Mat4>): Expr<Mat4> = matrixCompMultOf(left, right)
+
 public fun <T : ShType> atan(y: Expr<T>, x: Expr<T>): Expr<T> = sameShape("atan", y, x)
 
 public fun <T : ShType> min(left: Expr<T>, right: Expr<*>): Expr<T> =
@@ -154,9 +174,18 @@ private fun <T : ShType> unaryFloatValue(function: String, value: Expr<T>): Expr
     return call(value.shape, function, listOf(value))
 }
 
-private fun <T : ShType> transposeOf(matrix: Expr<*>): Expr<T> {
-    require(matrix.shape is Shape.Matrix) { "transpose requires a matrix, was ${matrix.shape}" }
-    return call(matrix.shape, "transpose", listOf(matrix))
+private fun <T : ShType> transposeOf(matrix: Expr<*>): Expr<T> = matrixUnary("transpose", matrix)
+
+private fun <T : ShType> matrixUnary(function: String, matrix: Expr<*>): Expr<T> {
+    require(matrix.shape is Shape.Matrix) { "$function requires a matrix, was ${matrix.shape}" }
+    return call(matrix.shape, function, listOf(matrix))
+}
+
+private fun <T : ShType> matrixCompMultOf(left: Expr<*>, right: Expr<*>): Expr<T> {
+    require(left.shape is Shape.Matrix && left.shape == right.shape) {
+        "matrixCompMult requires matrices of one size, was ${left.shape} and ${right.shape}"
+    }
+    return call(left.shape, "matrixCompMult", listOf(left, right))
 }
 
 private fun <P : Prec> distanceOf(left: Expr<*>, right: Expr<*>): Expr<Flt<P>> {

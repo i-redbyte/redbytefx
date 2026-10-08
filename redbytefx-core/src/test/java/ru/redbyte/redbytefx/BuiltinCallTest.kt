@@ -66,6 +66,34 @@ class BuiltinCallTest {
     }
 
     @Test
+    fun inverseAndComponentMultiplySupportAllMatrixSizes() {
+        val basis = mat2(vec2(2f.lit, 0f.lit), vec2(0f.lit, 3f.lit))
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val inversePoint = inverse(basis) * vec2(1f.lit, 1f.lit)
+                val componentPoint = matrixCompMult(basis, basis) * vec2(1f.lit, 1f.lit)
+                vec4(inversePoint.x, inversePoint.y, componentPoint.x, componentPoint.y)
+            }
+        }
+        assertTrue(agsl.agslSource().contains("inverse(float2x2("))
+        assertTrue(agsl.agslSource().contains("matrixCompMult(float2x2("))
+
+        val glsl = shader(ShaderTarget.Gles30) {
+            val normal = uniformMat3("normal")
+            val model = uniformMat4("model")
+            vertex { glPosition(attributeVec4("position")) }
+            fragment {
+                val normalPoint = inverse(normal.expr) * vec3(1f.lit, 0f.lit, 0f.lit)
+                val modelPoint = matrixCompMult(model.expr, model.expr) * vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit)
+                vec4(normalPoint.x, modelPoint.x, 0f.lit, 1f.lit)
+            }
+        }
+        val source = glsl.fragmentSource()
+        assertTrue(source.contains("inverse(u_normal)"))
+        assertTrue(source.contains("matrixCompMult(u_model, u_model)"))
+    }
+
+    @Test
     fun distanceOfVec2SpellsTheSameCall() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {
