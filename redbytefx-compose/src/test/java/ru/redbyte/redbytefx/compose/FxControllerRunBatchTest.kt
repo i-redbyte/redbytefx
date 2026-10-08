@@ -49,6 +49,23 @@ class FxControllerRunBatchTest {
         assertEquals(2, controller.runtimeInvalidationTick)
     }
 
+    @Test
+    fun removingOneHostLeavesTheOtherSubscribed() {
+        val controller = FxController(TrackingFxInstance())
+        val param = testFloatParam()
+        var firstInvalidations = 0
+        var secondInvalidations = 0
+        val first: () -> Unit = { firstInvalidations++ }
+        val second: () -> Unit = { secondInvalidations++ }
+        controller.addRuntimeInvalidationListener(first)
+        controller.addRuntimeInvalidationListener(second)
+        controller.setFloat(param, 1f)
+        controller.removeRuntimeInvalidationListener(first)
+        controller.setFloat(param, 2f)
+        assertEquals(1, firstInvalidations)
+        assertEquals(2, secondInvalidations)
+    }
+
     private class TrackingFxInstance : ShaderControl {
         var floatCalls: Int = 0
 

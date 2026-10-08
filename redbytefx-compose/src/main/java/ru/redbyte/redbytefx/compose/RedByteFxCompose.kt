@@ -66,7 +66,7 @@ public class FxController internal constructor(
     internal val control: ShaderControl,
 ) {
     private var controllerBatchDepth: Int = 0
-    internal var onRuntimeInvalidate: (() -> Unit)? = null
+    private val runtimeInvalidationListeners = LinkedHashSet<() -> Unit>()
     private var pendingHostInvalidate: Boolean = false
     internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
         private set
@@ -215,7 +215,15 @@ public class FxController internal constructor(
 
     private fun invalidateRuntime() {
         runtimeInvalidationTick += 1
-        onRuntimeInvalidate?.invoke()
+        for (listener in runtimeInvalidationListeners) listener()
+    }
+
+    internal fun addRuntimeInvalidationListener(listener: () -> Unit) {
+        runtimeInvalidationListeners += listener
+    }
+
+    internal fun removeRuntimeInvalidationListener(listener: () -> Unit) {
+        runtimeInvalidationListeners -= listener
     }
 }
 
@@ -479,6 +487,7 @@ private class RedByteFxNode(
 ) : Modifier.Node(), DrawModifierNode {
     private var layer: GraphicsLayer? = null
     private var appliedRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
+    private val invalidateListener: () -> Unit = { invalidateDraw() }
 
     override fun onAttach() {
         val graphicsLayer = requireGraphicsContext().createGraphicsLayer()
@@ -486,11 +495,11 @@ private class RedByteFxNode(
         graphicsLayer.renderEffect = null
         layer = graphicsLayer
         appliedRenderEffect = null
-        controller.onRuntimeInvalidate = { invalidateDraw() }
+        controller.addRuntimeInvalidationListener(invalidateListener)
     }
 
     override fun onDetach() {
-        controller.onRuntimeInvalidate = null
+        controller.removeRuntimeInvalidationListener(invalidateListener)
         layer?.let { requireGraphicsContext().releaseGraphicsLayer(it) }
         layer = null
         appliedRenderEffect = null
@@ -498,9 +507,9 @@ private class RedByteFxNode(
 
     fun updateController(next: FxController) {
         if (controller === next) return
-        controller.onRuntimeInvalidate = null
+        if (isAttached) controller.removeRuntimeInvalidationListener(invalidateListener)
         controller = next
-        controller.onRuntimeInvalidate = { invalidateDraw() }
+        if (isAttached) controller.addRuntimeInvalidationListener(invalidateListener)
         appliedRenderEffect = null
         invalidateDraw()
     }
