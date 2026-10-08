@@ -1,12 +1,21 @@
 package ru.redbyte.redbytefx
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GlslShaderTest {
+
+    @Test(timeout = 5_000)
+    fun analysisTraversesSharedExpressionOnlyOnce() {
+        var shared = 1f.lit
+        repeat(28) { shared = shared + shared }
+        assertFalse(exprUsesResolution(shared))
+        assertFalse(exprUsesClampedSample(shared))
+    }
 
     @Test
     fun spellUsesGlslNamesAndRejectsAgslChildShaders() {

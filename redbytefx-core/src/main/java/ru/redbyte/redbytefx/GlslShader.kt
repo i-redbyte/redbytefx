@@ -343,17 +343,27 @@ internal fun checkFunctionStage(expr: Expr<*>, stage: AuthoringPlace) {
 }
 
 internal fun rejectRecursion(functions: List<UserFunction>) {
-    for (function in functions) {
-        val callees = linkedSetOf<UserFunction>()
-        walk(function.body, linkedSetOf(function)) { node ->
-            if (node is ExprNode.UserCall) callees += node.function
-        }
-        if (function in callees) {
-            throw ProgramException(
+    val state = IdentityHashMap<UserFunction, Int>()
+    fun visit(function: UserFunction) {
+        when (state[function]) {
+            1 -> throw ProgramException(
                 ProgramCode.RecursiveFunction,
                 "Function \"${function.name}\" recurses",
             )
+            2 -> return
         }
+        state[function] = 1
+        val callees = linkedSetOf<UserFunction>()
+        fun collect(node: ExprNode) {
+            if (node is ExprNode.UserCall) callees += node.function
+        }
+        walk(function.body, linkedSetOf(), followFunctions = false, ::collect)
+        commandExprs(function.statements).forEach { walk(it, linkedSetOf(), followFunctions = false, ::collect) }
+        callees.forEach(::visit)
+        state[function] = 2
+    }
+    for (function in functions) {
+        visit(function)
     }
 }
 
@@ -459,50 +469,63 @@ internal fun collectVaryingUsesFromStageFunctions(
 
 private fun walk(
     expr: Expr<*>,
-    seen: MutableSet<UserFunction>,
+    seenFunctions: MutableSet<UserFunction>,
+    followFunctions: Boolean = true,
     visit: (ExprNode) -> Unit,
 ) {
+    walkOnce(expr, seenFunctions, IdentityHashMap(), followFunctions, visit)
+}
+
+private fun walkOnce(
+    expr: Expr<*>,
+    seenFunctions: MutableSet<UserFunction>,
+    seenExpressions: IdentityHashMap<Expr<*>, Boolean>,
+    followFunctions: Boolean,
+    visit: (ExprNode) -> Unit,
+) {
+    if (seenExpressions.put(expr, true) != null) return
     visit(expr.node)
+    fun descend(child: Expr<*>) = walkOnce(child, seenFunctions, seenExpressions, followFunctions, visit)
     when (val node = expr.node) {
-        is ExprNode.Unary -> walk(node.arg, seen, visit)
+        is ExprNode.Unary -> descend(node.arg)
         is ExprNode.Binary -> {
-            walk(node.left, seen, visit)
-            walk(node.right, seen, visit)
+            descend(node.left)
+            descend(node.right)
         }
-        is ExprNode.Construct -> node.args.forEach { walk(it, seen, visit) }
-        is ExprNode.Local -> walk(node.initializer, seen, visit)
-        is ExprNode.Swizzle -> walk(node.source, seen, visit)
-        is ExprNode.Cast -> walk(node.arg, seen, visit)
-        is ExprNode.Sample -> walk(node.coord, seen, visit)
-        is ExprNode.UnclampedSample -> walk(node.coord, seen, visit)
+        is ExprNode.Construct -> node.args.forEach(::descend)
+        is ExprNode.Local -> descend(node.initializer)
+        is ExprNode.Swizzle -> descend(node.source)
+        is ExprNode.Cast -> descend(node.arg)
+        is ExprNode.Sample -> descend(node.coord)
+        is ExprNode.UnclampedSample -> descend(node.coord)
         is ExprNode.Texture -> {
-            walk(node.sampler, seen, visit)
-            walk(node.uv, seen, visit)
+            descend(node.sampler)
+            descend(node.uv)
         }
         is ExprNode.TextureCube -> {
-            walk(node.sampler, seen, visit)
-            walk(node.direction, seen, visit)
+            descend(node.sampler)
+            descend(node.direction)
         }
-        is ExprNode.GlIn -> walk(node.index, seen, visit)
-        is ExprNode.VaryingAt -> walk(node.index, seen, visit)
-        is ExprNode.Call -> node.args.forEach { walk(it, seen, visit) }
+        is ExprNode.GlIn -> descend(node.index)
+        is ExprNode.VaryingAt -> descend(node.index)
+        is ExprNode.Call -> node.args.forEach(::descend)
         is ExprNode.Compare -> {
-            walk(node.left, seen, visit)
-            walk(node.right, seen, visit)
+            descend(node.left)
+            descend(node.right)
         }
         is ExprNode.Select -> {
-            walk(node.condition, seen, visit)
-            walk(node.ifTrue, seen, visit)
-            walk(node.ifFalse, seen, visit)
+            descend(node.condition)
+            descend(node.ifTrue)
+            descend(node.ifFalse)
         }
         is ExprNode.UserCall -> {
-            node.args.forEach { walk(it, seen, visit) }
-            if (seen.add(node.function)) {
-                walk(node.function.body, seen, visit)
-                commandExprs(node.function.statements).forEach { walk(it, seen, visit) }
+            node.args.forEach(::descend)
+            if (followFunctions && seenFunctions.add(node.function)) {
+                descend(node.function.body)
+                commandExprs(node.function.statements).forEach(::descend)
             }
         }
-        is ExprNode.Index -> walk(node.index, seen, visit)
+        is ExprNode.Index -> descend(node.index)
         is ExprNode.Literal,
         is ExprNode.IntLiteral,
         is ExprNode.UniformRef,

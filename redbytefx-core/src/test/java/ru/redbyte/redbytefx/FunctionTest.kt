@@ -138,6 +138,14 @@ class FunctionTest {
             rejectRecursion(listOf(first, second))
         }
         assertEquals(ProgramCode.RecursiveFunction, cycle.code)
+
+        val chain = List(128) { index ->
+            UserFunction("step$index", AuthoringPlace.Fragment, listOf(Formal("p0", shape)), param, shape)
+        }
+        for (index in 0 until chain.lastIndex) {
+            chain[index].body = Expr<ShType>(shape, ExprNode.UserCall(chain[index + 1], listOf(param)))
+        }
+        rejectRecursion(chain)
     }
 
     @Test

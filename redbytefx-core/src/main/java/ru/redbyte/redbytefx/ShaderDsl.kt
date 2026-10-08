@@ -581,7 +581,7 @@ public class ShaderDsl internal constructor(
         val needsClampedSample = roots.any(::exprUsesClampedSample)
         val occupied = names.snapshot()
         val functionText = renderAgslFunctions(usedFunctions, occupied, uniformNames, varyingNames)
-        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, usedFunctions)
+        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, identityFunctions(usedFunctions))
         val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
         val rendered = emitter.emit(body)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
@@ -1194,7 +1194,7 @@ public class FragmentDsl internal constructor(
 private class AgslEmitter(
     private val allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, UniformBinding>,
-    private val functions: List<UserFunction>? = null,
+    private val ownedFunctions: IdentityHashMap<UserFunction, Boolean>? = null,
 ) : CodeEmitter {
     private val localNames = IdentityHashMap<ExprNode.Local, String>()
     private var localIndex = 0
@@ -1231,7 +1231,7 @@ private class AgslEmitter(
         is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
         is ExprNode.UserCall -> {
-            if (functions != null && functions.none { it === node.function }) {
+            if (ownedFunctions != null && !ownedFunctions.containsKey(node.function)) {
                 throw ProgramException(
                     ProgramCode.ForeignFunction,
                     "Function \"${node.function.name}\" does not belong to this shader",
@@ -1320,9 +1320,10 @@ private fun renderAgslFunctions(
     uniforms: Map<Uniform<*>, UniformBinding>,
     varyingNames: Map<Varying<*>, String>,
 ): String = buildString {
+    val ownedFunctions = identityFunctions(functions)
     for (function in functions) {
         val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
-        val emitter = AgslEmitter(locals, uniforms, functions)
+        val emitter = AgslEmitter(locals, uniforms, ownedFunctions)
         val statements = spellStageStatements(function.statements, emitter, varyingNames)
         val body = emitter.emit(function.body)
         val signature = function.parameters.joinToString(", ") {
@@ -1335,6 +1336,11 @@ private fun renderAgslFunctions(
         append("  return ").append(body).append(";\n}\n")
     }
 }
+
+private fun identityFunctions(functions: List<UserFunction>): IdentityHashMap<UserFunction, Boolean> =
+    IdentityHashMap<UserFunction, Boolean>(functions.size).apply {
+        for (function in functions) put(function, true)
+    }
 
 private fun renderAgsl(
     bindings: List<UniformBinding>,
