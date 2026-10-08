@@ -157,6 +157,13 @@ class GlslShaderTest {
                 fragment { sample() }
             }
         }
+        for (target in listOf(ShaderTarget.Agsl, ShaderTarget.Gles30)) {
+            assertThrows(IllegalArgumentException::class.java) {
+                shader(target) {
+                    uniformMedium("uResolution", 1f)
+                }
+            }
+        }
     }
 
     @Test

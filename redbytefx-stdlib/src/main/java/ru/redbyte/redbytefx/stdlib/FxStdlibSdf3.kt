@@ -287,6 +287,7 @@ public fun FragmentDsl.rayMarch(
     }
     require(epsilon.isFinite() && epsilon > 0f) { "rayMarch epsilon must be finite and positive" }
     require(far.isFinite() && far > 0f) { "rayMarch far must be finite and positive" }
+    require(epsilon < far) { "rayMarch epsilon must be smaller than far" }
     val start = local(origin)
     val dir = local(normalize(direction))
     val traveled = local(float(0f))
@@ -318,6 +319,7 @@ public fun sdfNormal(
     epsilon: Float = 0.001f,
     scene: (Expr<Vec3<Flt<High>>>) -> Expr<Flt<High>>,
 ): Expr<Vec3<Flt<High>>> {
+    require(epsilon.isFinite() && epsilon > 0f) { "sdfNormal epsilon must be finite and positive" }
     val step = float(epsilon)
     val zero = float(0f)
     val dx = scene(point + float3(step, zero, zero)) - scene(point - float3(step, zero, zero))

@@ -22,6 +22,9 @@ public class GlCompileStatus(
  * A new abstract method must also be implemented by `Gles30Device`, `RecordingGlDevice`, and `FloatDevice`.
  */
 public abstract class GlDevice {
+    /** Drops temporary native buffers after the owning runtime is destroyed. */
+    internal open fun releaseScratch() = Unit
+
     public abstract fun createShader(stage: GlStage): Int
 
     public abstract fun shaderSource(shader: Int, source: String)

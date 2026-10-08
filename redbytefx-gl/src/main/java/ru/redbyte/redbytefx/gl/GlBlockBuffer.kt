@@ -32,6 +32,12 @@ internal class GlBlockBuffer(
         }
     }
 
+    /** A driver error means the bytes may not have reached the GPU; retry the next write. */
+    fun invalidate() {
+        bytes = null
+        floats = null
+    }
+
     /** Uploads [packed] unless it equals the bytes already in the buffer. */
     fun write(packed: ByteArray): Boolean {
         val previous = bytes

@@ -16,6 +16,12 @@ import java.nio.ByteOrder
  */
 public class Gles30Device : GlDevice() {
     private val statusSlot = IntArray(1)
+    private var pixelReadScratch: ByteBuffer? = null
+
+    internal override fun releaseScratch() {
+        pixelReadScratch = null
+        directScratch.remove()
+    }
 
     override fun createShader(stage: GlStage): Int = GLES30.glCreateShader(stageEnum(stage))
 
@@ -393,7 +399,14 @@ public class Gles30Device : GlDevice() {
     override fun readPixelsRgba(x: Int, y: Int, width: Int, height: Int, rgba: ByteArray) {
         val needed = rgbaByteCount(width, height)
         require(rgba.size >= needed) { "Pixel read needs $needed bytes, was ${rgba.size}" }
-        val buffer = ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder())
+        val previous = pixelReadScratch
+        val buffer = if (previous != null && previous.capacity() >= needed) {
+            previous
+        } else {
+            ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder()).also { pixelReadScratch = it }
+        }
+        buffer.clear()
+        buffer.limit(needed)
         GLES30.glReadPixels(x, y, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buffer)
         buffer.position(0)
         buffer.get(rgba, 0, needed)

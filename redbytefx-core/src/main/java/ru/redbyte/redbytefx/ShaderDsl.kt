@@ -281,6 +281,7 @@ public class ShaderDsl internal constructor(
 
     public fun uniformMedium(name: String, default: Float): MedFloatUniform {
         advance(AuthoringAction.DeclareUniform)
+        requireAuthorUniformName(name)
         require(default.isFinite()) { "Uniform default must be finite, was $default" }
         val handle = createUniform<Flt<Med>>(
             name = name,

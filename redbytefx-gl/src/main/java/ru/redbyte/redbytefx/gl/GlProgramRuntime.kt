@@ -81,7 +81,7 @@ public class GlProgramRuntime(
     private val framebufferColors = HashMap<Int, Int>()
     private var boundFramebuffer: Int = 0
     private val attribLocations = HashMap<String, Int>()
-    private val deletedUserBuffers = HashSet<Int>()
+    private val liveUserBuffers = HashSet<Int>()
 
     /** Compiles and links GLES stages from [ShaderProgram]; safe to call once per instance. */
     public fun link() {
@@ -160,6 +160,7 @@ public class GlProgramRuntime(
      * No-op when that handle is absent (the fragment never read `resolution`).
      */
     public fun setResolution(widthPx: Float, heightPx: Float): Boolean {
+        checkReady()
         val uniform = program.resolution ?: return false
         val width = if (widthPx > 0f) widthPx else 1f
         val height = if (heightPx > 0f) heightPx else 1f
@@ -328,12 +329,14 @@ public class GlProgramRuntime(
      * [destroy] deletes; call [deleteColorTarget] while the context is current, before or after
      * [destroy]. Unbind this target before sampling [GlColorTarget.colorTexture]:
      * a pass must not sample the texture of the framebuffer that is currently bound.
-     * Names are invalid after the EGL context is recreated.
+     * The framebuffer bound before this call remains bound. Names are invalid after the EGL
+     * context is recreated.
      */
     public fun createColorTarget(width: Int, height: Int): GlColorTarget {
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         require(width > 0 && height > 0) { "Framebuffer size must be positive, was ${width}x$height" }
+        val previousFramebuffer = boundFramebuffer
         val color = device.createTexture()
         if (color == 0) reject(GlCode.DriverError, "Driver returned no color texture name")
         var depth = 0
@@ -352,14 +355,12 @@ public class GlProgramRuntime(
             if (!device.framebufferComplete(framebuffer)) {
                 reject(GlCode.FramebufferIncomplete, "Framebuffer is incomplete")
             }
-            device.bindFramebuffer(0)
             framebufferColors[framebuffer] = color
-            boundFramebuffer = 0
             completed = true
             return GlColorTarget(framebuffer, color, depth, width, height)
         } finally {
+            device.bindFramebuffer(previousFramebuffer)
             if (!completed) {
-                device.bindFramebuffer(0)
                 if (framebuffer != 0) device.deleteFramebuffer(framebuffer)
                 if (depth != 0) device.deleteRenderbuffer(depth)
                 device.deleteTexture(color)
@@ -427,27 +428,28 @@ public class GlProgramRuntime(
     /**
      * Device. Allocates a buffer name on the EGL thread that linked this runtime.
      * [destroy] does not delete it. [deleteBuffer] still deletes it afterward, while the
-     * EGL context is current. The driver may reuse a deleted name; this call clears that mark
-     * so a later [deleteBuffer] of the new object is legal.
+     * EGL context is current. Only live names are tracked, so repeated create/delete cycles
+     * do not accumulate old buffer names.
      */
     public fun createBuffer(): Int {
         checkReady()
         val name = device.createBuffer()
         if (name == 0) reject(GlCode.DriverError, "Driver returned no buffer name")
-        deletedUserBuffers -= name
+        check(liveUserBuffers.add(name)) { "Driver returned an already live buffer name $name" }
         return name
     }
 
     /**
      * Device. Deletes a buffer name on the EGL thread that linked this runtime.
      * [destroy] leaves the name in place, and this call still deletes it afterward,
-     * while that EGL context is current. A second delete of the same name fails.
+     * while that EGL context is current. The name must come from this runtime's [createBuffer].
+     * A second delete of the same name fails.
      */
     public fun deleteBuffer(buffer: Int) {
         checkThread()
-        check(buffer !in deletedUserBuffers) { "Buffer $buffer is already deleted" }
+        check(buffer in liveUserBuffers) { "Buffer $buffer is not live in this runtime" }
         device.deleteBuffer(buffer)
-        deletedUserBuffers += buffer
+        liveUserBuffers.remove(buffer)
     }
 
     /**
@@ -624,11 +626,17 @@ public class GlProgramRuntime(
         }
         if (!buffer.pending(values)) return false
         val wrote = buffer.write(packStd140(block, values))
+        if (wrote) {
+            try {
+                buffer.bind()
+                checkDriver("uniformBlock")
+            } catch (error: Throwable) {
+                buffer.invalidate()
+                throw error
+            }
+        }
         buffer.remember(values)
-        if (!wrote) return false
-        buffer.bind()
-        checkDriver("uniformBlock")
-        return true
+        return wrote
     }
 
     @JvmName("setStorage")
@@ -637,11 +645,17 @@ public class GlProgramRuntime(
         val buffer = blocks.storage(block)
         if (!buffer.pending(values)) return false
         val wrote = buffer.write(packStd430(block, values))
+        if (wrote) {
+            try {
+                buffer.bind()
+                checkDriver("storageBlock")
+            } catch (error: Throwable) {
+                buffer.invalidate()
+                throw error
+            }
+        }
         buffer.remember(values)
-        if (!wrote) return false
-        buffer.bind()
-        checkDriver("storageBlock")
-        return true
+        return wrote
     }
 
     /**
@@ -697,6 +711,7 @@ public class GlProgramRuntime(
         vectorValues.clear()
         intValues.clear()
         samplers.clear()
+        device.releaseScratch()
     }
 
     private fun checkDriver(where: String) {

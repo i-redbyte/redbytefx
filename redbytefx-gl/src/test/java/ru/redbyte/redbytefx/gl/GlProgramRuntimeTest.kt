@@ -131,6 +131,21 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun resolutionWithoutAUniformStillChecksTheRuntimeState() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        assertEquals(GlCode.NotLinked, assertThrows(GlException::class.java) {
+            runtime.setResolution(2f, 2f)
+        }.code)
+        runtime.link()
+        assertFalse(runtime.setResolution(2f, 2f))
+        runtime.destroy()
+        assertEquals(GlCode.Destroyed, assertThrows(GlException::class.java) {
+            runtime.setResolution(2f, 2f)
+        }.code)
+    }
+
+    @Test
     fun unchangedFloatAndTextureDoNotCallTheDeviceAgain() {
         val device = RecordingGlDevice()
         lateinit var amount: Uniform<Flt<High>>
@@ -609,6 +624,45 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun aStrictDriverErrorDoesNotCacheUniformOrStorageBlockValues() {
+        val device = RecordingGlDevice()
+        lateinit var uniform: UniformBlock
+        val graphics = GlProgramRuntime(
+            shader(ShaderTarget.Gles30) {
+                uniform = uniformBlock("frame") { float("time") }
+                vertex { glPosition(attributeVec4("position")) }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            },
+            device,
+            strictErrors = true,
+        ).also { it.link() }
+        device.glError = 0x0502
+        assertEquals(GlCode.DriverError, assertThrows(GlException::class.java) {
+            graphics.set(uniform, floatArrayOf(1f))
+        }.code)
+        assertTrue(graphics.set(uniform, floatArrayOf(1f)))
+        assertEquals(2, device.bufferDataCalls)
+        assertFalse(graphics.set(uniform, floatArrayOf(1f)))
+
+        lateinit var storage: StorageBlock
+        val compute = GlProgramRuntime(
+            shader(ShaderTarget.Gles31) {
+                storage = storageBlock("cells") { float("value") }
+                compute(1) { }
+            },
+            device,
+            strictErrors = true,
+        ).also { it.link() }
+        device.glError = 0x0502
+        assertEquals(GlCode.DriverError, assertThrows(GlException::class.java) {
+            compute.set(storage, floatArrayOf(2f))
+        }.code)
+        assertTrue(compute.set(storage, floatArrayOf(2f)))
+        assertEquals(2, device.storageDataCalls)
+        assertFalse(compute.set(storage, floatArrayOf(2f)))
+    }
+
+    @Test
     fun gles32LinksVertexTessellationGeometryAndFragment() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(
@@ -857,6 +911,22 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun creatingAColorTargetPreservesTheCurrentFramebufferOnSuccessAndFailure() {
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(passthrough(), device)
+        runtime.link()
+        val current = runtime.createColorTarget(4, 4)
+        runtime.bindFramebuffer(current.framebuffer)
+
+        runtime.createColorTarget(8, 8)
+        assertEquals(current.framebuffer, device.boundFramebuffers.last())
+
+        device.framebufferOk = false
+        assertThrows(GlException::class.java) { runtime.createColorTarget(16, 16) }
+        assertEquals(current.framebuffer, device.boundFramebuffers.last())
+    }
+
+    @Test
     fun failedFramebufferAttachmentDeletesEveryAllocatedName() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)
@@ -970,6 +1040,8 @@ class GlProgramRuntimeTest {
         val runtime = GlProgramRuntime(passthrough(), device)
         runtime.link()
         val name = runtime.createBuffer()
+        assertThrows(IllegalStateException::class.java) { runtime.deleteBuffer(name + 1) }
+        assertEquals(0, device.deleteBufferCalls)
         runtime.destroy()
         assertEquals(0, device.deleteBufferCalls)
         runtime.deleteBuffer(name)

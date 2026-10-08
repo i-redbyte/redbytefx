@@ -271,7 +271,7 @@ class StdlibPortTest {
 
     @Test
     fun rayMarchRejectsInvalidDistances() {
-        for ((epsilon, far) in listOf(0f to 20f, Float.NaN to 20f, 0.001f to 0f)) {
+        for ((epsilon, far) in listOf(0f to 20f, Float.NaN to 20f, 0.001f to 0f, 20f to 10f)) {
             assertThrows(IllegalArgumentException::class.java) {
                 shader(ShaderTarget.Agsl) {
                     fragment {
@@ -280,6 +280,15 @@ class StdlibPortTest {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Test
+    fun sdfNormalRejectsAnInvalidDifferenceWidth() {
+        for (epsilon in listOf(0f, -0.01f, Float.NaN)) {
+            assertThrows(IllegalArgumentException::class.java) {
+                sdfNormal(float3(0f, 0f, 0f), epsilon) { sdSphere(it, 1f) }
             }
         }
     }

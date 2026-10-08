@@ -96,6 +96,7 @@ public class GlController internal constructor(
         synchronized(lock) {
             glQueue = queue
             runtime = null
+            discardPendingTextureBindings()
             queueGeneration++
             drainQueued = false
         }
@@ -111,6 +112,7 @@ public class GlController internal constructor(
         if (glQueue !== queue) return false
         glQueue = null
         runtime = null
+        discardPendingTextureBindings()
         queueGeneration++
         drainQueued = false
         true
@@ -140,7 +142,18 @@ public class GlController internal constructor(
     /** GL thread. [linked] is gone or about to be; writes wait for the next link. */
     internal fun detachRuntime(linked: GlProgramRuntime) {
         synchronized(lock) {
-            if (runtime === linked) runtime = null
+            if (runtime === linked) {
+                runtime = null
+                discardPendingTextureBindings()
+            }
+        }
+    }
+
+    /** A texture name is valid only on the context that received its bind. */
+    private fun discardPendingTextureBindings() {
+        val iterator = pending.keys.iterator()
+        while (iterator.hasNext()) {
+            if (!latest.containsKey(iterator.next())) iterator.remove()
         }
     }
 
