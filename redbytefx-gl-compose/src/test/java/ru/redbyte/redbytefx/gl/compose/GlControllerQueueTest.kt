@@ -149,6 +149,31 @@ class GlControllerQueueTest {
     }
 
     @Test
+    fun aNewTextureBindAfterContextLossUsesTheCurrentQueueEntry() {
+        lateinit var image: Uniform<Sampler2D>
+        val program = shader(ShaderTarget.Gles30) {
+            image = sampler2D("image")
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { texture(image, float2(0f, 0f)) }
+        }
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = mutableListOf<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { queued += it }
+        controller.attachQueue(queue)
+        val first = GlProgramRuntime(program, FloatDevice()).also { it.link() }
+        controller.attachRuntime(queue, first)
+        controller.bind(image, 7)
+        controller.detachRuntime(first)
+
+        val nextDevice = FloatDevice()
+        controller.attachRuntime(queue, GlProgramRuntime(program, nextDevice).also { it.link() })
+        controller.bind(image, 8)
+        queued.single().invoke()
+        assertEquals(1, nextDevice.textureBinds)
+        assertEquals(8, nextDevice.lastTexture)
+    }
+
+    @Test
     fun aDetachedQueueDoesNotBlockTheNextSurface() {
         val (program, amount) = amountProgram()
         val controller = GlController(program, GlSurfaceConfig())
@@ -411,8 +436,10 @@ internal class FloatDevice : GlDevice() {
     override fun useProgram(program: Int) = Unit
     override fun activeTexture(unit: Int) = Unit
     var textureBinds: Int = 0
+    var lastTexture: Int = 0
     override fun bindTexture2D(texture: Int) {
         textureBinds += 1
+        lastTexture = texture
     }
     override fun bindTextureCube(texture: Int) = Unit
     override fun createTexture(): Int = 1

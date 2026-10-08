@@ -61,8 +61,15 @@ public class GlController internal constructor(
     private val ownedUniforms = IdentityHashMap<Uniform<*>, Boolean>().apply {
         for (entry in program.spelledUniforms()) put(entry.uniform, true)
     }
+    private val ownedUniformBlocks = IdentityHashMap<UniformBlock, Boolean>().apply {
+        for (block in program.uniformBlocks) put(block, true)
+    }
+    private val ownedStorageBlocks = IdentityHashMap<StorageBlock, Boolean>().apply {
+        for (block in program.storageBlocks) put(block, true)
+    }
     private val latest = IdentityHashMap<Uniform<*>, UniformWrite>()
     private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
+    private val pendingOrder = ArrayDeque<Uniform<*>>()
     private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
     private val storageBlockWrites = CoalescedWrites<StorageBlock>()
     private val tasks = ArrayDeque<(GlProgramRuntime) -> Unit>()
@@ -130,7 +137,10 @@ public class GlController internal constructor(
             if (glQueue !== queue) return
             runtime = linked
             for (entry in latest) {
-                if (!pending.containsKey(entry.key)) pending[entry.key] = entry.value
+                if (!pending.containsKey(entry.key)) {
+                    pending[entry.key] = entry.value
+                    pendingOrder.addLast(entry.key)
+                }
             }
             replay(uniformBlockWrites)
             replay(storageBlockWrites)
@@ -158,6 +168,7 @@ public class GlController internal constructor(
         while (iterator.hasNext()) {
             if (!latest.containsKey(iterator.next())) iterator.remove()
         }
+        pendingOrder.removeAll { !pending.containsKey(it) }
     }
 
     private fun scheduleDrain() {
@@ -201,31 +212,37 @@ public class GlController internal constructor(
     private fun nextDrainAction(queue: (() -> Unit) -> Unit, generation: Long): (() -> Unit)? = synchronized(lock) {
         if (glQueue !== queue || queueGeneration != generation) return null
         val linked = runtime ?: return null
-        poll(pending)?.let { write -> return { write(linked) } }
+        poll(pending, pendingOrder)?.let { write -> return { write(linked) } }
         poll(uniformBlockWrites)?.let { write -> return { write(linked) } }
         poll(storageBlockWrites)?.let { write -> return { write(linked) } }
         tasks.removeFirstOrNull()?.let { task -> return { task(linked) } }
         null
     }
 
-    private fun poll(pendingWrites: IdentityHashMap<Uniform<*>, UniformWrite>): UniformWrite? {
-        val key = pendingWrites.keys.firstOrNull() ?: return null
+    private fun <K : Any> poll(
+        pendingWrites: IdentityHashMap<K, UniformWrite>,
+        order: ArrayDeque<K>,
+    ): UniformWrite? {
+        val key = order.removeFirstOrNull() ?: return null
         return pendingWrites.remove(key)
     }
 
     private fun <K : Any> poll(writes: CoalescedWrites<K>): UniformWrite? {
-        val key = writes.pending.keys.firstOrNull() ?: return null
-        return writes.pending.remove(key)
+        return poll(writes.pending, writes.pendingOrder)
     }
 
     private fun <K : Any> replay(writes: CoalescedWrites<K>) {
         for (entry in writes.latest) {
-            if (!writes.pending.containsKey(entry.key)) writes.pending[entry.key] = entry.value
+            if (!writes.pending.containsKey(entry.key)) {
+                writes.pending[entry.key] = entry.value
+                writes.pendingOrder.addLast(entry.key)
+            }
         }
     }
 
     private fun <K : Any> enqueueRetained(writes: CoalescedWrites<K>, key: K, write: UniformWrite) {
         synchronized(lock) {
+            if (!writes.pending.containsKey(key)) writes.pendingOrder.addLast(key)
             writes.pending[key] = write
             writes.latest[key] = write
         }
@@ -235,6 +252,7 @@ public class GlController internal constructor(
     private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {
         requireUniform(uniform)
         synchronized(lock) {
+            if (!pending.containsKey(uniform)) pendingOrder.addLast(uniform)
             pending[uniform] = write
             if (retained) latest[uniform] = write else latest.remove(uniform)
         }
@@ -246,11 +264,11 @@ public class GlController internal constructor(
     }
 
     private fun requireUniformBlock(block: UniformBlock) {
-        require(program.uniformBlocks.any { it === block }) { "Uniform block does not belong to this shader" }
+        require(ownedUniformBlocks.containsKey(block)) { "Uniform block does not belong to this shader" }
     }
 
     private fun requireStorageBlock(block: StorageBlock) {
-        require(program.storageBlocks.any { it === block }) { "Storage block does not belong to this shader" }
+        require(ownedStorageBlocks.containsKey(block)) { "Storage block does not belong to this shader" }
     }
 
     @JvmName("setHighFloat")
@@ -377,4 +395,5 @@ public class GlController internal constructor(
 private class CoalescedWrites<K : Any> {
     val latest = IdentityHashMap<K, UniformWrite>()
     val pending = IdentityHashMap<K, UniformWrite>()
+    val pendingOrder = ArrayDeque<K>()
 }
