@@ -275,18 +275,18 @@ public fun FxController.bindTime(
 
     LaunchedEffect(this, param, isPlaying, offsetSeconds) {
         if (!isPlaying) {
-            state.lastFrameNanos = null
+            state.hasLastFrame = false
             setFloat(param, offsetSeconds + state.elapsedSeconds)
             return@LaunchedEffect
         }
 
         while (true) {
             withFrameNanos { frameNanos ->
-                val lastFrameNanos = state.lastFrameNanos
-                if (lastFrameNanos != null) {
-                    state.elapsedSeconds += (frameNanos - lastFrameNanos) / 1_000_000_000f
+                if (state.hasLastFrame) {
+                    state.elapsedSeconds += (frameNanos - state.lastFrameNanos) / 1_000_000_000f
                 }
                 state.lastFrameNanos = frameNanos
+                state.hasLastFrame = true
                 setFloat(param, offsetSeconds + state.elapsedSeconds)
             }
         }
@@ -536,7 +536,8 @@ private class RedByteFxNode(
 
 internal class TimeBindingState {
     var elapsedSeconds: Float = 0f
-    var lastFrameNanos: Long? = null
+    var lastFrameNanos: Long = 0L
+    var hasLastFrame: Boolean = false
 }
 
 internal fun sanitizeControllerResolution(value: Float): Float =
