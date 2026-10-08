@@ -540,7 +540,7 @@ internal class TimeBindingState {
 }
 
 internal fun sanitizeControllerResolution(value: Float): Float =
-    if (value > 0f) value else 1f
+    if (value.isFinite() && value > 0f) value else 1f
 
 internal interface MediumShaderControl {
     fun setMedFloat(uniform: Uniform<Flt<Med>>, value: Float): Boolean

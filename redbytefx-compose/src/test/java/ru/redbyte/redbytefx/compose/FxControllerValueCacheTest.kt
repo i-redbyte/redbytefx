@@ -126,6 +126,7 @@ class FxControllerValueCacheTest {
         val controller = FxController(instance)
 
         controller.setResolution(0f, -5f)
+        controller.setResolution(Float.POSITIVE_INFINITY, Float.NaN)
 
         assertEquals(1, controller.runtimeInvalidationTick)
         assertEquals(1, instance.resolutionCalls)

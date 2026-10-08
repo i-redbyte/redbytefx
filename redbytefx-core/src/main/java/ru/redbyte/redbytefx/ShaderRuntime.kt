@@ -29,6 +29,7 @@ internal class ShaderRuntime(
     private val floatValues = java.util.IdentityHashMap<Uniform<*>, Float>()
     private val vectorValues = java.util.IdentityHashMap<Uniform<*>, FloatArray>()
     private val intValues = java.util.IdentityHashMap<Uniform<*>, Int>()
+    private val resolution = program.resolution
 
     init {
         batch {
@@ -91,7 +92,7 @@ internal class ShaderRuntime(
     internal fun set(uniform: Uniform<IntS>, value: Int): Boolean = setInt(uniform, value)
 
     internal fun setResolution(widthPx: Float, heightPx: Float): Boolean {
-        val handle = program.resolution ?: return false
+        val handle = resolution ?: return false
         return set(
             handle,
             sanitizeResolution(widthPx),
@@ -205,5 +206,5 @@ internal class ShaderRuntime(
         return true
     }
 
-    private fun sanitizeResolution(value: Float): Float = if (value > 0f) value else 1f
+    private fun sanitizeResolution(value: Float): Float = if (value.isFinite() && value > 0f) value else 1f
 }

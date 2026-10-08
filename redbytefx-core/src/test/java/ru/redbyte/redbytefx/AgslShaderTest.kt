@@ -130,6 +130,24 @@ class AgslShaderTest {
     }
 
     @Test
+    fun differentNaNPayloadsReachTheUniformWriter() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { sample() }
+        }
+        val writer = RecordingUniformWriter()
+        val runtime = ShaderRuntime(program, writer) {}
+        val first = Float.fromBits(0x7fc00001)
+        val second = Float.fromBits(0x7fc00002)
+
+        assertTrue(runtime.set(amount, first))
+        assertFalse(runtime.set(amount, first))
+        assertTrue(runtime.set(amount, second))
+        assertEquals(3, writer.floatValues("u_amount").size)
+    }
+
+    @Test
     fun failedEffectRefreshCanBeRetriedWithoutRewritingTheUniform() {
         lateinit var amount: Uniform<Flt<High>>
         val program = shader(ShaderTarget.Agsl) {
@@ -220,6 +238,7 @@ class AgslShaderTest {
         assertTrue(runtime.setResolution(2f, 3f))
         assertTrue(runtime.setResolution(0f, 3f))
         assertFalse(runtime.setResolution(1f, 3f))
+        assertFalse(runtime.setResolution(Float.POSITIVE_INFINITY, 3f))
         assertEquals(1f, writer.float2Values("uResolution").last().first)
         assertEquals(3f, writer.float2Values("uResolution").last().second)
         assertNotNull(program.resolution)
@@ -232,9 +251,11 @@ class AgslShaderTest {
             offset = uniformVec2("offset", 0.25f, 0.5f)
             fragment { sample() }
         }
+        offset.components!![0] = 9f
         val writer = RecordingUniformWriter()
         val runtime = ShaderRuntime(program, writer) {}
 
+        assertEquals(0.25f, offset.components!![0])
         assertEquals(listOf(0.25f to 0.5f), writer.float2Values("u_offset"))
         assertFalse(runtime.set(offset, 0.25f, 0.5f))
         assertEquals(1, writer.float2Values("u_offset").size)

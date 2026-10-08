@@ -8,7 +8,10 @@ class FxUniformValueTest {
 
     @Test
     fun sameFloatUniformValueTreatsNaNPayloadAsStable() {
-        assertTrue(sameFloatUniformValue(Float.NaN, Float.NaN))
+        val first = Float.fromBits(0x7fc00001)
+        val second = Float.fromBits(0x7fc00002)
+        assertTrue(sameFloatUniformValue(first, first))
+        assertFalse(sameFloatUniformValue(first, second))
     }
 
     @Test

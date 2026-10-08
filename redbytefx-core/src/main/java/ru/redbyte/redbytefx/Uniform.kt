@@ -13,10 +13,15 @@ public class Uniform<T : ShType> internal constructor(
     public val name: String?,
     public val shape: Shape,
     public val default: Float?,
-    public val components: FloatArray? = null,
+    components: FloatArray? = null,
     public val intDefault: Int? = null,
     public val boolDefault: Boolean? = null,
 ) {
+    private val initialComponents: FloatArray? = components?.copyOf()
+
+    public val components: FloatArray?
+        get() = initialComponents?.copyOf()
+
     public lateinit var expr: Expr<T>
         internal set
 }
