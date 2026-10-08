@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing git tag (e.g. v1.1.0)"
+        description: "Existing git tag (e.g. v1.1.1)"
         required: true
-        default: "v1.1.0"
 
 permissions:
   contents: write
@@ -20,22 +19,74 @@ jobs:
     steps:
       - name: Resolve tag
         id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+          PUSHED_TAG: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$REQUESTED_TAG"
           else
-            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            tag="$PUSHED_TAG"
           fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Expected a version tag such as v1.1.1, got: $tag"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.meta.outputs.tag }}
 
-      - name: Build release notes
+      - name: Download published libraries
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          TAG="${{ steps.meta.outputs.tag }}"
-          VER="${TAG#v}"
+          set -euo pipefail
+          mkdir -p dist
+          base="https://repo.maven.apache.org/maven2/io/github/i-redbyte"
+          for attempt in {1..30}; do
+            ready=true
+            for module in core gl gl-compose compose stdlib 3d; do
+              artifact="redbytefx-$module"
+              file="$artifact-$VERSION.aar"
+              target="dist/$file"
+              if [ -s "$target" ]; then
+                continue
+              fi
+              url="$base/$artifact/$VERSION/$file"
+              if curl --fail --silent --show-error --location --max-time 60 "$url" -o "$target.tmp" && [ -s "$target.tmp" ]; then
+                mv "$target.tmp" "$target"
+              else
+                rm -f "$target.tmp"
+                ready=false
+              fi
+            done
+            if [ "$ready" = true ]; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "::error::Some AARs for $VERSION are not available in Maven Central. Publish them, then rerun this workflow for the tag."
+              exit 1
+            fi
+            sleep 60
+          done
+          for file in dist/*.aar; do
+            unzip -tq "$file" > /dev/null
+          done
+          (cd dist && sha256sum *.aar > SHA256SUMS)
+
+      - name: Build release notes
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          VER: ${{ steps.meta.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
           {
             echo "## RedByteFX ${VER}"
             echo ""
@@ -53,7 +104,9 @@ jobs:
             done
             echo '```'
             echo ""
-            echo "Full changelog: [docs/changelog.md](https://github.com/${{ github.repository }}/blob/${TAG}/docs/changelog.md) · [RU](https://github.com/${{ github.repository }}/blob/${TAG}/docs/changelog.ru.md)"
+            echo "The attached AARs are the published binaries for manual download. Use Maven Central for Gradle projects so dependencies resolve automatically. SHA-256 hashes are in SHA256SUMS."
+            echo ""
+            echo "Full changelog: [docs/changelog.md](https://github.com/${REPOSITORY}/blob/${TAG}/docs/changelog.md) · [RU](https://github.com/${REPOSITORY}/blob/${TAG}/docs/changelog.ru.md)"
           } > release-notes.md
 
       - name: Publish GitHub Release
@@ -62,5 +115,9 @@ jobs:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ steps.meta.outputs.tag }}
           body_path: release-notes.md
+          files: |
+            dist/*.aar
+            dist/SHA256SUMS
+          fail_on_unmatched_files: true
           draft: false
           generate_release_notes: false
