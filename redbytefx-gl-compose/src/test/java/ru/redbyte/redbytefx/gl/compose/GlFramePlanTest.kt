@@ -154,6 +154,14 @@ class GlFramePlanTest {
     }
 
     @Test
+    fun aFailedUploadKeepsThePreviousSurfaceDrawRange() {
+        val frame = GlFrame(runtime(), { _, _ -> error("upload failed") }, triangle, null)
+        assertThrows(IllegalStateException::class.java) { frame.replace(FloatArray(2 * 3)) }
+        frame.draw(first = 0, count = 3)
+        assertEquals(3, frame.drawList().screen().single().count)
+    }
+
+    @Test
     fun theReleasedConstructorForwardsVerticesAndNeedsAnExplicitMesh() {
         var uploaded: FloatArray? = null
         val vertices = FloatArray(6)

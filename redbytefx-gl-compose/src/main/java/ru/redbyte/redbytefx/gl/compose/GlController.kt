@@ -371,7 +371,7 @@ public class GlController internal constructor(
 
     /**
      * Scene. Queues [dispatch][GlProgramRuntime.dispatch] on the GL thread.
-     * A failed uniform write does not drop it.
+     * A failed uniform write does not discard the queued dispatch.
      */
     public fun dispatch(x: Int, y: Int = 1, z: Int = 1) {
         require(x >= 1 && y >= 1 && z >= 1) {

@@ -299,16 +299,21 @@ public class GlFrame internal constructor(
     @JvmOverloads
     public fun replace(vertices: FloatArray, indices: IntArray? = null) {
         val mesh = surfaceMesh
+        val nextIndices: IntArray?
         if (mesh != null) {
             require(vertices.size % mesh.stride == 0) {
                 "Vertex buffer size ${vertices.size} is not a multiple of stride ${mesh.stride}"
             }
-            val next = indices ?: surfaceIndices
-            if (next != null) requireIndexRange(next, vertices.size / mesh.stride)
-            surfaceVertices = vertices.size / mesh.stride
-            surfaceIndices = next
+            nextIndices = indices ?: surfaceIndices
+            if (nextIndices != null) requireIndexRange(nextIndices, vertices.size / mesh.stride)
+        } else {
+            nextIndices = null
         }
         upload(vertices, indices)
+        if (mesh != null) {
+            surfaceVertices = vertices.size / mesh.stride
+            surfaceIndices = nextIndices
+        }
     }
 
     /**
