@@ -49,6 +49,23 @@ class SceneCameraTest {
     }
 
     @Test
+    fun overflowingCameraMathLeavesTheDestinationUntouched() {
+        val destination = FloatArray(MATRIX_FLOATS) { 7f }
+        assertThrows(IllegalArgumentException::class.java) {
+            lookAt(Float.MAX_VALUE, 0f, 0f, -Float.MAX_VALUE, 0f, 0f, 0f, 1f, 0f, destination)
+        }
+        assertTrue(destination.all { it == 7f })
+        assertThrows(IllegalArgumentException::class.java) {
+            perspective(Float.MIN_VALUE, 1f, 0.1f, 10f, destination)
+        }
+        assertTrue(destination.all { it == 7f })
+        assertThrows(IllegalArgumentException::class.java) {
+            ortho(Float.MAX_VALUE / 2f, Float.MAX_VALUE, 0f, 1f, 0f, 1f, destination)
+        }
+        assertTrue(destination.all { it == 7f })
+    }
+
+    @Test
     fun perspectiveUsesOpenGlClipSpace() {
         val matrix = perspective(PI.toFloat() / 2f, 1f, 0.1f, 100f)
         assertEquals(1f, matrix[0], 0.00001f)

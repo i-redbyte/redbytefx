@@ -73,7 +73,9 @@ public fun lookAt(
     var fy = centerY - eyeY
     var fz = centerZ - eyeZ
     val forwardLength = sqrt(fx * fx + fy * fy + fz * fz)
-    require(forwardLength > DEGENERATE) { "lookAt eye and center must differ" }
+    require(forwardLength.isFinite() && forwardLength > DEGENERATE) {
+        "lookAt eye and center must have a finite separation"
+    }
     fx /= forwardLength
     fy /= forwardLength
     fz /= forwardLength
@@ -81,13 +83,21 @@ public fun lookAt(
     var sy = fz * upX - fx * upZ
     var sz = fx * upY - fy * upX
     val sideLength = sqrt(sx * sx + sy * sy + sz * sz)
-    require(sideLength > DEGENERATE) { "lookAt up must not be parallel to the view direction" }
+    require(sideLength.isFinite() && sideLength > DEGENERATE) {
+        "lookAt up must have a finite, non-parallel direction"
+    }
     sx /= sideLength
     sy /= sideLength
     sz /= sideLength
     val ux = sy * fz - sz * fy
     val uy = sz * fx - sx * fz
     val uz = sx * fy - sy * fx
+    val tx = -(sx * eyeX + sy * eyeY + sz * eyeZ)
+    val ty = -(ux * eyeX + uy * eyeY + uz * eyeZ)
+    val tz = fx * eyeX + fy * eyeY + fz * eyeZ
+    require(tx.isFinite() && ty.isFinite() && tz.isFinite()) {
+        "lookAt translation must be finite"
+    }
     out[0] = sx
     out[1] = ux
     out[2] = -fx
@@ -100,9 +110,9 @@ public fun lookAt(
     out[9] = uz
     out[10] = -fz
     out[11] = 0f
-    out[12] = -(sx * eyeX + sy * eyeY + sz * eyeZ)
-    out[13] = -(ux * eyeX + uy * eyeY + uz * eyeZ)
-    out[14] = fx * eyeX + fy * eyeY + fz * eyeZ
+    out[12] = tx
+    out[13] = ty
+    out[14] = tz
     out[15] = 1f
     return out
 }
@@ -133,12 +143,18 @@ public fun perspective(fovy: Float, aspect: Float, near: Float, far: Float, out:
     require(far > near) { "perspective far must be greater than near, was far=$far near=$near" }
     val focal = 1f / tan(fovy * 0.5f)
     val span = near - far
+    val xScale = focal / aspect
+    val depthScale = (far + near) / span
+    val depthOffset = (2f * far * near) / span
+    require(xScale.isFinite() && focal.isFinite() && depthScale.isFinite() && depthOffset.isFinite()) {
+        "perspective matrix coefficients must be finite"
+    }
     out.fill(0f, 0, MATRIX_FLOATS)
-    out[0] = focal / aspect
+    out[0] = xScale
     out[5] = focal
-    out[10] = (far + near) / span
+    out[10] = depthScale
     out[11] = -1f
-    out[14] = (2f * far * near) / span
+    out[14] = depthOffset
     return out
 }
 
@@ -180,13 +196,23 @@ public fun ortho(
     val width = right - left
     val height = top - bottom
     val depth = far - near
+    val xScale = 2f / width
+    val yScale = 2f / height
+    val zScale = -2f / depth
+    val xOffset = -(right + left) / width
+    val yOffset = -(top + bottom) / height
+    val zOffset = -(far + near) / depth
+    require(
+        xScale.isFinite() && yScale.isFinite() && zScale.isFinite() &&
+            xOffset.isFinite() && yOffset.isFinite() && zOffset.isFinite(),
+    ) { "ortho matrix coefficients must be finite" }
     out.fill(0f, 0, MATRIX_FLOATS)
-    out[0] = 2f / width
-    out[5] = 2f / height
-    out[10] = -2f / depth
-    out[12] = -(right + left) / width
-    out[13] = -(top + bottom) / height
-    out[14] = -(far + near) / depth
+    out[0] = xScale
+    out[5] = yScale
+    out[10] = zScale
+    out[12] = xOffset
+    out[13] = yOffset
+    out[14] = zOffset
     out[15] = 1f
     return out
 }
