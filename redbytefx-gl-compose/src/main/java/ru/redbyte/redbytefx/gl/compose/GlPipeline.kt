@@ -35,8 +35,8 @@ public enum class CullFace {
  * Scene. Extra pass state on top of the depth test.
  *
  * The default matches the driver: blend off, scissor off, all color channels written, depth writes
- * on, face culling off. Each draw applies its own [GlPipeline], so a pass does not leave blend,
- * scissor, the color mask, the depth mask, or culling for the next one.
+ * on, face culling off. Each draw applies its own [GlPipeline], and the renderer restores the
+ * default before clearing the next pass.
  */
 public class GlPipeline(
     public val blend: Boolean = false,

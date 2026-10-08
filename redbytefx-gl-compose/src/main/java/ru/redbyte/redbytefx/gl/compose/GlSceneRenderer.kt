@@ -434,6 +434,7 @@ internal class SceneRenderer(
     }
 
     private fun clear() {
+        applyPipeline(GlPipeline.Default, GlesPipelineOps)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
     }
 
