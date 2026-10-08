@@ -59,6 +59,23 @@ class UniformBlockTest {
     }
 
     @Test
+    fun fragmentCommandUsingABlockDeclaresTheBlock() {
+        val program = shader(ShaderTarget.Gles30) {
+            uniformBlock("frame") {
+                val gain = float("gain")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    local(gain)
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        val fragment = program.fragmentSource()
+        assertTrue(fragment.contains("layout(std140) uniform frame {"))
+        assertTrue(fragment.contains("b_frame.gain"))
+    }
+
+    @Test
     fun theBlockIsSpelledOnlyInTheStageThatReadsIt() {
         val program = shader(ShaderTarget.Gles30) {
             uniformBlock("frame") {

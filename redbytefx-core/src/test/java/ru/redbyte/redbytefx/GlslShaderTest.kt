@@ -62,6 +62,17 @@ class GlslShaderTest {
             }
         }
         assertEquals(ProgramCode.VaryingNotWritten, error.code)
+        val statementError = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                val uv = varyingVec2("uv")
+                vertex { glPosition(attributeVec4("position")) }
+                fragment {
+                    local(uv.expr)
+                    vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.VaryingNotWritten, statementError.code)
     }
 
     @Test

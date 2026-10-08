@@ -704,6 +704,8 @@ public class ShaderDsl internal constructor(
         val reads = linkedSetOf<Varying<*>>()
         collectVaryings(body, reads)
         fragmentWrites.forEach { collectVaryings(it.value, reads) }
+        commandExprs(fragmentStatements).forEach { collectVaryings(it, reads) }
+        collectVaryingUsesFromStageFunctions(functions, AuthoringPlace.Fragment, reads)
         for (varying in reads) {
             if (varyingWrites.none { it.varying === varying }) {
                 throw ProgramException(

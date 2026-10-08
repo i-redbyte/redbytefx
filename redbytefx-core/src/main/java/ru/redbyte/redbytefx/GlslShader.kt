@@ -174,7 +174,7 @@ internal fun linkGlsl(
             blockText = blockText(
                 blocks,
                 exprRootsForStage(
-                    listOf(fragmentBody) + fragmentWrites.map { it.value },
+                    listOf(fragmentBody) + fragmentWrites.map { it.value } + commandExprs(fragmentStatements),
                     functions,
                     AuthoringPlace.Fragment,
                 ),
@@ -429,7 +429,7 @@ private fun collectUniformsFromStageFunctions(
     }
 }
 
-private fun collectVaryingUsesFromStageFunctions(
+internal fun collectVaryingUsesFromStageFunctions(
     functions: List<UserFunction>,
     stage: AuthoringPlace,
     into: MutableSet<Varying<*>>,
