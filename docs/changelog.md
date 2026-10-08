@@ -4,6 +4,26 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 
 Русская версия: [changelog.ru.md](changelog.ru.md).
 
+## 1.1.1 - 2026-10-08
+
+### Shader DSL and math
+
+- AGSL and GLSL emission now keeps local values in the correct scope and emits commands before expressions that use them. This fixes shaders with nested conditions and local variables; fragment command dependencies are also included in generated GLSL.
+- Shared expression graphs are traversed once during compilation, and unused AGSL functions are omitted from generated source.
+- Added shader `inverse` and `matrixCompMult` for 2x2, 3x3, and 4x4 matrices. The 3D module now also provides CPU-side `transpose`, `inverse`, `transformPoint`, and `transformDirection`.
+- Uniform and storage block layouts validate their sizes more carefully and reuse packing buffers to reduce allocations.
+
+### Runtime and rendering
+
+- AGSL uniform defaults and float payloads are preserved. Runtime handles are validated, effect refresh can retry after a failure, and Compose listeners are released with their host.
+- GLES and Compose handle failed uploads, sampler binds, frame passes, and EGL context changes more safely. Mesh replacement uses current index bounds, and frame rendering avoids repeated GL state changes.
+- Reused scalar uniform caches and block upload buffers; coalesced Compose writes are now drained in linear time instead of repeatedly scanning the queue.
+
+### Sample and checks
+
+- Circuit avoids much of its per-pixel pulse work, Neon floor animates vertices on the GPU, and several sample scenes avoid temporary allocations. Physics Bubble drag updates are processed in order.
+- `qualityCheck` now includes sample unit tests; a device test covers AGSL code emission with nested local values.
+
 ## 1.1.0 — 2026-10-06
 
 ### Platform and docs
