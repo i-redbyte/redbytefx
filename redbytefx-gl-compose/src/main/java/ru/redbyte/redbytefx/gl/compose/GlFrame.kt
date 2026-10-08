@@ -133,7 +133,8 @@ internal class DrawList {
         offscreenDraws.clear()
         if (oversizedScreen) screenDraws.trimToSize()
         if (oversizedOffscreen) offscreenDraws.trimToSize()
-        for (record in pool) {
+        for (index in 0 until pooled) {
+            val record = pool[index]
             record.mesh = null
             record.instances = null
             record.pipeline = GlPipeline.Default

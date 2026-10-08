@@ -46,6 +46,23 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun storageUploadReusesPackingBuffersAcrossUpdates() {
+        lateinit var cells: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            cells = storageBlock("cells") { vec3("value") }
+            compute(1) { }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device).also { it.link() }
+        runtime.set(cells, floatArrayOf(1f, 2f, 3f))
+        runtime.set(cells, floatArrayOf(4f, 5f, 6f))
+        runtime.set(cells, floatArrayOf(7f, 8f, 9f))
+        assertEquals(1, device.storageDataCalls)
+        assertEquals(2, device.storageSubDataCalls)
+        assertSame(device.storagePayloadRefs[0], device.storagePayloadRefs[2])
+    }
+
+    @Test
     fun linkKeepsTheProgramOnlyWhenTheDeviceReportsSuccess() {
         val device = RecordingGlDevice()
         val runtime = GlProgramRuntime(passthrough(), device)
@@ -1496,16 +1513,19 @@ private class RecordingGlDevice(
     var storageSubDataCalls = 0
     var bufferUpdateBarriers = 0
     val storageBytes = HashMap<Int, ByteArray>()
+    val storagePayloadRefs = ArrayList<ByteArray>()
 
     override fun shaderStorageData(buffer: Int, data: ByteArray) {
         storageDataCalls += 1
         writes += "storageData"
+        storagePayloadRefs += data
         storageBytes[buffer] = data.copyOf()
     }
 
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
         storageSubDataCalls += 1
         writes += "storageSubData"
+        storagePayloadRefs += data
         storageBytes[buffer] = data.copyOf()
     }
 

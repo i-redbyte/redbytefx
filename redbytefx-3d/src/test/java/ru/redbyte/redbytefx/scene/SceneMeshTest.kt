@@ -204,6 +204,29 @@ class SceneMeshTest {
         }
     }
 
+    @Test
+    fun tubeAcceptsExplicitClosureAndRejectsUndefinedTangents() {
+        val circle = circlePath(8)
+        val open = tubeAlong(circle, 0.05f)
+        val closed = tubeAlong(circle + circle.first(), 0.05f)
+        assertEquals(open.vertices.size, closed.vertices.size)
+        assertEquals(open.indices.size, closed.indices.size)
+        assertThrows(IllegalArgumentException::class.java) {
+            tubeAlong(circle.toMutableList().also { it[3] = it[2] }, 0.05f)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            tubeAlong(circle.toMutableList().also { it[7] = it[1] }, 0.05f)
+        }
+    }
+
+    @Test
+    fun polygonSideNormalsRemainUnitLengthForSmallEdges() {
+        val mesh = extrudePolygon(listOf(0f to 0f, 1.0e-7f to 0f, 0f to 1f), 0.1f)
+        val side = 2 * 3 * MESH_STRIDE
+        val normalLength = hypot(mesh.vertices[side + 3], mesh.vertices[side + 4])
+        assertEquals(1f, normalLength, 0.0001f)
+    }
+
     private fun circlePath(count: Int): List<Pair<Float, Float>> = List(count) { index ->
         val angle = index / count.toFloat() * (Math.PI * 2).toFloat()
         kotlin.math.cos(angle) to kotlin.math.sin(angle)

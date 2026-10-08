@@ -86,9 +86,9 @@ public fun merge(parts: List<SceneMesh>): SceneMesh {
     )
 }
 
-internal class MeshWriter {
-    private var vertices = FloatArray(64)
-    private var indices = IntArray(96)
+internal class MeshWriter(vertexCount: Int = 8, indexCapacity: Int = 96) {
+    private var vertices = FloatArray(vertexCount * MESH_STRIDE)
+    private var indices = IntArray(indexCapacity)
     private var vertexFloats = 0
     private var indexCount = 0
 
@@ -119,10 +119,10 @@ internal class MeshWriter {
     fun mesh(): SceneMesh {
         require(indexCount > 0) { "Mesh needs at least one triangle" }
         return SceneMesh(
-            vertices = vertices.copyOf(vertexFloats),
+            vertices = if (vertexFloats == vertices.size) vertices else vertices.copyOf(vertexFloats),
             stride = MESH_STRIDE,
             attribs = sceneMeshAttribs(),
-            indices = indices.copyOf(indexCount),
+            indices = if (indexCount == indices.size) indices else indices.copyOf(indexCount),
         )
     }
 }

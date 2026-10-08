@@ -48,7 +48,6 @@ internal class SceneRenderer(
     private val nameSlot = IntArray(1)
     private val surface = HeldMesh()
     private var heldMeshes = IdentityHashMap<GlMesh, HeldMesh>()
-    private val heldOrder = ArrayList<GlMesh>()
     private val upload: (FloatArray, IntArray?) -> Unit = { vertices, indices -> replaceSurface(vertices, indices) }
     private var frame: GlFrame? = null
     private var presentRuntime: GlProgramRuntime? = null
@@ -62,11 +61,14 @@ internal class SceneRenderer(
     private var startedNanos = 0L
     private var reported = false
     private var attribScratch = IntArray(8)
+    private var appliedPipeline: GlPipeline? = null
+    private var appliedDepthTest: Boolean? = null
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         releaseGpu(contextAlive = false)
         slot.runtime?.let { controller.detachRuntime(it) }
         slot.runtime = null
+        slot.eglContextHandle = 0L
         slot.releaseGl = null
         reported = false
         publish(GlLinkState.Pending)
@@ -93,6 +95,7 @@ internal class SceneRenderer(
             }
         }
         slot.runtime = runtime
+        slot.captureContext()
         try {
             val arrays = mesh.arrays
             fill(runtime, surface, mesh.stride, arrays.vertices, arrays.indices, arrays.revision)
@@ -100,10 +103,11 @@ internal class SceneRenderer(
         } catch (error: Throwable) {
             releaseGpu(contextAlive = true)
             slot.runtime = null
+            slot.eglContextHandle = 0L
             runtime.destroy()
             throw error
         }
-        slot.releaseGl = { releaseGpu(contextAlive = true) }
+        slot.releaseGl = { contextAlive -> releaseGpu(contextAlive) }
         publish(GlLinkState.Linked)
         controller.attachRuntime(slot.queue, runtime)
         GLES30.glClearColor(mesh.clearR, mesh.clearG, mesh.clearB, 1f)
@@ -135,6 +139,7 @@ internal class SceneRenderer(
             onFrame(current)
             refreshSurfaceMesh(runtime, current)
             requireOffscreenTarget(renderToTexture, draws.offscreen().size)
+            appliedDepthTest = null
             runtime.use()
             execute(runtime, draws, current.material)
         } finally {
@@ -165,6 +170,8 @@ internal class SceneRenderer(
             } finally {
                 runtime.bindFramebuffer(0)
             }
+        } else {
+            runtime.bindFramebuffer(0)
         }
         clear()
         if (draws.recordedCount() == 0) {
@@ -229,7 +236,10 @@ internal class SceneRenderer(
         if (executed == 0) return
         runtime.use()
         depthTest(target)
-        applyPipeline(pipeline, GlesPipelineOps)
+        if (appliedPipeline !== pipeline) {
+            applyPipeline(pipeline, GlesPipelineOps)
+            appliedPipeline = pipeline
+        }
         GLES30.glBindVertexArray(held.vao)
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, held.buffer)
         val attribs = target.attribs
@@ -301,7 +311,6 @@ internal class SceneRenderer(
         val created = HeldMesh()
         created.drawnFrame = frameNumber
         heldMeshes[target] = created
-        heldOrder += target
         fill(runtime, created, target.stride, arrays.vertices, arrays.indices, arrays.revision)
         return created
     }
@@ -350,23 +359,15 @@ internal class SceneRenderer(
     }
 
     private fun evictIdleMeshes(runtime: GlProgramRuntime) {
-        var index = heldOrder.size - 1
-        var evicted = false
-        while (index >= 0) {
-            val target = heldOrder[index]
-            val held = heldMeshes.getValue(target)
+        val iterator = heldMeshes.values.iterator()
+        while (iterator.hasNext()) {
+            val held = iterator.next()
             if (frameNumber - held.drawnFrame >= HELD_MESH_FRAMES) {
                 deleteNames(runtime, held)
-                heldMeshes.remove(target)
-                heldOrder.removeAt(index)
-                evicted = true
+                iterator.remove()
             }
-            index -= 1
         }
-        if (evicted && heldOrder.isEmpty()) {
-            heldOrder.trimToSize()
-            heldMeshes = IdentityHashMap()
-        }
+        if (heldMeshes.isEmpty()) heldMeshes = IdentityHashMap()
     }
 
     private fun deleteNames(runtime: GlProgramRuntime, held: HeldMesh) {
@@ -388,7 +389,7 @@ internal class SceneRenderer(
         val runtime = slot.runtime
         if (contextAlive && runtime != null) {
             deleteNames(runtime, surface)
-            for (index in heldOrder.indices) deleteNames(runtime, heldMeshes.getValue(heldOrder[index]))
+            for (held in heldMeshes.values) deleteNames(runtime, held)
             if (instanceBuffer != 0) runtime.deleteBuffer(instanceBuffer)
             colorTarget?.let { runtime.deleteColorTarget(it) }
             presentRuntime?.destroy()
@@ -402,15 +403,14 @@ internal class SceneRenderer(
         surface.vao = 0
         surface.enabledAttribCount = 0
         surface.sourceRevision = -1L
-        heldMeshes.clear()
         heldMeshes = IdentityHashMap()
-        heldOrder.clear()
-        heldOrder.trimToSize()
         instanceBuffer = 0
         instanceFloats = 0
         colorTarget = null
         presentRuntime = null
         frame = null
+        appliedPipeline = null
+        appliedDepthTest = null
     }
 
     private fun ensureColorTarget(runtime: GlProgramRuntime): GlColorTarget {
@@ -426,15 +426,19 @@ internal class SceneRenderer(
     }
 
     private fun depthTest(target: GlMesh) {
-        if (drawDepthTest(controller.config.depth, target.depth)) {
+        val enabled = drawDepthTest(controller.config.depth, target.depth)
+        if (appliedDepthTest == enabled) return
+        if (enabled) {
             GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         } else {
             GLES30.glDisable(GLES30.GL_DEPTH_TEST)
         }
+        appliedDepthTest = enabled
     }
 
     private fun clear() {
         applyPipeline(GlPipeline.Default, GlesPipelineOps)
+        appliedPipeline = GlPipeline.Default
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
     }
 

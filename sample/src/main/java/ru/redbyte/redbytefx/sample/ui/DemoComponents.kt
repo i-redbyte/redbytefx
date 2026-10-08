@@ -54,6 +54,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -709,8 +711,11 @@ private fun ExpandableCodeBlock(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val totalLines = previewLineCount(text)
+    val totalLines = androidx.compose.runtime.remember(text) { previewLineCount(text) }
     val canExpand = totalLines > collapsedLines
+    val collapsedPreview = androidx.compose.runtime.remember(text, collapsedLines) {
+        if (canExpand) previewShaderSource(text, collapsedLines) else text
+    }
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
     var expanded by rememberSaveable(stateKey) { mutableStateOf(false) }
@@ -732,7 +737,7 @@ private fun ExpandableCodeBlock(
             text = if (expanded || !canExpand) {
                 text
             } else {
-                previewShaderSource(text, collapsedLines)
+                collapsedPreview
             },
             maxLines = if (expanded || !canExpand) Int.MAX_VALUE else collapsedLines,
             meta = say("$totalLines lines", "$totalLines строк"),
@@ -975,10 +980,18 @@ internal fun previewShaderSource(
     source: String,
     maxLines: Int = 18,
 ): String {
-    val lines = source.lineSequence().toList()
-    if (lines.size <= maxLines) return source
+    require(maxLines >= 0)
+    val lines = source.lineSequence().iterator()
+    var count = 0
+    val preview = StringBuilder()
+    while (count < maxLines && lines.hasNext()) {
+        if (count > 0) preview.append('\n')
+        preview.append(lines.next())
+        count++
+    }
+    if (!lines.hasNext()) return source
     return buildString {
-        append(lines.take(maxLines).joinToString(separator = "\n"))
+        append(preview)
         append("\n...")
     }
 }
@@ -1373,17 +1386,15 @@ fun DemoPreviewStage(
                     shape = shape,
                 )
                 .drawWithCache {
+                    val sweepBrush = Brush.horizontalGradient(
+                        colors = listOf(Color.Transparent, sweepTint, Color.Transparent),
+                    )
+                    val sweepSize = Size(size.width * 0.36f, size.height)
                     onDrawWithContent {
                         drawRect(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    sweepTint,
-                                    Color.Transparent,
-                                ),
-                                startX = size.width * (sweep.value - 0.18f),
-                                endX = size.width * (sweep.value + 0.18f),
-                            ),
+                            brush = sweepBrush,
+                            topLeft = Offset(size.width * (sweep.value - 0.18f), 0f),
+                            size = sweepSize,
                             blendMode = BlendMode.Screen,
                         )
                         var y = 0f

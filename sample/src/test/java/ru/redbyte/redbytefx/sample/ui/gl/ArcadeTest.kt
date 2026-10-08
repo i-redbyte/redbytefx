@@ -79,6 +79,25 @@ class ArcadeTest {
         assertEquals(0f, sumY / vertices, 0.05f)
     }
 
+    @Test
+    fun reusedPenPublishesIndependentFrameSnapshots() {
+        val pen = WorldPen()
+        pen.box(0f, 0f, 1f, 0.1f, 0.1f, 0.1f, 1f, 0f, 0f)
+        val first = pen.toArray()
+        assertTrue(first.isNotEmpty())
+        val originalX = first[0]
+        pen.reset(1f, 0f, 0f)
+        assertEquals(0, pen.toArray().size)
+        pen.box(0f, 0f, 1f, 0.1f, 0.1f, 0.1f, 0f, 1f, 0f)
+        val second = pen.toArray()
+        assertEquals(originalX, first[0], 0f)
+        assertTrue(second[0] < first[0])
+        assertTrue(first[4] > 0f)
+        assertEquals(0f, first[5], 0f)
+        assertTrue(second[5] > 0f)
+        assertEquals(0f, second[4], 0f)
+    }
+
     private fun centerRayHit(mesh: FloatArray, at: Int): Float {
         val ax = mesh[at]
         val ay = mesh[at + 1]

@@ -47,6 +47,7 @@ private fun ArcadeScreen(
 }
 
 internal class TunnelRun {
+    private val pen = WorldPen()
     var ship = 0f
     var distance = 0f
     var score = 0
@@ -77,7 +78,7 @@ internal class TunnelRun {
     fun caption(russian: Boolean): String = if (russian) "Кольца: $score" else "Rings: $score"
 
     private fun rebuild() {
-        val pen = WorldPen(0f, 0f, distance)
+        pen.reset(0f, 0f, distance)
         var z = gate - GAP * 2f
         repeat(6) {
             ring(pen, z)
@@ -106,6 +107,7 @@ internal class TunnelRun {
 }
 
 internal class MazeRun {
+    private val pen = WorldPen()
     var x = 1.5f
     var z = 1.5f
     var vx = 0f
@@ -154,7 +156,7 @@ internal class MazeRun {
     }
 
     private fun rebuild() {
-        val pen = WorldPen(x, BALL_Y + EYE_UP, z - EYE_BACK, EYE_PITCH)
+        pen.reset(x, BALL_Y + EYE_UP, z - EYE_BACK, EYE_PITCH)
         MAZE.forEachIndexed { row, line ->
             line.forEachIndexed { col, mark ->
                 val cx = col + 0.5f
@@ -203,6 +205,7 @@ internal class MazeRun {
 }
 
 internal class BreakoutRun {
+    private val pen = WorldPen()
     var ballX = 0f
     var ballY = 0.5f
     var vx = 0.55f
@@ -287,17 +290,11 @@ internal class BreakoutRun {
     }
 
     private fun rebuild() {
-        val pen = WorldPen(0f, 1f, -2.35f)
-        val colors = arrayOf(
-            floatArrayOf(0.9f, 0.25f, 0.22f),
-            floatArrayOf(0.95f, 0.55f, 0.15f),
-            floatArrayOf(0.95f, 0.85f, 0.2f),
-            floatArrayOf(0.25f, 0.75f, 0.4f),
-        )
+        pen.reset(0f, 1f, -2.35f)
         for (row in 0 until ROWS) {
             for (col in 0 until COLS) {
                 if (!alive[row * COLS + col]) continue
-                val ink = colors[row]
+                val ink = BRICK_COLORS[row]
                 pen.box(-0.91f + col * 0.26f, 1.2f + row * 0.22f, 0f, 0.11f, 0.07f, 0.08f, ink[0], ink[1], ink[2])
             }
         }
@@ -309,10 +306,17 @@ internal class BreakoutRun {
     companion object {
         const val COLS = 8
         const val ROWS = 4
+        private val BRICK_COLORS = arrayOf(
+            floatArrayOf(0.9f, 0.25f, 0.22f),
+            floatArrayOf(0.95f, 0.55f, 0.15f),
+            floatArrayOf(0.95f, 0.85f, 0.2f),
+            floatArrayOf(0.25f, 0.75f, 0.4f),
+        )
     }
 }
 
 internal class StrafeRun {
+    private val pen = WorldPen()
     class Foe(val x: Float, val y: Float, val z: Float)
 
     val foes = ArrayList<Foe>()
@@ -352,8 +356,9 @@ internal class StrafeRun {
             val height = ((foes.size % 3) - 1) * 0.22f
             foes += Foe(lane, height, distance + 9f)
         }
-        val kept = ArrayList<Foe>(foes.size)
-        foes.forEach { foe ->
+        var kept = 0
+        for (index in foes.indices) {
+            val foe = foes[index]
             val ahead = foe.z - distance
             val hit = beam > 0f && abs(foe.x - beamX) < 0.2f && ahead in 0.6f..7.2f
             when {
@@ -361,18 +366,17 @@ internal class StrafeRun {
                     score += 1
                     flash = 1f
                 }
-                ahead > 0.45f -> kept += foe
+                ahead > 0.45f -> foes[kept++] = foe
             }
         }
-        foes.clear()
-        foes += kept
+        while (foes.size > kept) foes.removeAt(foes.lastIndex)
         rebuild()
     }
 
     fun caption(russian: Boolean): String = if (russian) "Сбито: $score" else "Hits: $score"
 
     private fun rebuild() {
-        val pen = WorldPen(0f, 0.05f, distance)
+        pen.reset(0f, 0.05f, distance)
         foes.forEach { foe ->
             pen.sphere(foe.x, foe.y, foe.z, 0.16f, 0.9f, 0.22f, 0.18f)
         }
@@ -385,6 +389,7 @@ internal class StrafeRun {
 }
 
 internal class DescentRun {
+    private val pen = WorldPen()
     var skier = 0f
     var distance = 0f
     var score = 0
@@ -419,7 +424,7 @@ internal class DescentRun {
     fun caption(russian: Boolean): String = if (russian) "Ворота: $score" else "Gates: $score"
 
     private fun rebuild() {
-        val pen = WorldPen(skier * 0.35f, 0.42f, distance)
+        pen.reset(skier * 0.35f, 0.42f, distance)
         var row = 0
         var z = distance + 0.35f
         while (z < distance + 12f) {

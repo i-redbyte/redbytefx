@@ -18,11 +18,7 @@ public fun cosinePalette(
     frequency: Expr<Vec3<Flt<High>>> = float3(1f, 1f, 1f),
     phase: Expr<Vec3<Flt<High>>> = float3(0f, 0.33f, 0.67f),
 ): Expr<Vec3<Flt<High>>> = saturate(
-    float3(
-        bias.x + amplitude.x * cos(TAU * (frequency.x * tone + phase.x)),
-        bias.y + amplitude.y * cos(TAU * (frequency.y * tone + phase.y)),
-        bias.z + amplitude.z * cos(TAU * (frequency.z * tone + phase.z)),
-    ),
+    bias + amplitude * cos((frequency * tone + phase) * TAU),
 )
 
 /**
@@ -61,8 +57,8 @@ public fun FragmentDsl.chromaticOffset(
     coord: Expr<Vec2<Flt<High>>> = fragCoord,
 ): Expr<Vec4<Flt<Med>>> {
     val safeDirectionLength = max(length(direction), 0.0001f)
-    val delta = direction / safeDirectionLength * offset
-    val base = sample(coord)
+    val delta = let(direction / safeDirectionLength * offset, "chromaDelta")
+    val base = let(sample(coord), "chromaBase")
     val shifted = ru.redbyte.redbytefx.color(
         sample(coord - delta).r,
         base.g,

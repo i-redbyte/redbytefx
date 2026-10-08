@@ -9,7 +9,9 @@ import ru.redbyte.redbytefx.Uniform
 import ru.redbyte.redbytefx.abs
 import ru.redbyte.redbytefx.div
 import ru.redbyte.redbytefx.fract
+import ru.redbyte.redbytefx.ifElse
 import ru.redbyte.redbytefx.lit
+import ru.redbyte.redbytefx.lt
 import ru.redbyte.redbytefx.min
 import ru.redbyte.redbytefx.minus
 import ru.redbyte.redbytefx.mix
@@ -34,10 +36,19 @@ internal fun floorScene(): TimedScene {
         aspect = uniform("aspect", 1f)
         val world = varyingVec2("world")
         vertex {
-            val xz = attributeVec2("xz")
-            val distance = xz.y
-            world.set(vec2(xz.x * 2.6f.lit, distance))
-            glPosition(vec4(xz.x * 1.25f.lit / aspect.expr, (-0.5f).lit, 0f.lit, distance))
+            val grid = attributeVec3("grid")
+            val start = fract((grid.y - time.expr * 0.7f.lit - FLOOR_NEAR.lit) / FLOOR_SPAN.lit) *
+                FLOOR_SPAN.lit + FLOOR_NEAR.lit
+            val distance = start + grid.z * FLOOR_STEP.lit
+            world.set(vec2(grid.x * 2.6f.lit, distance))
+            val clip = vec4(grid.x * 1.25f.lit / aspect.expr, (-0.5f).lit, 0f.lit, distance)
+            glPosition(
+                ifElse(
+                    start lt (FLOOR_NEAR + FLOOR_SPAN - FLOOR_STEP).lit,
+                    clip,
+                    vec4(2f.lit, 2f.lit, 0f.lit, 1f.lit),
+                ),
+            )
         }
         fragment {
             val cellX = abs(fract(world.expr.x) - 0.5f.lit)
@@ -60,6 +71,5 @@ internal fun DemoFloor() {
     val scene = remember { floorScene() }
     GlCanvas(scene.program, scene.mesh, dsl = floorDsl) { frame ->
         frame.bind(scene)
-        frame.replace(floorMesh(frame.seconds * 0.7f))
     }
 }

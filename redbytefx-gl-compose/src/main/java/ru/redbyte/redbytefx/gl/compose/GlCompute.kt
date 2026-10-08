@@ -75,13 +75,15 @@ public fun GlCompute(
                     val held = view.tag as GlSlot
                     if (controller.detachQueue(held.queue)) controller.linkStateValue = GlLinkState.Pending
                     view.queueEvent {
-                        held.releaseGl?.invoke()
+                        val contextAlive = held.ownsCurrentContext()
+                        held.releaseGl?.invoke(contextAlive)
                         held.releaseGl = null
                         held.runtime?.let { linked ->
                             controller.detachRuntime(linked)
-                            linked.destroy()
+                            if (contextAlive) linked.destroy()
                         }
                         held.runtime = null
+                        held.eglContextHandle = 0L
                     }
                     view.onPause()
                 },
@@ -134,6 +136,7 @@ internal class ComputeRenderer(
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         slot.runtime?.let { controller.detachRuntime(it) }
         slot.runtime = null
+        slot.eglContextHandle = 0L
         reported = false
         publish(GlLinkState.Pending)
         if (controller.program.target != ShaderTarget.Gles31) {
@@ -147,6 +150,7 @@ internal class ComputeRenderer(
             return
         }
         slot.runtime = runtime
+        slot.captureContext()
         publish(GlLinkState.Linked)
         controller.attachRuntime(slot.queue, runtime)
     }

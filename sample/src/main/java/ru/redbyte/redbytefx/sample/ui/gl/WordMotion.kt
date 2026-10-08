@@ -30,9 +30,19 @@ internal fun letterWave(index: Int, time: Float): Float {
 internal class WordModel {
     private val local: FloatArray
     val posed: FloatArray
+    private val pitchCos = FloatArray(WORD_COUNT)
+    private val pitchSin = FloatArray(WORD_COUNT)
+    private val lift = FloatArray(WORD_COUNT)
+    private val wave = FloatArray(WORD_COUNT)
+    private val yawCos = cos(YAW)
+    private val yawSin = sin(YAW)
 
     init {
-        val built = ArrayList<Float>()
+        val litCells = WORD_TEXT.sumOf { letter ->
+            wordGlyph(letter).sumOf { row -> row.count { it == '#' } }
+        }
+        val built = FloatArray(litCells * 36 * 5)
+        var cursor = 0
         WORD_TEXT.forEachIndexed { index, letter ->
             val line = if (index < 4) 0 else 1
             val slot = index % 4
@@ -42,22 +52,29 @@ internal class WordModel {
                     val x = slot * 6f + column - 11f
                     val y = (3f - row) - line * 9f + 4.5f
                     writeBox(x, y, 0f, 0.4f, 0.4f, 0.5f) { vx, vy, vz, shade ->
-                        built += vx
-                        built += vy
-                        built += vz
-                        built += shade
-                        built += index.toFloat()
+                        built[cursor++] = vx
+                        built[cursor++] = vy
+                        built[cursor++] = vz
+                        built[cursor++] = shade
+                        built[cursor++] = index.toFloat()
                     }
                 }
             }
         }
-        local = built.toFloatArray()
+        check(cursor == built.size) { "Word mesh size was planned wrong" }
+        local = built
         posed = FloatArray(local.size / 5 * 8)
     }
 
     fun pose(time: Float) {
-        val yawCos = cos(YAW)
-        val yawSin = sin(YAW)
+        val settled = wordSettled(time)
+        for (index in 0 until WORD_COUNT) {
+            val pitch = (1f - letterProgress(index, time)) * 2.2f
+            pitchCos[index] = cos(pitch)
+            pitchSin[index] = sin(pitch)
+            lift[index] = letterLift(index, time)
+            wave[index] = if (settled) sin(time * 2.5f - index % 4 * 0.85f) * 0.14f else 0f
+        }
         var read = 0
         var write = 0
         while (read < local.size) {
@@ -68,16 +85,13 @@ internal class WordModel {
             val id = local[read + 4]
             read += 5
             val index = id.toInt()
-            val pitch = (1f - letterProgress(index, time)) * 2.2f
-            val pitchCos = cos(pitch)
-            val pitchSin = sin(pitch)
             val sy = y * WORD_SCALE
             val sz = z * WORD_SCALE
-            val pitchedY = sy * pitchCos - sz * pitchSin
-            val pitchedZ = sy * pitchSin + sz * pitchCos
+            val pitchedY = sy * pitchCos[index] - sz * pitchSin[index]
+            val pitchedZ = sy * pitchSin[index] + sz * pitchCos[index]
             val sx = x * WORD_SCALE
             posed[write] = sx * yawCos + pitchedZ * yawSin
-            posed[write + 1] = pitchedY + letterLift(index, time) + letterWave(index, time)
+            posed[write + 1] = pitchedY + lift[index] + wave[index]
             posed[write + 2] = -sx * yawSin + pitchedZ * yawCos
             posed[write + 3] = 1f
             posed[write + 4] = id

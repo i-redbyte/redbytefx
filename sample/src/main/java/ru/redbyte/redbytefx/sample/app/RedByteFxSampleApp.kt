@@ -88,7 +88,7 @@ fun RedByteFxSampleApp(
     } else {
         null
     }
-    val route = sampleRoute(lab, currentDemo?.name, glExample?.name)
+    val route = sampleRoute(lab, currentDemo?.name, glExample)
 
     fun retreat() {
         when {
@@ -311,7 +311,7 @@ private fun sampleTitle(
 }
 
 @Composable
-private fun sampleRoute(lab: SampleLab, demoName: String?, glName: String?): String = when {
+private fun sampleRoute(lab: SampleLab, demoName: String?, glExample: GlExample?): String = when {
     lab == SampleLab.Agsl && demoName != null -> say(
         "demo://${demoName.lowercase()} / runtime: live",
         "пример://${demoName.lowercase()} / показ: живой",
@@ -320,9 +320,9 @@ private fun sampleRoute(lab: SampleLab, demoName: String?, glName: String?): Str
         "agsl://cookbook / runtime shader",
         "agsl://сборник / шейдер вживую",
     )
-    lab == SampleLab.Gl && glName != null -> say(
-        "gles://${glName.lowercase()} / es 3.0",
-        "gles://${glName.lowercase()} / es 3.0",
+    lab == SampleLab.Gl && glExample != null -> say(
+        "gles://${glExample.name.lowercase()} / ${glExample.api.removePrefix("OpenGL ").lowercase()}",
+        "gles://${glExample.name.lowercase()} / ${glExample.api.removePrefix("OpenGL ").lowercase()}",
     )
     lab == SampleLab.Gl -> say(
         "gles://examples / es 3.0",

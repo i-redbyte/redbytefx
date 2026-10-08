@@ -1,7 +1,9 @@
 package ru.redbyte.redbytefx.gl
 
+import ru.redbyte.redbytefx.StorageBlock
 import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.packStd140Into
+import ru.redbyte.redbytefx.packStd430Into
 
 /**
  * One uniform or storage block buffer at [binding].
@@ -31,6 +33,12 @@ internal class GlBlockBuffer(
         }
         val packed = writableBytes(block.byteSize)
         packStd140Into(block, values, packed)
+        return write(packed)
+    }
+
+    fun writeStd430(block: StorageBlock, values: FloatArray): Boolean {
+        val packed = writableBytes(block.byteSize(values.size))
+        packStd430Into(block, values, packed)
         return write(packed)
     }
 

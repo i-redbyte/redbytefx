@@ -27,6 +27,7 @@ import ru.redbyte.redbytefx.normalize
 import ru.redbyte.redbytefx.or
 import ru.redbyte.redbytefx.plus
 import ru.redbyte.redbytefx.saturate
+import ru.redbyte.redbytefx.sign
 import ru.redbyte.redbytefx.sqrt
 import ru.redbyte.redbytefx.times
 import ru.redbyte.redbytefx.unaryMinus
@@ -142,9 +143,9 @@ public fun sdTriangle(
     val ac = a - c
     val pc = point - c
     val nor = cross(ba, ac)
-    val inside = signOf(dot(cross(ba, nor), pa)) +
-        signOf(dot(cross(cb, nor), pb)) +
-        signOf(dot(cross(ac, nor), pc))
+    val inside = sign(dot(cross(ba, nor), pa)) +
+        sign(dot(cross(cb, nor), pb)) +
+        sign(dot(cross(ac, nor), pc))
     val nearestA = ba * clamp(dot(ba, pa) / max(dot(ba, ba), 0.0001f), 0f, 1f) - pa
     val nearestB = cb * clamp(dot(cb, pb) / max(dot(cb, cb), 0.0001f), 0f, 1f) - pb
     val nearestC = ac * clamp(dot(ac, pc) / max(dot(ac, ac), 0.0001f), 0f, 1f) - pc
@@ -327,6 +328,3 @@ public fun sdfNormal(
     val dz = scene(point + float3(zero, zero, step)) - scene(point - float3(zero, zero, step))
     return normalize(float3(dx, dy, dz))
 }
-
-private fun signOf(value: Expr<Flt<High>>): Expr<Flt<High>> =
-    ifElse(value gt 0f, float(1f), ifElse(value lt 0f, float(-1f), float(0f)))

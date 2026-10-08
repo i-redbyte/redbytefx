@@ -54,9 +54,12 @@ shader(ShaderTarget.Gles30) {
     aspect = uniform("aspect", 1f)
     val world = varyingVec2("world")
     vertex {
-        val xz = attributeVec2("xz")
-        world.set(vec2(xz.x * 2.6f.lit, xz.y))
-        glPosition(vec4(xz.x * 1.25f.lit / aspect.expr, (-0.5f).lit, 0f.lit, xz.y))
+        val grid = attributeVec3("grid")
+        val start = fract((grid.y - time.expr * 0.7f.lit - FLOOR_NEAR.lit) / FLOOR_SPAN.lit) * FLOOR_SPAN.lit + FLOOR_NEAR.lit
+        val distance = start + grid.z * FLOOR_STEP.lit
+        world.set(vec2(grid.x * 2.6f.lit, distance))
+        val clip = vec4(grid.x * 1.25f.lit / aspect.expr, (-0.5f).lit, 0f.lit, distance)
+        glPosition(ifElse(start lt (FLOOR_NEAR + FLOOR_SPAN - FLOOR_STEP).lit, clip, vec4(2f.lit, 2f.lit, 0f.lit, 1f.lit)))
     }
     fragment {
         val edge = min(abs(fract(world.expr.x) - 0.5f.lit), abs(fract(world.expr.y * 1.4f.lit) - 0.5f.lit))

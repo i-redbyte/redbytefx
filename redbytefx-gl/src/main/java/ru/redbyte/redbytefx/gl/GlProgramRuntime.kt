@@ -20,7 +20,6 @@ import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
-import ru.redbyte.redbytefx.packStd430
 import ru.redbyte.redbytefx.sameFloatUniformValue
 import ru.redbyte.redbytefx.unpackStd430
 import java.util.IdentityHashMap
@@ -80,7 +79,7 @@ public class GlProgramRuntime(
     private var linked = false
     private var destroyed = false
     private val blocks = GlOwnedBlocks(device, program)
-    private val ownedTextures = mutableListOf<Int>()
+    private val ownedTextures = HashSet<Int>()
     private val framebufferColors = HashMap<Int, Int>()
     private var boundFramebuffer: Int = 0
     private val attribLocations = HashMap<String, Int>()
@@ -647,7 +646,7 @@ public class GlProgramRuntime(
         checkReady()
         val buffer = blocks.storage(block)
         if (!buffer.pending(values)) return false
-        val wrote = buffer.write(packStd430(block, values))
+        val wrote = buffer.writeStd430(block, values)
         if (wrote) {
             try {
                 buffer.bind()

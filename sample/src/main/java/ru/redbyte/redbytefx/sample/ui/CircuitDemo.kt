@@ -114,7 +114,6 @@ private const val CIRCUIT_TRACE_THICKNESS_SCALE = 0.25f
 private const val CIRCUIT_TRACE_FEATHER_SCALE = 0.42f
 private const val CIRCUIT_TRACE_MIN_THICKNESS = 0.0032f
 private const val CIRCUIT_TRACE_MIN_FEATHER = 0.0026f
-private const val CIRCUIT_PULSE_THICKNESS_EXTRA = 0.0008f
 
 private val circuitBoardSpec: CircuitBoardSpec = buildCircuitBoardSpec()
 
@@ -656,22 +655,13 @@ private fun circuitSegmentPulse(
     board: Expr<Vec2<Flt<High>>>,
     time: Expr<Flt<High>>,
     segment: CircuitSegmentSpec,
+    traceMask: Expr<Flt<High>>,
 ): Expr<Flt<High>> {
     val start = segment.start.toExpr()
     val end = segment.end.toExpr()
     val phase = fract(time * segment.pulseSpeed + segment.pulseOffset)
     val progress = segmentProgress(point = board, start = start, end = end)
     val delta = fract(phase - progress + 1f)
-    val pulseThickness = if (segment.thickness * CIRCUIT_TRACE_THICKNESS_SCALE + CIRCUIT_PULSE_THICKNESS_EXTRA > CIRCUIT_TRACE_MIN_THICKNESS) {
-        segment.thickness * CIRCUIT_TRACE_THICKNESS_SCALE + CIRCUIT_PULSE_THICKNESS_EXTRA
-    } else {
-        CIRCUIT_TRACE_MIN_THICKNESS
-    }
-    val pulseFeather = if (segment.feather * CIRCUIT_TRACE_FEATHER_SCALE > CIRCUIT_TRACE_MIN_FEATHER) {
-        segment.feather * CIRCUIT_TRACE_FEATHER_SCALE
-    } else {
-        CIRCUIT_TRACE_MIN_FEATHER
-    }
     val headLength = if (segment.bandWidth * 0.20f > 0.018f) {
         segment.bandWidth * 0.20f
     } else {
@@ -685,13 +675,7 @@ private fun circuitSegmentPulse(
     val head = 1f - smoothstep(0f, headLength + segment.bandFeather * 0.45f, delta)
     val tail = (1f - smoothstep(headLength, tailLength + segment.bandFeather, delta)) * 0.42f
     val profile = max(head, tail)
-    return profile * segmentMask(
-        point = board,
-        start = start,
-        end = end,
-        thickness = pulseThickness,
-        feather = pulseFeather,
-    )
+    return profile * traceMask
 }
 
 private fun circuitViaMask(
@@ -854,12 +838,6 @@ fun DemoCircuit() {
                         "${segment.id}_trace",
                     )
                 }
-                val pulseMasks = boardSpec.segments.associate { segment ->
-                    segment.id to let(
-                        circuitSegmentPulse(board = board, time = time.expr, segment = segment),
-                        "${segment.id}_pulse",
-                    )
-                }
                 val viaMask = let(
                     circuitUnionMask(boardSpec.viaPoints.map { circuitViaMask(board = board, point = it) }),
                     "via_mask",
@@ -904,13 +882,19 @@ fun DemoCircuit() {
                 )
                 val activePulseMask = let(
                     circuitUnionMask(
-                        boardSpec.activations.map { (nodeId, activation) ->
+                        boardSpec.segments.map { segment ->
+                            val selectedRoute = boardSpec.activations
+                                .filter { (_, activation) -> segment.id in activation.segmentIds }
+                                .keys
+                                .map { nodeId -> circuitSelection(route.expr, nodesById.getValue(nodeId)) }
+                                .reduce { left, right -> left or right }
                             ifElse(
-                                circuitSelection(route.expr, nodesById.getValue(nodeId)),
-                                circuitUnionMask(
-                                    activation.segmentIds.map { segmentId ->
-                                        pulseMasks.getValue(segmentId)
-                                    },
+                                selectedRoute,
+                                circuitSegmentPulse(
+                                    board = board,
+                                    time = time.expr,
+                                    segment = segment,
+                                    traceMask = traceMasks.getValue(segment.id),
                                 ),
                                 float(0f),
                             )

@@ -9,6 +9,45 @@ import org.junit.Test
 class ComputeShaderTest {
 
     @Test
+    fun packStd430IntoReusesStorageAndClearsPadding() {
+        lateinit var colors: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            colors = storageBlock("colors") { vec3Array("rgb", 2) }
+            compute(1) { }
+        }
+        val values = floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f)
+        val into = ByteArray(colors.byteSize(values.size)) { 0x7f.toByte() }
+        packStd430Into(colors, values, into)
+        assertTrue(packStd430(colors, values).contentEquals(into))
+        val view = java.nio.ByteBuffer.wrap(into).order(java.nio.ByteOrder.nativeOrder())
+        assertEquals(0f, view.getFloat(12), 0f)
+        assertEquals(0f, view.getFloat(28), 0f)
+
+        values[0] = 7f
+        packStd430Into(colors, values, into)
+        assertEquals(7f, view.getFloat(0), 0f)
+        assertEquals(0f, view.getFloat(12), 0f)
+        assertThrows(IllegalArgumentException::class.java) {
+            packStd430Into(colors, values, ByteArray(into.size - 1))
+        }
+    }
+
+    @Test
+    fun unsizedStorageTailCanBeEmpty() {
+        lateinit var cells: StorageBlock
+        shader(ShaderTarget.Gles31) {
+            cells = storageBlock("cells") { floatArray("values") }
+            compute(1) { }
+        }
+        assertEquals(0, cells.byteSize(0))
+        assertEquals(0, packStd430(cells, floatArrayOf()).size)
+        val into = ByteArray(0)
+        packStd430Into(cells, floatArrayOf(), into)
+        assertEquals(0, unpackStd430(cells, java.nio.ByteBuffer.wrap(into), 0, FloatArray(0)))
+        assertEquals(8, cells.byteSize(2))
+    }
+
+    @Test
     fun oversizedStd430ArrayIsRejectedBeforePacking() {
         assertThrows(IllegalArgumentException::class.java) {
             shader(ShaderTarget.Gles31) {

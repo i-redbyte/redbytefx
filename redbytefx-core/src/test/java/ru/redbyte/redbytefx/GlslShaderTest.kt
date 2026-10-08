@@ -9,6 +9,54 @@ import org.junit.Test
 
 class GlslShaderTest {
 
+    @Test
+    fun fragmentLetReadsLocalAfterItsStatementWrites() {
+        val main = shader(ShaderTarget.Gles30) {
+            fragment {
+                val counter = local(0f.lit, "counter")
+                counter.set(2f.lit)
+                val result = let(counter.expr + 1f.lit, "result")
+                vec4(result, result, result, 1f.lit)
+            }
+        }.fragmentSource().substringAfter("void main() {")
+
+        assertTrue(main.indexOf("counter = 2.0;") < main.indexOf("float result ="))
+        assertTrue(main.indexOf("float result =") < main.indexOf("oColor ="))
+    }
+
+    @Test
+    fun fragmentLetInsideConditionalDoesNotLeakIntoOuterScope() {
+        val main = shader(ShaderTarget.Gles30) {
+            fragment {
+                val board = let(fragCoord, "board")
+                val active = local(0f.lit, "active")
+                whenTrue(fragCoord.x gt 0f.lit) { active.set(board.x) }
+                val result = let(active.expr + board.y, "result")
+                vec4(result, result, result, 1f.lit)
+            }
+        }.fragmentSource().substringAfter("void main() {")
+
+        assertTrue(main.contains("vec2 board ="))
+        assertTrue(main.contains("vec2 board_1 ="))
+        assertTrue(main.indexOf("active = board.x;") < main.indexOf("float result ="))
+    }
+
+    @Test
+    fun vertexVaryingAssignmentPrecedesConditionalPositionRead() {
+        val vertex = shader(ShaderTarget.Gles30) {
+            val mark = varyingVec2("mark")
+            vertex {
+                mark.set(attributeVec2("uv"))
+                whenTrue(1f.lit gt 0f.lit) {
+                    glPosition(vec4(mark.expr.x, mark.expr.y, 0f.lit, 1f.lit))
+                }
+            }
+            fragment { vec4(mark.expr.x, mark.expr.y, 0f.lit, 1f.lit) }
+        }.vertexSource().substringAfter("void main() {")
+
+        assertTrue(vertex.indexOf("v_mark =") < vertex.indexOf("if ("))
+    }
+
     @Test(timeout = 5_000)
     fun analysisTraversesSharedExpressionOnlyOnce() {
         var shared = 1f.lit

@@ -65,19 +65,33 @@ internal fun playfield(clearR: Float, clearG: Float, clearB: Float): Playfield {
 }
 
 internal class WorldPen(
-    private val camX: Float,
-    private val camY: Float,
-    private val camZ: Float,
+    camX: Float = 0f,
+    camY: Float = 0f,
+    camZ: Float = 0f,
     pitch: Float = 0f,
 ) {
-    private val pitchCos = cos(pitch)
-    private val pitchSin = sin(pitch)
-    val data = ArrayList<Float>(4096)
+    private var camX = camX
+    private var camY = camY
+    private var camZ = camZ
+    private var pitchCos = cos(pitch)
+    private var pitchSin = sin(pitch)
+    private var data = FloatArray(4096)
+    private var written = 0
     private val tri = FloatArray(12)
     private var count = 0
     private var red = 1f
     private var green = 1f
     private var blue = 1f
+
+    fun reset(camX: Float, camY: Float, camZ: Float, pitch: Float = 0f) {
+        this.camX = camX
+        this.camY = camY
+        this.camZ = camZ
+        pitchCos = cos(pitch)
+        pitchSin = sin(pitch)
+        written = 0
+        count = 0
+    }
 
     fun box(
         cx: Float,
@@ -120,7 +134,7 @@ internal class WorldPen(
         }
     }
 
-    fun toArray(): FloatArray = data.toFloatArray()
+    fun toArray(): FloatArray = data.copyOf(written)
 
     private fun triPoint(cx: Float, cy: Float, cz: Float, radius: Float, v: Float, u: Float) {
         val ring = sin(v)
@@ -140,18 +154,20 @@ internal class WorldPen(
         if (count < 3) return
         count = 0
         if (tri[2] < NEAR || tri[6] < NEAR || tri[10] < NEAR) return
+        val required = written + 3 * 8
+        if (required > data.size) data = data.copyOf(maxOf(required, data.size * 2))
         var index = 0
         while (index < 3) {
             val offset = index * 4
             val lit = tri[offset + 3]
-            data += tri[offset]
-            data += tri[offset + 1]
-            data += tri[offset + 2]
-            data += 1f
-            data += red * lit
-            data += green * lit
-            data += blue * lit
-            data += 1f
+            data[written++] = tri[offset]
+            data[written++] = tri[offset + 1]
+            data[written++] = tri[offset + 2]
+            data[written++] = 1f
+            data[written++] = red * lit
+            data[written++] = green * lit
+            data[written++] = blue * lit
+            data[written++] = 1f
             index += 1
         }
     }

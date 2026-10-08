@@ -583,11 +583,20 @@ public class ShaderDsl internal constructor(
         val functionText = renderAgslFunctions(usedFunctions, occupied, uniformNames, varyingNames)
         val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, identityFunctions(usedFunctions))
         val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
+        val declarations = emitter.declarations.toList()
         val rendered = emitter.emit(body)
+        val resultDeclarations = emitter.declarations.drop(declarations.size)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
         return ShaderProgram(
             target = target,
-            agsl = renderAgsl(bindings, emitter.declarations, functionText, statements, output, needsClampedSample),
+            agsl = renderAgsl(
+                bindings,
+                declarations,
+                functionText,
+                statements + resultDeclarations,
+                output,
+                needsClampedSample,
+            ),
             bindings = bindings,
         )
     }
@@ -1197,6 +1206,7 @@ private class AgslEmitter(
     private val ownedFunctions: IdentityHashMap<UserFunction, Boolean>? = null,
 ) : CodeEmitter {
     private val localNames = IdentityHashMap<ExprNode.Local, String>()
+    private val localScopes = ArrayDeque<MutableList<ExprNode.Local>>()
     private var localIndex = 0
     private val slotNames = IdentityHashMap<LocalSlot, String>()
     private var slotIndex = 0
@@ -1264,7 +1274,16 @@ private class AgslEmitter(
         localIndex += 1
         declarations += "  ${spell(shape, ShaderTarget.Agsl)} $name = $initializer;"
         localNames[node] = name
+        localScopes.lastOrNull()?.add(node)
         return name
+    }
+
+    override fun enterScope() {
+        localScopes.addLast(mutableListOf())
+    }
+
+    override fun leaveScope() {
+        for (node in localScopes.removeLast()) localNames.remove(node)
     }
 
     override fun bindSlot(slot: LocalSlot) {
@@ -1325,14 +1344,17 @@ private fun renderAgslFunctions(
         val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
         val emitter = AgslEmitter(locals, uniforms, ownedFunctions)
         val statements = spellStageStatements(function.statements, emitter, varyingNames)
+        val declarations = emitter.declarations.toList()
         val body = emitter.emit(function.body)
+        val resultDeclarations = emitter.declarations.drop(declarations.size)
         val signature = function.parameters.joinToString(", ") {
             "${spell(it.shape, ShaderTarget.Agsl)} ${it.name}"
         }
         append(spell(function.result, ShaderTarget.Agsl)).append(' ').append(function.name)
             .append('(').append(signature).append(") {\n")
-        emitter.declarations.forEach { append(it).append('\n') }
+        declarations.forEach { append(it).append('\n') }
         statements.forEach { append(it).append('\n') }
+        resultDeclarations.forEach { append(it).append('\n') }
         append("  return ").append(body).append(";\n}\n")
     }
 }

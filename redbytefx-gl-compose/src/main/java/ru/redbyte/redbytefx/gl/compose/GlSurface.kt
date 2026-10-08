@@ -95,13 +95,15 @@ public fun GlSurface(
                     val held = view.tag as GlSlot
                     if (controller.detachQueue(held.queue)) controller.linkStateValue = GlLinkState.Pending
                     view.queueEvent {
-                        held.releaseGl?.invoke()
+                        val contextAlive = held.ownsCurrentContext()
+                        held.releaseGl?.invoke(contextAlive)
                         held.releaseGl = null
                         held.runtime?.let { linked ->
                             controller.detachRuntime(linked)
-                            linked.destroy()
+                            if (contextAlive) linked.destroy()
                         }
                         held.runtime = null
+                        held.eglContextHandle = 0L
                     }
                     view.onPause()
                 },
@@ -136,8 +138,9 @@ public fun GlSurface(
  * Maps pointer position to normalized device coordinates (-1..1) and invokes [onPointer] on the UI thread.
  */
 @Composable
-public fun Modifier.glPointerInput(onPointer: (x: Float, y: Float) -> Unit): Modifier =
-    pointerInput(onPointer) {
+public fun Modifier.glPointerInput(onPointer: (x: Float, y: Float) -> Unit): Modifier {
+    val currentOnPointer by rememberUpdatedState(onPointer)
+    return pointerInput(Unit) {
         awaitEachGesture {
             while (true) {
                 val event = awaitPointerEvent()
@@ -146,8 +149,9 @@ public fun Modifier.glPointerInput(onPointer: (x: Float, y: Float) -> Unit): Mod
                 val height = size.height.coerceAtLeast(1)
                 val x = change.position.x / width * 2f - 1f
                 val y = 1f - change.position.y / height * 2f
-                onPointer(x, y)
+                currentOnPointer(x, y)
                 change.consume()
             }
         }
     }
+}

@@ -260,6 +260,7 @@ tasks.register("qualityCheck") {
         ":redbytefx-compose:testDebugUnitTest",
         ":redbytefx-stdlib:testDebugUnitTest",
         ":redbytefx-3d:testDebugUnitTest",
+        ":sample:testDebugUnitTest",
         ":sample:compileDebugKotlin",
         ":redbytefx-core:detekt",
         ":redbytefx-gl:detekt",

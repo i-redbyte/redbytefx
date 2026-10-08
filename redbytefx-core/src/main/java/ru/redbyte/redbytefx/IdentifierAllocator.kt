@@ -10,13 +10,17 @@ internal class IdentifierAllocator(
     initialOccupied: Set<String> = emptySet(),
 ) {
     private val occupied = initialOccupied.toMutableSet()
+    private val nextSuffix = mutableMapOf<String, Int>()
 
     fun reserve(base: String): String {
-        var candidate = base
-        var suffix = 1
+        if (occupied.add(base)) return base
+        var suffix = nextSuffix[base] ?: 1
+        var candidate = "${base}_$suffix"
         while (!occupied.add(candidate)) {
-            candidate = "${base}_${suffix++}"
+            suffix += 1
+            candidate = "${base}_$suffix"
         }
+        nextSuffix[base] = suffix + 1
         return candidate
     }
 

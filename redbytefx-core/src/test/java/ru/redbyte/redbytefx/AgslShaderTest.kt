@@ -12,6 +12,28 @@ import java.util.concurrent.atomic.AtomicReference
 class AgslShaderTest {
 
     @Test
+    fun letUsedInsideConditionalAndAfterItIsDeclaredInBothScopes() {
+        val main = shader(ShaderTarget.Agsl) {
+            fragment {
+                val board = let(fragCoord / resolution, "board")
+                val boardMask = let(board.x + board.y, "board_mask")
+                val active = local(0f.lit, "active")
+                whenTrue(fragCoord.x gt 0f.lit) {
+                    active.set(boardMask)
+                }
+                val result = let(active.expr + boardMask, "result")
+                vec4(result, result, result, 1f.lit)
+            }
+        }.agslSource().substringAfter("half4 main(float2 fragCoord) {")
+
+        assertTrue(main.contains("float2 board ="))
+        assertTrue(main.contains("float2 board_1 ="))
+        assertTrue(main.contains("float board_mask ="))
+        assertTrue(main.contains("float board_mask_1 ="))
+        assertTrue(main.indexOf("active = board_mask;") < main.indexOf("float result ="))
+    }
+
+    @Test
     fun runtimeRejectsWritesFromAnotherThreadBeforeChangingItsCache() {
         lateinit var amount: Uniform<Flt<High>>
         val program = shader(ShaderTarget.Agsl) {

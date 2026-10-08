@@ -128,8 +128,8 @@ internal fun writesGlPosition(commands: List<PrimitiveCommand>): Boolean = comma
 }
 
 internal fun requirePositionBeforeEmit(commands: List<PrimitiveCommand>) {
-    var armed = false
-    fun walk(list: List<PrimitiveCommand>) {
+    fun walk(list: List<PrimitiveCommand>, positioned: Boolean): Boolean {
+        var armed = positioned
         for (command in list) {
             when (command) {
                 is PrimitiveCommand.Position -> armed = true
@@ -141,13 +141,15 @@ internal fun requirePositionBeforeEmit(commands: List<PrimitiveCommand>) {
                         )
                     }
                 }
-                is PrimitiveCommand.Repeat -> walk(command.body)
-                is PrimitiveCommand.When -> walk(command.body)
+                // A repeat runs at least once; a conditional may not run at all.
+                is PrimitiveCommand.Repeat -> armed = walk(command.body, armed)
+                is PrimitiveCommand.When -> walk(command.body, armed)
                 else -> Unit
             }
         }
+        return armed
     }
-    walk(commands)
+    walk(commands, positioned = false)
 }
 
 internal fun commandExprs(commands: List<PrimitiveCommand>): List<Expr<*>> {

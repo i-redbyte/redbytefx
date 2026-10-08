@@ -34,46 +34,43 @@ internal fun sheetMesh(columns: Int, rows: Int, depth: Boolean): GlMesh = GlMesh
     clearB = 0.06f,
 )
 
-internal fun floorMesh(scroll: Float): FloatArray {
+internal const val FLOOR_NEAR = 0.45f
+internal const val FLOOR_SPAN = 7.2f
+internal const val FLOOR_ROWS = 22
+internal const val FLOOR_STEP = FLOOR_SPAN / FLOOR_ROWS
+
+/** Static grid: the vertex shader wraps each row, so animation never uploads new vertices. */
+internal fun floorMesh(): FloatArray {
     val columns = 14
-    val rows = 22
-    val near = 0.45f
-    val span = 7.2f
-    val step = span / rows
-    val distances = FloatArray(rows + 1) { index ->
-        val raw = near + index * step - scroll
-        val wrapped = ((raw - near) % span + span) % span + near
-        wrapped
-    }
-    val into = ArrayList<Float>(columns * rows * 12)
-    for (row in 0 until rows) {
-        val z0 = distances[row]
-        val z1 = distances[row + 1]
-        if (kotlin.math.abs(z1 - z0) > step * 1.5f) continue
+    val into = FloatArray(columns * FLOOR_ROWS * 6 * 3)
+    var cursor = 0
+    for (row in 0 until FLOOR_ROWS) {
+        val baseZ = FLOOR_NEAR + row * FLOOR_STEP
         for (column in 0 until columns) {
             val x0 = column.toFloat() / columns * 2f - 1f
             val x1 = (column + 1f) / columns * 2f - 1f
-            into += x0
-            into += z0
-            into += x1
-            into += z0
-            into += x0
-            into += z1
-            into += x1
-            into += z0
-            into += x1
-            into += z1
-            into += x0
-            into += z1
+            cursor = floorVertex(into, cursor, x0, baseZ, 0f)
+            cursor = floorVertex(into, cursor, x1, baseZ, 0f)
+            cursor = floorVertex(into, cursor, x0, baseZ, 1f)
+            cursor = floorVertex(into, cursor, x1, baseZ, 0f)
+            cursor = floorVertex(into, cursor, x1, baseZ, 1f)
+            cursor = floorVertex(into, cursor, x0, baseZ, 1f)
         }
     }
-    return into.toFloatArray()
+    return into
+}
+
+private fun floorVertex(into: FloatArray, at: Int, x: Float, baseZ: Float, edge: Float): Int {
+    into[at] = x
+    into[at + 1] = baseZ
+    into[at + 2] = edge
+    return at + 3
 }
 
 internal fun floorMeshHolder(): GlMesh = GlMesh(
-    vertices = floorMesh(0f),
-    stride = 2,
-    attribs = listOf(GlAttrib("a_xz", 2, 0)),
+    vertices = floorMesh(),
+    stride = 3,
+    attribs = listOf(GlAttrib("a_grid", 3, 0)),
     depth = true,
     clearR = 0.01f,
     clearG = 0.02f,

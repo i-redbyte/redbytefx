@@ -82,15 +82,7 @@ internal fun linkGlsl(
     val visibleWrites = if (piped) writes.filter { it.varying in pipeMembers } else writes
     bindLocalSlots(vertexStatements, vertexEmitter)
     bindLocalSlots(fragmentStatements, fragmentEmitter)
-    val vertexAssignments = visibleWrites.map { write ->
-        "$assignmentPrefix${varyingNames.getValue(write.varying)}" to vertexEmitter.emit(write.value)
-    }
-    val positionText = position?.let { vertexEmitter.emit(it) }
-    val fragmentText = fragmentEmitter.emit(fragmentBody)
     val orderedWrites = fragmentWrites.sortedBy { it.output.location }
-    val outputText = orderedWrites.map { write ->
-        outputNames.getValue(write.output) to fragmentEmitter.emit(write.value)
-    }
     val vertexUniforms = linkedSetOf<Uniform<*>>()
     val fragmentUniforms = linkedSetOf<Uniform<*>>()
     writes.forEach { collectUniforms(it.value, vertexUniforms) }
@@ -102,6 +94,13 @@ internal fun linkGlsl(
     commandExprs(fragmentStatements).forEach { collectUniforms(it, fragmentUniforms) }
     collectUniformsFromStageFunctions(functions, AuthoringPlace.Fragment, fragmentUniforms)
     bindings.firstOrNull { it.agslName == RB_RESOLUTION_UNIFORM }?.let { fragmentUniforms += it.uniform }
+    val vertexAssignments = buildList {
+        for (write in visibleWrites) {
+            val emitted = emitExpr(vertexEmitter, write.value)
+            addAll(emitted.first)
+            add("  $assignmentPrefix${varyingNames.getValue(write.varying)} = ${emitted.second};")
+        }
+    }
     val vertexExtra = spellCommands(
         vertexStatements,
         vertexEmitter,
@@ -109,6 +108,29 @@ internal fun linkGlsl(
         skipVarying = { varying -> piped && varying !in pipeMembers },
     )
     val fragmentExtra = spellCommands(fragmentStatements, fragmentEmitter, varyingOut = fragmentRead)
+    val vertexResults = buildList {
+        addAll(vertexAssignments)
+        addAll(vertexExtra)
+        if (position != null) {
+            val emitted = emitExpr(vertexEmitter, position)
+            addAll(emitted.first)
+            add("  gl_Position = ${emitted.second};")
+        }
+    }
+    val fragmentResults = buildList {
+        addAll(fragmentExtra)
+        if (orderedWrites.isEmpty()) {
+            val emitted = emitExpr(fragmentEmitter, fragmentBody)
+            addAll(emitted.first)
+            add("  oColor = ${emitted.second};")
+        } else {
+            for (write in orderedWrites) {
+                val emitted = emitExpr(fragmentEmitter, write.value)
+                addAll(emitted.first)
+                add("  ${outputNames.getValue(write.output)} = ${emitted.second};")
+            }
+        }
+    }
     return ShaderProgram(
         target = programTarget,
         vertex = renderStage(
@@ -116,9 +138,7 @@ internal fun linkGlsl(
             outputs = vertexPipeOutputs(piped, visibleWrites, pipeMembers, varyingNames, vertexStatements, position),
             uniforms = bindings.filter { it.uniform in vertexUniforms },
             declarations = vertexEmitter.declarations,
-            statements = vertexAssignments.map { (name, value) -> "  $name = $value;" } +
-                vertexExtra +
-                listOfNotNull(positionText?.let { "  gl_Position = $it;" }),
+            statements = vertexResults,
             functions = renderGlslFunctions(
                 functionsForStage(
                     functions,
@@ -130,8 +150,6 @@ internal fun linkGlsl(
                 attributeNames,
                 varyingNames,
             ),
-            outputName = null,
-            outputValue = null,
             blockText = blockText(
                 blocks,
                 exprRootsForStage(
@@ -156,7 +174,7 @@ internal fun linkGlsl(
             },
             uniforms = bindings.filter { it.uniform in fragmentUniforms },
             declarations = fragmentEmitter.declarations,
-            statements = fragmentExtra + outputText.map { (name, value) -> "  $name = $value;" },
+            statements = fragmentResults,
             functions = renderGlslFunctions(
                 functionsForStage(
                     functions,
@@ -169,8 +187,6 @@ internal fun linkGlsl(
                 varyingNames,
                 varyingRead = fragmentRead,
             ),
-            outputName = if (orderedWrites.isEmpty()) "oColor" else null,
-            outputValue = if (orderedWrites.isEmpty()) fragmentText else null,
             blockText = blockText(
                 blocks,
                 exprRootsForStage(
@@ -545,6 +561,10 @@ private fun walkOnce(
 internal interface CodeEmitter {
     fun emit(expr: Expr<*>): String
 
+    fun enterScope()
+
+    fun leaveScope()
+
     fun bindSlot(slot: LocalSlot)
 
     fun slotName(slot: LocalSlot): String
@@ -561,6 +581,7 @@ private class GlslEmitter(
     private val varyingAt: (Varying<*>, String) -> String = { _, _ -> "" },
 ) : CodeEmitter {
     private val localNames = IdentityHashMap<ExprNode.Local, String>()
+    private val localScopes = ArrayDeque<MutableList<ExprNode.Local>>()
     private var localIndex = 0
     private val slotNames = IdentityHashMap<LocalSlot, String>()
     private var slotIndex = 0
@@ -621,7 +642,16 @@ private class GlslEmitter(
         localIndex += 1
         declarations += "  ${glslDeclaration(shape)} $name = $initializer;"
         localNames[node] = name
+        localScopes.lastOrNull()?.add(node)
         return name
+    }
+
+    override fun enterScope() {
+        localScopes.addLast(mutableListOf())
+    }
+
+    override fun leaveScope() {
+        for (node in localScopes.removeLast()) localNames.remove(node)
     }
 
     override fun bindSlot(slot: LocalSlot) {
@@ -667,16 +697,17 @@ private fun renderGlslFunctions(
         val locals = IdentifierAllocator(occupied + function.parameters.map { it.name })
         val emitter = GlslEmitter(locals, uniforms, attributes, varyings, varyingRead, varyingAt)
         bindLocalSlots(function.statements, emitter)
-        val body = emitter.emit(function.body)
         val signature = function.parameters.joinToString(", ") { "${glslDeclaration(it.shape)} ${it.name}" }
         val statements = spellCommands(function.statements, emitter, varyingOut = { varying ->
             varyings.getValue(varying)
         })
+        val result = emitExpr(emitter, function.body)
         append(glslDeclaration(function.result)).append(' ').append(function.name)
             .append('(').append(signature).append(") {\n")
         emitter.declarations.forEach { append(it).append('\n') }
         statements.forEach { append(it).append('\n') }
-        append("  return ").append(body).append(";\n}\n")
+        result.first.forEach { append(it).append('\n') }
+        append("  return ").append(result.second).append(";\n}\n")
     }
 }
 
@@ -687,8 +718,6 @@ private fun renderStage(
     declarations: List<String>,
     statements: List<String>,
     functions: String,
-    outputName: String?,
-    outputValue: String?,
     blockText: String,
     version: Int = GLSL_300,
 ): String = buildString {
@@ -705,9 +734,6 @@ private fun renderStage(
     append("void main() {\n")
     for (line in declarations) append(line).append('\n')
     for (line in statements) append(line).append('\n')
-    if (outputName != null && outputValue != null) {
-        append("  ").append(outputName).append(" = ").append(outputValue).append(";\n")
-    }
     append("}\n")
 }
 
@@ -1079,22 +1105,26 @@ private fun spellCommands(
     skipVarying: (Varying<*>) -> Boolean = { false },
 ): List<String> {
     val lines = mutableListOf<String>()
-    val inline = indent.length > 2
     val span = mutableListOf<PrimitiveCommand>()
     val writtenBefore = alreadyWritten.toMutableSet()
     var carried = inheritedPosition
     fun spellChild(body: List<PrimitiveCommand>, command: PrimitiveCommand, childIndent: String) {
         val visible = lastPosition(span) ?: carried
-        lines += spellCommands(
-            body,
-            emitter,
-            varyingOut,
-            childIndent,
-            beforeEmit,
-            writtenBefore + writtenVaryings(span),
-            visible,
-            skipVarying,
-        )
+        emitter.enterScope()
+        try {
+            lines += spellCommands(
+                body,
+                emitter,
+                varyingOut,
+                childIndent,
+                beforeEmit,
+                writtenBefore + writtenVaryings(span),
+                visible,
+                skipVarying,
+            )
+        } finally {
+            emitter.leaveScope()
+        }
         if (hasEmit(body)) {
             span.clear()
             carried = null
@@ -1105,7 +1135,7 @@ private fun spellCommands(
     for (command in commands) {
         when (command) {
             is PrimitiveCommand.Position -> {
-                lines += assignment(indent, "gl_Position", emitter, command.value, inline)
+                lines += assignment(indent, "gl_Position", emitter, command.value)
                 span += command
             }
             PrimitiveCommand.EmitVertex -> {
@@ -1120,11 +1150,11 @@ private fun spellCommands(
                 span += command
             }
             is PrimitiveCommand.OuterLevel -> {
-                lines += assignment(indent, "gl_TessLevelOuter[${command.index}]", emitter, command.value, inline)
+                lines += assignment(indent, "gl_TessLevelOuter[${command.index}]", emitter, command.value)
                 span += command
             }
             is PrimitiveCommand.InnerLevel -> {
-                lines += assignment(indent, "gl_TessLevelInner[${command.index}]", emitter, command.value, inline)
+                lines += assignment(indent, "gl_TessLevelInner[${command.index}]", emitter, command.value)
                 span += command
             }
             PrimitiveCommand.PassPosition -> {
@@ -1133,20 +1163,20 @@ private fun spellCommands(
             }
             is PrimitiveCommand.VaryingSet -> {
                 if (!skipVarying(command.varying)) {
-                    lines += assignment(indent, varyingOut(command.varying), emitter, command.value, inline)
+                    lines += assignment(indent, varyingOut(command.varying), emitter, command.value)
                 }
                 span += command
             }
             is PrimitiveCommand.Store -> {
-                val left = emitExpr(emitter, command.target, inline)
-                val right = emitExpr(emitter, command.value, inline)
+                val left = emitExpr(emitter, command.target)
+                val right = emitExpr(emitter, command.value)
                 left.first.forEach { lines += it }
                 right.first.forEach { lines += it }
                 lines += "$indent${left.second} = ${right.second};"
                 span += command
             }
             is PrimitiveCommand.LocalSet -> {
-                lines += assignment(indent, emitter.slotName(command.slot), emitter, command.value, inline)
+                lines += assignment(indent, emitter.slotName(command.slot), emitter, command.value)
                 span += command
             }
             PrimitiveCommand.Discard -> {
@@ -1154,7 +1184,9 @@ private fun spellCommands(
                 span += command
             }
             is PrimitiveCommand.DiscardIf -> {
-                lines += "${indent}if (${emitter.emit(command.condition)}) discard;"
+                val condition = emitExpr(emitter, command.condition)
+                condition.first.forEach { lines += it }
+                lines += "${indent}if (${condition.second}) discard;"
                 span += command
             }
             PrimitiveCommand.Barrier -> {
@@ -1162,7 +1194,9 @@ private fun spellCommands(
                 span += command
             }
             is PrimitiveCommand.When -> {
-                lines += "${indent}if (${emitter.emit(command.condition)}) {"
+                val condition = emitExpr(emitter, command.condition)
+                condition.first.forEach { lines += it }
+                lines += "${indent}if (${condition.second}) {"
                 spellChild(command.body, command, "$indent  ")
                 lines += "$indent}"
             }
@@ -1182,14 +1216,12 @@ private fun assignment(
     target: String,
     emitter: CodeEmitter,
     value: Expr<*>,
-    inline: Boolean,
 ): String {
-    val emitted = emitExpr(emitter, value, inline)
+    val emitted = emitExpr(emitter, value)
     return emitted.first.joinToString("") { "$it\n" } + "$indent$target = ${emitted.second};"
 }
 
-private fun emitExpr(emitter: CodeEmitter, expr: Expr<*>, inline: Boolean): Pair<List<String>, String> {
-    if (!inline) return emptyList<String>() to emitter.emit(expr)
+private fun emitExpr(emitter: CodeEmitter, expr: Expr<*>): Pair<List<String>, String> {
     val before = emitter.declarations.size
     val text = emitter.emit(expr)
     val fresh = emitter.declarations.drop(before)

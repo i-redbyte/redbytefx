@@ -9,6 +9,31 @@ import org.junit.Test
 class GeometryShaderTest {
 
     @Test
+    fun conditionalPositionDoesNotAuthorizeAnUnconditionalEmit() {
+        val missingPosition = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles32) {
+                vertex { glPosition(attributeVec4("position")) }
+                geometry(GeometryInput.Points, GeometryOutput.Points, 1) {
+                    whenTrue(1f.lit gt 0f.lit) { glPosition(glIn(0)) }
+                    emitVertex()
+                }
+                fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+            }
+        }
+        assertEquals(ProgramCode.EmitVertexWithoutPosition, missingPosition.code)
+
+        val valid = shader(ShaderTarget.Gles32) {
+            vertex { glPosition(attributeVec4("position")) }
+            geometry(GeometryInput.Points, GeometryOutput.Points, 1) {
+                repeat(1) { glPosition(glIn(0)) }
+                emitVertex()
+            }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        assertTrue(valid.geometrySource().contains("EmitVertex();"))
+    }
+
+    @Test
     fun gles32SpellsGeometryAndTessellationAtVersion320() {
         val program = shader(ShaderTarget.Gles32) {
             vertex { glPosition(attributeVec4("position")) }

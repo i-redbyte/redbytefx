@@ -154,10 +154,9 @@ private fun validateStd140Values(block: UniformBlock, values: FloatArray) {
 }
 
 private fun writeStd140Into(block: UniformBlock, values: FloatArray, into: ByteArray) {
-    val buffer = ByteBuffer.wrap(into).order(ByteOrder.nativeOrder())
     var cursor = 0
     block.members.forEachIndexed { index, member ->
-        cursor = writeStd140(buffer, block.offsetAt(index), member, values, cursor)
+        cursor = writeStd140(into, block.offsetAt(index), member, values, cursor)
     }
 }
 
@@ -208,12 +207,35 @@ internal fun std140ElementSize(shape: Shape): Int = when (shape) {
 private fun vector(lanes: Int): Shape = Shape.Vector(ScalarKind.Float, Precision.High, lanes)
 
 private fun writeStd140(
-    buffer: ByteBuffer,
+    into: ByteArray,
     offset: Int,
     member: BlockMember,
     values: FloatArray,
     cursor: Int,
-): Int = transferStd140(buffer, offset, member, values, cursor, into = null)
+): Int {
+    val shape = member.shape
+    val lanes = if (shape is Shape.Matrix) shape.lanes else laneCount(shape)
+    val columns = if (shape is Shape.Matrix) shape.lanes else 1
+    val elements = if (member.arraySize == 0) 1 else member.arraySize
+    val elementStride = if (shape is Shape.Matrix) std140ElementSize(shape) else columnStride(member, shape)
+    var local = cursor
+    var element = 0
+    while (element < elements) {
+        var column = 0
+        while (column < columns) {
+            val base = offset + element * elementStride + column * VEC4_ALIGNMENT
+            var lane = 0
+            while (lane < lanes) {
+                putFloatNative(into, base + lane * FLOAT_ALIGNMENT, values[local])
+                local += 1
+                lane += 1
+            }
+            column += 1
+        }
+        element += 1
+    }
+    return local
+}
 
 private fun readStd140(
     buffer: ByteBuffer,
@@ -221,21 +243,20 @@ private fun readStd140(
     member: BlockMember,
     into: FloatArray,
     cursor: Int,
-): Int = transferStd140(buffer, offset, member, values = null, cursor, into)
+): Int = transferStd140(buffer, offset, member, cursor, into)
 
 private fun transferStd140(
     buffer: ByteBuffer,
     offset: Int,
     member: BlockMember,
-    values: FloatArray?,
     cursor: Int,
-    into: FloatArray?,
+    into: FloatArray,
 ): Int {
     val shape = member.shape
     return if (shape is Shape.Matrix) {
-        transferMatrix(buffer, offset, member, shape, values, cursor, into)
+        transferMatrix(buffer, offset, member, shape, cursor, into)
     } else {
-        transferColumns(buffer, offset, member, laneCount(shape), columnStride(member, shape), values, cursor, into)
+        transferColumns(buffer, offset, member, laneCount(shape), columnStride(member, shape), cursor, into)
     }
 }
 
@@ -244,12 +265,11 @@ private fun transferMatrix(
     offset: Int,
     member: BlockMember,
     shape: Shape.Matrix,
-    values: FloatArray?,
     cursor: Int,
-    into: FloatArray?,
+    into: FloatArray,
 ): Int {
     val elementStride = if (member.arraySize > 0) std140ElementStride(shape) else std140ElementSize(shape)
-    return transferColumns(buffer, offset, member, shape.lanes, elementStride, values, cursor, into)
+    return transferColumns(buffer, offset, member, shape.lanes, elementStride, cursor, into)
 }
 
 private fun transferColumns(
@@ -258,9 +278,8 @@ private fun transferColumns(
     member: BlockMember,
     lanes: Int,
     elementStride: Int,
-    values: FloatArray?,
     cursor: Int,
-    into: FloatArray?,
+    into: FloatArray,
 ): Int {
     val elements = if (member.arraySize == 0) 1 else member.arraySize
     val columnBytes = if (member.shape is Shape.Matrix) VEC4_ALIGNMENT else elementStride
@@ -271,7 +290,7 @@ private fun transferColumns(
         val columns = if (member.shape is Shape.Matrix) lanes else 1
         while (column < columns) {
             val base = offset + element * elementStride + column * columnBytes
-            local = copyLanes(buffer, base, lanes, values, local, into)
+            local = copyLanes(buffer, base, lanes, local, into)
             column += 1
         }
         element += 1
@@ -286,15 +305,14 @@ private fun copyLanes(
     buffer: ByteBuffer,
     base: Int,
     lanes: Int,
-    values: FloatArray?,
     cursor: Int,
-    into: FloatArray?,
+    into: FloatArray,
 ): Int {
     var local = cursor
     var lane = 0
     while (lane < lanes) {
         val at = base + lane * FLOAT_ALIGNMENT
-        if (into != null) into[local] = buffer.getFloat(at) else buffer.putFloat(at, values!![local])
+        into[local] = buffer.getFloat(at)
         local += 1
         lane += 1
     }
@@ -361,3 +379,20 @@ internal fun checkedLayoutMultiply(left: Int, right: Int): Int {
 
 private const val FLOAT_ALIGNMENT = 4
 private const val VEC4_ALIGNMENT = 16
+
+internal fun putFloatNative(into: ByteArray, offset: Int, value: Float) {
+    val bits = value.toRawBits()
+    if (NATIVE_LITTLE_ENDIAN) {
+        into[offset] = bits.toByte()
+        into[offset + 1] = (bits ushr 8).toByte()
+        into[offset + 2] = (bits ushr 16).toByte()
+        into[offset + 3] = (bits ushr 24).toByte()
+    } else {
+        into[offset] = (bits ushr 24).toByte()
+        into[offset + 1] = (bits ushr 16).toByte()
+        into[offset + 2] = (bits ushr 8).toByte()
+        into[offset + 3] = bits.toByte()
+    }
+}
+
+private val NATIVE_LITTLE_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN

@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx.gl.compose
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.ShaderTarget
@@ -12,6 +13,20 @@ import ru.redbyte.redbytefx.vec4
 
 class GlComputeHostTest {
     @Test
+    fun glNamesAreReleasedOnlyOnTheirOwningContext() {
+        val slot = GlSlot()
+        var current = 7L
+        slot.currentContextHandle = { current }
+        assertFalse(slot.ownsCurrentContext())
+        slot.captureContext()
+        assertTrue(slot.ownsCurrentContext())
+        current = 8L
+        assertFalse(slot.ownsCurrentContext())
+        current = 0L
+        assertFalse(slot.ownsCurrentContext())
+    }
+
+    @Test
     fun aComputeHostLinksOnTheGlThreadAndDoesNotDraw() {
         lateinit var cells: StorageBlock
         val program = shader(ShaderTarget.Gles31) {
@@ -22,6 +37,7 @@ class GlComputeHostTest {
         val runtime = GlProgramRuntime(program, device).also { it.link() }
         val controller = GlController(program, GlSurfaceConfig())
         val slot = GlSlot()
+        slot.currentContextHandle = { 1L }
         slot.post = { block -> block() }
         val queued = ArrayDeque<() -> Unit>()
         val queue: (() -> Unit) -> Unit = { block -> queued.addLast(block) }

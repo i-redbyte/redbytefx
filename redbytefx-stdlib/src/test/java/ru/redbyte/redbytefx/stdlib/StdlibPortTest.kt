@@ -27,6 +27,16 @@ import ru.redbyte.redbytefx.stdlib.horizontalReveal
 class StdlibPortTest {
 
     @Test
+    fun chromaticOffsetSamplesContentThreeTimes() {
+        val main = shader(ShaderTarget.Agsl) {
+            fragment { chromaticOffset(offset = 2f) }
+        }.agslSource().substringAfter("half4 main(float2 fragCoord) {")
+
+        assertEquals(3, Regex("rb_sample\\(").findAll(main).count())
+        assertEquals(1, Regex("chromaBase = rb_sample\\(").findAll(main).count())
+    }
+
+    @Test
     fun circleMaskSpellsASmoothstep() {
         val program = shader(ShaderTarget.Agsl) {
             fragment {
@@ -212,11 +222,13 @@ class StdlibPortTest {
         assertTrue(agsl.contains("length("))
         assertTrue(agsl.contains("for (int"))
         assertTrue(agsl.contains("normalize("))
+        assertTrue(agsl.contains("sign("))
 
         val gles = program(ShaderTarget.Gles30).fragmentSource()
         assertTrue(gles.contains("length("))
         assertTrue(gles.contains("for (int"))
         assertTrue(gles.contains("normalize("))
+        assertTrue(gles.contains("sign("))
     }
 
     @Test

@@ -19,19 +19,69 @@ public class StorageBlock internal constructor(
     public val binding: Int,
 ) {
     private val layoutOffsets = offsets.copyOf()
+    private val unsizedAt = members.indexOfFirst { it.unsized }
+    private val fixedValueCount = members.fold(0) { count, member ->
+        if (member.unsized) count else checkedLayoutAdd(count, logicalLanes(member))
+    }
+    private val alignment = members.maxOfOrNull { member ->
+        if (member.arraySize > 0 || member.unsized) {
+            std430ArrayStride(member.shape)
+        } else {
+            std140Alignment(member.shape)
+        }
+    } ?: 1
+
+    init {
+        require(members.isNotEmpty()) { "Storage block requires a field" }
+    }
 
     public val offsets: IntArray
         get() = layoutOffsets.copyOf()
 
     public val byteSize: Int
         get() {
-            check(members.none { it.unsized }) {
+            check(unsizedAt < 0) {
                 "Storage block \"$name\" has an unsized array; call byteSize(valueCount)"
             }
             return fixedByteSize
         }
 
-    public fun byteSize(valueCount: Int): Int = std430Layout(concreteMembers(this, valueCount)).byteSize
+    public fun byteSize(valueCount: Int): Int {
+        val tailElements = tailElements(valueCount)
+        if (unsizedAt < 0) return fixedByteSize
+        val tail = members[unsizedAt]
+        val end = checkedLayoutAdd(
+            layoutOffsets[unsizedAt],
+            checkedLayoutMultiply(std430ArrayStride(tail.shape), tailElements),
+        )
+        return roundUp(end, alignment)
+    }
+
+    internal fun offsetAt(index: Int): Int = layoutOffsets[index]
+
+    internal fun elementsAt(index: Int, tailElements: Int): Int = when {
+        index == unsizedAt -> tailElements
+        members[index].arraySize > 0 -> members[index].arraySize
+        else -> 1
+    }
+
+    internal fun tailElements(valueCount: Int): Int {
+        if (unsizedAt < 0) {
+            require(valueCount == fixedValueCount) {
+                "Storage block \"$name\" expects $fixedValueCount floats, was $valueCount"
+            }
+            return 0
+        }
+        val lanes = laneCount(members[unsizedAt].shape)
+        require(valueCount >= fixedValueCount) {
+            "Storage block \"$name\" expects $fixedValueCount floats plus a multiple of $lanes, was $valueCount"
+        }
+        val tail = valueCount - fixedValueCount
+        require(tail % lanes == 0) {
+            "Storage block \"$name\" expects $fixedValueCount floats plus a multiple of $lanes, was $valueCount"
+        }
+        return tail / lanes
+    }
 }
 
 public class StorageArray<T : ShType> internal constructor(
@@ -134,29 +184,47 @@ internal class ComputeLayout(
 )
 
 public fun packStd430(block: StorageBlock, values: FloatArray): ByteArray {
+    validateStd430Values(values)
+    val packed = ByteArray(block.byteSize(values.size))
+    writeStd430Into(block, values, packed)
+    return packed
+}
+
+/** Packs into an existing buffer, including zeroing std430 padding before each write. */
+public fun packStd430Into(block: StorageBlock, values: FloatArray, into: ByteArray) {
+    validateStd430Values(values)
+    val required = block.byteSize(values.size)
+    require(into.size == required) {
+        "Storage block \"${block.name}\" needs $required bytes, was ${into.size}"
+    }
+    into.fill(0)
+    writeStd430Into(block, values, into)
+}
+
+private fun validateStd430Values(values: FloatArray) {
     require(values.all { it.isFinite() }) { "Storage block values must be finite" }
-    val concrete = concreteMembers(block, values.size)
-    val layout = std430Layout(concrete)
-    val buffer = ByteBuffer.allocate(layout.byteSize).order(ByteOrder.nativeOrder())
+}
+
+private fun writeStd430Into(block: StorageBlock, values: FloatArray, into: ByteArray) {
+    val tailElements = block.tailElements(values.size)
     var cursor = 0
-    concrete.forEachIndexed { index, member ->
-        buffer.position(layout.offsets[index])
+    block.members.forEachIndexed { index, member ->
         val lanes = laneCount(member.shape)
-        val elements = if (member.arraySize == 0 && !block.members[index].unsized) 1 else member.arraySize
-        val stride = if (member.arraySize > 0 || block.members[index].unsized) {
-            std430ArrayStride(member.shape) / FLOAT_BYTES
+        val elements = block.elementsAt(index, tailElements)
+        val stride = if (member.arraySize > 0 || member.unsized) {
+            std430ArrayStride(member.shape)
         } else {
-            lanes
+            lanes * FLOAT_BYTES
         }
+        var base = block.offsetAt(index)
         repeat(elements) {
-            repeat(lanes) {
-                buffer.putFloat(values[cursor])
+            repeat(lanes) { lane ->
+                putFloatNative(into, base + lane * FLOAT_BYTES, values[cursor])
                 cursor += 1
             }
-            repeat(stride - lanes) { buffer.putFloat(0f) }
+            base += stride
         }
     }
-    return buffer.array()
 }
 
 /**
@@ -170,24 +238,24 @@ public fun unpackStd430(block: StorageBlock, packed: ByteBuffer, valueCount: Int
     require(into.size >= valueCount) {
         "Storage block \"${block.name}\" needs $valueCount floats, was ${into.size}"
     }
-    val concrete = concreteMembers(block, valueCount)
-    val layout = std430Layout(concrete)
+    val tailElements = block.tailElements(valueCount)
+    val required = block.byteSize(valueCount)
     val view = packed.duplicate().order(ByteOrder.nativeOrder())
-    require(view.limit() >= layout.byteSize) {
-        "Storage block \"${block.name}\" needs ${layout.byteSize} bytes, was ${view.limit()}"
+    require(view.limit() >= required) {
+        "Storage block \"${block.name}\" needs $required bytes, was ${view.limit()}"
     }
     var cursor = 0
-    concrete.forEachIndexed { index, member ->
+    block.members.forEachIndexed { index, member ->
         val lanes = laneCount(member.shape)
-        val elements = if (member.arraySize == 0 && !block.members[index].unsized) 1 else member.arraySize
-        val stride = if (member.arraySize > 0 || block.members[index].unsized) {
+        val elements = block.elementsAt(index, tailElements)
+        val stride = if (member.arraySize > 0 || member.unsized) {
             std430ArrayStride(member.shape) / FLOAT_BYTES
         } else {
             lanes
         }
         var element = 0
         while (element < elements) {
-            val base = layout.offsets[index] + element * stride * FLOAT_BYTES
+            val base = block.offsetAt(index) + element * stride * FLOAT_BYTES
             var lane = 0
             while (lane < lanes) {
                 into[cursor] = view.getFloat(base + lane * FLOAT_BYTES)
@@ -198,44 +266,6 @@ public fun unpackStd430(block: StorageBlock, packed: ByteBuffer, valueCount: Int
         }
     }
     return cursor
-}
-
-private fun concreteMembers(block: StorageBlock, valueCount: Int): List<BlockMember> {
-    val counts = elementCounts(block, valueCount)
-    return block.members.mapIndexed { index, member ->
-        if (member.unsized) {
-            BlockMember(member.instanceName, member.memberName, member.shape, counts[index])
-        } else {
-            member
-        }
-    }
-}
-
-private fun elementCounts(block: StorageBlock, valueCount: Int): IntArray {
-    val counts = IntArray(block.members.size)
-    var fixed = 0
-    var unsizedAt = -1
-    block.members.forEachIndexed { index, member ->
-        if (member.unsized) {
-            unsizedAt = index
-        } else {
-            counts[index] = if (member.arraySize == 0) 1 else member.arraySize
-            fixed = checkedLayoutAdd(fixed, logicalLanes(member))
-        }
-    }
-    if (unsizedAt < 0) {
-        require(valueCount == fixed) {
-            "Storage block \"${block.name}\" expects $fixed floats, was $valueCount"
-        }
-        return counts
-    }
-    val lanes = laneCount(block.members[unsizedAt].shape)
-    val tail = valueCount - fixed
-    require(tail >= 0 && tail % lanes == 0) {
-        "Storage block \"${block.name}\" expects $fixed floats plus a multiple of $lanes, was $valueCount"
-    }
-    counts[unsizedAt] = tail / lanes
-    return counts
 }
 
 private const val FLOAT_BYTES = 4

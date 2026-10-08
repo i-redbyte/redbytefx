@@ -56,7 +56,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.*
@@ -183,7 +185,7 @@ private fun rememberBubbleState(
     val maxRadiusPx = with(density) { BubbleConfig.MAX_ORB_RADIUS.toPx() }
     val minRadiusPx = with(density) { BubbleConfig.MIN_ORB_RADIUS.toPx() }
 
-    return remember(screenWidthPx, screenHeightPx) {
+    return remember(screenWidthPx, screenHeightPx, maxRadiusPx, minRadiusPx) {
         PhysicsBubbleState(
             screenHeightPx = screenHeightPx,
             orbRadiusMaxPx = maxRadiusPx,
@@ -456,8 +458,8 @@ private fun PhysicsBubbleContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .bubbleDragInput(state, scope)
-            .bubbleTapInput(state, scope)
+            .bubbleDragInput(state)
+            .bubbleTapInput(state)
             .drawBehind {
                 drawThemeBackground(
                     isDarkTheme = isDarkTheme,
@@ -520,10 +522,15 @@ private fun PhysicsBubbleContent(
             ) {
                 Text(
                     text = say("RedByteFX Bubble", "Пузырь RedByteFX"),
-                    fontSize = 44.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
+                    lineHeight = 38.sp,
                     letterSpacing = (-1).sp,
                     color = titleColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 )
                 Text(
                     text = say(
@@ -703,82 +710,95 @@ private fun DeformationFrameLoop(state: PhysicsBubbleState) {
     }
 }
 
-private fun Modifier.bubbleDragInput(
-    state: PhysicsBubbleState,
-    scope: CoroutineScope,
-): Modifier = pointerInput(Unit) {
-    var isUnlocked = false
-    detectDragGestures(
-        onDragStart = { isUnlocked = state.isAtTop() },
-        onDragEnd = {
-            scope.launch {
-                if (isUnlocked) {
-                    val target = if (state.bubblePos.value.y < state.midPoint) {
-                        Offset(state.centerX, state.topOrbCenterY)
-                    } else {
-                        Offset(state.centerX, state.bottomOrbCenterY)
-                    }
-                    state.bubblePos.animateTo(target, if (target.y == state.topOrbCenterY) UnlockedSnapSpring else SnapBackSpring)
-                } else {
-                    val targetY = if (state.bubblePos.value.y < state.midPoint) {
-                        state.topOrbCenterY
-                    } else {
-                        state.bottomOrbCenterY
-                    }
-                    state.bubblePos.animateTo(Offset(state.centerX, targetY), SnapBackSpring)
-                }
+private fun Modifier.bubbleDragInput(state: PhysicsBubbleState): Modifier = pointerInput(state) {
+    coroutineScope {
+        var isUnlocked = false
+        var desiredPosition = state.bubblePos.value
+        var dragChannel: Channel<Offset>? = null
+        var dragWorker: Job? = null
+        var settleJob: Job? = null
+
+        fun settle() {
+            val channel = dragChannel ?: return
+            channel.close()
+            dragChannel = null
+            val worker = dragWorker
+            val finalPosition = desiredPosition
+            val unlocked = isUnlocked
+            val targetY = if (finalPosition.y < state.midPoint) state.topOrbCenterY else state.bottomOrbCenterY
+            val target = Offset(state.centerX, targetY)
+            settleJob = launch {
+                worker?.join()
+                state.bubblePos.snapTo(finalPosition)
+                state.bubblePos.animateTo(
+                    target,
+                    if (unlocked && targetY == state.topOrbCenterY) UnlockedSnapSpring else SnapBackSpring,
+                )
             }
-        },
-    ) { change, dragAmount ->
-        if (state.popAnim.value > 0f) return@detectDragGestures
-        change.consume()
-        val proposedY = state.bubblePos.value.y + dragAmount.y
-        if (!isUnlocked && proposedY <= state.topOrbCenterY) {
-            isUnlocked = true
         }
 
-        scope.launch {
-            if (isUnlocked) {
-                state.bubblePos.snapTo(
-                    Offset(
-                        x = state.bubblePos.value.x + dragAmount.x,
-                        y = proposedY,
-                    ),
-                )
-            } else {
-                state.bubblePos.snapTo(
-                    Offset(
-                        x = state.centerX,
-                        y = proposedY.coerceAtMost(state.maxDragY),
-                    ),
-                )
+        detectDragGestures(
+            onDragStart = {
+                settleJob?.cancel()
+                dragWorker?.cancel()
+                dragChannel?.close()
+                isUnlocked = state.isAtTop()
+                desiredPosition = state.bubblePos.value
+                if (state.popAnim.value == 0f) {
+                    val channel = Channel<Offset>(Channel.CONFLATED)
+                    dragChannel = channel
+                    dragWorker = launch {
+                        for (position in channel) state.bubblePos.snapTo(position)
+                    }
+                } else {
+                    dragChannel = null
+                    dragWorker = null
+                }
+            },
+            onDragEnd = { settle() },
+            onDragCancel = { settle() },
+        ) { change, dragAmount ->
+            if (state.popAnim.value > 0f) {
+                dragWorker?.cancel()
+                dragChannel?.close()
+                dragChannel = null
+                return@detectDragGestures
             }
+            if (dragChannel == null) return@detectDragGestures
+            change.consume()
+            val proposedY = desiredPosition.y + dragAmount.y
+            if (!isUnlocked && proposedY <= state.topOrbCenterY) isUnlocked = true
+            desiredPosition = if (isUnlocked) {
+                Offset(desiredPosition.x + dragAmount.x, proposedY)
+            } else {
+                Offset(state.centerX, proposedY.coerceAtMost(state.maxDragY))
+            }
+            dragChannel?.trySend(desiredPosition)
         }
     }
 }
 
-private fun Modifier.bubbleTapInput(
-    state: PhysicsBubbleState,
-    scope: CoroutineScope,
-): Modifier = pointerInput(Unit) {
-    detectTapGestures(
-        onTap = {
-            if (state.popAnim.value == 0f) {
-                scope.launch {
-                    state.popAnim.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(
-                            durationMillis = BubbleConfig.POP_DURATION,
-                            easing = FastOutLinearInEasing,
-                        ),
-                    )
-                    delay(BubbleConfig.POP_DELAY)
-                    state.popAnim.snapTo(0f)
-                    state.bubblePos.snapTo(Offset(state.centerX, state.bottomOrbCenterY))
+private fun Modifier.bubbleTapInput(state: PhysicsBubbleState): Modifier = pointerInput(state) {
+    coroutineScope {
+        detectTapGestures(
+            onTap = {
+                if (state.popAnim.value == 0f) {
+                    launch {
+                        state.popAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(
+                                durationMillis = BubbleConfig.POP_DURATION,
+                                easing = FastOutLinearInEasing,
+                            ),
+                        )
+                        delay(BubbleConfig.POP_DELAY)
+                        state.popAnim.snapTo(0f)
+                        state.bubblePos.snapTo(Offset(state.centerX, state.bottomOrbCenterY))
+                    }
                 }
-            }
-        },
-    )
+            },
+        )
+    }
 }
 
 private fun createRadialBrush(
