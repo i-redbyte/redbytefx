@@ -17,10 +17,10 @@ class VectorAlgebraTest {
         assertEquals(Shape.Scalar(ScalarKind.Float, Precision.High), high.w.shape)
         assertEquals(Shape.Vector(ScalarKind.Float, Precision.Med, 3), med.rgb.shape)
         assertEquals("xz", (high.xz.node as ExprNode.Swizzle).mask)
-        assertEquals(
-            "float4(1.0, 2.0, 3.0, 4.0).xz",
-            emitAgsl(high.xz),
-        )
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment { vec4(high.xz.x, high.xz.y, 0f.lit, 1f.lit) }
+        }.agslSource()
+        assertTrue(agsl.contains("float4(1.0, 2.0, 3.0, 4.0).xz"))
 
         assertThrows(IllegalArgumentException::class.java) { swizzle(high, "xg") }
         assertThrows(IllegalArgumentException::class.java) { swizzle(high, "xyzwx") }
@@ -35,8 +35,15 @@ class VectorAlgebraTest {
         val sum = 1.intLit + 2.intLit
         assertEquals(Shape.Scalar(ScalarKind.Int, null), sum.shape)
         assertEquals(Shape.Scalar(ScalarKind.Float, Precision.High), sum.toFloat().shape)
-        assertEquals("float((1 + 2))", emitAgsl(sum.toFloat()))
-        assertEquals("(-3)", emitAgsl(-3.intLit))
+        val agsl = shader(ShaderTarget.Agsl) {
+            fragment {
+                val converted = sum.toFloat()
+                val negative = (-3.intLit).toFloat()
+                vec4(converted, negative, 0f.lit, 1f.lit)
+            }
+        }.agslSource()
+        assertTrue(agsl.contains("float((1 + 2))"))
+        assertTrue(agsl.contains("float((-3))"))
         assertThrows(IllegalArgumentException::class.java) {
             integralArithShape(ArithOp.Add, 1.intLit.shape, 1f.lit.shape)
         }

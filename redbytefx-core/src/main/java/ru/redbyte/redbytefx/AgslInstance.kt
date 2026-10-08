@@ -19,8 +19,7 @@ public class AgslInstance internal constructor(
     }
 
     private val shader = RuntimeShader(program.agslSource())
-    private var renderEffect: RenderEffect =
-        RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
+    private lateinit var renderEffect: RenderEffect
     private val runtime = ShaderRuntime(
         program = program,
         writer = object : UniformWriter {

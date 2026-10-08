@@ -577,15 +577,18 @@ public class ShaderDsl internal constructor(
         val varyingNames = varyings.associateWith { varying ->
             names.reserve(sanitizeIdentifier(varying.name, "v_"))
         }
+        val roots = listOf(body) + commandExprs(fragmentStatements)
+        val usedFunctions = reachableFunctions(functions, roots)
+        val needsClampedSample = roots.any(::exprUsesClampedSample)
         val occupied = names.snapshot()
-        val functionText = renderAgslFunctions(functions, occupied, uniformNames, varyingNames)
-        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, functions)
+        val functionText = renderAgslFunctions(usedFunctions, occupied, uniformNames, varyingNames)
+        val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, usedFunctions)
         val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
         val rendered = emitter.emit(body)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
         return ShaderProgram(
             target = target,
-            agsl = renderAgsl(bindings, emitter.declarations, functionText, statements, output),
+            agsl = renderAgsl(bindings, emitter.declarations, functionText, statements, output, needsClampedSample),
             bindings = bindings,
         )
     }
@@ -1189,9 +1192,6 @@ public class FragmentDsl internal constructor(
     }
 }
 
-internal fun emitAgsl(expr: Expr<*>): String =
-    AgslEmitter(IdentifierAllocator(agslReservedNames()), emptyMap()).emit(expr)
-
 private class AgslEmitter(
     private val allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, UniformBinding>,
@@ -1343,6 +1343,7 @@ private fun renderAgsl(
     functions: String,
     statements: List<String>,
     output: String,
+    needsClampedSample: Boolean,
 ): String = buildString {
     append("uniform shader ").append(RB_INPUT_UNIFORM).append(";\n")
     append("uniform float2 ").append(RB_RESOLUTION_UNIFORM).append(";\n")
@@ -1352,7 +1353,7 @@ private fun renderAgsl(
         append("uniform ").append(type).append(' ').append(binding.agslName).append(";\n")
     }
     append('\n')
-    append(AGSL_SAMPLE_HELPER)
+    if (needsClampedSample) append(AGSL_SAMPLE_HELPER)
     append(functions)
     append("half4 main(float2 fragCoord) {\n")
     for (line in declarations) {

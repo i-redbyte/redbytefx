@@ -241,6 +241,49 @@ class AgslShaderTest {
         assertTrue(runtime.set(offset, 1f, 0.5f))
         assertEquals(listOf(0.25f to 0.5f, 1f to 0.5f), writer.float2Values("u_offset"))
     }
+
+    @Test
+    fun failedVectorWriteCanBeRetriedWithoutCachingTheFailedValue() {
+        lateinit var offset: Uniform<Vec2<Flt<High>>>
+        val program = shader(ShaderTarget.Agsl) {
+            offset = uniformVec2("offset", 0f, 0f)
+            fragment { sample() }
+        }
+        var failNext = false
+        val delegate = RecordingUniformWriter()
+        val writer = object : UniformWriter by delegate {
+            override fun setFloat2(name: String, x: Float, y: Float) {
+                if (failNext) {
+                    failNext = false
+                    error("writer failed")
+                }
+                delegate.setFloat2(name, x, y)
+            }
+        }
+        val runtime = ShaderRuntime(program, writer) {}
+
+        failNext = true
+        assertThrows(IllegalStateException::class.java) { runtime.set(offset, 1f, 2f) }
+        assertTrue(runtime.set(offset, 1f, 2f))
+        assertFalse(runtime.set(offset, 1f, 2f))
+        assertEquals(listOf(0f to 0f, 1f to 2f), delegate.float2Values("u_offset"))
+    }
+
+    @Test
+    fun proceduralShaderOmitsUnusedSamplingCodeAndFunctions() {
+        val program = shader(ShaderTarget.Agsl) {
+            fragment {
+                fn("unused") { this@fragment.sample() }
+                vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit)
+            }
+        }
+        val source = program.agslSource()
+
+        assertFalse(source.contains("rb_maxCoord"))
+        assertFalse(source.contains("rb_sample"))
+        assertFalse(source.contains("unused("))
+        assertTrue(source.contains("uniform shader uContent;"))
+    }
 }
 
 internal class RecordingUniformWriter : UniformWriter {

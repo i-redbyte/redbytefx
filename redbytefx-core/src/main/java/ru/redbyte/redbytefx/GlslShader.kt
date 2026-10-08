@@ -295,6 +295,27 @@ internal fun exprUsesResolution(expr: Expr<*>): Boolean {
     return used
 }
 
+internal fun exprUsesClampedSample(expr: Expr<*>): Boolean {
+    var used = false
+    walk(expr, linkedSetOf()) { node ->
+        if (node is ExprNode.Sample) used = true
+    }
+    return used
+}
+
+internal fun reachableFunctions(
+    functions: List<UserFunction>,
+    roots: List<Expr<*>>,
+): List<UserFunction> {
+    val reachable = linkedSetOf<UserFunction>()
+    roots.forEach { root ->
+        walk(root, linkedSetOf()) { node ->
+            if (node is ExprNode.UserCall) reachable += node.function
+        }
+    }
+    return functions.filter { it in reachable }
+}
+
 internal fun collectVaryings(expr: Expr<*>, into: MutableSet<Varying<*>>) {
     collectVaryingUses(expr, into)
 }

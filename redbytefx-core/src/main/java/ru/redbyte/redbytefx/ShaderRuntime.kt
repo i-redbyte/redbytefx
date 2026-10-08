@@ -40,7 +40,12 @@ internal class ShaderRuntime(
                 }
                 val components = binding.uniform.components
                 if (components != null && shape is Shape.Vector && shape.kind == ScalarKind.Float) {
-                    writeVector(binding.uniform, components)
+                    when (components.size) {
+                        2 -> setVector2(binding.uniform, components[0], components[1])
+                        3 -> setVector3(binding.uniform, components[0], components[1], components[2])
+                        4 -> setVector4(binding.uniform, components[0], components[1], components[2], components[3])
+                        else -> error("Vector uniform width must be 2, 3, or 4")
+                    }
                 }
                 val intDefault = binding.uniform.intDefault
                 if (intDefault != null && shape is Shape.Scalar && shape.kind == ScalarKind.Int) {
@@ -57,36 +62,30 @@ internal class ShaderRuntime(
     internal fun set(uniform: Uniform<Flt<Med>>, value: Float): Boolean = setFloat(uniform, value)
 
     internal fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float): Boolean {
-        if (sameStored2(uniform, x, y)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y))
+        return setVector2(uniform, x, y)
     }
 
     internal fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float): Boolean {
-        if (sameStored3(uniform, x, y, z)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y, z))
+        return setVector3(uniform, x, y, z)
     }
 
     internal fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        if (sameStored4(uniform, x, y, z, w)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y, z, w))
+        return setVector4(uniform, x, y, z, w)
     }
 
     @JvmName("setMedVec2")
     internal fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float): Boolean {
-        if (sameStored2(uniform, x, y)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y))
+        return setVector2(uniform, x, y)
     }
 
     @JvmName("setMedVec3")
     internal fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float): Boolean {
-        if (sameStored3(uniform, x, y, z)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y, z))
+        return setVector3(uniform, x, y, z)
     }
 
     @JvmName("setMedVec4")
     internal fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float): Boolean {
-        if (sameStored4(uniform, x, y, z, w)) return flushPending()
-        return writeVector(uniform, floatArrayOf(x, y, z, w))
+        return setVector4(uniform, x, y, z, w)
     }
 
     internal fun set(uniform: Uniform<IntS>, value: Int): Boolean = setInt(uniform, value)
@@ -144,18 +143,41 @@ internal class ShaderRuntime(
             sameFloatUniformValue(previous[3], w)
     }
 
-    private fun writeVector(uniform: Uniform<*>, value: FloatArray): Boolean {
+    private fun setVector2(uniform: Uniform<*>, x: Float, y: Float): Boolean {
+        if (sameStored2(uniform, x, y)) return flushPending()
         val binding = program.binding(uniform)
         val previous = vectorValues[uniform]
-        if (previous != null && sameVector(previous, value)) return flushPending()
-        val stored = value.copyOf()
-        when (stored.size) {
-            2 -> writer.setFloat2(binding.agslName, stored[0], stored[1])
-            3 -> writer.setFloat3(binding.agslName, stored[0], stored[1], stored[2])
-            4 -> writer.setFloat4(binding.agslName, stored[0], stored[1], stored[2], stored[3])
-            else -> error("Vector uniform width must be 2, 3, or 4")
-        }
-        vectorValues[uniform] = stored
+        writer.setFloat2(binding.agslName, x, y)
+        val stored = previous ?: FloatArray(2).also { vectorValues[uniform] = it }
+        stored[0] = x
+        stored[1] = y
+        notifyChanged()
+        return true
+    }
+
+    private fun setVector3(uniform: Uniform<*>, x: Float, y: Float, z: Float): Boolean {
+        if (sameStored3(uniform, x, y, z)) return flushPending()
+        val binding = program.binding(uniform)
+        val previous = vectorValues[uniform]
+        writer.setFloat3(binding.agslName, x, y, z)
+        val stored = previous ?: FloatArray(3).also { vectorValues[uniform] = it }
+        stored[0] = x
+        stored[1] = y
+        stored[2] = z
+        notifyChanged()
+        return true
+    }
+
+    private fun setVector4(uniform: Uniform<*>, x: Float, y: Float, z: Float, w: Float): Boolean {
+        if (sameStored4(uniform, x, y, z, w)) return flushPending()
+        val binding = program.binding(uniform)
+        val previous = vectorValues[uniform]
+        writer.setFloat4(binding.agslName, x, y, z, w)
+        val stored = previous ?: FloatArray(4).also { vectorValues[uniform] = it }
+        stored[0] = x
+        stored[1] = y
+        stored[2] = z
+        stored[3] = w
         notifyChanged()
         return true
     }
@@ -184,12 +206,4 @@ internal class ShaderRuntime(
     }
 
     private fun sanitizeResolution(value: Float): Float = if (value > 0f) value else 1f
-}
-
-private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
-    if (previous.size != value.size) return false
-    for (index in previous.indices) {
-        if (!sameFloatUniformValue(previous[index], value[index])) return false
-    }
-    return true
 }
