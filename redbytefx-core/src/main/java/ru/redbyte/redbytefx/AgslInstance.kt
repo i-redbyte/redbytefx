@@ -19,7 +19,7 @@ public class AgslInstance internal constructor(
     }
 
     private val shader = RuntimeShader(program.agslSource())
-    private lateinit var renderEffect: RenderEffect
+    private lateinit var effect: RenderEffect
     private val runtime = ShaderRuntime(
         program = program,
         writer = object : UniformWriter {
@@ -46,9 +46,15 @@ public class AgslInstance internal constructor(
         onChanged = ::refresh,
     )
 
+    init {
+        // The runtime refreshes while it writes defaults; a program with nothing to write still
+        // needs an effect before the first renderEffect() call.
+        if (!::effect.isInitialized) refresh()
+    }
+
     public fun renderEffect(): RenderEffect {
         runtime.checkThread()
-        return renderEffect
+        return effect
     }
 
     public fun set(uniform: Uniform<Flt<High>>, value: Float): Boolean = runtime.set(uniform, value)
@@ -87,7 +93,7 @@ public class AgslInstance internal constructor(
     }
 
     private fun refresh() {
-        renderEffect = RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
+        effect = RenderEffect.createRuntimeShaderEffect(shader, RB_INPUT_UNIFORM)
     }
 }
 

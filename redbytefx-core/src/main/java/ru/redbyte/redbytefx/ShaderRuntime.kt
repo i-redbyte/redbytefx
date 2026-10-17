@@ -117,15 +117,27 @@ internal class ShaderRuntime(
         )
     }
 
+    /**
+     * Runs [block] with one refresh at the end. If [block] throws and the refresh throws too, the
+     * refresh failure is attached to the original exception as suppressed instead of replacing it.
+     */
+    @Suppress("TooGenericExceptionCaught")
     internal fun batch(block: () -> Unit) {
         checkThread()
         batchDepth += 1
         try {
             block()
-        } finally {
+        } catch (failure: Throwable) {
             batchDepth -= 1
-            flushPending()
+            try {
+                flushPending()
+            } catch (refresh: Throwable) {
+                failure.addSuppressed(refresh)
+            }
+            throw failure
         }
+        batchDepth -= 1
+        flushPending()
     }
 
     private fun setFloat(uniform: Uniform<*>, value: Float): Boolean {

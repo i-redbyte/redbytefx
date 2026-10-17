@@ -12,6 +12,32 @@ import java.util.concurrent.atomic.AtomicReference
 class AgslShaderTest {
 
     @Test
+    fun aFailingBatchKeepsItsOwnExceptionWhenTheRefreshAlsoFails() {
+        lateinit var amount: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Agsl) {
+            amount = uniform("amount", 0f)
+            fragment { vec4(amount.expr, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        var failRefresh = false
+        val runtime = ShaderRuntime(program, RecordingUniformWriter()) {
+            if (failRefresh) throw IllegalStateException("refresh failed")
+        }
+        failRefresh = true
+        val original = IllegalArgumentException("batch failed")
+
+        val thrown = assertThrows(IllegalArgumentException::class.java) {
+            runtime.batch {
+                runtime.set(amount, 1f)
+                throw original
+            }
+        }
+
+        assertSame(original, thrown)
+        assertEquals("refresh failed", thrown.suppressed.single().message)
+    }
+
+
+    @Test
     fun letUsedInsideConditionalAndAfterItIsDeclaredInBothScopes() {
         val main = shader(ShaderTarget.Agsl) {
             fragment {
