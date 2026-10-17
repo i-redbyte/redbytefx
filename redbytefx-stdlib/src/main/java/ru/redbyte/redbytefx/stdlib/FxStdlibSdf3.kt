@@ -312,7 +312,9 @@ public fun FragmentDsl.rayMarch(
 }
 
 /**
- * Outward normal of a signed [scene] at [point], from central differences of width [epsilon].
+ * Outward normal of a signed [scene] at [point], from four samples at the corners of a
+ * tetrahedron [epsilon] away. Central differences would need six copies of [scene]; the weighted
+ * sum of these four is proportional to the gradient for any locally linear field.
  * This is an expression: it does not declare locals.
  */
 public fun sdfNormal(
@@ -321,10 +323,11 @@ public fun sdfNormal(
     scene: (Expr<Vec3<Flt<High>>>) -> Expr<Flt<High>>,
 ): Expr<Vec3<Flt<High>>> {
     require(epsilon.isFinite() && epsilon > 0f) { "sdfNormal epsilon must be finite and positive" }
-    val step = float(epsilon)
-    val zero = float(0f)
-    val dx = scene(point + float3(step, zero, zero)) - scene(point - float3(step, zero, zero))
-    val dy = scene(point + float3(zero, step, zero)) - scene(point - float3(zero, step, zero))
-    val dz = scene(point + float3(zero, zero, step)) - scene(point - float3(zero, zero, step))
-    return normalize(float3(dx, dy, dz))
+    val ahead = float(epsilon)
+    val behind = float(-epsilon)
+    val a = float3(ahead, behind, behind)
+    val b = float3(behind, behind, ahead)
+    val c = float3(behind, ahead, behind)
+    val d = float3(ahead, ahead, ahead)
+    return normalize(a * scene(point + a) + b * scene(point + b) + c * scene(point + c) + d * scene(point + d))
 }

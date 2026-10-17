@@ -322,6 +322,22 @@ class StdlibPortTest {
     }
 
     @Test
+    fun sdfNormalSamplesTheSceneFourTimes() {
+        var samples = 0
+        shader(ShaderTarget.Gles30) {
+            fragment {
+                val normal = sdfNormal(float3(0f, 0f, 0f)) {
+                    samples++
+                    sdSphere(it, 1f)
+                }
+                vec4(normal.x, normal.y, normal.z, 1f.lit)
+            }
+        }
+
+        assertEquals(4, samples)
+    }
+
+    @Test
     fun sdfNormalRejectsAnInvalidDifferenceWidth() {
         for (epsilon in listOf(0f, -0.01f, Float.NaN)) {
             assertThrows(IllegalArgumentException::class.java) {
