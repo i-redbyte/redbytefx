@@ -213,9 +213,18 @@ class GlDrawDeviceTest {
         assertNoGlError("instanced draw")
         assertPixel(0, 0, 255, 0, 255)
         assertPixel(SIZE - 1, SIZE - 1, 255, 0, 255)
-        val divisor = IntArray(1)
-        GLES30.glGetVertexAttribiv(model, GLES30.GL_VERTEX_ATTRIB_ARRAY_DIVISOR, divisor, 0)
-        assertEquals(0, divisor[0])
+        // The divisor is checked by behaviour: drivers disagree on glGetVertexAttribiv for it
+        // (SwiftShader returns garbage). Redraw with per-vertex offsets where only the first vertex
+        // moves right. A divisor still at 1 would give every vertex that offset and fill the right
+        // half; at 0 the right half stays empty.
+        clear()
+        val perVertex = runtime.createBuffer()
+        runtime.replaceArrayBuffer(perVertex, 0, FloatArray(16).also { it[0] = 1f })
+        runtime.vertexAttribFloat(model, 4, 4, 0)
+        runtime.drawRange(GLES30.GL_TRIANGLES, 4, 0, 6, kind, null)
+        runtime.disableVertexAttribArray(model)
+        assertNoGlError("per-vertex redraw")
+        assertPixel(SIZE - 1, SIZE - 1, 0, 0, 0)
     }
 
     @Test
