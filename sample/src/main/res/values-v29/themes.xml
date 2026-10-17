@@ -1,0 +1,7 @@
+<resources>
+    <!-- DayNight follows the system dark mode; the parent exists from API 29. -->
+    <style name="Theme.RedByteFxSample" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>
