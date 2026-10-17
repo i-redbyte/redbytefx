@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LabHome(
+    agslAvailable: Boolean,
     onAgsl: () -> Unit,
     onGl: () -> Unit,
 ) {
@@ -36,11 +37,16 @@ fun LabHome(
             modifier = Modifier.weight(1f),
             badge = "AGSL",
             title = say("AGSL examples", "Примеры AGSL"),
-            summary = say(
-                "The cookbook as it is now: transforms, motion, color, compositing, and procedural effects on RuntimeShader.",
-                "Сборник как он есть: преобразования, движение, цвет, сборка и процедурные эффекты на RuntimeShader.",
-            ),
+            summary = if (agslAvailable) {
+                say(
+                    "The cookbook as it is now: transforms, motion, color, compositing, and procedural effects on RuntimeShader.",
+                    "Сборник как он есть: преобразования, движение, цвет, сборка и процедурные эффекты на RuntimeShader.",
+                )
+            } else {
+                agslUnavailableText()
+            },
             onClick = onAgsl,
+            enabled = agslAvailable,
         )
         LabCard(
             modifier = Modifier.weight(1f),
@@ -62,11 +68,12 @@ private fun LabCard(
     summary: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     CyberPanel(
         modifier = modifier
             .clip(RoundedCornerShape(28.dp))
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
     ) {
         CyberBadge(text = badge)
         Text(
@@ -82,4 +89,22 @@ private fun LabCard(
             modifier = Modifier.padding(top = 8.dp),
         )
     }
+}
+
+/** Why AGSL examples are closed on this device. */
+@Composable
+internal fun agslUnavailableText(): String = say(
+    "AGSL needs Android 13 (API 33). This device can still run every OpenGL example.",
+    "Для AGSL нужен Android 13 (API 33). Все примеры OpenGL на этом устройстве работают.",
+)
+
+/** Shown instead of the AGSL lab when RuntimeShader is unavailable. */
+@Composable
+fun AgslUnavailable() {
+    Text(
+        text = agslUnavailableText(),
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(16.dp),
+    )
 }

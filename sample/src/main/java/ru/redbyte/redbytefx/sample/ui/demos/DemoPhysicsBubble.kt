@@ -1,6 +1,7 @@
 // The original shader is taken from https://gist.github.com/Mikkareem/1a80129f67bbca3e1a2837e29116801f?permalink_comment_id=6079666#file-02_physicsbubblescreen-kt
 package ru.redbyte.redbytefx.sample.ui.demos
 
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -62,6 +63,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.redbyte.redbytefx.*
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.compose.FxController
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
@@ -379,6 +381,7 @@ private fun BubbleFxBindingLoop(
     }
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoPhysicsBubble(
     modifier: Modifier = Modifier,

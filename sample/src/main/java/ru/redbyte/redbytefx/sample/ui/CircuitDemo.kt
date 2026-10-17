@@ -2,6 +2,7 @@
 
 package ru.redbyte.redbytefx.sample.ui
 
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.redbyte.redbytefx.*
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindTime
 import ru.redbyte.redbytefx.compose.redbyteFx
@@ -792,6 +794,7 @@ private fun CircuitPreviewStage(
     }
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoCircuit() {
     val boardSpec = circuitBoardSpec

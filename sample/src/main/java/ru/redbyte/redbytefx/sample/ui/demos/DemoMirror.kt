@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ru.redbyte.redbytefx.*
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
@@ -33,6 +35,7 @@ private data class MirrorSetup(
     val yFrom: Uniform<Flt<High>>,
 )
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoMirror() {
     var enabled by rememberSaveable { mutableStateOf(false) }

@@ -47,9 +47,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.redbyte.redbytefx.RedByteFxPlatform
 import ru.redbyte.redbytefx.sample.R
 import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
+import ru.redbyte.redbytefx.sample.ui.AgslUnavailable
 import ru.redbyte.redbytefx.sample.ui.CyberBackdrop
 import ru.redbyte.redbytefx.sample.ui.CyberBadge
 import ru.redbyte.redbytefx.sample.ui.CyberPanel
@@ -343,13 +345,17 @@ private fun SampleDestination(
     onOpenGlExample: (GlExample) -> Unit,
 ) {
     when (place.lab) {
-        SampleLab.Hub -> LabHome(onAgsl = onOpenAgsl, onGl = onOpenGl)
+        SampleLab.Hub -> LabHome(
+            agslAvailable = RedByteFxPlatform.isAgslSupported(),
+            onAgsl = onOpenAgsl,
+            onGl = onOpenGl,
+        )
         SampleLab.Agsl -> {
             val id = place.demo
-            if (id == null) {
-                HomeScreen(demos = DemoCatalog, onOpen = onOpenDemo)
-            } else {
-                DemoScreen(id = id, onOpenDemo = onOpenDemo)
+            when {
+                !RedByteFxPlatform.isAgslSupported() -> AgslUnavailable()
+                id == null -> HomeScreen(demos = DemoCatalog, onOpen = onOpenDemo)
+                else -> DemoScreen(id = id, onOpenDemo = onOpenDemo)
             }
         }
         SampleLab.Gl -> {

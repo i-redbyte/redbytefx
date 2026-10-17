@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.*
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.compose.rememberFxController
@@ -30,6 +32,7 @@ private data class CompositeSetup(
     val amount: Uniform<Flt<High>>,
 )
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoComposite() {
     var radiusUi by rememberSaveable { mutableFloatStateOf(20f) }

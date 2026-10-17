@@ -4,6 +4,7 @@ package ru.redbyte.redbytefx.sample.ui
 
 import android.content.ClipData
 import android.content.Intent
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -70,6 +71,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.compose.FxController
 import ru.redbyte.redbytefx.compose.redbyteFx
 import ru.redbyte.redbytefx.sample.model.DemoFollowUp
@@ -1497,6 +1499,7 @@ fun DemoPreviewStage(
  * Preview for the Liquid Glass demo: a centered translucent pill with a label, on a busy gradient so
  * refraction and rim highlights read clearly through [Modifier.redbyteFx].
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoLiquidGlassPreviewStage(
     fx: FxController,

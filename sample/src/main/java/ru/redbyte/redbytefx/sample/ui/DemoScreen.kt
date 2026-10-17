@@ -1,7 +1,9 @@
 package ru.redbyte.redbytefx.sample.ui
 
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.sample.model.DemoCatalog
 import ru.redbyte.redbytefx.sample.model.DemoId
 import ru.redbyte.redbytefx.sample.model.demoInfo
@@ -39,6 +41,7 @@ import ru.redbyte.redbytefx.sample.ui.demos.DemoTouchRipple
 import ru.redbyte.redbytefx.sample.ui.demos.DemoWarp
 import ru.redbyte.redbytefx.sample.ui.demos.DemoWave
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoScreen(
     id: DemoId,
@@ -72,6 +75,7 @@ fun DemoScreen(
     }
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 private fun DemoCatalogFirst(id: DemoId) {
     when (id) {
@@ -95,6 +99,7 @@ private fun DemoCatalogFirst(id: DemoId) {
     }
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 private fun DemoCatalogSecond(id: DemoId) {
     when (id) {

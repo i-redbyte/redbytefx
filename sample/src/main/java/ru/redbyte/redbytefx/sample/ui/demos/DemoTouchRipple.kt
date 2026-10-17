@@ -1,5 +1,6 @@
 package ru.redbyte.redbytefx.sample.ui.demos
 
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
@@ -12,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import ru.redbyte.redbytefx.*
+import ru.redbyte.redbytefx.RedByteFxApis
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.compose.bindFloat
 import ru.redbyte.redbytefx.compose.bindFloat2
@@ -30,6 +32,7 @@ private data class TouchRippleSetup(
     val strength: Uniform<Flt<High>>,
 )
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 @Composable
 fun DemoTouchRipple() {
     var pointerXUi by rememberSaveable { mutableFloatStateOf(50f) }
