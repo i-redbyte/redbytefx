@@ -1,63 +1,46 @@
 name: Sample APK
 
+# Replaces the demo APK after Quality passes on master, so the download never comes from a
+# commit that failed the gate.
 on:
-  workflow_dispatch:
-  push:
+  workflow_run:
+    workflows:
+      - Quality
+    types:
+      - completed
     branches:
-      - main
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: sample-apk
+  cancel-in-progress: true
+
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          distribution: temurin
-          java-version: "17"
+          ref: ${{ env.SOURCE_SHA }}
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Install Android SDK packages
-        run: |
-          SDK_ROOT="${ANDROID_HOME}"
-          CMDLINE_BIN="${SDK_ROOT}/cmdline-tools/latest/bin"
-          if [ ! -x "${CMDLINE_BIN}/sdkmanager" ]; then
-            for dir in "${SDK_ROOT}/cmdline-tools"/*; do
-              if [ -x "${dir}/bin/sdkmanager" ]; then
-                CMDLINE_BIN="${dir}/bin"
-                break
-              fi
-            done
-          fi
-          if [ ! -x "${CMDLINE_BIN}/sdkmanager" ]; then
-            echo "::error::sdkmanager not found under ${SDK_ROOT}/cmdline-tools"
-            exit 1
-          fi
-          echo "${CMDLINE_BIN}" >> "${GITHUB_PATH}"
-          echo "${SDK_ROOT}/platform-tools" >> "${GITHUB_PATH}"
-          export PATH="${CMDLINE_BIN}:${SDK_ROOT}/platform-tools:${PATH}"
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Android build setup
+        uses: ./.github/actions/android-setup
 
       - name: Assemble universal debug APK
+        # The default APK is a single fat binary (all ABIs); the sample has no ABI splits.
         run: ./gradlew :sample:assembleDebug --no-daemon
-        # Default APK is a single fat binary (all ABIs); sample has no abi splits.
 
       - name: Prepare artifact name
-        run: |
-          cp sample/build/outputs/apk/debug/sample-debug.apk redbytefx-sample-demo.apk
+        run: cp sample/build/outputs/apk/debug/sample-debug.apk redbytefx-sample-demo.apk
 
       - name: Publish demo APK (fixed release, overwrite)
         env:
@@ -68,7 +51,7 @@ jobs:
             gh release create demo \
               --repo "${{ github.repository }}" \
               --title "Sample demo APK" \
-              --notes "Последняя сборка sample-приложения. Коммит: ${{ github.sha }}"
+              --notes "Последняя сборка sample-приложения. Коммит: ${SOURCE_SHA}"
           fi
           gh release upload demo redbytefx-sample-demo.apk \
             --repo "${{ github.repository }}" \
