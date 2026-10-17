@@ -191,6 +191,21 @@ class GlFramePlanTest {
     }
 
     @Test
+    fun keptIndicesAreCheckedAgainstTheirHighestIndexWithoutARescan() {
+        val position = listOf(GlAttrib("a_position", 3, 0))
+        val mesh = GlMesh(FloatArray(18), 3, position, indices = intArrayOf(0, 5, 2))
+        assertEquals(5, mesh.arrays.highestIndex)
+
+        assertThrows(IllegalArgumentException::class.java) { mesh.replace(FloatArray(15)) }
+        mesh.replace(FloatArray(21))
+        assertEquals(5, mesh.arrays.highestIndex)
+        mesh.replace(FloatArray(9), intArrayOf(1, 0))
+        assertEquals(1, mesh.arrays.highestIndex)
+        mesh.replace(FloatArray(9), null)
+        assertEquals(-1, mesh.arrays.highestIndex)
+    }
+
+    @Test
     fun aConcurrentVertexReplacementKeepsTheLatestIndices() {
         val mesh = GlMesh(FloatArray(9), 3, listOf(GlAttrib("a_position", 3, 0)), indices = intArrayOf(0, 1, 2))
         val updatedIndices = intArrayOf(2, 1, 0)

@@ -26,7 +26,7 @@ public class GlMesh(
     indices: IntArray? = null,
 ) {
     @Volatile
-    internal var arrays: MeshArrays = MeshArrays(vertices, indices, 0L)
+    internal var arrays: MeshArrays
         private set
 
     public val vertices: FloatArray get() = arrays.vertices
@@ -35,7 +35,15 @@ public class GlMesh(
 
     init {
         require(stride > 0) { "Stride must be positive, was $stride" }
-        requireLayout(vertices, indices)
+        for (index in attribs.indices) {
+            val attrib = attribs[index]
+            require(attrib.size in 1..MAX_ATTRIB_SIZE) { "Attribute ${attrib.name} size must be 1..4" }
+            require(attrib.offset >= 0 && attrib.offset + attrib.size <= stride) {
+                "Attribute ${attrib.name} does not fit in stride $stride"
+            }
+        }
+        require(patchVertices >= 0) { "Patch vertices must be non-negative, was $patchVertices" }
+        arrays = MeshArrays(vertices, indices, requireLayout(vertices, indices), 0L)
     }
 
     /**
@@ -46,30 +54,34 @@ public class GlMesh(
     @Synchronized
     public fun replace(vertices: FloatArray, indices: IntArray? = PRESERVE_MESH_INDICES) {
         val current = arrays
+        val highest = if (indices === PRESERVE_MESH_INDICES) {
+            requireVertexStride(vertices)
+            current.highestIndex.also { requireHighestIndex(it, vertices.size / stride) }
+        } else {
+            requireLayout(vertices, indices)
+        }
         val nextIndices = if (indices === PRESERVE_MESH_INDICES) current.indices else indices
-        requireLayout(vertices, nextIndices)
-        arrays = MeshArrays(vertices, nextIndices, current.revision + 1)
+        arrays = MeshArrays(vertices, nextIndices, highest, current.revision + 1)
     }
 
-    private fun requireLayout(vertices: FloatArray, indices: IntArray?) {
+    /** Returns the highest index, or -1 without indices. */
+    private fun requireLayout(vertices: FloatArray, indices: IntArray?): Int {
+        requireVertexStride(vertices)
+        return if (indices != null) requireIndexRange(indices, vertices.size / stride) else NO_INDICES
+    }
+
+    private fun requireVertexStride(vertices: FloatArray) {
         require(vertices.size % stride == 0) {
             "Vertex buffer size ${vertices.size} is not a multiple of stride $stride"
         }
-        for (index in attribs.indices) {
-            val attrib = attribs[index]
-            require(attrib.size in 1..MAX_ATTRIB_SIZE) { "Attribute ${attrib.name} size must be 1..4" }
-            require(attrib.offset >= 0 && attrib.offset + attrib.size <= stride) {
-                "Attribute ${attrib.name} does not fit in stride $stride"
-            }
-        }
-        require(patchVertices >= 0) { "Patch vertices must be non-negative, was $patchVertices" }
-        if (indices != null) requireIndexRange(indices, vertices.size / stride)
     }
 }
 
+/** [highestIndex] is computed once when the arrays are published; -1 without indices. */
 internal class MeshArrays(
     val vertices: FloatArray,
     val indices: IntArray?,
+    val highestIndex: Int,
     val revision: Long,
 )
 

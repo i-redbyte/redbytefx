@@ -47,17 +47,26 @@ internal class RecordedDraw {
     var modelStorage: FloatArray? = null
 }
 
-/** Scene. [indices] must be non-empty and every index must address a vertex. */
-internal fun requireIndexRange(indices: IntArray, vertexCount: Int) {
+/** Scene. [indices] must be non-empty and every index must address a vertex. Returns the highest. */
+internal fun requireIndexRange(indices: IntArray, vertexCount: Int): Int {
     require(indices.isNotEmpty()) { "Index buffer must contain at least one index" }
-    require(vertexCount > 0) { "Vertex count must be positive, was $vertexCount" }
     var highest = -1
     for (index in indices) {
         require(index >= 0) { "Index must be non-negative, was $index" }
         if (index > highest) highest = index
     }
+    requireHighestIndex(highest, vertexCount)
+    return highest
+}
+
+/** Checks indices validated earlier against a new vertex count; -1 means no indices. */
+internal fun requireHighestIndex(highest: Int, vertexCount: Int) {
+    if (highest == NO_INDICES) return
+    require(vertexCount > 0) { "Vertex count must be positive, was $vertexCount" }
     require(highest < vertexCount) { "Index $highest is outside $vertexCount vertices" }
 }
+
+internal const val NO_INDICES = -1
 
 /**
  * Scene. Count a recorded draw issues when it runs. A whole-mesh draw reads the index or vertex
@@ -250,6 +259,7 @@ public class GlFrame internal constructor(
 
     private var surfaceVertices: Int = surfaceMesh?.let { it.vertices.size / it.stride } ?: 0
     private var surfaceIndices: IntArray? = surfaceMesh?.indices
+    private var surfaceHighestIndex: Int = surfaceMesh?.arrays?.highestIndex ?: NO_INDICES
     private var surfaceRevision: Long = surfaceMesh?.arrays?.revision ?: -1L
 
     internal fun syncSurfaceMesh(arrays: MeshArrays) {
@@ -257,6 +267,7 @@ public class GlFrame internal constructor(
         if (arrays.revision == surfaceRevision) return
         surfaceVertices = arrays.vertices.size / mesh.stride
         surfaceIndices = arrays.indices
+        surfaceHighestIndex = arrays.highestIndex
         surfaceRevision = arrays.revision
     }
 
@@ -298,20 +309,23 @@ public class GlFrame internal constructor(
     @JvmOverloads
     public fun replace(vertices: FloatArray, indices: IntArray? = null) {
         val mesh = surfaceMesh
-        val nextIndices: IntArray?
+        var highest = NO_INDICES
         if (mesh != null) {
             require(vertices.size % mesh.stride == 0) {
                 "Vertex buffer size ${vertices.size} is not a multiple of stride ${mesh.stride}"
             }
-            nextIndices = indices ?: surfaceIndices
-            if (nextIndices != null) requireIndexRange(nextIndices, vertices.size / mesh.stride)
-        } else {
-            nextIndices = null
+            val vertexCount = vertices.size / mesh.stride
+            highest = if (indices != null) {
+                requireIndexRange(indices, vertexCount)
+            } else {
+                surfaceHighestIndex.also { requireHighestIndex(it, vertexCount) }
+            }
         }
         upload(vertices, indices)
         if (mesh != null) {
             surfaceVertices = vertices.size / mesh.stride
-            surfaceIndices = nextIndices
+            if (indices != null) surfaceIndices = indices
+            surfaceHighestIndex = highest
         }
     }
 
