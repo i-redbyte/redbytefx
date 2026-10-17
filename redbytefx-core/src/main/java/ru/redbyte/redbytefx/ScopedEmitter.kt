@@ -210,11 +210,3 @@ internal inline fun forEachOperand(node: ExprNode, visit: (Expr<*>) -> Unit) {
         -> Unit
     }
 }
-
-/** Base name for a `let` local or a mutable slot; unsafe suggestions are sanitized. */
-internal fun localBase(suggested: String?, index: Int): String {
-    if (suggested.isNullOrBlank()) return "l$index"
-    val first = suggested.first()
-    val safe = (first.isLetter() || first == '_') && suggested.all { it == '_' || it.isLetterOrDigit() }
-    return if (safe) suggested else sanitizeSuggestedIdentifier(suggested, "l")
-}

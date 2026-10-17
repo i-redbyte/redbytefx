@@ -1230,7 +1230,7 @@ private val TESS_CONTROL_PER_VERTEX = listOf(
 )
 
 internal fun glslReservedNames(): Set<String> = buildSet {
-    addAll(RESERVED_USER_FUNCTION_NAMES)
+    addAll(RESERVED_SHADER_WORDS)
     add("main")
     add("gl_Position")
     add("oColor")

@@ -1272,7 +1272,7 @@ internal val ArithOp.symbol: String
     }
 
 private fun agslReservedNames(): Set<String> = buildSet {
-    addAll(RESERVED_USER_FUNCTION_NAMES)
+    addAll(RESERVED_SHADER_WORDS)
     add("fragCoord")
     add("main")
     add(RB_INPUT_UNIFORM)
