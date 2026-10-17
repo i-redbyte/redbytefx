@@ -375,6 +375,36 @@ class GlControllerQueueTest {
         assertTrue("allocated $bytes bytes for $writes writes", bytes < writes)
     }
 
+    @Test(timeout = 10_000)
+    fun aWriteFromTheUiThreadDoesNotWaitForTheDriver() {
+        val (program, amount) = amountProgram()
+        val device = FloatDevice()
+        val controller = GlController(program, GlSurfaceConfig())
+        val queue: (() -> Unit) -> Unit = { }
+        controller.attachQueue(queue)
+        val inDriver = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        controller.set(amount, 0.25f)
+        val glThread = Thread {
+            val runtime = GlProgramRuntime(program, device).also { it.link() }
+            device.onFloatWrite = {
+                inDriver.countDown()
+                release.await()
+            }
+            controller.attachRuntime(queue, runtime)
+        }.apply { start() }
+        inDriver.await()
+
+        val writer = Thread { controller.set(amount, 0.5f) }.apply { start() }
+        writer.join(2_000)
+        val finished = !writer.isAlive
+        release.countDown()
+        glThread.join()
+        writer.join()
+
+        assertTrue("set() waited for the GL thread's driver call", finished)
+    }
+
     @Test
     fun the129thGlTaskFailsAndTheFirstOneStays() {
         val (program, amount) = amountProgram()
@@ -472,7 +502,8 @@ class GlControllerQueueTest {
     }
 }
 
-internal class FloatDevice : GlDevice() {
+internal open class FloatDevice : GlDevice() {
+    var onFloatWrite: () -> Unit = {}
     var floatCalls: Int = 0
     var lastFloat: Float = Float.NaN
     var rejectNegative: Boolean = false
@@ -488,6 +519,7 @@ internal class FloatDevice : GlDevice() {
     override fun uniformLocation(program: Int, name: String): Int = 1
     override fun attribLocation(program: Int, name: String): Int = 0
     override fun uniform1f(location: Int, value: Float) {
+        onFloatWrite()
         if (rejectNegative && value < 0f) error("rejected")
         floatCalls += 1
         lastFloat = value

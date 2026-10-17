@@ -30,7 +30,11 @@ internal sealed class WriteSlot {
     /** Holds a value that a new EGL context should receive again. */
     abstract val replayable: Boolean
 
-    abstract fun applyTo(runtime: GlProgramRuntime)
+    /** Under the controller lock: copies the latest value aside for [applyStaged]. */
+    abstract fun stage()
+
+    /** GL thread, outside the lock: writes the value [stage] copied, so UI writes never wait. */
+    abstract fun applyStaged(runtime: GlProgramRuntime)
 }
 
 internal enum class UniformWriteKind {
@@ -52,6 +56,10 @@ internal class UniformSlot(private val uniform: Uniform<*>) : WriteSlot() {
     private val components = FloatArray(VECTOR_LANES)
     private var integer = 0
     private var matrix: FloatArray? = null
+    private var stagedKind = UniformWriteKind.None
+    private val stagedComponents = FloatArray(VECTOR_LANES)
+    private var stagedInteger = 0
+    private var stagedMatrix: FloatArray? = null
 
     override val replayable: Boolean
         get() = kind != UniformWriteKind.None && !isTexture
@@ -83,10 +91,20 @@ internal class UniformSlot(private val uniform: Uniform<*>) : WriteSlot() {
         if (isTexture) kind = UniformWriteKind.None
     }
 
+    override fun stage() {
+        stagedKind = kind
+        components.copyInto(stagedComponents)
+        stagedInteger = integer
+        val source = matrix ?: return
+        val target = stagedMatrix?.takeIf { it.size == source.size } ?: FloatArray(source.size).also { stagedMatrix = it }
+        source.copyInto(target)
+    }
+
     @Suppress("UNCHECKED_CAST", "CyclomaticComplexMethod")
-    override fun applyTo(runtime: GlProgramRuntime) {
-        val c = components
-        when (kind) {
+    override fun applyStaged(runtime: GlProgramRuntime) {
+        val c = stagedComponents
+        val integer = stagedInteger
+        when (stagedKind) {
             UniformWriteKind.None -> Unit
             UniformWriteKind.Float -> runtime.set(uniform as Uniform<Flt<High>>, c[0])
             UniformWriteKind.Vec2 -> runtime.set(uniform as Uniform<Vec2<Flt<High>>>, c[0], c[1])
@@ -94,7 +112,7 @@ internal class UniformSlot(private val uniform: Uniform<*>) : WriteSlot() {
             UniformWriteKind.Vec4 -> runtime.set(uniform as Uniform<Vec4<Flt<High>>>, c[0], c[1], c[2], c[3])
             UniformWriteKind.Int -> runtime.set(uniform as Uniform<IntS>, integer)
             UniformWriteKind.Bool -> runtime.set(uniform as Uniform<BoolS>, integer != 0)
-            UniformWriteKind.Matrix -> applyMatrix(runtime, checkNotNull(matrix))
+            UniformWriteKind.Matrix -> applyMatrix(runtime, checkNotNull(stagedMatrix))
             UniformWriteKind.Texture2D -> runtime.bind(uniform as Uniform<Sampler2D>, integer)
             UniformWriteKind.TextureCube -> runtime.bind(uniform as Uniform<SamplerCube>, integer)
         }
@@ -120,6 +138,7 @@ internal class BlockSlot private constructor(
     constructor(block: StorageBlock) : this(null, block)
 
     private var values: FloatArray? = null
+    private var staged: FloatArray? = null
 
     override val replayable: Boolean
         get() = values != null
@@ -129,8 +148,14 @@ internal class BlockSlot private constructor(
         source.copyInto(target)
     }
 
-    override fun applyTo(runtime: GlProgramRuntime) {
-        val stored = values ?: return
+    override fun stage() {
+        val source = values ?: return
+        val target = staged?.takeIf { it.size == source.size } ?: FloatArray(source.size).also { staged = it }
+        source.copyInto(target)
+    }
+
+    override fun applyStaged(runtime: GlProgramRuntime) {
+        val stored = staged ?: return
         if (uniformBlock != null) runtime.set(uniformBlock, stored) else runtime.set(checkNotNull(storageBlock), stored)
     }
 }

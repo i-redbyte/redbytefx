@@ -220,36 +220,39 @@ public class GlController internal constructor(
 
     /**
      * Applies pending writes in the order they were first made, then [runOnGl] blocks, one at a
-     * time. Must run on the GL thread. A write is applied under the lock, so a UI-thread write of
-     * the same handle never tears; a task runs outside it. Anything that throws is reported and
-     * not retried; the rest of the drain still runs.
+     * time. Must run on the GL thread. Under the lock a write only copies its value aside, so a
+     * UI-thread write never waits for the driver and never tears; the GL call happens outside.
+     * Anything that throws is reported and not retried; the rest of the drain still runs.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun drainPending(queue: (() -> Unit) -> Unit, generation: Long) {
         while (true) {
-            val task = synchronized(lock) {
-                if (glQueue !== queue || queueGeneration != generation) return
-                val linked = runtime ?: return
-                val slot = pendingSlots.removeFirstOrNull()
-                if (slot != null) {
-                    slot.pending = false
-                    try {
-                        slot.applyTo(linked)
-                    } catch (error: Exception) {
-                        reportFailure(error)
-                    }
-                    null
-                } else {
-                    val next = tasks.removeFirstOrNull() ?: return
-                    next to linked
-                }
-            } ?: continue
+            val linked = currentRuntime(queue, generation) ?: return
+            val slot = stageNextSlot()
             try {
-                task.first(task.second)
+                if (slot != null) {
+                    slot.applyStaged(linked)
+                } else {
+                    val task = synchronized(lock) { tasks.removeFirstOrNull() } ?: return
+                    task(linked)
+                }
             } catch (error: Exception) {
                 reportFailure(error)
             }
         }
+    }
+
+    private fun currentRuntime(queue: (() -> Unit) -> Unit, generation: Long): GlProgramRuntime? =
+        synchronized(lock) {
+            if (glQueue !== queue || queueGeneration != generation) null else runtime
+        }
+
+    /** Under the lock: takes the oldest pending slot and copies its value aside. */
+    private fun stageNextSlot(): WriteSlot? = synchronized(lock) {
+        val slot = pendingSlots.removeFirstOrNull() ?: return null
+        slot.pending = false
+        slot.stage()
+        slot
     }
 
     private fun uniformSlot(uniform: Uniform<*>): UniformSlot =
