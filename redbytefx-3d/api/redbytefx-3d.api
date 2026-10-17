@@ -1,0 +1,110 @@
+public final class ru/redbyte/redbytefx/scene/LitMesh {
+	public fun <init> (Lru/redbyte/redbytefx/ShaderProgram;Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Uniform;)V
+	public final fun getAlbedo ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getLight ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getModel ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getNormalMatrix ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getProgram ()Lru/redbyte/redbytefx/ShaderProgram;
+	public final fun getProjection ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getView ()Lru/redbyte/redbytefx/Uniform;
+}
+
+public final class ru/redbyte/redbytefx/scene/R {
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneAttrib {
+	public fun <init> (Ljava/lang/String;II)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOffset ()I
+	public final fun getSize ()I
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneCameraKt {
+	public static final field MATRIX_FLOATS I
+	public static final fun getIDENTITY ()[F
+	public static final fun lookAt (FFFFFFFFF)[F
+	public static final fun lookAt (FFFFFFFFF[F)[F
+	public static final fun ortho (FFFFFF)[F
+	public static final fun ortho (FFFFFF[F)[F
+	public static final fun perspective (FFFF)[F
+	public static final fun perspective (FFFF[F)[F
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneComposeKt {
+	public static final fun merge (Ljava/util/List;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun tagUv (Lru/redbyte/redbytefx/scene/SceneMesh;FLjava/lang/Float;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun tagUv$default (Lru/redbyte/redbytefx/scene/SceneMesh;FLjava/lang/Float;ILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun transform (Lru/redbyte/redbytefx/scene/SceneMesh;[F)Lru/redbyte/redbytefx/scene/SceneMesh;
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneLitKt {
+	public static final fun instanceModel (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;)Lru/redbyte/redbytefx/Expr;
+	public static final fun litTexturedMesh ([F)Lru/redbyte/redbytefx/scene/LitMesh;
+	public static synthetic fun litTexturedMesh$default ([FILjava/lang/Object;)Lru/redbyte/redbytefx/scene/LitMesh;
+	public static final fun normalMatrix ([F[F)[F
+	public static synthetic fun normalMatrix$default ([F[FILjava/lang/Object;)[F
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneMatrixKt {
+	public static final fun identity ([F)[F
+	public static synthetic fun identity$default ([FILjava/lang/Object;)[F
+	public static final fun multiply ([F[F[F)[F
+	public static synthetic fun multiply$default ([F[F[FILjava/lang/Object;)[F
+	public static final fun rotationX (F[F)[F
+	public static synthetic fun rotationX$default (F[FILjava/lang/Object;)[F
+	public static final fun rotationY (F[F)[F
+	public static synthetic fun rotationY$default (F[FILjava/lang/Object;)[F
+	public static final fun rotationZ (F[F)[F
+	public static synthetic fun rotationZ$default (F[FILjava/lang/Object;)[F
+	public static final fun scale (FFF[F)[F
+	public static synthetic fun scale$default (FFF[FILjava/lang/Object;)[F
+	public static final fun translation (FFF[F)[F
+	public static synthetic fun translation$default (FFF[FILjava/lang/Object;)[F
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneMatrixOpsKt {
+	public static final fun inverse ([F[F)[F
+	public static synthetic fun inverse$default ([F[FILjava/lang/Object;)[F
+	public static final fun transformDirection ([FFFF[F)[F
+	public static synthetic fun transformDirection$default ([FFFF[FILjava/lang/Object;)[F
+	public static final fun transformPoint ([FFFF[F)[F
+	public static synthetic fun transformPoint$default ([FFFF[FILjava/lang/Object;)[F
+	public static final fun transpose ([F[F)[F
+	public static synthetic fun transpose$default ([F[FILjava/lang/Object;)[F
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneMesh {
+	public fun <init> ([FILjava/util/List;[I)V
+	public final fun getAttribs ()Ljava/util/List;
+	public final fun getIndices ()[I
+	public final fun getStride ()I
+	public final fun getVertices ()[F
+}
+
+public final class ru/redbyte/redbytefx/scene/SceneMeshKt {
+	public static final field MESH_NORMAL Ljava/lang/String;
+	public static final field MESH_POSITION Ljava/lang/String;
+	public static final field MESH_STRIDE I
+	public static final field MESH_UV Ljava/lang/String;
+	public static final fun sceneMeshAttribs ()Ljava/util/List;
+}
+
+public final class ru/redbyte/redbytefx/scene/ScenePathsKt {
+	public static final fun disc (FFI)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun disc$default (FFIILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun extrudePolygon (Ljava/util/List;F)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun tubeAlong (Ljava/util/List;FIF)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun tubeAlong$default (Ljava/util/List;FIFILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+}
+
+public final class ru/redbyte/redbytefx/scene/ScenePrimitivesKt {
+	public static final fun box (FFFFFF)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun quad (FF)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun quad$default (FFILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun sphere (FII)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun sphere$default (FIIILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun torus (FFII)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static synthetic fun torus$default (FFIIILjava/lang/Object;)Lru/redbyte/redbytefx/scene/SceneMesh;
+	public static final fun triangle (FFFFFFFFF)Lru/redbyte/redbytefx/scene/SceneMesh;
+}
+

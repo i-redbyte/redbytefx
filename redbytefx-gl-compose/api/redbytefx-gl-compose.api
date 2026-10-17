@@ -1,0 +1,274 @@
+public final class ru/redbyte/redbytefx/gl/compose/BlendEquation : java/lang/Enum {
+	public static final field Add Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+	public static final field ReverseSubtract Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+	public static final field Subtract Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/BlendFactor : java/lang/Enum {
+	public static final field DstAlpha Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field DstColor Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field One Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field OneMinusDstAlpha Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field OneMinusDstColor Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field OneMinusSrcAlpha Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field OneMinusSrcColor Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field SrcAlpha Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field SrcColor Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static final field Zero Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/CullFace : java/lang/Enum {
+	public static final field Back Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public static final field Front Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public static final field FrontAndBack Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public static final field Off Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/compose/CullFace;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlAttrib {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;II)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOffset ()I
+	public final fun getSize ()I
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlComposeKt {
+	public static final fun bindFloat (Lru/redbyte/redbytefx/gl/compose/GlController;Lru/redbyte/redbytefx/Uniform;FLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindInt (Lru/redbyte/redbytefx/gl/compose/GlController;Lru/redbyte/redbytefx/Uniform;ILandroidx/compose/runtime/Composer;I)V
+	public static final fun bindTime (Lru/redbyte/redbytefx/gl/compose/GlController;Lru/redbyte/redbytefx/Uniform;ZFLandroidx/compose/runtime/Composer;II)V
+	public static final fun redbyteFx (Lru/redbyte/redbytefx/gl/compose/GlController;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberGlController (Lru/redbyte/redbytefx/ShaderProgram;Lru/redbyte/redbytefx/gl/compose/GlSurfaceConfig;Landroidx/compose/runtime/Composer;II)Lru/redbyte/redbytefx/gl/compose/GlController;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlComputeKt {
+	public static final synthetic fun GlCompute (Lru/redbyte/redbytefx/gl/compose/GlController;Landroidx/compose/ui/Modifier;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun GlCompute (Lru/redbyte/redbytefx/gl/compose/GlController;Landroidx/compose/ui/Modifier;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlController {
+	public static final field $stable I
+	public final fun bindSampler2D (Lru/redbyte/redbytefx/Uniform;I)V
+	public final fun bindSamplerCube (Lru/redbyte/redbytefx/Uniform;I)V
+	public final fun dispatch (III)V
+	public static synthetic fun dispatch$default (Lru/redbyte/redbytefx/gl/compose/GlController;IIIILjava/lang/Object;)V
+	public final fun getConfig ()Lru/redbyte/redbytefx/gl/compose/GlSurfaceConfig;
+	public final fun getFailure ()Landroidx/compose/runtime/State;
+	public final fun getLinkState ()Landroidx/compose/runtime/State;
+	public final fun getProgram ()Lru/redbyte/redbytefx/ShaderProgram;
+	public final fun read (Lru/redbyte/redbytefx/StorageBlock;[FLkotlin/jvm/functions/Function1;)V
+	public final fun runOnGl (Lkotlin/jvm/functions/Function0;)V
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FF)V
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFF)V
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFFF)V
+	public final fun set (Lru/redbyte/redbytefx/Uniform;I)V
+	public final fun set (Lru/redbyte/redbytefx/Uniform;Z)V
+	public final fun setHighFloat (Lru/redbyte/redbytefx/Uniform;F)V
+	public final fun setMat2 (Lru/redbyte/redbytefx/Uniform;[F)V
+	public final fun setMat3 (Lru/redbyte/redbytefx/Uniform;[F)V
+	public final fun setMat4 (Lru/redbyte/redbytefx/Uniform;[F)V
+	public final fun setMedFloat (Lru/redbyte/redbytefx/Uniform;F)V
+	public final fun setMedVec2 (Lru/redbyte/redbytefx/Uniform;FF)V
+	public final fun setMedVec3 (Lru/redbyte/redbytefx/Uniform;FFF)V
+	public final fun setMedVec4 (Lru/redbyte/redbytefx/Uniform;FFFF)V
+	public final fun setStorageBlock (Lru/redbyte/redbytefx/StorageBlock;[F)V
+	public final fun setUniformBlock (Lru/redbyte/redbytefx/UniformBlock;[F)V
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlFrame {
+	public static final field $stable I
+	public fun <init> (Lru/redbyte/redbytefx/gl/GlProgramRuntime;FFLkotlin/jvm/functions/Function1;FF)V
+	public synthetic fun <init> (Lru/redbyte/redbytefx/gl/GlProgramRuntime;FFLkotlin/jvm/functions/Function1;FFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun draw ()V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;I)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F[F)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F[FLjava/lang/Float;)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F[FLjava/lang/Float;Z)V
+	public final fun draw (Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F[FLjava/lang/Float;ZLru/redbyte/redbytefx/gl/compose/GlPipeline;)V
+	public static synthetic fun draw$default (Lru/redbyte/redbytefx/gl/compose/GlFrame;Lru/redbyte/redbytefx/gl/compose/GlMesh;II[F[FLjava/lang/Float;ZLru/redbyte/redbytefx/gl/compose/GlPipeline;ILjava/lang/Object;)V
+	public final fun getAspect ()F
+	public final fun getColorTarget ()Lru/redbyte/redbytefx/gl/GlColorTarget;
+	public final fun getHeightPx ()F
+	public final fun getMaterial ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getPresentRuntime ()Lru/redbyte/redbytefx/gl/GlProgramRuntime;
+	public final fun getRuntime ()Lru/redbyte/redbytefx/gl/GlProgramRuntime;
+	public final fun getSeconds ()F
+	public final fun getWidthPx ()F
+	public final fun offscreen (Lkotlin/jvm/functions/Function0;)V
+	public final fun replace ([F)V
+	public final fun replace ([F[I)V
+	public static synthetic fun replace$default (Lru/redbyte/redbytefx/gl/compose/GlFrame;[F[IILjava/lang/Object;)V
+	public final fun setMaterial (Lru/redbyte/redbytefx/Uniform;)V
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlFrameKt {
+	public static final field MODEL_COLUMN_0 Ljava/lang/String;
+	public static final field MODEL_COLUMN_1 Ljava/lang/String;
+	public static final field MODEL_COLUMN_2 Ljava/lang/String;
+	public static final field MODEL_COLUMN_3 Ljava/lang/String;
+	public static final field MODEL_MATRIX_FLOATS I
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlLinkErrorOverlayKt {
+	public static final fun GlLinkErrorOverlay (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class ru/redbyte/redbytefx/gl/compose/GlLinkState {
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlLinkState$Failed : ru/redbyte/redbytefx/gl/compose/GlLinkState {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/compose/GlLinkState$Failed;
+	public static synthetic fun copy$default (Lru/redbyte/redbytefx/gl/compose/GlLinkState$Failed;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlLinkState$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlLinkState$Linked : ru/redbyte/redbytefx/gl/compose/GlLinkState {
+	public static final field $stable I
+	public static final field INSTANCE Lru/redbyte/redbytefx/gl/compose/GlLinkState$Linked;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlLinkState$Pending : ru/redbyte/redbytefx/gl/compose/GlLinkState {
+	public static final field $stable I
+	public static final field INSTANCE Lru/redbyte/redbytefx/gl/compose/GlLinkState$Pending;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlLitModelKt {
+	public static final fun setLitModel (Lru/redbyte/redbytefx/gl/GlProgramRuntime;Lru/redbyte/redbytefx/scene/LitMesh;[F)V
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlMesh {
+	public static final field $stable I
+	public fun <init> ([FILjava/util/List;IIZFFF[I)V
+	public synthetic fun <init> ([FILjava/util/List;IIZFFF[IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAttribs ()Ljava/util/List;
+	public final fun getClearB ()F
+	public final fun getClearG ()F
+	public final fun getClearR ()F
+	public final fun getDepth ()Z
+	public final fun getIndices ()[I
+	public final fun getMode ()I
+	public final fun getPatchVertices ()I
+	public final fun getStride ()I
+	public final fun getVertices ()[F
+	public final fun replace ([F[I)V
+	public static synthetic fun replace$default (Lru/redbyte/redbytefx/gl/compose/GlMesh;[F[IILjava/lang/Object;)V
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlMeshKt {
+	public static final fun screenMesh (FFF)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun screenMesh$default (FFFILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlPipeline {
+	public static final field $stable I
+	public static final field Companion Lru/redbyte/redbytefx/gl/compose/GlPipeline$Companion;
+	public fun <init> ()V
+	public fun <init> (ZLru/redbyte/redbytefx/gl/compose/BlendFactor;Lru/redbyte/redbytefx/gl/compose/BlendFactor;Lru/redbyte/redbytefx/gl/compose/BlendEquation;ZIIIIZZZZZLru/redbyte/redbytefx/gl/compose/CullFace;)V
+	public synthetic fun <init> (ZLru/redbyte/redbytefx/gl/compose/BlendFactor;Lru/redbyte/redbytefx/gl/compose/BlendFactor;Lru/redbyte/redbytefx/gl/compose/BlendEquation;ZIIIIZZZZZLru/redbyte/redbytefx/gl/compose/CullFace;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBlend ()Z
+	public final fun getCullFace ()Lru/redbyte/redbytefx/gl/compose/CullFace;
+	public final fun getDepthMask ()Z
+	public final fun getDstFactor ()Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public final fun getEquation ()Lru/redbyte/redbytefx/gl/compose/BlendEquation;
+	public final fun getHeight ()I
+	public final fun getScissor ()Z
+	public final fun getSrcFactor ()Lru/redbyte/redbytefx/gl/compose/BlendFactor;
+	public final fun getWidth ()I
+	public final fun getWriteAlpha ()Z
+	public final fun getWriteBlue ()Z
+	public final fun getWriteGreen ()Z
+	public final fun getWriteRed ()Z
+	public final fun getX ()I
+	public final fun getY ()I
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlPipeline$Companion {
+	public final fun getDefault ()Lru/redbyte/redbytefx/gl/compose/GlPipeline;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlPrimitivesKt {
+	public static final field MESH_NORMAL Ljava/lang/String;
+	public static final field MESH_POSITION Ljava/lang/String;
+	public static final field MESH_STRIDE I
+	public static final field MESH_UV Ljava/lang/String;
+	public static final fun box (FFFFFF)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun disc (FFI)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun disc$default (FFIILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun extrudePolygon (Ljava/util/List;F)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun merge (Ljava/util/List;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun meshAttribs ()Ljava/util/List;
+	public static final fun quad (FF)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun quad$default (FFILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun sphere (FII)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun sphere$default (FIIILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun tagUv (Lru/redbyte/redbytefx/gl/compose/GlMesh;FLjava/lang/Float;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun tagUv$default (Lru/redbyte/redbytefx/gl/compose/GlMesh;FLjava/lang/Float;ILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun torus (FFII)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun torus$default (FFIIILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun transform (Lru/redbyte/redbytefx/gl/compose/GlMesh;[F)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun triangle (FFFFFFFFF)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static final fun tubeAlong (Ljava/util/List;FIF)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+	public static synthetic fun tubeAlong$default (Ljava/util/List;FIFILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlMesh;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlRequirementsKt {
+	public static final fun glEs30LinkRequirement ()Ljava/lang/String;
+	public static final fun glEs31LinkRequirement ()Ljava/lang/String;
+	public static final fun glEs32LinkRequirement ()Ljava/lang/String;
+	public static final fun glLinkRequirementHint (Lru/redbyte/redbytefx/ShaderProgram;)Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlRuntimeLinkKt {
+	public static final field GL_LINK_FALLBACK Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlSurfaceConfig {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (ZZZ)V
+	public synthetic fun <init> (ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun copy (ZZZ)Lru/redbyte/redbytefx/gl/compose/GlSurfaceConfig;
+	public static synthetic fun copy$default (Lru/redbyte/redbytefx/gl/compose/GlSurfaceConfig;ZZZILjava/lang/Object;)Lru/redbyte/redbytefx/gl/compose/GlSurfaceConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDepth ()Z
+	public final fun getStrictErrors ()Z
+	public final fun getStrictUniformLocations ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/GlSurfaceKt {
+	public static final synthetic fun GlSurface (Lru/redbyte/redbytefx/gl/compose/GlController;Lru/redbyte/redbytefx/gl/compose/GlMesh;Landroidx/compose/ui/Modifier;Ljava/lang/String;Lru/redbyte/redbytefx/ShaderProgram;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun GlSurface (Lru/redbyte/redbytefx/gl/compose/GlController;Lru/redbyte/redbytefx/gl/compose/GlMesh;Landroidx/compose/ui/Modifier;Ljava/lang/String;Lru/redbyte/redbytefx/ShaderProgram;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun glPointerInput (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)Landroidx/compose/ui/Modifier;
+}
+
+public final class ru/redbyte/redbytefx/gl/compose/R {
+}
+

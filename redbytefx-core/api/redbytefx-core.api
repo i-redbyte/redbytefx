@@ -1,0 +1,996 @@
+public final class ru/redbyte/redbytefx/AgslInstance {
+	public final fun batch (Lkotlin/jvm/functions/Function0;)V
+	public final fun renderEffect ()Landroid/graphics/RenderEffect;
+	public final fun set (Lru/redbyte/redbytefx/Uniform;F)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFFF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;I)Z
+	public final fun setMedFloat (Lru/redbyte/redbytefx/Uniform;F)Z
+	public final fun setMedVec2 (Lru/redbyte/redbytefx/Uniform;FF)Z
+	public final fun setMedVec3 (Lru/redbyte/redbytefx/Uniform;FFF)Z
+	public final fun setMedVec4 (Lru/redbyte/redbytefx/Uniform;FFFF)Z
+	public final fun setResolution (FF)Z
+}
+
+public final class ru/redbyte/redbytefx/AgslInstanceKt {
+	public static final fun newAgslInstance (Lru/redbyte/redbytefx/ShaderProgram;)Lru/redbyte/redbytefx/AgslInstance;
+}
+
+public final class ru/redbyte/redbytefx/AgslNotSupportedException : java/lang/IllegalStateException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class ru/redbyte/redbytefx/ArithKt {
+	public static final fun divFlt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divFltVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divFltVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divFltVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec2Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec3Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec4Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun getLit (F)Lru/redbyte/redbytefx/Expr;
+	public static final fun getLit (I)Lru/redbyte/redbytefx/Expr;
+	public static final fun getMed (F)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFlt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFltVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFltVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFltVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec2Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec3Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec4Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun negFlt (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun negVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun negVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun negVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFlt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFltVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFltVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFltVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec2Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec3Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec4Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFlt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFltVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFltVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFltVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec2Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec3Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec4Flt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun vec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun vec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun vec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public abstract interface class ru/redbyte/redbytefx/BVec2 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/BVec3 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/BVec4 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/BoolS : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/BuiltinKt {
+	public static final fun abs (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun atan (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun atan (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ceil (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun clamp (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun cos (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun crossVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun dFdx (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun dFdy (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun distanceVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun distanceVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun dotVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun dotVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun dotVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun floor (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun fract (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun fwidth (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun inverseMat2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun inverseMat3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun inverseMat4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun lambert (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun lengthVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun lengthVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun lengthVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun matrixCompMultMat2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun matrixCompMultMat3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun matrixCompMultMat4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun max (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun min (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mix (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mod (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun normalize (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun pow (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun radians (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun reflect (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun saturate (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun sign (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun sin (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun smoothstep (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun sqrt (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun step (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun tan (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun transposeMat2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun transposeMat3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun transposeMat4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public abstract interface class ru/redbyte/redbytefx/ChildShader : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/ChooseScope {
+	public final fun on (FLkotlin/jvm/functions/Function0;)V
+	public final fun on (FLru/redbyte/redbytefx/Expr;)V
+	public final fun on (ILkotlin/jvm/functions/Function0;)V
+	public final fun on (ILru/redbyte/redbytefx/Expr;)V
+	public final fun otherwise (Lkotlin/jvm/functions/Function0;)V
+	public final fun otherwise (Lru/redbyte/redbytefx/Expr;)V
+}
+
+public final class ru/redbyte/redbytefx/CompareKt {
+	public static final fun allBVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun allBVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun allBVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun and (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun anyBVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun anyBVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun anyBVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun choose (Lru/redbyte/redbytefx/Expr;FLkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun choose$default (Lru/redbyte/redbytefx/Expr;FLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public static final fun eq (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun eqInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun eqVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun eqVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun eqVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ge (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun geInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun geVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun geVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun geVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gtInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gtVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gtVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gtVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ifElse (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun le (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun leInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun leVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun leVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun leVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun lt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ltInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ltVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ltVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ltVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ne (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun neInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun neVec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun neVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun neVec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun not (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun or (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/ComputeDsl {
+	public final fun barrier ()V
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun getGlobalId ()Lru/redbyte/redbytefx/Expr;
+	public final fun getLocalId ()Lru/redbyte/redbytefx/Expr;
+	public final fun getWorkGroupId ()Lru/redbyte/redbytefx/Expr;
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/ComputeDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun sharedFloat (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun sharedVec2 (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun sharedVec3 (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun sharedVec4 (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun store (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/Expr {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getShape ()Lru/redbyte/redbytefx/Shape;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class ru/redbyte/redbytefx/Flt : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/Fn0 {
+	public final fun invoke ()Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn1 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn2 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn3 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn4 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn5 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn6 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn7 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/Fn8 {
+	public final fun invoke (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/FnDsl {
+	public final fun let (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun let$default (Lru/redbyte/redbytefx/FnDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun letValue (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun letValue$default (Lru/redbyte/redbytefx/FnDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/FnDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/FragmentDsl {
+	public final fun barrier ()V
+	public final fun discard ()V
+	public final fun discard (Lru/redbyte/redbytefx/Expr;)V
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun getFragCoord ()Lru/redbyte/redbytefx/Expr;
+	public final fun getResolution ()Lru/redbyte/redbytefx/Expr;
+	public final fun getTarget ()Lru/redbyte/redbytefx/ShaderTarget;
+	public final fun let (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun let$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun letValue (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun letValue$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun outVec4 (Ljava/lang/String;I)Lru/redbyte/redbytefx/FragmentOutput;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun sample (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun sample$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun sampleUnclamped (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static synthetic fun sampleUnclamped$default (Lru/redbyte/redbytefx/FragmentDsl;Lru/redbyte/redbytefx/Expr;ILjava/lang/Object;)Lru/redbyte/redbytefx/Expr;
+	public final fun set (Lru/redbyte/redbytefx/FragmentOutput;Lru/redbyte/redbytefx/Expr;)V
+	public final fun sharedFloat (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun texture (Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun textureCube (Lru/redbyte/redbytefx/Uniform;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/FragmentOutput {
+	public final fun getLocation ()I
+	public final fun getName ()Ljava/lang/String;
+	public final fun getShape ()Lru/redbyte/redbytefx/Shape;
+}
+
+public final class ru/redbyte/redbytefx/FrameClock {
+	public static final field Companion Lru/redbyte/redbytefx/FrameClock$Companion;
+	public static final field DEFAULT_MAX_STEP_NANOS J
+	public fun <init> ()V
+	public fun <init> (J)V
+	public synthetic fun <init> (JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getSeconds ()F
+	public final fun pause ()V
+	public final fun secondsWithOffset (F)F
+	public final fun tick (J)F
+}
+
+public final class ru/redbyte/redbytefx/FrameClock$Companion {
+}
+
+public final class ru/redbyte/redbytefx/FxUniformValueKt {
+	public static final fun sameFloatUniformValue (FF)Z
+}
+
+public final class ru/redbyte/redbytefx/GeometryDsl {
+	public final fun at (Lru/redbyte/redbytefx/Varying;I)Lru/redbyte/redbytefx/Expr;
+	public final fun at (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun emitVertex ()V
+	public final fun endPrimitive ()V
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun glIn (I)Lru/redbyte/redbytefx/Expr;
+	public final fun glIn (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun glPosition (Lru/redbyte/redbytefx/Expr;)V
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/GeometryDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun set (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/GeometryInput : java/lang/Enum {
+	public static final field Lines Lru/redbyte/redbytefx/GeometryInput;
+	public static final field LinesAdjacency Lru/redbyte/redbytefx/GeometryInput;
+	public static final field Points Lru/redbyte/redbytefx/GeometryInput;
+	public static final field Triangles Lru/redbyte/redbytefx/GeometryInput;
+	public static final field TrianglesAdjacency Lru/redbyte/redbytefx/GeometryInput;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/GeometryInput;
+	public static fun values ()[Lru/redbyte/redbytefx/GeometryInput;
+}
+
+public final class ru/redbyte/redbytefx/GeometryOutput : java/lang/Enum {
+	public static final field LineStrip Lru/redbyte/redbytefx/GeometryOutput;
+	public static final field Points Lru/redbyte/redbytefx/GeometryOutput;
+	public static final field TriangleStrip Lru/redbyte/redbytefx/GeometryOutput;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/GeometryOutput;
+	public static fun values ()[Lru/redbyte/redbytefx/GeometryOutput;
+}
+
+public abstract interface class ru/redbyte/redbytefx/High : ru/redbyte/redbytefx/Prec {
+}
+
+public final class ru/redbyte/redbytefx/IntArithKt {
+	public static final fun divInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun getIntLit (I)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun negInt (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun toFloat (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public abstract interface class ru/redbyte/redbytefx/IntS : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/LocalVar {
+	public final fun getExpr ()Lru/redbyte/redbytefx/Expr;
+	public final fun set (Lru/redbyte/redbytefx/Expr;)V
+}
+
+public abstract interface class ru/redbyte/redbytefx/Mat2 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/Mat3 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/Mat4 : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/MatrixKt {
+	public static final fun mat2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mat3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mat4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat2Mat2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat2Vec2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat3Mat3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat3Vec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat4Mat4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMat4Vec4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public abstract interface class ru/redbyte/redbytefx/Med : ru/redbyte/redbytefx/Prec {
+}
+
+public abstract interface class ru/redbyte/redbytefx/Prec {
+}
+
+public final class ru/redbyte/redbytefx/Precision : java/lang/Enum {
+	public static final field High Lru/redbyte/redbytefx/Precision;
+	public static final field Med Lru/redbyte/redbytefx/Precision;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/Precision;
+	public static fun values ()[Lru/redbyte/redbytefx/Precision;
+}
+
+public final class ru/redbyte/redbytefx/R {
+}
+
+public final class ru/redbyte/redbytefx/RedByteFxApis {
+	public static final field AGSL_MIN_SDK I
+	public static final field DOCS_BASE_URL Ljava/lang/String;
+	public static final field GLES30_MIN_SDK I
+	public static final field GLES31_MIN_SDK I
+	public static final field GLES32_MIN_SDK I
+	public static final field INSTANCE Lru/redbyte/redbytefx/RedByteFxApis;
+}
+
+public abstract interface annotation class ru/redbyte/redbytefx/RedByteFxDsl : java/lang/annotation/Annotation {
+}
+
+public final class ru/redbyte/redbytefx/RedByteFxPlatform {
+	public static final field INSTANCE Lru/redbyte/redbytefx/RedByteFxPlatform;
+	public final fun isAgslSupported ()Z
+	public final fun requireAgslRuntime ()V
+}
+
+public abstract interface class ru/redbyte/redbytefx/Sampler2D : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/SamplerCube : ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/ScalarKind : java/lang/Enum {
+	public static final field Bool Lru/redbyte/redbytefx/ScalarKind;
+	public static final field Float Lru/redbyte/redbytefx/ScalarKind;
+	public static final field Int Lru/redbyte/redbytefx/ScalarKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/ScalarKind;
+	public static fun values ()[Lru/redbyte/redbytefx/ScalarKind;
+}
+
+public abstract interface class ru/redbyte/redbytefx/ShType {
+}
+
+public final class ru/redbyte/redbytefx/ShaderDsl {
+	public final fun compute (IIILkotlin/jvm/functions/Function1;)V
+	public final fun compute (IILkotlin/jvm/functions/Function1;)V
+	public final fun compute (ILkotlin/jvm/functions/Function1;)V
+	public final fun fragment (Lkotlin/jvm/functions/Function1;)V
+	public final fun geometry (Lru/redbyte/redbytefx/GeometryInput;Lru/redbyte/redbytefx/GeometryOutput;ILkotlin/jvm/functions/Function1;)V
+	public final fun sampler2D (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun samplerCube (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun storageBlock (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/StorageBlock;
+	public final fun tessControl (ILkotlin/jvm/functions/Function1;)V
+	public final fun tessEval (Lru/redbyte/redbytefx/TessPrimitive;Lru/redbyte/redbytefx/TessSpacing;Lru/redbyte/redbytefx/TessVertexOrder;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun tessEval$default (Lru/redbyte/redbytefx/ShaderDsl;Lru/redbyte/redbytefx/TessPrimitive;Lru/redbyte/redbytefx/TessSpacing;Lru/redbyte/redbytefx/TessVertexOrder;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun uniform (Ljava/lang/String;F)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformBlock (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/UniformBlock;
+	public final fun uniformBool (Ljava/lang/String;Z)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformInt (Ljava/lang/String;I)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMat2 (Ljava/lang/String;[F)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMat2$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;[FILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMat3 (Ljava/lang/String;[F)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMat3$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;[FILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMat4 (Ljava/lang/String;[F)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMat4$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;[FILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMedium (Ljava/lang/String;F)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMediumVec2 (Ljava/lang/String;FF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMediumVec2$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMediumVec3 (Ljava/lang/String;FFF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMediumVec3$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformMediumVec4 (Ljava/lang/String;FFFF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformMediumVec4$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFFFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformTime (FLjava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformTime$default (Lru/redbyte/redbytefx/ShaderDsl;FLjava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformVec2 (Ljava/lang/String;FF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformVec2$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformVec3 (Ljava/lang/String;FFF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformVec3$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun uniformVec4 (Ljava/lang/String;FFFF)Lru/redbyte/redbytefx/Uniform;
+	public static synthetic fun uniformVec4$default (Lru/redbyte/redbytefx/ShaderDsl;Ljava/lang/String;FFFFILjava/lang/Object;)Lru/redbyte/redbytefx/Uniform;
+	public final fun varyingFloat (Ljava/lang/String;)Lru/redbyte/redbytefx/Varying;
+	public final fun varyingVec2 (Ljava/lang/String;)Lru/redbyte/redbytefx/Varying;
+	public final fun varyingVec3 (Ljava/lang/String;)Lru/redbyte/redbytefx/Varying;
+	public final fun varyingVec4 (Ljava/lang/String;)Lru/redbyte/redbytefx/Varying;
+	public final fun vertex (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class ru/redbyte/redbytefx/ShaderDsl$VertexDsl {
+	public fun <init> (Lru/redbyte/redbytefx/ShaderDsl;)V
+	public final fun attributeVec2 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun attributeVec3 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun attributeVec4 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun glPosition (Lru/redbyte/redbytefx/Expr;)V
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/ShaderDsl$VertexDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun set (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/ShaderDslKt {
+	public static final fun shader (Lru/redbyte/redbytefx/ShaderTarget;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/ShaderProgram;
+}
+
+public final class ru/redbyte/redbytefx/ShaderProgram {
+	public final fun agslSource ()Ljava/lang/String;
+	public final fun boolUniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun computeSource ()Ljava/lang/String;
+	public final fun floatUniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun fragmentSource ()Ljava/lang/String;
+	public final fun geometrySource ()Ljava/lang/String;
+	public final fun getResolution ()Lru/redbyte/redbytefx/Uniform;
+	public final fun getStorageBlock ()Lru/redbyte/redbytefx/StorageBlock;
+	public final fun getStorageBlocks ()Ljava/util/List;
+	public final fun getTarget ()Lru/redbyte/redbytefx/ShaderTarget;
+	public final fun getUniformBlock ()Lru/redbyte/redbytefx/UniformBlock;
+	public final fun getUniformBlocks ()Ljava/util/List;
+	public final fun hasGeometry ()Z
+	public final fun hasTessellation ()Z
+	public final fun intUniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mat2Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mat3Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mat4Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mediumFloatUniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mediumVec2Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mediumVec3Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun mediumVec4Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun spelledUniforms ()Ljava/util/List;
+	public final fun tessControlSource ()Ljava/lang/String;
+	public final fun tessEvalSource ()Ljava/lang/String;
+	public final fun vec2Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun vec3Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun vec4Uniform (Ljava/lang/String;)Lru/redbyte/redbytefx/Uniform;
+	public final fun vertexSource ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/ShaderTarget : java/lang/Enum {
+	public static final field Agsl Lru/redbyte/redbytefx/ShaderTarget;
+	public static final field Gles30 Lru/redbyte/redbytefx/ShaderTarget;
+	public static final field Gles31 Lru/redbyte/redbytefx/ShaderTarget;
+	public static final field Gles32 Lru/redbyte/redbytefx/ShaderTarget;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/ShaderTarget;
+	public static fun values ()[Lru/redbyte/redbytefx/ShaderTarget;
+}
+
+public abstract interface class ru/redbyte/redbytefx/Shape {
+}
+
+public final class ru/redbyte/redbytefx/Shape$ChildShader : ru/redbyte/redbytefx/Shape {
+	public static final field INSTANCE Lru/redbyte/redbytefx/Shape$ChildShader;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/Shape$Matrix : ru/redbyte/redbytefx/Shape {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lru/redbyte/redbytefx/Shape$Matrix;
+	public static synthetic fun copy$default (Lru/redbyte/redbytefx/Shape$Matrix;IILjava/lang/Object;)Lru/redbyte/redbytefx/Shape$Matrix;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLanes ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/Shape$Sampler2D : ru/redbyte/redbytefx/Shape {
+	public static final field INSTANCE Lru/redbyte/redbytefx/Shape$Sampler2D;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/Shape$SamplerCube : ru/redbyte/redbytefx/Shape {
+	public static final field INSTANCE Lru/redbyte/redbytefx/Shape$SamplerCube;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/Shape$Scalar : ru/redbyte/redbytefx/Shape {
+	public fun <init> (Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;)V
+	public final fun component1 ()Lru/redbyte/redbytefx/ScalarKind;
+	public final fun component2 ()Lru/redbyte/redbytefx/Precision;
+	public final fun copy (Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;)Lru/redbyte/redbytefx/Shape$Scalar;
+	public static synthetic fun copy$default (Lru/redbyte/redbytefx/Shape$Scalar;Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;ILjava/lang/Object;)Lru/redbyte/redbytefx/Shape$Scalar;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lru/redbyte/redbytefx/ScalarKind;
+	public final fun getPrecision ()Lru/redbyte/redbytefx/Precision;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/Shape$Vector : ru/redbyte/redbytefx/Shape {
+	public fun <init> (Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;I)V
+	public final fun component1 ()Lru/redbyte/redbytefx/ScalarKind;
+	public final fun component2 ()Lru/redbyte/redbytefx/Precision;
+	public final fun component3 ()I
+	public final fun copy (Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;I)Lru/redbyte/redbytefx/Shape$Vector;
+	public static synthetic fun copy$default (Lru/redbyte/redbytefx/Shape$Vector;Lru/redbyte/redbytefx/ScalarKind;Lru/redbyte/redbytefx/Precision;IILjava/lang/Object;)Lru/redbyte/redbytefx/Shape$Vector;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lru/redbyte/redbytefx/ScalarKind;
+	public final fun getLanes ()I
+	public final fun getPrecision ()Lru/redbyte/redbytefx/Precision;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/SpelledUniform {
+	public final fun getName ()Ljava/lang/String;
+	public final fun getUniform ()Lru/redbyte/redbytefx/Uniform;
+}
+
+public final class ru/redbyte/redbytefx/StorageArray {
+	public final fun get (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/StorageBlock {
+	public final fun byteSize (I)I
+	public final fun getBinding ()I
+	public final fun getByteSize ()I
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOffsets ()[I
+	public final fun getTypeName ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/StorageBlockBuilder {
+	public final fun compute (IIILkotlin/jvm/functions/Function1;)V
+	public final fun compute (IILkotlin/jvm/functions/Function1;)V
+	public final fun compute (ILkotlin/jvm/functions/Function1;)V
+	public final fun float (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun floatArray (Ljava/lang/String;)Lru/redbyte/redbytefx/StorageArray;
+	public final fun floatArray (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec2 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec2Array (Ljava/lang/String;)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec2Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec3 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec3Array (Ljava/lang/String;)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec3Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec4 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec4Array (Ljava/lang/String;)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec4Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+}
+
+public final class ru/redbyte/redbytefx/StorageBlockKt {
+	public static final fun packStd430 (Lru/redbyte/redbytefx/StorageBlock;[F)[B
+	public static final fun packStd430Into (Lru/redbyte/redbytefx/StorageBlock;[F[B)V
+	public static final fun unpackStd430 (Lru/redbyte/redbytefx/StorageBlock;Ljava/nio/ByteBuffer;I[F)I
+}
+
+public final class ru/redbyte/redbytefx/SugarKt {
+	public static final fun clamp (Lru/redbyte/redbytefx/Expr;FF)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorFromHighVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorFromMedVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorHigh (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorHighChannelsMedAlpha (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorMed (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorVec3HighAlphaFloat (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorVec3HighAlphaHigh (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorVec3HighAlphaMed (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun colorVec3Med (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divFloatScalar (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun divScalarFloat (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec2Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec3Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun divVec4Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun eq (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun float (F)Lru/redbyte/redbytefx/Expr;
+	public static final fun float2 (FF)Lru/redbyte/redbytefx/Expr;
+	public static final fun float2 (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float2 (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun float2 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float3 (FFF)Lru/redbyte/redbytefx/Expr;
+	public static final fun float3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float4 (FFFF)Lru/redbyte/redbytefx/Expr;
+	public static final fun float4 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float4Vec3HighMed (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun float4Vec3Same (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ge (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun grayscale (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gt (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun gte (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun gte (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gteInt (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun le (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun lt (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun luminance (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun max (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun max (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun min (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun min (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFloatScalar (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusFloatVec2 (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusScalarFloat (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec2Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec3Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun minusVec4Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun mix (FFLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mix (FLru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mix (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun mixFloatMedHighAmount (FLru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mixMedScalarHighAmount (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mixMedVec3HighAmount (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun mixMedVec4HighAmount (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun ne (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFloatScalar (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusFloatVec2 (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusMedScalarHigh (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusMedVec3HighVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusScalarFloat (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec2Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec3Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun plusVec4Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun pow (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun smoothstep (FFLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun smoothstep (FLru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun step (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFloatScalar (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesFloatVec2 (FLru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMedScalarHigh (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMedVec3HighScalar (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMedVec3HighVec3 (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesMedVec4High (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesScalarFloat (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec2Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec3Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun timesVec4Float (Lru/redbyte/redbytefx/Expr;F)Lru/redbyte/redbytefx/Expr;
+	public static final fun toHigh (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun toMedScalar (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun toMedVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun toMedVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/SwizzleAccessKt {
+	public static final fun aVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun bVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun gVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun rVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun rgVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun rgbVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun rgbVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun rgbaVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun wVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xIntVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyzVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyzVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xyzwVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xzVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun xzVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun yIntVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun yVec2 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun yVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun yVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun zIntVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun zVec3 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public static final fun zVec4 (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+}
+
+public final class ru/redbyte/redbytefx/TessControlDsl {
+	public final fun at (Lru/redbyte/redbytefx/Varying;I)Lru/redbyte/redbytefx/Expr;
+	public final fun at (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun glIn (I)Lru/redbyte/redbytefx/Expr;
+	public final fun glIn (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/TessControlDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun passPosition ()V
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun set (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)V
+	public final fun tessLevelInner (ILru/redbyte/redbytefx/Expr;)V
+	public final fun tessLevelOuter (ILru/redbyte/redbytefx/Expr;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/TessEvalDsl {
+	public final fun at (Lru/redbyte/redbytefx/Varying;I)Lru/redbyte/redbytefx/Expr;
+	public final fun at (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun fn (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lru/redbyte/redbytefx/Fn0;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lru/redbyte/redbytefx/Fn1;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)Lru/redbyte/redbytefx/Fn2;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;)Lru/redbyte/redbytefx/Fn3;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;)Lru/redbyte/redbytefx/Fn4;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;)Lru/redbyte/redbytefx/Fn5;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;)Lru/redbyte/redbytefx/Fn6;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;)Lru/redbyte/redbytefx/Fn7;
+	public final fun fn (Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;)Lru/redbyte/redbytefx/Fn8;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn0;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn1;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn2;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn3;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function5;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn4;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function6;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn5;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function7;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn6;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function8;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn7;
+	public static synthetic fun fn$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;Lkotlin/jvm/functions/Function9;ILjava/lang/Object;)Lru/redbyte/redbytefx/Fn8;
+	public final fun getTessCoord ()Lru/redbyte/redbytefx/Expr;
+	public final fun glIn (I)Lru/redbyte/redbytefx/Expr;
+	public final fun glIn (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun glPosition (Lru/redbyte/redbytefx/Expr;)V
+	public final fun local (Lru/redbyte/redbytefx/Expr;Ljava/lang/String;)Lru/redbyte/redbytefx/LocalVar;
+	public static synthetic fun local$default (Lru/redbyte/redbytefx/TessEvalDsl;Lru/redbyte/redbytefx/Expr;Ljava/lang/String;ILjava/lang/Object;)Lru/redbyte/redbytefx/LocalVar;
+	public final fun recur (Lru/redbyte/redbytefx/Expr;)Lru/redbyte/redbytefx/Expr;
+	public final fun repeat (ILkotlin/jvm/functions/Function1;)V
+	public final fun set (Lru/redbyte/redbytefx/Varying;Lru/redbyte/redbytefx/Expr;)V
+	public final fun whenTrue (Lru/redbyte/redbytefx/Expr;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class ru/redbyte/redbytefx/TessPrimitive : java/lang/Enum {
+	public static final field Isolines Lru/redbyte/redbytefx/TessPrimitive;
+	public static final field Quads Lru/redbyte/redbytefx/TessPrimitive;
+	public static final field Triangles Lru/redbyte/redbytefx/TessPrimitive;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/TessPrimitive;
+	public static fun values ()[Lru/redbyte/redbytefx/TessPrimitive;
+}
+
+public final class ru/redbyte/redbytefx/TessSpacing : java/lang/Enum {
+	public static final field Equal Lru/redbyte/redbytefx/TessSpacing;
+	public static final field FractionalEven Lru/redbyte/redbytefx/TessSpacing;
+	public static final field FractionalOdd Lru/redbyte/redbytefx/TessSpacing;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/TessSpacing;
+	public static fun values ()[Lru/redbyte/redbytefx/TessSpacing;
+}
+
+public final class ru/redbyte/redbytefx/TessVertexOrder : java/lang/Enum {
+	public static final field Ccw Lru/redbyte/redbytefx/TessVertexOrder;
+	public static final field Cw Lru/redbyte/redbytefx/TessVertexOrder;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/TessVertexOrder;
+	public static fun values ()[Lru/redbyte/redbytefx/TessVertexOrder;
+}
+
+public final class ru/redbyte/redbytefx/Uniform {
+	public final fun getBoolDefault ()Ljava/lang/Boolean;
+	public final fun getComponents ()[F
+	public final fun getDefault ()Ljava/lang/Float;
+	public final fun getExpr ()Lru/redbyte/redbytefx/Expr;
+	public final fun getIntDefault ()Ljava/lang/Integer;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getShape ()Lru/redbyte/redbytefx/Shape;
+}
+
+public final class ru/redbyte/redbytefx/UniformBlock {
+	public final fun getBinding ()I
+	public final fun getByteSize ()I
+	public final fun getFloatCount ()I
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOffsets ()[I
+	public final fun getTypeName ()Ljava/lang/String;
+}
+
+public final class ru/redbyte/redbytefx/UniformBlockBuilder {
+	public final fun float (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun floatArray (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun fragment (Lkotlin/jvm/functions/Function1;)V
+	public final fun mat2 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun mat3 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun mat4 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec2 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec2Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec3 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec3Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vec4 (Ljava/lang/String;)Lru/redbyte/redbytefx/Expr;
+	public final fun vec4Array (Ljava/lang/String;I)Lru/redbyte/redbytefx/StorageArray;
+	public final fun vertex (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class ru/redbyte/redbytefx/UniformBlockKt {
+	public static final fun packStd140 (Lru/redbyte/redbytefx/UniformBlock;[F)[B
+	public static final fun packStd140Into (Lru/redbyte/redbytefx/UniformBlock;[F[B)V
+	public static final fun unpackStd140 (Lru/redbyte/redbytefx/UniformBlock;Ljava/nio/ByteBuffer;[F)I
+}
+
+public final class ru/redbyte/redbytefx/Varying {
+	public final fun getExpr ()Lru/redbyte/redbytefx/Expr;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getShape ()Lru/redbyte/redbytefx/Shape;
+}
+
+public abstract interface class ru/redbyte/redbytefx/Vec2 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/Vec3 : ru/redbyte/redbytefx/ShType {
+}
+
+public abstract interface class ru/redbyte/redbytefx/Vec4 : ru/redbyte/redbytefx/ShType {
+}
+

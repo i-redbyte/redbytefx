@@ -1,0 +1,308 @@
+public final class ru/redbyte/redbytefx/gl/BufferUploadKind : java/lang/Enum {
+	public static final field Full Lru/redbyte/redbytefx/gl/BufferUploadKind;
+	public static final field Sub Lru/redbyte/redbytefx/gl/BufferUploadKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/BufferUploadKind;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/BufferUploadKind;
+}
+
+public final class ru/redbyte/redbytefx/gl/CubeFace : java/lang/Enum {
+	public static final field NegativeX Lru/redbyte/redbytefx/gl/CubeFace;
+	public static final field NegativeY Lru/redbyte/redbytefx/gl/CubeFace;
+	public static final field NegativeZ Lru/redbyte/redbytefx/gl/CubeFace;
+	public static final field PositiveX Lru/redbyte/redbytefx/gl/CubeFace;
+	public static final field PositiveY Lru/redbyte/redbytefx/gl/CubeFace;
+	public static final field PositiveZ Lru/redbyte/redbytefx/gl/CubeFace;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/CubeFace;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/CubeFace;
+}
+
+public final class ru/redbyte/redbytefx/gl/DrawKind : java/lang/Enum {
+	public static final field Arrays Lru/redbyte/redbytefx/gl/DrawKind;
+	public static final field ArraysInstanced Lru/redbyte/redbytefx/gl/DrawKind;
+	public static final field Elements Lru/redbyte/redbytefx/gl/DrawKind;
+	public static final field ElementsInstanced Lru/redbyte/redbytefx/gl/DrawKind;
+	public static final field None Lru/redbyte/redbytefx/gl/DrawKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/DrawKind;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/DrawKind;
+}
+
+public final class ru/redbyte/redbytefx/gl/GlCode : java/lang/Enum {
+	public static final field BlockBindingLimit Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field CompileFailed Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field Destroyed Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field DriverError Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field FeedbackLoop Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field FramebufferIncomplete Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field LinkFailed Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field MissingUniformLocation Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field NotLinked Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field TextureUnitLimit Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field UniformBlockNotBound Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field WrongTarget Lru/redbyte/redbytefx/gl/GlCode;
+	public static final field WrongThread Lru/redbyte/redbytefx/gl/GlCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/GlCode;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/GlCode;
+}
+
+public final class ru/redbyte/redbytefx/gl/GlColorTarget {
+	public fun <init> (IIIII)V
+	public final fun getColorTexture ()I
+	public final fun getDepthRenderbuffer ()I
+	public final fun getFramebuffer ()I
+	public final fun getHeight ()I
+	public final fun getWidth ()I
+}
+
+public final class ru/redbyte/redbytefx/gl/GlCompileStatus {
+	public fun <init> (ZLjava/lang/String;)V
+	public final fun getInfoLog ()Ljava/lang/String;
+	public final fun getOk ()Z
+}
+
+public abstract class ru/redbyte/redbytefx/gl/GlDevice {
+	public fun <init> ()V
+	public abstract fun activeTexture (I)V
+	public abstract fun arrayBufferData (I[F)V
+	public abstract fun arrayBufferSubData (I[F)V
+	public abstract fun attachShader (II)V
+	public abstract fun attribLocation (ILjava/lang/String;)I
+	public abstract fun bindFramebuffer (I)V
+	public abstract fun bindShaderStorageBase (II)V
+	public abstract fun bindTexture2D (I)V
+	public abstract fun bindTextureCube (I)V
+	public abstract fun bindUniformBufferBase (II)V
+	public abstract fun bufferUpdateBarrier ()V
+	public abstract fun compileShader (I)Lru/redbyte/redbytefx/gl/GlCompileStatus;
+	public abstract fun createBuffer ()I
+	public abstract fun createFramebuffer ()I
+	public abstract fun createProgram ()I
+	public abstract fun createRenderbuffer ()I
+	public abstract fun createShader (Lru/redbyte/redbytefx/gl/GlStage;)I
+	public abstract fun createTexture ()I
+	public abstract fun deleteBuffer (I)V
+	public abstract fun deleteFramebuffer (I)V
+	public abstract fun deleteProgram (I)V
+	public abstract fun deleteRenderbuffer (I)V
+	public abstract fun deleteShader (I)V
+	public abstract fun deleteTexture (I)V
+	public abstract fun disableVertexAttribArray (I)V
+	public abstract fun dispatchCompute (III)V
+	public abstract fun drawArrays (III)V
+	public abstract fun drawArraysInstanced (IIII)V
+	public abstract fun drawElements (IIZI)V
+	public abstract fun drawElementsInstanced (IIZII)V
+	public abstract fun elementBufferData (I[IZ)V
+	public abstract fun filterMipmap2D (I)V
+	public fun flushGlErrors (Ljava/lang/String;)V
+	public abstract fun framebufferColor (II)V
+	public abstract fun framebufferComplete (I)Z
+	public abstract fun framebufferDepth (IIII)V
+	public abstract fun generateMipmap2D (I)V
+	public abstract fun linkProgram (I)Lru/redbyte/redbytefx/gl/GlCompileStatus;
+	public abstract fun mapShaderStorageRead (II)Ljava/nio/ByteBuffer;
+	public abstract fun maxCombinedTextureImageUnits ()I
+	public abstract fun maxShaderStorageBufferBindings ()I
+	public abstract fun maxUniformBufferBindings ()I
+	public abstract fun readPixelsRgba (IIII[B)V
+	public abstract fun shaderSource (ILjava/lang/String;)V
+	public abstract fun shaderStorageBarrier ()V
+	public abstract fun shaderStorageData (I[B)V
+	public abstract fun shaderStorageSubData (I[B)V
+	public fun takeGlError ()I
+	public abstract fun texImage2DRgba (III[B)V
+	public abstract fun texImage2DRgbaAlloc (III)V
+	public abstract fun texImageCubeFace (ILru/redbyte/redbytefx/gl/CubeFace;II[B)V
+	public abstract fun texSubImage2DRgba (IIIII[B)V
+	public abstract fun texture2DLinearClamp (I)V
+	public abstract fun texture2DLinearRepeat (I)V
+	public abstract fun textureCubeLinearClamp (I)V
+	public abstract fun unbindVertexArray ()V
+	public abstract fun uniform1f (IF)V
+	public abstract fun uniform1i (II)V
+	public abstract fun uniform2f (IFF)V
+	public abstract fun uniform3f (IFFF)V
+	public abstract fun uniform4f (IFFFF)V
+	public abstract fun uniformBlockBinding (III)V
+	public abstract fun uniformBlockIndex (ILjava/lang/String;)I
+	public abstract fun uniformBufferData (I[B)V
+	public abstract fun uniformBufferSubData (I[B)V
+	public abstract fun uniformLocation (ILjava/lang/String;)I
+	public abstract fun uniformMatrix2fv (I[F)V
+	public abstract fun uniformMatrix3fv (I[F)V
+	public abstract fun uniformMatrix4fv (I[F)V
+	public abstract fun unmapShaderStorage (I)V
+	public abstract fun useProgram (I)V
+	public abstract fun vertexAttribDivisor (II)V
+	public abstract fun vertexAttribFloat (IIII)V
+}
+
+public final class ru/redbyte/redbytefx/gl/GlDrawPlanKt {
+	public static final field INDEX_SHORT_LIMIT I
+	public static final fun indexElementKind ([I)Lru/redbyte/redbytefx/gl/IndexElementKind;
+	public static final fun planBufferUpload (II)Lru/redbyte/redbytefx/gl/BufferUploadKind;
+	public static final fun planDraw (ILjava/lang/Integer;Ljava/lang/Integer;)Lru/redbyte/redbytefx/gl/DrawKind;
+}
+
+public final class ru/redbyte/redbytefx/gl/GlException : java/lang/IllegalStateException {
+	public fun <init> (Lru/redbyte/redbytefx/gl/GlCode;Ljava/lang/String;)V
+	public final fun getCode ()Lru/redbyte/redbytefx/gl/GlCode;
+}
+
+public final class ru/redbyte/redbytefx/gl/GlProgramRuntime {
+	public fun <init> (Lru/redbyte/redbytefx/ShaderProgram;Lru/redbyte/redbytefx/gl/GlDevice;Ljava/lang/Thread;ZLru/redbyte/redbytefx/gl/GlTextureUnits;Z)V
+	public synthetic fun <init> (Lru/redbyte/redbytefx/ShaderProgram;Lru/redbyte/redbytefx/gl/GlDevice;Ljava/lang/Thread;ZLru/redbyte/redbytefx/gl/GlTextureUnits;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun attribLocation (Ljava/lang/String;)I
+	public final fun bind (Lru/redbyte/redbytefx/Uniform;I)Z
+	public final fun bindCube (Lru/redbyte/redbytefx/Uniform;I)Z
+	public final fun bindFramebuffer (I)V
+	public final fun createBuffer ()I
+	public final fun createColorTarget (II)Lru/redbyte/redbytefx/gl/GlColorTarget;
+	public final fun createTexture ()I
+	public final fun deleteBuffer (I)V
+	public final fun deleteColorTarget (Lru/redbyte/redbytefx/gl/GlColorTarget;)V
+	public final fun deleteTexture (I)V
+	public final fun destroy ()V
+	public final fun disableVertexAttribArray (I)V
+	public final fun dispatch (IIIZ)V
+	public static synthetic fun dispatch$default (Lru/redbyte/redbytefx/gl/GlProgramRuntime;IIIZILjava/lang/Object;)V
+	public final fun drawRange (IIIILru/redbyte/redbytefx/gl/IndexElementKind;Ljava/lang/Integer;)V
+	public final fun elementBufferData (I[I)Lru/redbyte/redbytefx/gl/IndexElementKind;
+	public final fun filterMipmap2D (I)V
+	public final fun generateMipmap2D (I)V
+	public final fun link ()V
+	public final fun readColorTarget (Lru/redbyte/redbytefx/gl/GlColorTarget;[B)V
+	public final fun readFramebuffer (II[B)V
+	public final fun readStorage (Lru/redbyte/redbytefx/StorageBlock;[F)I
+	public final fun replaceArrayBuffer (II[F)I
+	public final fun set (Lru/redbyte/redbytefx/Uniform;F)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;FFFF)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;I)Z
+	public final fun set (Lru/redbyte/redbytefx/Uniform;Z)Z
+	public final fun set (Lru/redbyte/redbytefx/UniformBlock;[F)Z
+	public final fun setMat2 (Lru/redbyte/redbytefx/Uniform;[F)Z
+	public final fun setMat3 (Lru/redbyte/redbytefx/Uniform;[F)Z
+	public final fun setMat4 (Lru/redbyte/redbytefx/Uniform;[F)Z
+	public final fun setMedFloat (Lru/redbyte/redbytefx/Uniform;F)Z
+	public final fun setMedVec2 (Lru/redbyte/redbytefx/Uniform;FF)Z
+	public final fun setMedVec3 (Lru/redbyte/redbytefx/Uniform;FFF)Z
+	public final fun setMedVec4 (Lru/redbyte/redbytefx/Uniform;FFFF)Z
+	public final fun setResolution (FF)Z
+	public final fun setStorage (Lru/redbyte/redbytefx/StorageBlock;[F)Z
+	public final fun texSubImage2DRgba (IIIIIII[B)V
+	public final fun uploadCubeFace (ILru/redbyte/redbytefx/gl/CubeFace;II[B)V
+	public final fun uploadRgba (II[B)I
+	public final fun use ()V
+	public final fun vertexAttribDivisor (II)V
+	public final fun vertexAttribFloat (IIII)V
+}
+
+public final class ru/redbyte/redbytefx/gl/GlStage : java/lang/Enum {
+	public static final field Compute Lru/redbyte/redbytefx/gl/GlStage;
+	public static final field Fragment Lru/redbyte/redbytefx/gl/GlStage;
+	public static final field Geometry Lru/redbyte/redbytefx/gl/GlStage;
+	public static final field TessControl Lru/redbyte/redbytefx/gl/GlStage;
+	public static final field TessEval Lru/redbyte/redbytefx/gl/GlStage;
+	public static final field Vertex Lru/redbyte/redbytefx/gl/GlStage;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/GlStage;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/GlStage;
+}
+
+public final class ru/redbyte/redbytefx/gl/GlTextureUnits {
+	public fun <init> ()V
+}
+
+public final class ru/redbyte/redbytefx/gl/Gles30Device : ru/redbyte/redbytefx/gl/GlDevice {
+	public fun <init> ()V
+	public fun activeTexture (I)V
+	public fun arrayBufferData (I[F)V
+	public fun arrayBufferSubData (I[F)V
+	public fun attachShader (II)V
+	public fun attribLocation (ILjava/lang/String;)I
+	public fun bindFramebuffer (I)V
+	public fun bindShaderStorageBase (II)V
+	public fun bindTexture2D (I)V
+	public fun bindTextureCube (I)V
+	public fun bindUniformBufferBase (II)V
+	public fun bufferUpdateBarrier ()V
+	public fun compileShader (I)Lru/redbyte/redbytefx/gl/GlCompileStatus;
+	public fun createBuffer ()I
+	public fun createFramebuffer ()I
+	public fun createProgram ()I
+	public fun createRenderbuffer ()I
+	public fun createShader (Lru/redbyte/redbytefx/gl/GlStage;)I
+	public fun createTexture ()I
+	public fun deleteBuffer (I)V
+	public fun deleteFramebuffer (I)V
+	public fun deleteProgram (I)V
+	public fun deleteRenderbuffer (I)V
+	public fun deleteShader (I)V
+	public fun deleteTexture (I)V
+	public fun disableVertexAttribArray (I)V
+	public fun dispatchCompute (III)V
+	public fun drawArrays (III)V
+	public fun drawArraysInstanced (IIII)V
+	public fun drawElements (IIZI)V
+	public fun drawElementsInstanced (IIZII)V
+	public fun elementBufferData (I[IZ)V
+	public fun filterMipmap2D (I)V
+	public fun flushGlErrors (Ljava/lang/String;)V
+	public fun framebufferColor (II)V
+	public fun framebufferComplete (I)Z
+	public fun framebufferDepth (IIII)V
+	public fun generateMipmap2D (I)V
+	public fun linkProgram (I)Lru/redbyte/redbytefx/gl/GlCompileStatus;
+	public fun mapShaderStorageRead (II)Ljava/nio/ByteBuffer;
+	public fun maxCombinedTextureImageUnits ()I
+	public fun maxShaderStorageBufferBindings ()I
+	public fun maxUniformBufferBindings ()I
+	public fun readPixelsRgba (IIII[B)V
+	public fun shaderSource (ILjava/lang/String;)V
+	public fun shaderStorageBarrier ()V
+	public fun shaderStorageData (I[B)V
+	public fun shaderStorageSubData (I[B)V
+	public fun takeGlError ()I
+	public fun texImage2DRgba (III[B)V
+	public fun texImage2DRgbaAlloc (III)V
+	public fun texImageCubeFace (ILru/redbyte/redbytefx/gl/CubeFace;II[B)V
+	public fun texSubImage2DRgba (IIIII[B)V
+	public fun texture2DLinearClamp (I)V
+	public fun texture2DLinearRepeat (I)V
+	public fun textureCubeLinearClamp (I)V
+	public fun unbindVertexArray ()V
+	public fun uniform1f (IF)V
+	public fun uniform1i (II)V
+	public fun uniform2f (IFF)V
+	public fun uniform3f (IFFF)V
+	public fun uniform4f (IFFFF)V
+	public fun uniformBlockBinding (III)V
+	public fun uniformBlockIndex (ILjava/lang/String;)I
+	public fun uniformBufferData (I[B)V
+	public fun uniformBufferSubData (I[B)V
+	public fun uniformLocation (ILjava/lang/String;)I
+	public fun uniformMatrix2fv (I[F)V
+	public fun uniformMatrix3fv (I[F)V
+	public fun uniformMatrix4fv (I[F)V
+	public fun unmapShaderStorage (I)V
+	public fun useProgram (I)V
+	public fun vertexAttribDivisor (II)V
+	public fun vertexAttribFloat (IIII)V
+}
+
+public final class ru/redbyte/redbytefx/gl/IndexElementKind : java/lang/Enum {
+	public static final field UnsignedInt Lru/redbyte/redbytefx/gl/IndexElementKind;
+	public static final field UnsignedShort Lru/redbyte/redbytefx/gl/IndexElementKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lru/redbyte/redbytefx/gl/IndexElementKind;
+	public static fun values ()[Lru/redbyte/redbytefx/gl/IndexElementKind;
+}
+
+public final class ru/redbyte/redbytefx/gl/R {
+}
+

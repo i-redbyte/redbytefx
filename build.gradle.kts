@@ -1,10 +1,22 @@
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import kotlinx.validation.api.dump
+import kotlinx.validation.api.filterOutNonPublic
+import kotlinx.validation.api.loadApiFromJvmClasses
+import java.util.jar.JarFile
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
 import org.jetbrains.dokka.gradle.DokkaExtension
+
+buildscript {
+    dependencies {
+        classpath(libs.binary.compatibility.validator)
+        classpath(libs.kotlin.metadata.jvm)
+        classpath(libs.asm.tree)
+    }
+}
 
 plugins {
     alias(libs.plugins.dokka) apply false
@@ -45,6 +57,7 @@ subprojects {
     // Every library publishes the same way; a module's gradle.properties names it.
     pluginManager.withPlugin("com.vanniktech.maven.publish.base") {
         configureRedbytePublishing()
+        registerPublicApiTasks()
     }
 
     pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
@@ -113,6 +126,65 @@ subprojects {
             }
         }
     }
+}
+
+/**
+ * apiDump records the public JVM API of the release classes in api/<module>.api; apiCheck fails
+ * when the compiled API no longer matches it, so an incompatible change cannot ship unnoticed.
+ * Kotlin `internal` declarations are filtered out through their metadata.
+ */
+private fun Project.registerPublicApiTasks() {
+    val classesJar = layout.buildDirectory.file(
+        "intermediates/compile_library_classes_jar/release/bundleLibCompileToJarRelease/classes.jar",
+    )
+    val dumpFile = layout.projectDirectory.file("api/$name.api")
+    val module = path
+    tasks.register("apiDump") {
+        group = "verification"
+        description = "Writes the public API of this library to api/$name.api."
+        dependsOn("bundleLibCompileToJarRelease")
+        inputs.file(classesJar)
+        outputs.file(dumpFile)
+        doLast {
+            val file = dumpFile.asFile
+            file.parentFile.mkdirs()
+            file.writeText(publicApiOf(classesJar.get().asFile))
+        }
+    }
+    tasks.register("apiCheck") {
+        group = "verification"
+        description = "Fails when the public API differs from api/$name.api."
+        dependsOn("bundleLibCompileToJarRelease")
+        inputs.file(classesJar)
+        inputs.file(dumpFile)
+        doLast {
+            val recorded = dumpFile.asFile
+            check(recorded.isFile) { "$module has no ${recorded.name}; run ./gradlew apiDump" }
+            val actual = publicApiOf(classesJar.get().asFile)
+            check(recorded.readText() == actual) {
+                val removed = recorded.readLines() - actual.lines().toSet()
+                val added = actual.lines() - recorded.readLines().toSet()
+                buildString {
+                    append("Public API of $module changed. If intended, run ./gradlew apiDump.\n")
+                    removed.filter { it.isNotBlank() }.forEach { append("- ").append(it).append('\n') }
+                    added.filter { it.isNotBlank() }.forEach { append("+ ").append(it).append('\n') }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Public API dump of a release classes jar. ComposableSingletons classes hold compiler-generated
+ * lambdas whose names change with the source, so their blocks are dropped.
+ */
+private fun publicApiOf(jar: java.io.File): String {
+    val dump = JarFile(jar).use { classes ->
+        buildString { classes.loadApiFromJvmClasses().filterOutNonPublic().dump(this) }
+    }
+    return dump.split("\n\n")
+        .filterNot { block -> "ComposableSingletons$" in block.lineSequence().first() }
+        .joinToString("\n\n")
 }
 
 private fun Project.configureRedbytePublishing() {
@@ -308,8 +380,14 @@ tasks.register("installGitHooks") {
 
 tasks.register("qualityCheck") {
     group = "verification"
-    description = "Unit tests, sample compilation, Detekt, and Android Lint."
+    description = "Unit tests, sample compilation, Detekt, Android Lint, and the public API check."
     dependsOn(
+        ":redbytefx-core:apiCheck",
+        ":redbytefx-gl:apiCheck",
+        ":redbytefx-gl-compose:apiCheck",
+        ":redbytefx-compose:apiCheck",
+        ":redbytefx-stdlib:apiCheck",
+        ":redbytefx-3d:apiCheck",
         ":redbytefx-core:lintDebug",
         ":redbytefx-gl:lintDebug",
         ":redbytefx-gl-compose:lintDebug",

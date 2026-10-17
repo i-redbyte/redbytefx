@@ -12,6 +12,8 @@ robolectric = "4.14.1"
 vanniktech-maven-publish = "0.36.0"
 annotation = "1.9.1"
 dokka = "2.2.0"
+binary-compatibility-validator = "0.18.1"
+asm = "9.8"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -22,6 +24,9 @@ vanniktech-maven-publish-base = { id = "com.vanniktech.maven.publish.base", vers
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [libraries]
+binary-compatibility-validator = { module = "org.jetbrains.kotlinx:binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 dokka-android-doc = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }

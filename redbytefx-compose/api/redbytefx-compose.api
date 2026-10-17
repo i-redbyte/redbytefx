@@ -1,0 +1,33 @@
+public final class ru/redbyte/redbytefx/compose/FxController {
+	public static final field $stable I
+	public final fun runBatch (Lkotlin/jvm/functions/Function0;)V
+	public final fun setFloat (Lru/redbyte/redbytefx/Uniform;F)V
+	public final fun setFloat2 (Lru/redbyte/redbytefx/Uniform;FF)V
+	public final fun setFloat3 (Lru/redbyte/redbytefx/Uniform;FFF)V
+	public final fun setFloat4 (Lru/redbyte/redbytefx/Uniform;FFFF)V
+	public final fun setInt (Lru/redbyte/redbytefx/Uniform;I)V
+	public final fun setMedFloat (Lru/redbyte/redbytefx/Uniform;F)V
+	public final fun setMedFloat2 (Lru/redbyte/redbytefx/Uniform;FF)V
+	public final fun setMedFloat3 (Lru/redbyte/redbytefx/Uniform;FFF)V
+	public final fun setMedFloat4 (Lru/redbyte/redbytefx/Uniform;FFFF)V
+	public final fun setResolution (FF)V
+}
+
+public final class ru/redbyte/redbytefx/compose/R {
+}
+
+public final class ru/redbyte/redbytefx/compose/RedByteFxComposeKt {
+	public static final fun bindFloat (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindFloat2 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindFloat3 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindFloat4 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFFFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindInt (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;ILandroidx/compose/runtime/Composer;I)V
+	public static final fun bindMedFloat (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindMedFloat2 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindMedFloat3 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindMedFloat4 (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;FFFFLandroidx/compose/runtime/Composer;I)V
+	public static final fun bindTime (Lru/redbyte/redbytefx/compose/FxController;Lru/redbyte/redbytefx/Uniform;ZFLandroidx/compose/runtime/Composer;II)V
+	public static final fun redbyteFx (Landroidx/compose/ui/Modifier;Lru/redbyte/redbytefx/compose/FxController;)Landroidx/compose/ui/Modifier;
+	public static final fun rememberFxController (Lru/redbyte/redbytefx/ShaderProgram;Landroidx/compose/runtime/Composer;I)Lru/redbyte/redbytefx/compose/FxController;
+}
+
