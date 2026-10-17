@@ -1,6 +1,7 @@
 package ru.redbyte.redbytefx.gl.compose
 
 import android.opengl.GLSurfaceView
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -24,6 +25,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 /** Shown when [GlCompute] is given a program that is not GLES 3.1 compute. */
+private const val COMPUTE_LOG_TAG = "RedByteFX"
+
 internal const val COMPUTE_HOST_TARGET: String = "GlCompute requires a GLES 3.1 compute program"
 
 /**
@@ -37,6 +40,7 @@ public fun GlCompute(
     controller: GlController,
     modifier: Modifier = Modifier,
     requirement: String? = controller.program.glLinkRequirementHint(),
+    failureOverlay: @Composable (Throwable) -> Unit = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
     overlay: @Composable (GlLinkState) -> Unit = { state ->
         if (state is GlLinkState.Failed) {
             GlLinkErrorOverlay(state.message)
@@ -45,6 +49,7 @@ public fun GlCompute(
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val linkState by controller.linkState
+    val failure by controller.failure
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     Box(modifier = modifier) {
         key(controller) {
@@ -66,7 +71,7 @@ public fun GlCompute(
                         renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
                         requestRender()
                     }
-                    controller.attachQueue(slot.queue)
+                    controller.attachQueue(slot.queue, slot.post)
                     glSurfaceView = surfaceView
                     surfaceView
                 },
@@ -115,6 +120,7 @@ public fun GlCompute(
             }
         }
         overlay(linkState)
+        failure?.let { failureOverlay(it) }
     }
 }
 
@@ -132,6 +138,10 @@ internal class ComputeRenderer(
     },
 ) : GLSurfaceView.Renderer {
     private var reported = false
+    private val guard = FrameGuard { error ->
+        Log.e(COMPUTE_LOG_TAG, "GlCompute failed to link", error)
+        if (error is GlException && error.code in LINK_CODES) fail(error) else controller.reportFailure(error)
+    }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         slot.runtime?.let { controller.detachRuntime(it) }
@@ -143,12 +153,10 @@ internal class ComputeRenderer(
             publish(GlLinkState.Failed(COMPUTE_HOST_TARGET))
             return
         }
-        val runtime = try {
-            link(controller.program, GlTextureUnits())
-        } catch (error: GlException) {
-            fail(error)
-            return
-        }
+        guard.resume()
+        var linked: GlProgramRuntime? = null
+        guard.run { linked = link(controller.program, GlTextureUnits()) }
+        val runtime = linked ?: return
         slot.runtime = runtime
         slot.captureContext()
         publish(GlLinkState.Linked)

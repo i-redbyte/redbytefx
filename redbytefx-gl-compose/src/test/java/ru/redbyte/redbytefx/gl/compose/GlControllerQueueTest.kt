@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
+import ru.redbyte.redbytefx.Mat4
 import ru.redbyte.redbytefx.Sampler2D
 import ru.redbyte.redbytefx.float2
 import ru.redbyte.redbytefx.ShaderTarget
@@ -39,7 +40,7 @@ class GlControllerQueueTest {
         }
         val queued = mutableListOf<() -> Unit>()
         val controller = GlController(owner, GlSurfaceConfig())
-        controller.attachQueue { queued += it }
+        controller.attachQueue(queue = { queued += it })
         val queuedBeforeWrites = queued.size
         assertThrows(IllegalArgumentException::class.java) {
             controller.set(foreign.floatUniform("u_amount"), 1f)
@@ -288,19 +289,59 @@ class GlControllerQueueTest {
         controller.set(bad, -1f)
         controller.set(good, 0.5f)
         controller.runOnGl { followed = true }
-        var thrown = 0
         var steps = 0
         while (queued.isNotEmpty() && steps < 8) {
             steps += 1
-            try {
-                queued.removeFirst().invoke()
-            } catch (error: IllegalStateException) {
-                thrown += 1
-            }
+            queued.removeFirst().invoke()
         }
-        assertEquals(1, thrown)
+        assertTrue(controller.failure.value is IllegalStateException)
         assertEquals(0.5f, device.lastFloat)
         assertTrue(followed)
+    }
+
+    @Test
+    fun malformedArraysAreRejectedOnTheCallingThread() {
+        lateinit var model: Uniform<Mat4>
+        lateinit var frame: UniformBlock
+        lateinit var cells: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            model = uniformMat4("model")
+            frame = uniformBlock("frame") { float("gain") }
+            cells = storageBlock("cells") { float("value") }
+            compute(1) { }
+        }
+        val queued = mutableListOf<() -> Unit>()
+        val controller = GlController(program, GlSurfaceConfig())
+        controller.attachQueue(queue = { queued += it })
+        val before = queued.size
+
+        assertThrows(IllegalArgumentException::class.java) { controller.setMat4(model, FloatArray(15)) }
+        assertThrows(IllegalArgumentException::class.java) { controller.set(frame, floatArrayOf(1f, 2f)) }
+        assertThrows(IllegalArgumentException::class.java) { controller.set(cells, floatArrayOf(1f, 2f)) }
+        assertThrows(IllegalArgumentException::class.java) { controller.set(frame, floatArrayOf(Float.NaN)) }
+        assertEquals(before, queued.size)
+    }
+
+    @Test
+    fun aFailingTaskIsReportedInsteadOfThrownOnTheGlThread() {
+        val (program, amount) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = ArrayDeque<() -> Unit>()
+        val queue: (() -> Unit) -> Unit = { queued.addLast(it) }
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        val problem = IllegalStateException("task failed")
+        var after = false
+        controller.runOnGl { throw problem }
+        controller.runOnGl { after = true }
+        while (queued.isNotEmpty()) queued.removeFirst().invoke()
+
+        assertTrue(controller.failure.value === problem)
+        assertTrue(after)
+
+        controller.set(amount, 0.3f)
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        assertEquals(null, controller.failure.value)
     }
 
     @Test
@@ -374,17 +415,12 @@ class GlControllerQueueTest {
         controller.read(cells, into) { count = it }
         assertEquals(-1, count)
         assertEquals(0f, into[0], 0f)
-        var thrown = 0
         var steps = 0
         while (queued.isNotEmpty() && steps < 8) {
             steps += 1
-            try {
-                queued.removeFirst().invoke()
-            } catch (error: IllegalStateException) {
-                thrown += 1
-            }
+            queued.removeFirst().invoke()
         }
-        assertEquals(1, thrown)
+        assertTrue(controller.failure.value is IllegalStateException)
         assertEquals(1, device.dispatchCalls)
         assertEquals(listOf(2, 3, 4), device.dispatchGroups)
         assertEquals(1, count)

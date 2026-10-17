@@ -16,3 +16,7 @@ public fun GlLinkErrorOverlay(message: String, modifier: Modifier = Modifier) {
         modifier = modifier.padding(24.dp),
     )
 }
+
+/** Text for [GlController.failure]: the exception message, or its type when it has none. */
+internal fun glFailureMessage(error: Throwable): String =
+    error.message?.takeIf { it.isNotBlank() } ?: error::class.java.simpleName

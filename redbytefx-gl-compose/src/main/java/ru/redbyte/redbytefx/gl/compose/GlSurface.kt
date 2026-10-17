@@ -24,7 +24,8 @@ import ru.redbyte.redbytefx.ShaderProgram
  * Embeds a [GLSurfaceView] that links and draws [controller.program].
  *
  * Link progress is exposed as [GlController.linkState]; the default [overlay] shows [GlLinkErrorOverlay]
- * when linking fails. [onFrame] runs on the GL thread before each draw — use [GlFrame.seconds] for time
+ * when linking fails. An exception thrown on the GL thread, including from [onFrame], stops drawing
+ * instead of crashing the app; it is published as [GlController.failure] and shown by [failureOverlay]. [onFrame] runs on the GL thread before each draw — use [GlFrame.seconds] for time
  * uniforms and [GlFrame.runtime] for direct [ru.redbyte.redbytefx.gl.GlProgramRuntime] calls.
  *
  * Rendering follows the host [androidx.lifecycle.Lifecycle] (`onResume` / `onPause` on the surface).
@@ -51,6 +52,7 @@ public fun GlSurface(
     present: ShaderProgram? = null,
     renderToTexture: Boolean = false,
     onFrame: (GlFrame) -> Unit,
+    failureOverlay: @Composable (Throwable) -> Unit = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
     overlay: @Composable (GlLinkState) -> Unit = { state ->
         if (state is GlLinkState.Failed) {
             GlLinkErrorOverlay(state.message)
@@ -59,6 +61,7 @@ public fun GlSurface(
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val linkState by controller.linkState
+    val failure by controller.failure
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     val currentOnFrame by rememberUpdatedState(onFrame)
     Box(modifier = modifier) {
@@ -86,7 +89,7 @@ public fun GlSurface(
                             ),
                         )
                     }
-                    controller.attachQueue(slot.queue)
+                    controller.attachQueue(slot.queue, slot.post)
                     glSurfaceView = surfaceView
                     surfaceView
                 },
@@ -131,6 +134,7 @@ public fun GlSurface(
             }
         }
         overlay(linkState)
+        failure?.let { failureOverlay(it) }
     }
 }
 

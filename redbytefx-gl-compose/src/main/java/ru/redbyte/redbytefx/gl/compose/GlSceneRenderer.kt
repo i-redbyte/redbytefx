@@ -3,10 +3,12 @@ package ru.redbyte.redbytefx.gl.compose
 import android.opengl.GLES30
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
+import android.util.Log
 import ru.redbyte.redbytefx.Flt
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.Uniform
+import ru.redbyte.redbytefx.gl.GlCode
 import ru.redbyte.redbytefx.gl.GlColorTarget
 import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
@@ -15,6 +17,17 @@ import ru.redbyte.redbytefx.gl.IndexElementKind
 import java.util.IdentityHashMap
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+
+private const val LOG_TAG = "RedByteFX"
+
+/** Codes that mean the program never linked; they are shown as [GlLinkState.Failed]. */
+internal val LINK_CODES: Set<GlCode> = setOf(
+    GlCode.CompileFailed,
+    GlCode.LinkFailed,
+    GlCode.MissingUniformLocation,
+    GlCode.BlockBindingLimit,
+    GlCode.WrongTarget,
+)
 
 /** Frames a recorded mesh may go undrawn before the host deletes its buffers. */
 internal const val HELD_MESH_FRAMES: Long = 60L
@@ -63,6 +76,10 @@ internal class SceneRenderer(
     private var attribScratch = IntArray(8)
     private var appliedPipeline: GlPipeline? = null
     private var appliedDepthTest: Boolean? = null
+    private val guard = FrameGuard { error ->
+        Log.e(LOG_TAG, "GlSurface stopped rendering after an error", error)
+        report(error)
+    }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         releaseGpu(contextAlive = false)
@@ -71,41 +88,31 @@ internal class SceneRenderer(
         slot.eglContextHandle = 0L
         slot.releaseGl = null
         reported = false
+        guard.resume()
         publish(GlLinkState.Pending)
         val textureUnits = GlTextureUnits()
         val strict = controller.config.strictUniformLocations
         val strictErrors = controller.config.strictErrors
-        val runtime = try {
-            linkProgram(controller.program, strict, textureUnits, strictErrors)
-        } catch (error: GlException) {
-            fail(error)
-            return
-        }
-        val presentProgram = present
-        if (presentProgram != null) {
-            presentRuntime = try {
-                linkProgram(presentProgram, strict, textureUnits, strictErrors)
-            } catch (error: GlException) {
-                runtime.destroy()
-                fail(error)
-                return
-            } catch (error: Throwable) {
-                runtime.destroy()
-                throw error
-            }
-        }
-        slot.runtime = runtime
-        slot.captureContext()
-        try {
+        var linked: GlProgramRuntime? = null
+        val ready = guard.run {
+            val runtime = linkProgram(controller.program, strict, textureUnits, strictErrors)
+            linked = runtime
+            present?.let { presentRuntime = linkProgram(it, strict, textureUnits, strictErrors) }
+            slot.runtime = runtime
+            slot.captureContext()
             val arrays = mesh.arrays
             fill(runtime, surface, mesh.stride, arrays.vertices, arrays.indices, arrays.revision)
             frame = GlFrame(runtime, upload, mesh, presentRuntime)
-        } catch (error: Throwable) {
-            releaseGpu(contextAlive = true)
+        }
+        val runtime = linked
+        if (!ready || runtime == null) {
+            if (runtime != null) {
+                releaseGpu(contextAlive = true)
+                runtime.destroy()
+            }
             slot.runtime = null
             slot.eglContextHandle = 0L
-            runtime.destroy()
-            throw error
+            return
         }
         slot.releaseGl = { contextAlive -> releaseGpu(contextAlive) }
         publish(GlLinkState.Linked)
@@ -124,6 +131,15 @@ internal class SceneRenderer(
     override fun onDrawFrame(gl: GL10?) {
         val runtime = slot.runtime ?: return
         val current = frame ?: return
+        if (guard.halted) {
+            GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
+            GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
+            return
+        }
+        guard.run { drawFrame(runtime, current) }
+    }
+
+    private fun drawFrame(runtime: GlProgramRuntime, current: GlFrame) {
         refreshSurfaceMesh(runtime, current)
         frameNumber += 1
         current.seconds = (System.nanoTime() - startedNanos) / NANOS_PER_SECOND
@@ -446,6 +462,10 @@ internal class SceneRenderer(
         if (reported) return
         reported = true
         publish(GlLinkState.Failed(linkMessage(requirement, error)))
+    }
+
+    private fun report(error: Throwable) {
+        if (error is GlException && error.code in LINK_CODES) fail(error) else controller.reportFailure(error)
     }
 
     private fun publish(state: GlLinkState) {

@@ -38,6 +38,10 @@ private typealias UniformWrite = (GlProgramRuntime) -> Unit
  * context, so it is not replayed: bind again after re-uploading. [dispatch] and [read] run once
  * on the GL thread. [read] returns immediately and fills the caller's buffer from that queue.
  * [runOnGl] blocks run once.
+ *
+ * Arrays are validated on the calling thread. An exception thrown later on the GL thread, by a
+ * queued write, a [runOnGl] block, or the surface's `onFrame`, never reaches the GL thread's
+ * uncaught handler: it is published as [failure] and the remaining work still runs.
  */
 @Stable
 public class GlController internal constructor(
@@ -52,7 +56,13 @@ public class GlController internal constructor(
             linkStateHolder.value = value
         }
 
+    private val failureHolder = mutableStateOf<Throwable?>(null)
+
+    /** Last exception raised on the GL thread for this controller; null after a successful link. */
+    public val failure: State<Throwable?> get() = failureHolder
+
     private var glQueue: ((() -> Unit) -> Unit)? = null
+    private var post: (() -> Unit) -> Unit = { it() }
 
     @Volatile
     internal var runtime: GlProgramRuntime? = null
@@ -102,9 +112,10 @@ public class GlController internal constructor(
      * The new view has its own GL thread, so a program linked by an older view is dropped here:
      * writing through it from the new thread would fail the runtime's thread check.
      */
-    internal fun attachQueue(queue: (() -> Unit) -> Unit) {
+    internal fun attachQueue(queue: (() -> Unit) -> Unit, post: (() -> Unit) -> Unit = { it() }) {
         synchronized(lock) {
             glQueue = queue
+            this.post = post
             runtime = null
             discardPendingTextureBindings()
             queueGeneration++
@@ -146,6 +157,7 @@ public class GlController internal constructor(
             replay(storageBlockWrites)
             queueGeneration
         }
+        publishFailure(null)
         drainPending(queue, generation)
     }
 
@@ -192,19 +204,29 @@ public class GlController internal constructor(
         }
     }
 
+    /** GL thread. Publishes [error] as [failure] instead of letting it end the GL thread. */
+    internal fun reportFailure(error: Throwable) {
+        publishFailure(error)
+    }
+
+    private fun publishFailure(error: Throwable?) {
+        val poster = synchronized(lock) { post }
+        poster { failureHolder.value = error }
+    }
+
     /**
      * Applies queued uniform writes, then [runOnGl] blocks, one at a time.
-     * Must run on the GL thread. A write or block that throws is not retried; everything still
-     * queued is scheduled again, so one failure does not drop the rest of the drain.
+     * Must run on the GL thread. A write or block that throws is reported and not retried;
+     * the rest of the drain still runs.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun drainPending(queue: (() -> Unit) -> Unit, generation: Long) {
         while (true) {
             val action = nextDrainAction(queue, generation) ?: return
             try {
                 action()
-            } catch (error: Throwable) {
-                scheduleDrain()
-                throw error
+            } catch (error: Exception) {
+                reportFailure(error)
             }
         }
     }
@@ -329,6 +351,7 @@ public class GlController internal constructor(
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat2(uniform: Uniform<Mat2>, values: FloatArray) {
         requireUniform(uniform)
+        requireMatrix(values, 4)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
@@ -336,6 +359,7 @@ public class GlController internal constructor(
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat3(uniform: Uniform<Mat3>, values: FloatArray) {
         requireUniform(uniform)
+        requireMatrix(values, 9)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
@@ -343,6 +367,7 @@ public class GlController internal constructor(
     /** Scene. Copies [values] before queuing the GL write. */
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
         requireUniform(uniform)
+        requireMatrix(values, 16)
         val snapshot = values.copyOf()
         enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
     }
@@ -354,6 +379,10 @@ public class GlController internal constructor(
     @JvmName("setUniformBlock")
     public fun set(block: UniformBlock, values: FloatArray) {
         requireUniformBlock(block)
+        require(values.size == block.floatCount) {
+            "Uniform block \"${block.name}\" expects ${block.floatCount} floats, was ${values.size}"
+        }
+        requireFinite(values)
         val snapshot = values.copyOf()
         enqueueRetained(uniformBlockWrites, block) { it.set(block, snapshot) }
     }
@@ -365,6 +394,8 @@ public class GlController internal constructor(
     @JvmName("setStorageBlock")
     public fun set(block: StorageBlock, values: FloatArray) {
         requireStorageBlock(block)
+        block.byteSize(values.size)
+        requireFinite(values)
         val snapshot = values.copyOf()
         enqueueRetained(storageBlockWrites, block) { it.set(block, snapshot) }
     }
@@ -390,6 +421,14 @@ public class GlController internal constructor(
             onResult(linked.read(block, into))
         }
     }
+}
+
+private fun requireMatrix(values: FloatArray, floats: Int) {
+    require(values.size == floats) { "Matrix uniform expects $floats floats, was ${values.size}" }
+}
+
+private fun requireFinite(values: FloatArray) {
+    for (value in values) require(value.isFinite()) { "Block values must be finite, was $value" }
 }
 
 private class CoalescedWrites<K : Any> {
