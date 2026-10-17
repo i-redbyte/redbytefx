@@ -81,6 +81,7 @@ public class GlController internal constructor(
     private val tasks = ArrayDeque<(GlProgramRuntime) -> Unit>()
     private var queueGeneration = 0L
     private var drainQueued = false
+    private var failureReported = false
 
     /**
      * Runs [block] on the GL thread.
@@ -208,13 +209,24 @@ public class GlController internal constructor(
         if (current) drainPending(queue, generation)
     }
 
-    /** GL thread. Publishes [error] as [failure] instead of letting it end the GL thread. */
+    /**
+     * GL thread. Publishes [error] as [failure] instead of letting it end the GL thread. Only the
+     * first failure since the last link is published, so a fault that repeats every frame does
+     * not post and recompose every frame.
+     */
     internal fun reportFailure(error: Throwable) {
+        synchronized(lock) {
+            if (failureReported) return
+            failureReported = true
+        }
         publishFailure(error)
     }
 
     private fun publishFailure(error: Throwable?) {
-        val poster = synchronized(lock) { post }
+        val poster = synchronized(lock) {
+            if (error == null) failureReported = false
+            post
+        }
         poster { failureHolder.value = error }
     }
 

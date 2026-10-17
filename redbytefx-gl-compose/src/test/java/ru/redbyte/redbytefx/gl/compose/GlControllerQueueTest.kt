@@ -406,6 +406,26 @@ class GlControllerQueueTest {
     }
 
     @Test
+    fun aRepeatingFailureIsPublishedOnceUntilANewContext() {
+        val (program, _) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val queue: (() -> Unit) -> Unit = { it() }
+        var posts = 0
+        controller.attachQueue(queue, post = { block -> posts += 1; block() })
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        val afterLink = posts
+        val first = IllegalStateException("first")
+        repeat(60) { index -> controller.reportFailure(if (index == 0) first else IllegalStateException("again")) }
+
+        assertEquals(afterLink + 1, posts)
+        assertTrue(controller.failure.value === first)
+
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        controller.reportFailure(IllegalStateException("next context"))
+        assertEquals("next context", controller.failure.value?.message)
+    }
+
+    @Test
     fun the129thGlTaskFailsAndTheFirstOneStays() {
         val (program, amount) = amountProgram()
         val controller = GlController(program, GlSurfaceConfig())
