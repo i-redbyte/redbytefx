@@ -29,16 +29,16 @@
 
 ## Подключение к новому проекту
 
-Убедитесь, что проект использует `mavenCentral()`. Добавьте нужные модули в `build.gradle.kts` приложения (пример для **1.1.1**; актуальная опубликованная версия показана на бейджике выше). Список выпусков есть на [Maven Central](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core):
+Убедитесь, что проект использует `mavenCentral()`. Добавьте нужные модули в `build.gradle.kts` приложения (пример для **1.2.0**; актуальная опубликованная версия показана на бейджике выше). Список выпусков есть на [Maven Central](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core):
 
 ```kotlin
 dependencies {
-    implementation("io.github.i-redbyte:redbytefx-core:1.1.1")
-    implementation("io.github.i-redbyte:redbytefx-compose:1.1.1")    // AGSL в Compose
-    implementation("io.github.i-redbyte:redbytefx-gl:1.1.1")         // рантайм OpenGL ES
-    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.1.1") // OpenGL ES в Compose
-    implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.1")     // необязательные готовые функции
-    implementation("io.github.i-redbyte:redbytefx-3d:1.1.1")         // необязательные меши и камера
+    implementation("io.github.i-redbyte:redbytefx-core:1.2.0")
+    implementation("io.github.i-redbyte:redbytefx-compose:1.2.0")    // AGSL в Compose
+    implementation("io.github.i-redbyte:redbytefx-gl:1.2.0")         // рантайм OpenGL ES
+    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.2.0") // OpenGL ES в Compose
+    implementation("io.github.i-redbyte:redbytefx-stdlib:1.2.0")     // необязательные готовые функции
+    implementation("io.github.i-redbyte:redbytefx-3d:1.2.0")         // необязательные меши и камера
 }
 ```
 
@@ -91,7 +91,7 @@ fun waveTextView(context: Context): TextView {
 
 В Activity на API 33+ вызовите `setContentView(waveTextView(this))`. Импорты: `android.content.Context`, `android.widget.TextView`, `androidx.annotation.RequiresApi` и `ru.redbyte.redbytefx.*`. Если позже меняете параметр шейдера, после изменения ещё раз вызовите `setRenderEffect(instance.renderEffect())`.
 
-Если хочется подробнее разобраться с AGSL, прочитайте [«Маяк в пустыне: Kotlin DSL для Android-шейдеров»](https://habr.com/ru/articles/1022546/). Статья написана для более ранней версии API; для версии 1.1.1 ориентируйтесь на примеры здесь.
+Если хочется подробнее разобраться с AGSL, прочитайте [«Маяк в пустыне: Kotlin DSL для Android-шейдеров»](https://habr.com/ru/articles/1022546/). Статья написана для более ранней версии API; для версии 1.2.0 ориентируйтесь на примеры здесь.
 
 ## Первая сцена на OpenGL ES
 

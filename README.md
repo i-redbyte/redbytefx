@@ -29,16 +29,16 @@ These clips come from the [sample app](sample/). You can also [download the late
 
 ## Add it to a new project
 
-Make sure your project uses `mavenCentral()`. Add the modules you need to your app's `build.gradle.kts` (example for **1.1.1**; see the badge above for the latest published version). You can browse releases on [Maven Central](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core):
+Make sure your project uses `mavenCentral()`. Add the modules you need to your app's `build.gradle.kts` (example for **1.2.0**; see the badge above for the latest published version). You can browse releases on [Maven Central](https://central.sonatype.com/artifact/io.github.i-redbyte/redbytefx-core):
 
 ```kotlin
 dependencies {
-    implementation("io.github.i-redbyte:redbytefx-core:1.1.1")
-    implementation("io.github.i-redbyte:redbytefx-compose:1.1.1")    // AGSL in Compose
-    implementation("io.github.i-redbyte:redbytefx-gl:1.1.1")         // OpenGL ES runtime
-    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.1.1") // OpenGL ES in Compose
-    implementation("io.github.i-redbyte:redbytefx-stdlib:1.1.1")     // Optional effect helpers
-    implementation("io.github.i-redbyte:redbytefx-3d:1.1.1")         // Optional mesh and camera helpers
+    implementation("io.github.i-redbyte:redbytefx-core:1.2.0")
+    implementation("io.github.i-redbyte:redbytefx-compose:1.2.0")    // AGSL in Compose
+    implementation("io.github.i-redbyte:redbytefx-gl:1.2.0")         // OpenGL ES runtime
+    implementation("io.github.i-redbyte:redbytefx-gl-compose:1.2.0") // OpenGL ES in Compose
+    implementation("io.github.i-redbyte:redbytefx-stdlib:1.2.0")     // Optional effect helpers
+    implementation("io.github.i-redbyte:redbytefx-3d:1.2.0")         // Optional mesh and camera helpers
 }
 ```
 
@@ -91,7 +91,7 @@ fun waveTextView(context: Context): TextView {
 
 Use `setContentView(waveTextView(this))` from an Activity on API 33+. Imports: `android.content.Context`, `android.widget.TextView`, `androidx.annotation.RequiresApi`, and `ru.redbyte.redbytefx.*`. If you change a uniform later, call `setRenderEffect(instance.renderEffect())` again after the change.
 
-For a longer, beginner-friendly AGSL walkthrough, see [“Маяк в пустыне: Kotlin DSL для Android-шейдеров”](https://habr.com/ru/articles/1022546/) (in Russian). It uses an earlier version of the API, so use the snippets here for version 1.1.1.
+For a longer, beginner-friendly AGSL walkthrough, see [“Маяк в пустыне: Kotlin DSL для Android-шейдеров”](https://habr.com/ru/articles/1022546/) (in Russian). It uses an earlier version of the API, so use the snippets here for version 1.2.0.
 
 ## Your first OpenGL ES scene
 
