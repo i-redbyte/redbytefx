@@ -500,28 +500,17 @@ public class Gles30Device : GlDevice() {
 
 private const val LOG_TAG = "RedByteFX"
 
-private val directScratch = ThreadLocal<ByteBuffer>()
-
 /**
  * `glBufferData` reads a direct buffer. A heap [ByteBuffer.wrap] does not qualify and is rejected
  * by the Android GLES bindings. Texture uploads accept a heap buffer, so pixels skip this scratch:
  * it is kept per thread and would otherwise hold the largest image for the life of the GL thread.
  */
-private fun scratch(bytes: Int): ByteBuffer {
-    val existing = directScratch.get()
-    val buffer = if (existing != null && existing.capacity() >= bytes) {
-        existing
-    } else {
-        ByteBuffer.allocateDirect(bytes).also { directScratch.set(it) }
-    }
-    buffer.order(ByteOrder.nativeOrder())
-    buffer.clear()
-    return buffer
-}
+private val directScratch: ThreadLocal<NativeScratch> = ThreadLocal.withInitial { NativeScratch() }
+
+private fun scratch(bytes: Int): ByteBuffer = checkNotNull(directScratch.get()).acquire(bytes)
 
 private fun ByteArray.asNativeBuffer(): ByteBuffer {
     val buffer = scratch(size)
-    buffer.limit(size)
     buffer.put(this)
     buffer.position(0)
     return buffer
@@ -530,7 +519,6 @@ private fun ByteArray.asNativeBuffer(): ByteBuffer {
 private fun FloatArray.asNativeBuffer(): ByteBuffer {
     val bytes = size * Float.SIZE_BYTES
     val buffer = scratch(bytes)
-    buffer.limit(bytes)
     buffer.asFloatBuffer().put(this)
     buffer.position(0)
     return buffer
@@ -539,7 +527,6 @@ private fun FloatArray.asNativeBuffer(): ByteBuffer {
 private fun IntArray.asNativeIntBuffer(): ByteBuffer {
     val bytes = size * Int.SIZE_BYTES
     val buffer = scratch(bytes)
-    buffer.limit(bytes)
     buffer.asIntBuffer().put(this)
     buffer.position(0)
     return buffer
@@ -548,7 +535,6 @@ private fun IntArray.asNativeIntBuffer(): ByteBuffer {
 private fun IntArray.asNativeShortBuffer(): ByteBuffer {
     val bytes = size * Short.SIZE_BYTES
     val buffer = scratch(bytes)
-    buffer.limit(bytes)
     val view = buffer.asShortBuffer()
     for (value in this) {
         view.put(value.toShort())
