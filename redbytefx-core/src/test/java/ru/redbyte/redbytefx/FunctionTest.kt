@@ -64,6 +64,49 @@ class FunctionTest {
     }
 
     @Test
+    fun aVertexFunctionThatReadsAnAttributeOnlyInALocalWriteCannotBeCalledFromTheFragment() {
+        lateinit var bump: Fn1<Flt<High>, Flt<High>>
+        val error = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                vertex {
+                    val position = attributeVec4("position")
+                    bump = fn(0f.lit, "bump") { t ->
+                        val total = local(t, "total")
+                        total.set(total.expr + position.x)
+                        total.expr
+                    }
+                    glPosition(position)
+                }
+                fragment {
+                    val y = bump(0f.lit)
+                    vec4(y, y, y, 1f.lit)
+                }
+            }
+        }
+        assertEquals(ProgramCode.FunctionWrongStage, error.code)
+    }
+
+    @Test
+    fun aFunctionThatCallsADiscardingFunctionCannotBeCalledFromTheVertexStage() {
+        lateinit var outer: Fn1<Flt<High>, Flt<High>>
+        val error = assertThrows(ProgramException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                fragment {
+                    val inner = fn(0f.lit, "inner") { t ->
+                        this@fragment.discard(t.lt(0f.lit))
+                        t
+                    }
+                    outer = fn(0f.lit, "outer") { t -> inner(t) + 1f }
+                    val y = outer(0f.lit)
+                    vec4(y, y, y, 1f.lit)
+                }
+                vertex { glPosition(vec4(outer(0f.lit), 0f.lit, 0f.lit, 1f.lit)) }
+            }
+        }
+        assertEquals(ProgramCode.FunctionWrongStage, error.code)
+    }
+
+    @Test
     fun aVertexFunctionCannotBeCalledFromTheFragment() {
         lateinit var bump: Fn1<Flt<High>, Flt<High>>
         val error = assertThrows(ProgramException::class.java) {

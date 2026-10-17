@@ -25,6 +25,9 @@ internal class UserFunction(
     var body: Expr<*> = body
     var result: Shape = result
     var statements: List<PrimitiveCommand> = emptyList()
+
+    /** Reads something only its own stage has; set once the body is known. */
+    var stageDependent: Boolean = false
 }
 
 /** User function with no parameters (from `fn(name) { … }`). */
@@ -480,6 +483,7 @@ internal class StageFunctions(
             function.statements = isolated.first
             function.body = isolated.second
             function.result = isolated.second.shape
+            function.stageDependent = readsStage(function)
             register(function)
             return function
         } finally {

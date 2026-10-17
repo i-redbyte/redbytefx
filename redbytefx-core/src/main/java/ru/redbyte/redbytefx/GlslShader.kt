@@ -349,7 +349,7 @@ internal fun collectVaryingUses(expr: Expr<*>, into: MutableSet<Varying<*>>) {
 
 internal fun checkFunctionStage(expr: Expr<*>, stage: AuthoringPlace) {
     walk(expr, linkedSetOf()) { node ->
-        if (node is ExprNode.UserCall && node.function.stage != stage && isStageDependent(node.function)) {
+        if (node is ExprNode.UserCall && node.function.stage != stage && node.function.stageDependent) {
             throw ProgramException(
                 ProgramCode.FunctionWrongStage,
                 "Function \"${node.function.name}\" is not defined in this stage",
@@ -390,16 +390,22 @@ private fun functionsForStage(
 ): List<UserFunction> {
     val reachable = calledFunctions(roots)
     val owned = functions.filter { it.stage == stage }
-    val copies = reachable.filter { it.stage != stage && !isStageDependent(it) }
+    val copies = reachable.filter { it.stage != stage && !it.stageDependent }
     return owned + copies
 }
 
-private fun isStageDependent(function: UserFunction): Boolean {
+/**
+ * Whether [function] reads something only its own stage has, in its result or in any statement.
+ * Callees were classified when they were defined, so each function is walked once.
+ */
+internal fun readsStage(function: UserFunction): Boolean {
+    if (statementsDepend(function.statements)) return true
     var dependent = false
-    walk(function.body, linkedSetOf()) { node ->
-        if (isStageNode(node)) dependent = true
+    val visit: (ExprNode) -> Unit = { node ->
+        if (isStageNode(node) || node is ExprNode.UserCall && node.function.stageDependent) dependent = true
     }
-    if (statementsDepend(function.statements)) dependent = true
+    walk(function.body, linkedSetOf(), followFunctions = false, visit)
+    for (expr in commandExprs(function.statements)) walk(expr, linkedSetOf(), followFunctions = false, visit)
     return dependent
 }
 
