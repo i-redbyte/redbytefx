@@ -129,20 +129,22 @@ subprojects {
 }
 
 /**
- * apiDump records the public JVM API of the release classes in api/<module>.api; apiCheck fails
+ * apiDump records the public JVM API of the compiled classes in api/<module>.api; apiCheck fails
  * when the compiled API no longer matches it, so an incompatible change cannot ship unnoticed.
  * Kotlin `internal` declarations are filtered out through their metadata.
  */
 private fun Project.registerPublicApiTasks() {
+    // The debug compile jar has the same public API as release and is already built for tests
+    // and lint, so the check adds no second compilation.
     val classesJar = layout.buildDirectory.file(
-        "intermediates/compile_library_classes_jar/release/bundleLibCompileToJarRelease/classes.jar",
+        "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
     )
     val dumpFile = layout.projectDirectory.file("api/$name.api")
     val module = path
     tasks.register("apiDump") {
         group = "verification"
         description = "Writes the public API of this library to api/$name.api."
-        dependsOn("bundleLibCompileToJarRelease")
+        dependsOn("bundleLibCompileToJarDebug")
         inputs.file(classesJar)
         outputs.file(dumpFile)
         doLast {
@@ -154,9 +156,10 @@ private fun Project.registerPublicApiTasks() {
     tasks.register("apiCheck") {
         group = "verification"
         description = "Fails when the public API differs from api/$name.api."
-        dependsOn("bundleLibCompileToJarRelease")
+        dependsOn("bundleLibCompileToJarDebug")
         inputs.file(classesJar)
-        inputs.file(dumpFile)
+        // files() instead of file(): a missing dump reaches the check below with its hint.
+        inputs.files(dumpFile)
         doLast {
             val recorded = dumpFile.asFile
             check(recorded.isFile) { "$module has no ${recorded.name}; run ./gradlew apiDump" }
@@ -175,7 +178,7 @@ private fun Project.registerPublicApiTasks() {
 }
 
 /**
- * Public API dump of a release classes jar. ComposableSingletons classes hold compiler-generated
+ * Public API dump of a compiled classes jar. ComposableSingletons classes hold compiler-generated
  * lambdas whose names change with the source, so their blocks are dropped.
  */
 private fun publicApiOf(jar: java.io.File): String {
