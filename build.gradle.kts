@@ -18,9 +18,6 @@ plugins {
 version = providers.gradleProperty("redbytefx.version").orElse("1.1.1").get()
 group = "io.github.i-redbyte"
 
-val detektFormatting =
-    "io.gitlab.arturbosch.detekt:detekt-formatting:${libs.versions.detekt.get()}"
-
 val hasMavenCentralCredentials =
     (
         providers.gradleProperty("mavenCentralUsername").isPresent &&
@@ -52,7 +49,7 @@ subprojects {
 
     pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
         dependencies {
-            add("detektPlugins", detektFormatting)
+            add("detektPlugins", rootProject.libs.detekt.formatting)
         }
     }
 
