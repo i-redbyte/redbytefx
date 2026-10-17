@@ -2,6 +2,7 @@ package ru.redbyte.redbytefx
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -9,6 +10,21 @@ class RedByteFxPlatformTest {
     @After
     fun restoreSdk() {
         RedByteFxPlatform.sdkInt = { android.os.Build.VERSION.SDK_INT }
+    }
+
+    @Test
+    fun agslSupportIsReportedWithoutThrowing() {
+        RedByteFxPlatform.sdkInt = { RedByteFxApis.AGSL_MIN_SDK - 1 }
+        assertFalse(RedByteFxPlatform.isAgslSupported())
+        RedByteFxPlatform.sdkInt = { RedByteFxApis.AGSL_MIN_SDK }
+        assertTrue(RedByteFxPlatform.isAgslSupported())
+    }
+
+    @Test
+    fun anAgslProgramCompilesOnAnyApiLevel() {
+        RedByteFxPlatform.sdkInt = { 24 }
+        val source = shader(ShaderTarget.Agsl) { fragment { sample() } }.agslSource()
+        assertTrue(source.contains("half4 main("))
     }
 
     @Test

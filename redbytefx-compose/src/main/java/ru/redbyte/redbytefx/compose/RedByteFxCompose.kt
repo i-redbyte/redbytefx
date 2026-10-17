@@ -568,6 +568,7 @@ internal interface ShaderControl : MediumShaderControl {
     fun runBatch(block: () -> Unit)
 }
 
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 internal class AgslShaderControl(
     private val instance: AgslInstance,
 ) : ShaderControl {

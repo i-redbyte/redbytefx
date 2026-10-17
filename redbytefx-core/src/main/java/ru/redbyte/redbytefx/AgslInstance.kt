@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
  * [RenderEffect], so the effect is recreated after a real change. Call [renderEffect] and the
  * setters from the UI thread that owns the draw.
  */
+@RequiresApi(RedByteFxApis.AGSL_MIN_SDK)
 public class AgslInstance internal constructor(
     program: ShaderProgram,
 ) {
