@@ -13,6 +13,8 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - A `repeat { }` whose body records no shader statement now fails with `ProgramCode.EmptyRepeat` and points to `local(...).set(...)` or `kotlin.repeat`, instead of silently emitting an empty loop.
 - Looking up a uniform by an author name shared by several uniforms throws and lists the spelled names; spelled names still resolve directly.
 - `Expr` caches its hash, so a graph with reused subexpressions hashes in linear time.
+- Comparing two equal expression graphs built separately takes linear time instead of exponential.
+- A function that reads a stage-only value only inside a local assignment can no longer be called from another stage: it fails with `ProgramCode.FunctionWrongStage` instead of producing a shader that fails to link. Each function is classified once, when it is defined.
 - `ShaderTarget.Agsl` no longer requires API 33: compiling AGSL works on any API level. Running it still needs Android 13, and `AgslInstance` now carries `@RequiresApi(33)`. New `RedByteFxPlatform.isAgslSupported()` checks support without throwing.
 - New `FrameClock` accumulates frame time in whole nanoseconds, skips paused gaps, and caps a single step; both `bindTime` helpers use it, so time no longer drifts after hours.
 
@@ -29,6 +31,8 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 - GL views keep their EGL context across pauses and start paused unless the host lifecycle is resumed. `GlFrame.seconds` keeps counting across a new context without jumping.
 - A new `mesh` passed to `GlSurface` is uploaded on the existing context instead of recreating the view.
 - A recorded draw that no longer fits a mesh shrunk from another thread is skipped instead of failing.
+- `GlFrame.replace(vertices)` and `GlMesh.replace(vertices)` check kept indices against their cached highest index instead of scanning them on every call.
+- A `GlController` no longer keeps a released GL view, and its `Context`, reachable until the next view attaches.
 - `GlCompute` lays out at least 1 dp with a transparent surface, so a zero-size host still links.
 - `GlController` writes allocate nothing and never hold its lock during a GL call; the AGSL modifier invalidates through one path; the scene renderer avoids per-frame allocations and per-draw state calls.
 - The 1.1.1 JVM signatures of `GlSurface` and `GlCompute` are kept, so binaries compiled against 1.1.1 keep working.
@@ -37,6 +41,7 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 ### Standard library
 
 - Alpha guards in medium precision use 1/1024 instead of 1e-6, which half floats flush to zero, and `polarAngle01` is defined at its center.
+- `sdfNormal` samples the scene four times (tetrahedral differences) instead of six, so the scene appears in the shader two fewer times. Normals can differ from 1.1.1 in the last bits.
 
 ### Sample and checks
 
