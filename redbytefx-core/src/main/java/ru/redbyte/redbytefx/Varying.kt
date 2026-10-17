@@ -36,6 +36,7 @@ internal enum class ProgramCode {
     TessInterpolation,
     LocalInsideRepeat,
     UnsizedStorageNotLast,
+    EmptyRepeat,
 }
 
 internal class ProgramException(

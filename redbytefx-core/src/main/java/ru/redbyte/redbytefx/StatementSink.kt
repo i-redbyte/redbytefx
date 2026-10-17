@@ -43,6 +43,13 @@ internal class StatementSink {
             frames.removeLast()
             stack.removeLast()
         }
+        if (inner.isEmpty()) {
+            throw ProgramException(
+                ProgramCode.EmptyRepeat,
+                "repeat records a shader loop, but its body wrote nothing. Write through " +
+                    "local(...).set(...) inside it, or call kotlin.repeat to unroll at build time.",
+            )
+        }
         add(PrimitiveCommand.Repeat(count, indexName, inner.toList()))
     }
 

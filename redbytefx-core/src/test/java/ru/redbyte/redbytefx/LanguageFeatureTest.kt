@@ -94,6 +94,20 @@ class LanguageFeatureTest {
     }
 
     @Test
+    fun repeatThatRecordsNoStatementIsRejectedWithAHint() {
+        val error = assertThrows(IllegalStateException::class.java) {
+            shader(ShaderTarget.Gles30) {
+                fragment {
+                    var value = fragCoord.x
+                    repeat(3) { value = value * value }
+                    vec4(value, value, value, 1f.lit)
+                }
+            }
+        }
+        assertTrue(error.message.orEmpty(), error.message.orEmpty().contains("kotlin.repeat"))
+    }
+
+    @Test
     fun localAccumulatesInsideRepeatAndDiscardCanBeConditional() {
         val agsl = shader(ShaderTarget.Agsl) {
             fragment {
