@@ -10,12 +10,31 @@ public class Expr<out T : ShType> internal constructor(
     public val shape: Shape,
     internal val node: ExprNode,
 ) {
+    private var cachedHash = 0
+    private var hashed = false
+
+    /**
+     * Structural equality. Identical graphs and graphs with different hashes are decided without
+     * walking them.
+     */
     override fun equals(other: Any?): Boolean {
+        if (this === other) return true
         if (other !is Expr<*>) return false
+        if (hashCode() != other.hashCode()) return false
         return shape == other.shape && node == other.node
     }
 
-    override fun hashCode(): Int = 31 * shape.hashCode() + node.hashCode()
+    /**
+     * Structural hash, computed once. A node hashes its operands through their cached hashes, so a
+     * graph that reuses subexpressions hashes in linear time instead of once per path.
+     */
+    override fun hashCode(): Int {
+        if (!hashed) {
+            cachedHash = 31 * shape.hashCode() + node.hashCode()
+            hashed = true
+        }
+        return cachedHash
+    }
 
     override fun toString(): String = "Expr($shape, $node)"
 }

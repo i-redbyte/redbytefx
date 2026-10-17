@@ -102,5 +102,16 @@ class SharedExpressionTest {
         assertEquals(1, body.occurrences("p0 + 1.0"))
     }
 
+    @Test(timeout = 5_000)
+    fun hashingADeeplySharedGraphIsLinear() {
+        var value: Expr<Flt<High>> = 1f.lit
+        for (level in 0 until 60) value = value * value + value
+        val set = HashSet<Expr<*>>()
+        set += value
+
+        assertTrue(value in set)
+        assertTrue(value == value)
+    }
+
     private fun String.occurrences(needle: String): Int = windowed(needle.length).count { it == needle }
 }
