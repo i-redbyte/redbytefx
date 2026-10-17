@@ -50,12 +50,8 @@ public fun GlSurface(
     present: ShaderProgram? = null,
     renderToTexture: Boolean = false,
     onFrame: (GlFrame) -> Unit,
-    failureOverlay: @Composable (Throwable) -> Unit = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
-    overlay: @Composable (GlLinkState) -> Unit = { state ->
-        if (state is GlLinkState.Failed) {
-            GlLinkErrorOverlay(state.message)
-        }
-    },
+    failureOverlay: @Composable (Throwable) -> Unit = DefaultFailureOverlay,
+    overlay: @Composable (GlLinkState) -> Unit = DefaultLinkOverlay,
 ) {
     val linkState by controller.linkState
     val failure by controller.failure
@@ -132,11 +128,7 @@ public fun GlSurface(
     present: ShaderProgram? = null,
     renderToTexture: Boolean = false,
     onFrame: (GlFrame) -> Unit,
-    overlay: @Composable (GlLinkState) -> Unit = { state ->
-        if (state is GlLinkState.Failed) {
-            GlLinkErrorOverlay(state.message)
-        }
-    },
+    overlay: @Composable (GlLinkState) -> Unit = DefaultLinkOverlay,
 ) {
     GlSurface(
         controller = controller,
@@ -146,7 +138,7 @@ public fun GlSurface(
         present = present,
         renderToTexture = renderToTexture,
         onFrame = onFrame,
-        failureOverlay = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
+        failureOverlay = DefaultFailureOverlay,
         overlay = overlay,
     )
 }

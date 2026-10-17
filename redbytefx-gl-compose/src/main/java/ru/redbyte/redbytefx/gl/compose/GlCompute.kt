@@ -41,12 +41,8 @@ public fun GlCompute(
     controller: GlController,
     modifier: Modifier = Modifier,
     requirement: String? = controller.program.glLinkRequirementHint(),
-    failureOverlay: @Composable (Throwable) -> Unit = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
-    overlay: @Composable (GlLinkState) -> Unit = { state ->
-        if (state is GlLinkState.Failed) {
-            GlLinkErrorOverlay(state.message)
-        }
-    },
+    failureOverlay: @Composable (Throwable) -> Unit = DefaultFailureOverlay,
+    overlay: @Composable (GlLinkState) -> Unit = DefaultLinkOverlay,
 ) {
     val linkState by controller.linkState
     val failure by controller.failure
@@ -154,17 +150,13 @@ public fun GlCompute(
     controller: GlController,
     modifier: Modifier = Modifier,
     requirement: String? = controller.program.glLinkRequirementHint(),
-    overlay: @Composable (GlLinkState) -> Unit = { state ->
-        if (state is GlLinkState.Failed) {
-            GlLinkErrorOverlay(state.message)
-        }
-    },
+    overlay: @Composable (GlLinkState) -> Unit = DefaultLinkOverlay,
 ) {
     GlCompute(
         controller = controller,
         modifier = modifier,
         requirement = requirement,
-        failureOverlay = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
+        failureOverlay = DefaultFailureOverlay,
         overlay = overlay,
     )
 }

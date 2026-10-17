@@ -20,3 +20,15 @@ public fun GlLinkErrorOverlay(message: String, modifier: Modifier = Modifier) {
 /** Text for [GlController.failure]: the exception message, or its type when it has none. */
 internal fun glFailureMessage(error: Throwable): String =
     error.message?.takeIf { it.isNotBlank() } ?: error::class.java.simpleName
+
+/** Default link overlay of [GlSurface] and [GlCompute]: the message of a failed link. */
+internal val DefaultLinkOverlay: @Composable (GlLinkState) -> Unit = { state ->
+    if (state is GlLinkState.Failed) {
+        GlLinkErrorOverlay(state.message)
+    }
+}
+
+/** Default failure overlay of [GlSurface] and [GlCompute]: the message of a GL-thread exception. */
+internal val DefaultFailureOverlay: @Composable (Throwable) -> Unit = { error ->
+    GlLinkErrorOverlay(glFailureMessage(error))
+}
