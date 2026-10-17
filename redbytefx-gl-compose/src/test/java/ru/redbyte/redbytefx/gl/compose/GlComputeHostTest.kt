@@ -44,7 +44,7 @@ class GlComputeHostTest {
         slot.queue = queue
         controller.attachQueue(queue)
         var linkCalls = 0
-        val renderer = ComputeRenderer(controller, null, slot) { _, _ ->
+        val renderer = ComputeRenderer(controller, null, slot, clearFrame = {}) { _, _ ->
             linkCalls += 1
             runtime
         }
@@ -79,7 +79,7 @@ class GlComputeHostTest {
         slot.queue = queue
         controller.attachQueue(queue)
         var linkCalls = 0
-        val renderer = ComputeRenderer(controller, null, slot) { _, _ ->
+        val renderer = ComputeRenderer(controller, null, slot, clearFrame = {}) { _, _ ->
             linkCalls += 1
             error("link")
         }
