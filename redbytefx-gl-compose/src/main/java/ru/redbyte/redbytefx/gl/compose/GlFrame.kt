@@ -262,7 +262,7 @@ public class GlFrame internal constructor(
         surfaceRevision = arrays.revision
     }
 
-    /** Seconds since the surface was created on this context. */
+    /** Animation seconds of this surface; they keep counting across a new EGL context and skip pauses. */
     public var seconds: Float = 0f
         internal set
 

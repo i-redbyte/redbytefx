@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -13,9 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.ShaderTarget
 import ru.redbyte.redbytefx.gl.GlException
@@ -47,7 +43,6 @@ public fun GlCompute(
         }
     },
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
     val linkState by controller.linkState
     val failure by controller.failure
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
@@ -58,15 +53,11 @@ public fun GlCompute(
                 factory = { context ->
                     val slot = GlSlot()
                     val surfaceView = GLSurfaceView(context).apply {
-                        setEGLContextClientVersion(3)
-                        setEGLContextFactory(Es3ContextFactory(eglClientMinor(controller.program)))
-                        setEGLConfigChooser(8, 8, 8, 8, 0, 0)
-                        slot.post = { block -> post { block() } }
+                        configureEs3(eglClientMinor(controller.program), depthBits = 0, slot = slot)
                         slot.queue = { block ->
                             queueEvent(block)
                             requestRender()
                         }
-                        tag = slot
                         setRenderer(ComputeRenderer(controller, requirement, slot))
                         renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
                         requestRender()
@@ -77,48 +68,11 @@ public fun GlCompute(
                 },
                 onRelease = { view ->
                     if (glSurfaceView === view) glSurfaceView = null
-                    val held = view.tag as GlSlot
-                    if (controller.detachQueue(held.queue)) controller.linkStateValue = GlLinkState.Pending
-                    view.queueEvent {
-                        val contextAlive = held.ownsCurrentContext()
-                        held.releaseGl?.invoke(contextAlive)
-                        held.releaseGl = null
-                        held.runtime?.let { linked ->
-                            controller.detachRuntime(linked)
-                            if (contextAlive) linked.destroy()
-                        }
-                        held.runtime = null
-                        held.eglContextHandle = 0L
-                    }
-                    view.onPause()
+                    releaseGlView(view, controller)
                 },
             )
         }
-        DisposableEffect(lifecycleOwner, glSurfaceView) {
-            val surface = glSurfaceView
-            if (surface == null) {
-                return@DisposableEffect onDispose {}
-            }
-            val lifecycle = lifecycleOwner.lifecycle
-            val observer = LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_RESUME -> {
-                        surface.onResume()
-                        surface.requestRender()
-                    }
-                    Lifecycle.Event.ON_PAUSE -> surface.onPause()
-                    else -> Unit
-                }
-            }
-            lifecycle.addObserver(observer)
-            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                surface.onResume()
-                surface.requestRender()
-            }
-            onDispose {
-                lifecycle.removeObserver(observer)
-            }
-        }
+        GlViewLifecycle(glSurfaceView, requestFrame = true)
         overlay(linkState)
         failure?.let { failureOverlay(it) }
     }

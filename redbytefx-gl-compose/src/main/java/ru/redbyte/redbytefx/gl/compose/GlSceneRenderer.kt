@@ -5,6 +5,7 @@ import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.util.Log
 import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.FrameClock
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.ShaderProgram
 import ru.redbyte.redbytefx.Uniform
@@ -31,8 +32,6 @@ internal val LINK_CODES: Set<GlCode> = setOf(
 
 /** Frames a recorded mesh may go undrawn before the host deletes its buffers. */
 internal const val HELD_MESH_FRAMES: Long = 60L
-
-private const val NANOS_PER_SECOND = 1_000_000_000f
 
 /** GPU names for one mesh on the current EGL context. */
 private class HeldMesh {
@@ -71,7 +70,7 @@ internal class SceneRenderer(
     private var aspect = 1f
     private var viewWidth = 0
     private var viewHeight = 0
-    private var startedNanos = 0L
+    private val clock = FrameClock()
     private var reported = false
     private var attribScratch = IntArray(8)
     private var appliedPipeline: GlPipeline? = null
@@ -118,7 +117,7 @@ internal class SceneRenderer(
         publish(GlLinkState.Linked)
         controller.attachRuntime(slot.queue, runtime)
         GLES30.glClearColor(mesh.clearR, mesh.clearG, mesh.clearB, 1f)
-        startedNanos = System.nanoTime()
+        clock.pause()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -142,7 +141,7 @@ internal class SceneRenderer(
     private fun drawFrame(runtime: GlProgramRuntime, current: GlFrame) {
         refreshSurfaceMesh(runtime, current)
         frameNumber += 1
-        current.seconds = (System.nanoTime() - startedNanos) / NANOS_PER_SECOND
+        current.seconds = clock.tick(System.nanoTime())
         current.aspect = aspect
         current.widthPx = viewWidth.toFloat().coerceAtLeast(1f)
         current.heightPx = viewHeight.toFloat().coerceAtLeast(1f)
