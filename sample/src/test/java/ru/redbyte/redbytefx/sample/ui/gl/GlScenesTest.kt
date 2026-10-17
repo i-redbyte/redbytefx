@@ -245,9 +245,6 @@ class GlScenesTest {
         assertEquals(0f, letterLift(0, 10f), 0.02f)
         assertTrue(!wordSettled(0.2f))
         assertTrue(wordSettled(10f))
-        assertEquals(0f, letterWave(1, 0.2f), 0.0001f)
-        assertTrue(abs(letterWave(0, 10f)) > 0.01f)
-        assertTrue(abs(letterWave(0, 10f) - letterWave(1, 10f)) > 0.01f)
 
         val model = WordModel()
         model.pose(10f)

@@ -21,12 +21,6 @@ internal fun wordSettled(time: Float): Boolean = letterProgress(WORD_COUNT - 1, 
 
 internal fun letterLift(index: Int, time: Float): Float = FALL_FROM * (1f - easeOut(letterProgress(index, time)))
 
-internal fun letterWave(index: Int, time: Float): Float {
-    if (!wordSettled(time)) return 0f
-    val slot = index % 4
-    return sin(time * 2.5f - slot * 0.85f) * 0.14f
-}
-
 internal class WordModel {
     private val local: FloatArray
     val posed: FloatArray
