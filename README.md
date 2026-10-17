@@ -144,6 +144,15 @@ setContentView(triangleView)
 
 Import `androidx.compose.ui.platform.ComposeView`. A `ComponentActivity` supplies the lifecycle needed by `GlSurface`. For a pure `GLSurfaceView.Renderer`, `redbytefx-gl` also exposes `GlProgramRuntime`; that route requires you to manage the EGL context and vertex buffers yourself.
 
+## Good to know
+
+- **Reuse expressions freely.** A Kotlin value used several times in one statement is computed once in the generated shader, so layered helpers such as `fbm(domainWarp(uv))` stay compact.
+- **Names become shader identifiers.** Uniform, local, function, and output names are turned into ASCII identifiers: Cyrillic is transliterated (`яркость` becomes `u_yarkost`), and GLSL/AGSL keywords, types, and builtins get a suffix. If two uniforms share a name, look them up by the spelled name shown in the generated source.
+- **`repeat` inside a stage is a shader loop.** Its body must record shader statements, for example `local(...).set(...)`. A body that only reassigns Kotlin variables is rejected; call `kotlin.repeat` when you want to unroll at build time.
+- **GL errors do not crash the app.** A failed link is shown by `GlSurface`'s `overlay`. An exception on the GL thread, including one thrown from `onFrame`, stops drawing and is published as `GlController.failure`, which `failureOverlay` shows.
+- **The GL context survives pauses.** `GlSurface` keeps its EGL context in the background, `GlFrame.seconds` keeps counting without jumping, and passing a new `mesh` uploads it without recreating the view. Keep a mesh you pass to `frame.draw` between frames: buffers are cached per mesh object.
+- **Several programs on one context** with `GlProgramRuntime` must share one `GlTextureUnits`. For time uniforms in your own host, `FrameClock` accumulates frame time without drift.
+
 ## Explore the examples
 
 The [sample app](sample/) has AGSL effects and OpenGL ES scenes. Start with these, then try the full [AGSL catalog](sample/src/main/java/ru/redbyte/redbytefx/sample/model/Demo.kt) and [OpenGL catalog](sample/src/main/java/ru/redbyte/redbytefx/sample/ui/gl/GlExampleList.kt):
