@@ -50,13 +50,14 @@ private class HeldMesh {
 
 internal class SceneRenderer(
     private val controller: GlController,
-    private val mesh: GlMesh,
+    private val meshes: MeshSwitch,
     private val requirement: String?,
     private val slot: GlSlot,
     private val present: ShaderProgram?,
     private val renderToTexture: Boolean,
     private val onFrame: (GlFrame) -> Unit,
 ) : GLSurfaceView.Renderer {
+    private val mesh: GlMesh get() = meshes.current
     private val nameSlot = IntArray(1)
     private val surface = HeldMesh()
     private var heldMeshes = IdentityHashMap<GlMesh, HeldMesh>()
@@ -129,13 +130,24 @@ internal class SceneRenderer(
 
     override fun onDrawFrame(gl: GL10?) {
         val runtime = slot.runtime ?: return
-        val current = frame ?: return
+        if (frame == null) return
         if (guard.halted) {
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
             GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
             return
         }
-        guard.run { drawFrame(runtime, current) }
+        guard.run {
+            meshes.takeChange()?.let { next -> switchSurfaceMesh(runtime, next) }
+            drawFrame(runtime, checkNotNull(frame))
+        }
+    }
+
+    /** Uploads a new surface mesh into the existing buffers and starts a frame for it. */
+    private fun switchSurfaceMesh(runtime: GlProgramRuntime, next: GlMesh) {
+        val arrays = next.arrays
+        fill(runtime, surface, next.stride, arrays.vertices, arrays.indices, arrays.revision)
+        frame = GlFrame(runtime, upload, next, presentRuntime)
+        GLES30.glClearColor(next.clearR, next.clearG, next.clearB, 1f)
     }
 
     private fun drawFrame(runtime: GlProgramRuntime, current: GlFrame) {

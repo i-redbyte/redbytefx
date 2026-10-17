@@ -36,7 +36,8 @@ import ru.redbyte.redbytefx.ShaderProgram
  * name is valid on this context. [present] is a second program linked on that same context, not a
  * second [GlController]. Its uniforms are set on [GlFrame.presentRuntime].
  *
- * A new [mesh], [present], or [renderToTexture] recreates the GL view. [onFrame] may change
+ * A new [mesh] is uploaded on the existing EGL context. A new [present] or [renderToTexture]
+ * recreates the GL view. [onFrame] may change
  * between compositions; the GL thread calls the latest one. A mesh passed to [GlFrame.draw] keeps
  * its buffers while it is drawn; after [HELD_MESH_FRAMES] frames without a draw they are deleted.
  */
@@ -60,8 +61,9 @@ public fun GlSurface(
     val failure by controller.failure
     var glSurfaceView by remember { mutableStateOf<GLSurfaceView?>(null) }
     val currentOnFrame by rememberUpdatedState(onFrame)
+    val currentMesh by rememberUpdatedState(mesh)
     Box(modifier = modifier) {
-        key(controller, mesh, present, renderToTexture) {
+        key(controller, present, renderToTexture) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
@@ -72,7 +74,7 @@ public fun GlSurface(
                         setRenderer(
                             SceneRenderer(
                                 controller = controller,
-                                mesh = mesh,
+                                meshes = MeshSwitch(mesh) { currentMesh },
                                 requirement = requirement,
                                 slot = slot,
                                 present = present,

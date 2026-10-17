@@ -327,6 +327,8 @@ public class GlFrame internal constructor(
      * matrix, copied immediately, so the same scratch array may be reused for the next draw in this
      * frame. [model] and [instances] together are an argument error. [material] is written to
      * [GlFrame.material] on the GL thread just before a surface draw; omit it to write `-1`.
+     * Pass a mesh you keep between frames: buffers are cached per [GlMesh] object, so a new object
+     * every frame uploads new buffers and keeps them for [HELD_MESH_FRAMES] frames.
      * [present] selects [presentRuntime], is only valid for a screen draw, and cannot take
      * [material]. [pipeline] is applied on the GL
      * thread for this draw only. The next draw applies its own, and the default leaves blend off,
