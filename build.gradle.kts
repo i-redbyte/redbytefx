@@ -311,8 +311,15 @@ tasks.register("installGitHooks") {
 
 tasks.register("qualityCheck") {
     group = "verification"
-    description = "Unit tests, sample compilation, and Detekt on main sources."
+    description = "Unit tests, sample compilation, Detekt, and Android Lint."
     dependsOn(
+        ":redbytefx-core:lintDebug",
+        ":redbytefx-gl:lintDebug",
+        ":redbytefx-gl-compose:lintDebug",
+        ":redbytefx-compose:lintDebug",
+        ":redbytefx-stdlib:lintDebug",
+        ":redbytefx-3d:lintDebug",
+        ":sample:lintDebug",
         ":redbytefx-core:testDebugUnitTest",
         ":redbytefx-gl:testDebugUnitTest",
         ":redbytefx-gl-compose:testDebugUnitTest",
