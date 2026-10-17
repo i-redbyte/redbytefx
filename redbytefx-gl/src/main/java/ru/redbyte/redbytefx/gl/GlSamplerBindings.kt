@@ -13,7 +13,7 @@ import java.util.IdentityHashMap
 internal class GlSamplerBindings(
     private val device: GlDevice,
     private val textureUnits: GlTextureUnits,
-    private val programId: () -> Int,
+    private val makeCurrent: () -> Unit,
 ) {
     private val boundUnits = IdentityHashMap<Uniform<*>, Int>()
     private val textureIds = IdentityHashMap<Uniform<*>, Int>()
@@ -77,7 +77,7 @@ internal class GlSamplerBindings(
             )
         }
         try {
-            device.useProgram(programId())
+            makeCurrent()
             device.uniform1i(location, unit)
         } catch (error: Throwable) {
             textureUnits.release(unit)

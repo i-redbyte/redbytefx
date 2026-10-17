@@ -2,16 +2,25 @@ package ru.redbyte.redbytefx.gl
 
 private const val UNKNOWN: Int = -1
 
+internal const val NO_PROGRAM: Int = -1
+
 /**
- * Device. Texture-unit state of one EGL context: which units are taken, which unit is active,
- * and which texture each unit holds.
+ * Device. Binding state of one EGL context: which texture units are taken, which unit is active,
+ * which texture each unit holds, which program is current, and which framebuffer is bound.
  *
- * Units are context state, not program state. Every [GlProgramRuntime] that draws on one context
- * must share one instance. Otherwise two programs both start at unit 0, and one skips a bind
- * because its own cache is stale. Destroying a runtime returns only the units that runtime took.
- * A recreated context needs a new instance.
+ * This is context state, not program state. Every [GlProgramRuntime] that draws on one context
+ * must share one instance. Otherwise two programs both start at unit 0 and one skips a bind
+ * because its own cache is stale, and a program switch made by one runtime is invisible to the
+ * other. Destroying a runtime returns only the units that runtime took. A recreated context needs
+ * a new instance.
  */
 public class GlTextureUnits {
+    /** Program name made current through a runtime on this context, or [NO_PROGRAM]. */
+    internal var program: Int = NO_PROGRAM
+
+    /** Framebuffer name bound through a runtime on this context; zero is the window. */
+    internal var framebuffer: Int = 0
+
     private var next = 0
     private var active = 0
     private var held = IntArray(0)

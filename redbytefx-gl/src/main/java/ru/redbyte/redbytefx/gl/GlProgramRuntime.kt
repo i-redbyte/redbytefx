@@ -20,7 +20,6 @@ import ru.redbyte.redbytefx.UniformBlock
 import ru.redbyte.redbytefx.Vec2
 import ru.redbyte.redbytefx.Vec3
 import ru.redbyte.redbytefx.Vec4
-import ru.redbyte.redbytefx.sameFloatUniformValue
 import ru.redbyte.redbytefx.unpackStd430
 import java.util.IdentityHashMap
 import kotlin.jvm.JvmName
@@ -54,6 +53,10 @@ public class GlException(
  * An unchanged float or texture does not call the device again.
  * [textureUnits] is shared by every runtime that draws on this EGL context.
  *
+ * @param textureUnits binding state of the EGL context. The default suits a runtime that is alone on
+ * its context. Pass one shared instance to every runtime that draws on the same context, and a new
+ * one after the context is recreated; otherwise one runtime's program, texture, or framebuffer
+ * switch is invisible to the others.
  * @param strictErrors when true, `glGetError` runs after draw, dispatch, texture upload, and read,
  * and a driver error becomes [GlException] with [GlCode.DriverError]. The default does not query
  * the driver on those calls. A strict link still drains errors after link.
@@ -66,22 +69,15 @@ public class GlProgramRuntime(
     private val textureUnits: GlTextureUnits = GlTextureUnits(),
     private val strictErrors: Boolean = false,
 ) {
-    private class FloatCache(var value: Float)
-
-    private class IntCache(var value: Int)
-
     private val locations = IdentityHashMap<Uniform<*>, Int>()
-    private val floatValues = IdentityHashMap<Uniform<*>, FloatCache>()
-    private val vectorValues = IdentityHashMap<Uniform<*>, FloatArray>()
-    private val intValues = IdentityHashMap<Uniform<*>, IntCache>()
-    private val samplers = GlSamplerBindings(device, textureUnits) { programId }
+    private val values = GlUniformValues(device, ::makeCurrent)
+    private val samplers = GlSamplerBindings(device, textureUnits, ::makeCurrent)
     private var programId = 0
     private var linked = false
     private var destroyed = false
     private val blocks = GlOwnedBlocks(device, program)
     private val ownedTextures = HashSet<Int>()
     private val framebufferColors = HashMap<Int, Int>()
-    private var boundFramebuffer: Int = 0
     private val attribLocations = HashMap<String, Int>()
     private val liveUserBuffers = HashSet<Int>()
 
@@ -124,22 +120,22 @@ public class GlProgramRuntime(
             }
             val default = slot.uniform.default
             if (default != null && isGlFloatScalar(slot.uniform.shape)) {
-                writeFloat(slot.uniform, location, default)
+                values.writeFloat(slot.uniform, location, default)
             }
             val components = slot.uniform.components
             if (components != null && isGlFloatVector(slot.uniform.shape)) {
-                writeVector(slot.uniform, location, components)
+                values.writeVector(slot.uniform, location, components)
             }
             if (components != null && slot.uniform.shape is Shape.Matrix) {
-                writeMatrix(slot.uniform, location, components)
+                values.writeMatrix(slot.uniform, location, components)
             }
             val intDefault = slot.uniform.intDefault
             if (intDefault != null && isGlIntScalar(slot.uniform.shape)) {
-                writeInt(slot.uniform, location, intDefault)
+                values.writeInt(slot.uniform, location, intDefault)
             }
             val boolDefault = slot.uniform.boolDefault
             if (boolDefault != null && isGlBoolScalar(slot.uniform.shape)) {
-                writeInt(slot.uniform, location, if (boolDefault) 1 else 0)
+                values.writeInt(slot.uniform, location, if (boolDefault) 1 else 0)
             }
         }
     }
@@ -153,6 +149,7 @@ public class GlProgramRuntime(
     public fun use() {
         checkReady()
         device.useProgram(programId)
+        textureUnits.program = programId
         blocks.bind()
         samplers.rebindDisturbed()
     }
@@ -338,7 +335,7 @@ public class GlProgramRuntime(
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
         require(width > 0 && height > 0) { "Framebuffer size must be positive, was ${width}x$height" }
-        val previousFramebuffer = boundFramebuffer
+        val previousFramebuffer = textureUnits.framebuffer
         val color = device.createTexture()
         if (color == 0) reject(GlCode.DriverError, "Driver returned no color texture name")
         var depth = 0
@@ -383,7 +380,7 @@ public class GlProgramRuntime(
         device.deleteTexture(target.colorTexture)
         samplers.forget(target.colorTexture)
         framebufferColors.remove(target.framebuffer)
-        if (boundFramebuffer == target.framebuffer) boundFramebuffer = 0
+        if (textureUnits.framebuffer == target.framebuffer) textureUnits.framebuffer = 0
     }
 
     /**
@@ -399,7 +396,7 @@ public class GlProgramRuntime(
                 reject(GlCode.FeedbackLoop, "Cannot sample the color texture of the bound framebuffer")
             }
         }
-        boundFramebuffer = framebuffer
+        textureUnits.framebuffer = framebuffer
         device.bindFramebuffer(framebuffer)
     }
 
@@ -423,7 +420,7 @@ public class GlProgramRuntime(
     public fun readColorTarget(target: GlColorTarget, into: ByteArray) {
         checkThread()
         if (destroyed) reject(GlCode.Destroyed, "Program is destroyed")
-        readColorTargetPixels(device, boundFramebuffer, target, into)
+        readColorTargetPixels(device, textureUnits.framebuffer, target, into)
         checkDriver("read")
     }
 
@@ -511,6 +508,7 @@ public class GlProgramRuntime(
                 "Draw range $first + $count is past $vertexCount vertices"
             }
         }
+        makeCurrent()
         samplers.rebindDisturbed()
         if (count == 0 || vertexCount == 0 || instanceCount == 0) return
         val kind = planDraw(
@@ -607,7 +605,8 @@ public class GlProgramRuntime(
     private fun bindSampler(uniform: Uniform<*>, texture: Int, cube: Boolean): Boolean {
         checkReady()
         val location = locationOf(uniform)
-        if (boundFramebuffer != 0 && framebufferColors[boundFramebuffer] == texture) {
+        val bound = textureUnits.framebuffer
+        if (bound != 0 && framebufferColors[bound] == texture) {
             reject(GlCode.FeedbackLoop, "Cannot sample the color texture of the bound framebuffer")
         }
         return samplers.bind(uniform, texture, cube, location)
@@ -700,18 +699,16 @@ public class GlProgramRuntime(
         }
         ownedTextures.clear()
         framebufferColors.clear()
-        boundFramebuffer = 0
         blocks.delete()
         if (programId != 0) {
             device.useProgram(0)
+            textureUnits.program = 0
             device.deleteProgram(programId)
             programId = 0
         }
         linked = false
         locations.clear()
-        floatValues.clear()
-        vectorValues.clear()
-        intValues.clear()
+        values.clear()
         samplers.clear()
         device.releaseScratch()
     }
@@ -729,7 +726,7 @@ public class GlProgramRuntime(
         require(isGlFloatScalar(uniform.shape)) { "GL float uniform must be a float" }
         val location = locationOf(uniform)
         if (location < 0) return false
-        return writeFloat(uniform, location, value)
+        return values.writeFloat(uniform, location, value)
     }
 
     private fun writeVector(uniform: Uniform<*>, width: Int, x: Float, y: Float, z: Float, w: Float): Boolean {
@@ -737,60 +734,14 @@ public class GlProgramRuntime(
         require(isGlFloatVector(uniform.shape)) { "GL vector uniform must be a float vector" }
         val location = locationOf(uniform)
         if (location < 0) return false
-        return storeVector(uniform, location, width, x, y, z, w)
-    }
-
-    private fun writeVector(uniform: Uniform<*>, location: Int, value: FloatArray): Boolean = storeVector(
-        uniform,
-        location,
-        value.size,
-        value[0],
-        value[1],
-        value.getOrElse(2) { 0f },
-        value.getOrElse(3) { 0f },
-    )
-
-    private fun storeVector(
-        uniform: Uniform<*>,
-        location: Int,
-        width: Int,
-        x: Float,
-        y: Float,
-        z: Float,
-        w: Float,
-    ): Boolean {
-        require(width in 2..4) { "Vector uniform width must be 2, 3, or 4" }
-        val previous = vectorValues[uniform]
-        if (previous != null && previous.size == width && sameComponents(previous, x, y, z, w)) return false
-        device.useProgram(programId)
-        when (width) {
-            2 -> device.uniform2f(location, x, y)
-            3 -> device.uniform3f(location, x, y, z)
-            else -> device.uniform4f(location, x, y, z, w)
-        }
-        val cached = if (previous != null && previous.size == width) previous else FloatArray(width)
-        cached[0] = x
-        cached[1] = y
-        if (width > 2) cached[2] = z
-        if (width > 3) cached[3] = w
-        if (previous !== cached) vectorValues[uniform] = cached
-        return true
+        return values.writeVector(uniform, location, width, x, y, z, w)
     }
 
     private fun writeIntUniform(uniform: Uniform<*>, value: Int): Boolean {
         checkReady()
         val location = locationOf(uniform)
         if (location < 0) return false
-        return writeInt(uniform, location, value)
-    }
-
-    private fun writeInt(uniform: Uniform<*>, location: Int, value: Int): Boolean {
-        val previous = intValues[uniform]
-        if (previous != null && previous.value == value) return false
-        device.useProgram(programId)
-        device.uniform1i(location, value)
-        if (previous == null) intValues[uniform] = IntCache(value) else previous.value = value
-        return true
+        return values.writeInt(uniform, location, value)
     }
 
     private fun writeMatrixUniform(uniform: Uniform<*>, values: FloatArray, expected: Int): Boolean {
@@ -801,32 +752,14 @@ public class GlProgramRuntime(
         require(uniform.shape is Shape.Matrix) { "GL matrix uniform must be a matrix" }
         val location = locationOf(uniform)
         if (location < 0) return false
-        return writeMatrix(uniform, location, values)
+        return this.values.writeMatrix(uniform, location, values)
     }
 
-    private fun writeMatrix(uniform: Uniform<*>, location: Int, values: FloatArray): Boolean {
-        val previous = vectorValues[uniform]
-        if (previous != null && sameVector(previous, values)) return false
+    /** Makes this program current unless the shared context state says it already is. */
+    private fun makeCurrent() {
+        if (textureUnits.program == programId) return
         device.useProgram(programId)
-        when (values.size) {
-            4 -> device.uniformMatrix2fv(location, values)
-            9 -> device.uniformMatrix3fv(location, values)
-            16 -> device.uniformMatrix4fv(location, values)
-            else -> error("Matrix uniform width must be 4, 9, or 16")
-        }
-        val cached = if (previous != null && previous.size == values.size) previous else FloatArray(values.size)
-        values.copyInto(cached)
-        if (previous !== cached) vectorValues[uniform] = cached
-        return true
-    }
-
-    private fun writeFloat(uniform: Uniform<*>, location: Int, value: Float): Boolean {
-        val previous = floatValues[uniform]
-        if (previous != null && sameFloatUniformValue(previous.value, value)) return false
-        device.useProgram(programId)
-        device.uniform1f(location, value)
-        if (previous == null) floatValues[uniform] = FloatCache(value) else previous.value = value
-        return true
+        textureUnits.program = programId
     }
 
     private fun locationOf(uniform: Uniform<*>): Int {
@@ -859,19 +792,5 @@ private fun isGlIntScalar(shape: Shape): Boolean =
 
 private fun isGlBoolScalar(shape: Shape): Boolean =
     shape is Shape.Scalar && shape.kind == ScalarKind.Bool
-
-private fun sameComponents(previous: FloatArray, x: Float, y: Float, z: Float, w: Float): Boolean {
-    if (!sameFloatUniformValue(previous[0], x) || !sameFloatUniformValue(previous[1], y)) return false
-    if (previous.size > 2 && !sameFloatUniformValue(previous[2], z)) return false
-    return previous.size <= 3 || sameFloatUniformValue(previous[3], w)
-}
-
-private fun sameVector(previous: FloatArray, value: FloatArray): Boolean {
-    if (previous.size != value.size) return false
-    for (index in previous.indices) {
-        if (!sameFloatUniformValue(previous[index], value[index])) return false
-    }
-    return true
-}
 
 internal fun reject(code: GlCode, message: String): Nothing = throw GlException(code, message)

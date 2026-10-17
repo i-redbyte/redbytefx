@@ -30,6 +30,60 @@ import ru.redbyte.redbytefx.z
 
 class GlProgramRuntimeTest {
 
+    private fun twoProgramsOnOneContext(): Triple<RecordingGlDevice, Pair<GlProgramRuntime, GlProgramRuntime>, Uniform<Flt<High>>> {
+        lateinit var amount: Uniform<Flt<High>>
+        val first = shader(ShaderTarget.Gles30) {
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(1f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val second = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 0f)
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(amount.expr, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val device = RecordingGlDevice()
+        val units = GlTextureUnits()
+        val a = GlProgramRuntime(first, device, textureUnits = units).also { it.link() }
+        val b = GlProgramRuntime(second, device, textureUnits = units).also { it.link() }
+        return Triple(device, a to b, amount)
+    }
+
+    @Test
+    fun aDrawUsesItsOwnProgramEvenAfterAnotherProgramWroteAUniform() {
+        val (device, runtimes, amount) = twoProgramsOnOneContext()
+        val (a, b) = runtimes
+        a.use()
+        val programA = device.currentProgram
+        b.set(amount, 0.5f)
+        a.drawRange(GLES_TRIANGLES, vertexCount = 3, first = 0, count = 3, elements = null, instanceCount = null)
+
+        assertEquals(listOf(programA), device.drawPrograms)
+    }
+
+    @Test
+    fun uniformWritesOnTheCurrentProgramDoNotRebindIt() {
+        val (device, runtimes, amount) = twoProgramsOnOneContext()
+        val b = runtimes.second
+        b.use()
+        val before = device.useCalls
+        b.set(amount, 0.1f)
+        b.set(amount, 0.2f)
+        b.set(amount, 0.3f)
+
+        assertEquals(before, device.useCalls)
+    }
+
+    @Test
+    fun aColorTargetRestoresTheFramebufferAnotherRuntimeBound() {
+        val (device, runtimes, _) = twoProgramsOnOneContext()
+        val (a, b) = runtimes
+        val target = b.createColorTarget(4, 4)
+        b.bindFramebuffer(target.framebuffer)
+        a.createColorTarget(2, 2)
+
+        assertEquals(target.framebuffer, device.boundFramebuffers.last())
+    }
+
     @Test
     fun blockUploadReusesThePreviousByteBuffer() {
         val device = RecordingGlDevice()
@@ -1252,6 +1306,9 @@ private class RecordingGlDevice(
     private val storageBindingLimit: Int = 8,
 ) : GlDevice() {
     var uniformBindingQueries = 0
+    var useCalls = 0
+    var currentProgram = 0
+    val drawPrograms = mutableListOf<Int>()
     var storageBindingQueries = 0
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
@@ -1374,6 +1431,8 @@ private class RecordingGlDevice(
 
     override fun useProgram(program: Int) {
         writes += "use"
+        useCalls += 1
+        currentProgram = program
     }
 
     override fun activeTexture(unit: Int) {
@@ -1568,6 +1627,7 @@ private class RecordingGlDevice(
 
     override fun drawArrays(mode: Int, first: Int, count: Int) {
         draws += DrawKind.Arrays
+        drawPrograms += currentProgram
     }
 
     override fun drawElements(mode: Int, count: Int, unsignedInt: Boolean, indexOffset: Int) {
@@ -1695,3 +1755,5 @@ private class RecordingGlDevice(
 
     override fun vertexAttribFloat(location: Int, size: Int, strideFloats: Int, offsetFloats: Int) = Unit
 }
+
+private const val GLES_TRIANGLES = 4
