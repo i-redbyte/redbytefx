@@ -4,6 +4,45 @@ All notable changes to the published Maven artifacts (`io.github.i-redbyte:redby
 
 Русская версия: [changelog.ru.md](changelog.ru.md).
 
+## 1.2.0 - unreleased
+
+### Shader DSL and compilation
+
+- A subexpression that one statement reads more than once is spelled once and reused. Layered helpers no longer grow exponentially: `fbm(domainWarp(uv))` went from 3.4 MB of GLSL to a few kilobytes, and deeply shared graphs no longer run the compiler out of memory.
+- Generated identifiers are always valid ASCII. Cyrillic names are transliterated (`яркость` becomes `u_yarkost`), and names that clash with GLSL ES 3.20 or AGSL keywords, types, or builtins get a suffix. Prefixed names (`u_`, `a_`, `v_`) keep their 1.1.1 spelling, and `gl_`, `sk_`, and `__` never appear.
+- A `repeat { }` whose body records no shader statement now fails with `ProgramCode.EmptyRepeat` and points to `local(...).set(...)` or `kotlin.repeat`, instead of silently emitting an empty loop.
+- Looking up a uniform by an author name shared by several uniforms throws and lists the spelled names; spelled names still resolve directly.
+- `Expr` caches its hash, so a graph with reused subexpressions hashes in linear time.
+- `ShaderTarget.Agsl` no longer requires API 33: compiling AGSL works on any API level. Running it still needs Android 13, and `AgslInstance` now carries `@RequiresApi(33)`. New `RedByteFxPlatform.isAgslSupported()` checks support without throwing.
+- New `FrameClock` accumulates frame time in whole nanoseconds, skips paused gaps, and caps a single step; both `bindTime` helpers use it, so time no longer drifts after hours.
+
+### GLES runtime
+
+- Uniform setters bind their program before every write, and `drawRange` makes its own program current, so `A.use(); B.set(...); A.drawRange(...)` draws with `A`. The shared `GlTextureUnits` also tracks the bound framebuffer, which color targets now restore correctly.
+- Deleting a uniform or storage block buffer no longer clears a binding point another program may be using.
+- `glGetError` draining stops after 16 reads, so a lost robust context cannot hang the GL thread.
+- Uniform and storage block updates, the native upload scratch, and `setLitModel` no longer allocate on steady updates.
+
+### Compose hosts
+
+- An exception on the GL thread (a queued write, a `runOnGl` block, `onFrame`, or a non-link setup error) no longer crashes the app. Rendering stops, the error is published as `GlController.failure`, and the new `failureOverlay` parameter of `GlSurface` and `GlCompute` shows it. Matrix and block arrays are validated when `set` is called.
+- GL views keep their EGL context across pauses and start paused unless the host lifecycle is resumed. `GlFrame.seconds` keeps counting across a new context without jumping.
+- A new `mesh` passed to `GlSurface` is uploaded on the existing context instead of recreating the view.
+- A recorded draw that no longer fits a mesh shrunk from another thread is skipped instead of failing.
+- `GlCompute` lays out at least 1 dp with a transparent surface, so a zero-size host still links.
+- `GlController` writes allocate nothing and never hold its lock during a GL call; the AGSL modifier invalidates through one path; the scene renderer avoids per-frame allocations and per-draw state calls.
+- The 1.1.1 JVM signatures of `GlSurface` and `GlCompute` are kept, so binaries compiled against 1.1.1 keep working.
+- `redbytefx-gl-compose` exposes `redbytefx-3d` as an API dependency, because `setLitModel` takes a `LitMesh`.
+
+### Standard library
+
+- Alpha guards in medium precision use 1/1024 instead of 1e-6, which half floats flush to zero, and `polarAngle01` is defined at its center.
+
+### Sample and checks
+
+- The sample runs on Android 7 to 9 (the window theme had no parent below API 29) and closes the AGSL examples below Android 13 instead of crashing.
+- `qualityCheck` now also runs Android Lint and checks the public API against committed `api/*.api` dumps.
+
 ## 1.1.1 - 2026-10-08
 
 ### Shader DSL and math
