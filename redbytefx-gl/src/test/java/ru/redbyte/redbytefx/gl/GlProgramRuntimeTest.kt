@@ -111,6 +111,58 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun steadyStorageUpdatesAllocateNothing() {
+        lateinit var cells: StorageBlock
+        val program = shader(ShaderTarget.Gles31) {
+            cells = storageBlock("cells") { vec4Array("values", 256) }
+            compute(1) { }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device).also { it.link() }
+        val values = FloatArray(1024)
+        runtime.set(cells, values)
+        device.recordPayloads = false
+        var step = 0f
+
+        val bytes = allocatedBytes {
+            repeat(100) {
+                step += 1f
+                values[0] = step
+                runtime.set(cells, values)
+            }
+        }
+        assertEquals(0L, bytes)
+    }
+
+    @Test
+    fun steadyUniformBlockUpdatesAllocateNothing() {
+        lateinit var frame: UniformBlock
+        val program = shader(ShaderTarget.Gles30) {
+            frame = uniformBlock("frame") {
+                float("time")
+                vec3("light")
+            }
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val device = RecordingGlDevice()
+        val runtime = GlProgramRuntime(program, device).also { it.link() }
+        val values = FloatArray(frame.floatCount)
+        runtime.set(frame, values)
+        device.recordPayloads = false
+        var step = 0f
+
+        val bytes = allocatedBytes {
+            repeat(100) {
+                step += 1f
+                values[0] = step
+                runtime.set(frame, values)
+            }
+        }
+        assertEquals(0L, bytes)
+    }
+
+    @Test
     fun storageUploadReusesPackingBuffersAcrossUpdates() {
         lateinit var cells: StorageBlock
         val program = shader(ShaderTarget.Gles31) {
@@ -1318,6 +1370,7 @@ private class RecordingGlDevice(
 ) : GlDevice() {
     var uniformBindingQueries = 0
     var useCalls = 0
+    var recordPayloads = true
     var currentProgram = 0
     val drawPrograms = mutableListOf<Int>()
     var storageBindingQueries = 0
@@ -1551,6 +1604,7 @@ private class RecordingGlDevice(
 
     override fun uniformBufferSubData(buffer: Int, data: ByteArray) {
         bufferSubDataCalls += 1
+        if (!recordPayloads) return
         writes += "bufferSubData"
     }
 
@@ -1558,6 +1612,7 @@ private class RecordingGlDevice(
     val assignedBlockBindings = mutableListOf<Int>()
 
     override fun bindUniformBufferBase(buffer: Int, binding: Int) {
+        if (!recordPayloads) return
         writes += "bindBuffer"
         uniformBindPoints += binding
     }
@@ -1587,6 +1642,7 @@ private class RecordingGlDevice(
 
     override fun shaderStorageData(buffer: Int, data: ByteArray) {
         storageDataCalls += 1
+        if (!recordPayloads) return
         writes += "storageData"
         storagePayloadRefs += data
         storageBytes[buffer] = data.copyOf()
@@ -1594,6 +1650,7 @@ private class RecordingGlDevice(
 
     override fun shaderStorageSubData(buffer: Int, data: ByteArray) {
         storageSubDataCalls += 1
+        if (!recordPayloads) return
         writes += "storageSubData"
         storagePayloadRefs += data
         storageBytes[buffer] = data.copyOf()
@@ -1614,6 +1671,7 @@ private class RecordingGlDevice(
     val storageBindPoints = mutableListOf<Int>()
 
     override fun bindShaderStorageBase(buffer: Int, binding: Int) {
+        if (!recordPayloads) return
         writes += "bindStorage"
         storageBindPoints += binding
     }

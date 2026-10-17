@@ -155,7 +155,9 @@ private fun validateStd140Values(block: UniformBlock, values: FloatArray) {
 
 private fun writeStd140Into(block: UniformBlock, values: FloatArray, into: ByteArray) {
     var cursor = 0
-    block.members.forEachIndexed { index, member ->
+    val members = block.members
+    for (index in members.indices) {
+        val member = members[index]
         cursor = writeStd140(into, block.offsetAt(index), member, values, cursor)
     }
 }
@@ -173,7 +175,9 @@ public fun unpackStd140(block: UniformBlock, packed: ByteBuffer, into: FloatArra
         "Uniform block \"${block.name}\" needs ${block.byteSize} bytes, was ${view.limit()}"
     }
     var cursor = 0
-    block.members.forEachIndexed { index, member ->
+    val members = block.members
+    for (index in members.indices) {
+        val member = members[index]
         cursor = readStd140(view, block.offsetAt(index), member, into, cursor)
     }
     return cursor

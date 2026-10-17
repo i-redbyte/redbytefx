@@ -208,7 +208,9 @@ private fun validateStd430Values(values: FloatArray) {
 private fun writeStd430Into(block: StorageBlock, values: FloatArray, into: ByteArray) {
     val tailElements = block.tailElements(values.size)
     var cursor = 0
-    block.members.forEachIndexed { index, member ->
+    val members = block.members
+    for (index in members.indices) {
+        val member = members[index]
         val lanes = laneCount(member.shape)
         val elements = block.elementsAt(index, tailElements)
         val stride = if (member.arraySize > 0 || member.unsized) {
@@ -245,7 +247,9 @@ public fun unpackStd430(block: StorageBlock, packed: ByteBuffer, valueCount: Int
         "Storage block \"${block.name}\" needs $required bytes, was ${view.limit()}"
     }
     var cursor = 0
-    block.members.forEachIndexed { index, member ->
+    val members = block.members
+    for (index in members.indices) {
+        val member = members[index]
         val lanes = laneCount(member.shape)
         val elements = block.elementsAt(index, tailElements)
         val stride = if (member.arraySize > 0 || member.unsized) {

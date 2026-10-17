@@ -18,13 +18,14 @@ internal class GlBlockBuffer(
 ) {
     var name: Int = 0
         private set
-    private var bytes: ByteArray? = null
-    private var scratch: ByteArray? = null
+    private var packing: ByteArray? = null
+    private var storedSize: Int = 0
     private var floats: FloatArray? = null
 
+    /** The packing buffer for [size] bytes, reused while the size stays the same. */
     fun writableBytes(size: Int): ByteArray {
-        val available = scratch
-        return if (available != null && available.size == size) available else ByteArray(size).also { scratch = it }
+        val available = packing
+        return if (available != null && available.size == size) available else ByteArray(size).also { packing = it }
     }
 
     fun writeStd140(block: UniformBlock, values: FloatArray): Boolean {
@@ -42,7 +43,10 @@ internal class GlBlockBuffer(
         return write(packed)
     }
 
-    /** True when [values] differ from the last upload the device accepted. */
+    /**
+     * True when [values] differ from the last upload the device accepted. This float comparison is
+     * the only change check: equal floats always pack to equal bytes.
+     */
     fun pending(values: FloatArray): Boolean {
         val previous = floats
         return previous == null || !previous.contentEquals(values)
@@ -58,28 +62,25 @@ internal class GlBlockBuffer(
         }
     }
 
-    /** A driver error means the bytes may not have reached the GPU; retry the next write. */
+    /** A driver error means the bytes may not have reached the GPU; the next write is a full one. */
     fun invalidate() {
-        bytes = null
+        storedSize = 0
         floats = null
     }
 
-    /** Uploads [packed] unless it equals the bytes already in the buffer. */
+    /** Uploads [packed]; a first upload or a size change reallocates the store. */
     fun write(packed: ByteArray): Boolean {
-        val previous = bytes
-        if (previous != null && previous.contentEquals(packed)) return false
-        val full = name == 0 || previous == null || previous.size != packed.size
+        val full = name == 0 || storedSize != packed.size
         if (name == 0) {
             name = device.createBuffer()
             require(name != 0) { "Driver returned no buffer name" }
         }
         upload(packed, full)
-        scratch = previous
-        bytes = packed
+        storedSize = packed.size
         return true
     }
 
-    fun storedBytes(): Int = bytes?.size ?: 0
+    fun storedBytes(): Int = storedSize
 
     fun storedFloats(): Int = floats?.size ?: 0
 
@@ -97,8 +98,8 @@ internal class GlBlockBuffer(
             device.deleteBuffer(name)
             name = 0
         }
-        bytes = null
-        scratch = null
+        packing = null
+        storedSize = 0
         floats = null
     }
 
