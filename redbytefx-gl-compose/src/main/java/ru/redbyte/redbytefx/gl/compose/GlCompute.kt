@@ -146,3 +146,25 @@ private fun clearTransparent() {
     GLES30.glClearColor(0f, 0f, 0f, 0f)
     GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 }
+
+/** Binary-compatible 1.1.1 entry point; Kotlin callers resolve to the overload with `failureOverlay`. */
+@Deprecated("Kept for binaries compiled against 1.1.1", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun GlCompute(
+    controller: GlController,
+    modifier: Modifier = Modifier,
+    requirement: String? = controller.program.glLinkRequirementHint(),
+    overlay: @Composable (GlLinkState) -> Unit = { state ->
+        if (state is GlLinkState.Failed) {
+            GlLinkErrorOverlay(state.message)
+        }
+    },
+) {
+    GlCompute(
+        controller = controller,
+        modifier = modifier,
+        requirement = requirement,
+        failureOverlay = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
+        overlay = overlay,
+    )
+}

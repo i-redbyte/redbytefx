@@ -120,3 +120,33 @@ public fun Modifier.glPointerInput(onPointer: (x: Float, y: Float) -> Unit): Mod
         }
     }
 }
+
+/** Binary-compatible 1.1.1 entry point; Kotlin callers resolve to the overload with `failureOverlay`. */
+@Deprecated("Kept for binaries compiled against 1.1.1", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun GlSurface(
+    controller: GlController,
+    mesh: GlMesh,
+    modifier: Modifier = Modifier,
+    requirement: String? = controller.program.glLinkRequirementHint(),
+    present: ShaderProgram? = null,
+    renderToTexture: Boolean = false,
+    onFrame: (GlFrame) -> Unit,
+    overlay: @Composable (GlLinkState) -> Unit = { state ->
+        if (state is GlLinkState.Failed) {
+            GlLinkErrorOverlay(state.message)
+        }
+    },
+) {
+    GlSurface(
+        controller = controller,
+        mesh = mesh,
+        modifier = modifier,
+        requirement = requirement,
+        present = present,
+        renderToTexture = renderToTexture,
+        onFrame = onFrame,
+        failureOverlay = { error -> GlLinkErrorOverlay(glFailureMessage(error)) },
+        overlay = overlay,
+    )
+}
