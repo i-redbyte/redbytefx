@@ -113,5 +113,19 @@ class SharedExpressionTest {
         assertTrue(value == value)
     }
 
+    @Test(timeout = 5_000)
+    fun comparingTwoSeparatelyBuiltSharedGraphsIsLinear() {
+        fun build(): Expr<Flt<High>> {
+            var value: Expr<Flt<High>> = 1f.lit
+            for (level in 0 until 60) value = value * value + value
+            return value
+        }
+        val left = build()
+        val right = build()
+
+        assertTrue(left == right)
+        assertTrue(left in hashSetOf(right))
+    }
+
     private fun String.occurrences(needle: String): Int = windowed(needle.length).count { it == needle }
 }

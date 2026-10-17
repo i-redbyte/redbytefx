@@ -1,5 +1,7 @@
 package ru.redbyte.redbytefx
 
+import java.util.IdentityHashMap
+
 /**
  * Authoring-time shader expression.
  *
@@ -15,13 +17,29 @@ public class Expr<out T : ShType> internal constructor(
 
     /**
      * Structural equality. Identical graphs and graphs with different hashes are decided without
-     * walking them.
+     * walking them. Within one comparison a pair found equal is not compared again, so two
+     * separately built graphs that share subexpressions compare in linear time.
      */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Expr<*>) return false
-        if (hashCode() != other.hashCode()) return false
-        return shape == other.shape && node == other.node
+        if (hashCode() != other.hashCode() || shape != other.shape) return false
+        val ongoing = provenEqual.get()
+        if (ongoing != null) return sameNode(other, ongoing)
+        val proven = IdentityHashMap<Expr<*>, Expr<*>>()
+        provenEqual.set(proven)
+        try {
+            return sameNode(other, proven)
+        } finally {
+            provenEqual.remove()
+        }
+    }
+
+    private fun sameNode(other: Expr<*>, proven: IdentityHashMap<Expr<*>, Expr<*>>): Boolean {
+        if (proven[this] === other) return true
+        val same = node == other.node
+        if (same) proven[this] = other
+        return same
     }
 
     /**
@@ -38,6 +56,9 @@ public class Expr<out T : ShType> internal constructor(
 
     override fun toString(): String = "Expr($shape, $node)"
 }
+
+/** Pairs already found equal by the comparison running on this thread. */
+private val provenEqual = ThreadLocal<IdentityHashMap<Expr<*>, Expr<*>>>()
 
 internal sealed interface ExprNode {
     data class Literal(val value: Float, val precision: Precision) : ExprNode
