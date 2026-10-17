@@ -1,3 +1,7 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+import com.vanniktech.maven.publish.SourcesJar
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.plugins.signing.SigningExtension
 import org.jetbrains.dokka.gradle.DokkaExtension
@@ -41,6 +45,11 @@ val hasSigningConfiguration =
     hasInMemoryOrLegacySigningConfiguration || hasGpgCmdSigningConfiguration
 
 subprojects {
+    // Every library publishes the same way; a module's gradle.properties names it.
+    pluginManager.withPlugin("com.vanniktech.maven.publish.base") {
+        configureRedbytePublishing()
+    }
+
     pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
         dependencies {
             add("detektPlugins", detektFormatting)
@@ -104,6 +113,56 @@ subprojects {
                 "Publishing to Maven Central requires a configured GPG key. " +
                     "Set signingInMemoryKey, signing.secretKeyRingFile, or signing.gnupg.* " +
                     "in Gradle properties."
+            }
+        }
+    }
+}
+
+private fun Project.configureRedbytePublishing() {
+    val pomName = checkNotNull(findProperty("redbytefx.pomName")) { "$path needs redbytefx.pomName" }
+    val pomDescription = checkNotNull(findProperty("redbytefx.pomDescription")) {
+        "$path needs redbytefx.pomDescription"
+    }
+    extensions.configure<MavenPublishBaseExtension> {
+        publishToMavenCentral(automaticRelease = true)
+        if (hasSigningConfiguration) {
+            signAllPublications()
+        }
+        configure(
+            AndroidSingleVariantLibrary(
+                variant = "release",
+                sourcesJar = SourcesJar.Sources(),
+                javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
+            ),
+        )
+        coordinates(
+            groupId = rootProject.group.toString(),
+            artifactId = name,
+            version = rootProject.version.toString(),
+        )
+        pom {
+            name.set(pomName.toString())
+            description.set(pomDescription.toString())
+            inceptionYear.set("2026")
+            url.set("https://github.com/i-redbyte/redbytefx")
+            licenses {
+                license {
+                    name.set("MIT License")
+                    url.set("https://opensource.org/license/mit")
+                    distribution.set("repo")
+                }
+            }
+            developers {
+                developer {
+                    id.set("i-redbyte")
+                    name.set("Ilya Sokolov")
+                    url.set("https://github.com/i-redbyte")
+                }
+            }
+            scm {
+                url.set("https://github.com/i-redbyte/redbytefx")
+                connection.set("scm:git:git://github.com/i-redbyte/redbytefx.git")
+                developerConnection.set("scm:git:ssh://git@github.com/i-redbyte/redbytefx.git")
             }
         }
     }
