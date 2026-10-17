@@ -61,7 +61,8 @@ internal fun requireIndexRange(indices: IntArray, vertexCount: Int) {
 
 /**
  * Scene. Count a recorded draw issues when it runs. A whole-mesh draw reads the index or vertex
- * count then, after any [GlFrame.replace]. An explicit count must still fit after [first].
+ * count then, after any [GlFrame.replace]. The range was validated when it was recorded; if the
+ * mesh shrank since, through [GlMesh.replace] on another thread, the draw is skipped (zero).
  */
 internal fun executedDrawCount(
     wholeMesh: Boolean,
@@ -71,12 +72,9 @@ internal fun executedDrawCount(
     vertexCount: Int,
 ): Int {
     val available = indexCount ?: vertexCount
-    require(first <= available) { "Draw first $first is past $available elements" }
+    if (first > available) return 0
     if (wholeMesh) return available - first
-    require(requested <= available - first) {
-        "Draw range $first + $requested is past $available elements"
-    }
-    return requested
+    return if (requested <= available - first) requested else 0
 }
 
 /** Scene. Depth-test a draw when the surface asked for it, or this mesh writes depth. */

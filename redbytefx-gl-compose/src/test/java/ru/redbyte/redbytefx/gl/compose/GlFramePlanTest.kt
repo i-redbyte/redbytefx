@@ -58,12 +58,9 @@ class GlFramePlanTest {
         assertEquals(1, executedDrawCount(wholeMesh = true, first = 1, requested = 2, indexCount = null, vertexCount = 2))
         assertEquals(17, executedDrawCount(wholeMesh = true, first = 1, requested = 2, indexCount = 18, vertexCount = 24))
         assertEquals(6, executedDrawCount(wholeMesh = false, first = 0, requested = 6, indexCount = 18, vertexCount = 24))
-        assertThrows(IllegalArgumentException::class.java) {
-            executedDrawCount(wholeMesh = false, first = 0, requested = 6, indexCount = 3, vertexCount = 24)
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            executedDrawCount(wholeMesh = true, first = 4, requested = 0, indexCount = 3, vertexCount = 24)
-        }
+        // The mesh shrank on another thread after the draw was recorded: the draw is skipped.
+        assertEquals(0, executedDrawCount(wholeMesh = false, first = 0, requested = 6, indexCount = 3, vertexCount = 24))
+        assertEquals(0, executedDrawCount(wholeMesh = true, first = 4, requested = 0, indexCount = 3, vertexCount = 24))
     }
 
     @Test
