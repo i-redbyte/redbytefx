@@ -471,22 +471,12 @@ public class Gles30Device : GlDevice() {
     }
 
     override fun flushGlErrors(context: String) {
-        var error = GLES30.glGetError()
-        while (error != GLES30.GL_NO_ERROR) {
+        drainGlErrors(GLES30::glGetError) { error ->
             Log.w(LOG_TAG, "OpenGL error 0x${Integer.toHexString(error)} after $context")
-            error = GLES30.glGetError()
         }
     }
 
-    override fun takeGlError(): Int {
-        var found = GLES30.GL_NO_ERROR
-        var error = GLES30.glGetError()
-        while (error != GLES30.GL_NO_ERROR) {
-            if (found == GLES30.GL_NO_ERROR) found = error
-            error = GLES30.glGetError()
-        }
-        return found
-    }
+    override fun takeGlError(): Int = drainGlErrors(GLES30::glGetError) { }
 
     /** GLES 3.1+ only. ES 3.0 must not query `GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS`. */
     private fun esAtLeast(major: Int, minor: Int): Boolean {
