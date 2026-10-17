@@ -61,16 +61,15 @@ class GlProgramRuntimeTest {
     }
 
     @Test
-    fun uniformWritesOnTheCurrentProgramDoNotRebindIt() {
+    fun aUniformWriteReachesItsProgramAfterTheHostSwitchedProgramsItself() {
         val (device, runtimes, amount) = twoProgramsOnOneContext()
         val b = runtimes.second
         b.use()
-        val before = device.useCalls
-        b.set(amount, 0.1f)
-        b.set(amount, 0.2f)
-        b.set(amount, 0.3f)
+        val programB = device.currentProgram
+        device.useProgram(999)
+        b.set(amount, 0.7f)
 
-        assertEquals(before, device.useCalls)
+        assertEquals(listOf(programB), device.floatWritePrograms.takeLast(1))
     }
 
     @Test
@@ -1373,6 +1372,7 @@ private class RecordingGlDevice(
     var recordPayloads = true
     var currentProgram = 0
     val drawPrograms = mutableListOf<Int>()
+    val floatWritePrograms = mutableListOf<Int>()
     var storageBindingQueries = 0
     val liveShaders = mutableSetOf<Int>()
     val livePrograms = mutableSetOf<Int>()
@@ -1449,6 +1449,7 @@ private class RecordingGlDevice(
         }
         writes += "uniform1f"
         uniform1fCalls += 1
+        floatWritePrograms += currentProgram
     }
 
     var uniform3fCalls = 0

@@ -70,8 +70,8 @@ public class GlProgramRuntime(
     private val strictErrors: Boolean = false,
 ) {
     private val locations = IdentityHashMap<Uniform<*>, Int>()
-    private val values = GlUniformValues(device, ::makeCurrent)
-    private val samplers = GlSamplerBindings(device, textureUnits, ::makeCurrent)
+    private val values = GlUniformValues(device, ::bindForWrite)
+    private val samplers = GlSamplerBindings(device, textureUnits, ::bindForWrite)
     private var programId = 0
     private var linked = false
     private var destroyed = false
@@ -755,7 +755,16 @@ public class GlProgramRuntime(
         return this.values.writeMatrix(uniform, location, values)
     }
 
-    /** Makes this program current unless the shared context state says it already is. */
+    /**
+     * Binds this program before a uniform write. glUniform writes into the current program, and a
+     * host may have called glUseProgram itself since, so this never trusts the shared cache.
+     */
+    private fun bindForWrite() {
+        device.useProgram(programId)
+        textureUnits.program = programId
+    }
+
+    /** Makes this program current for a draw unless the shared context state says it already is. */
     private fun makeCurrent() {
         if (textureUnits.program == programId) return
         device.useProgram(programId)
