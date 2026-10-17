@@ -94,6 +94,20 @@ class LanguageFeatureTest {
     }
 
     @Test
+    fun anAuthorNameSharedByTwoUniformsIsAnAmbiguousLookup() {
+        lateinit var second: Uniform<Flt<High>>
+        val program = shader(ShaderTarget.Gles30) {
+            val first = uniform("time", 0f)
+            second = uniform("time", 1f)
+            fragment { vec4(first.expr, second.expr, 0f.lit, 1f.lit) }
+        }
+
+        val error = assertThrows(IllegalArgumentException::class.java) { program.floatUniform("time") }
+        assertTrue(error.message.orEmpty(), error.message.orEmpty().contains("u_time_1"))
+        assertTrue(program.floatUniform("u_time_1") === second)
+    }
+
+    @Test
     fun repeatThatRecordsNoStatementIsRejectedWithAHint() {
         val error = assertThrows(IllegalStateException::class.java) {
             shader(ShaderTarget.Gles30) {

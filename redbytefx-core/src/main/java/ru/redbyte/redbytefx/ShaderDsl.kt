@@ -98,9 +98,20 @@ public class ShaderProgram internal constructor(
 
     public fun mat4Uniform(name: String): Uniform<Mat4> = lookup(name, Shape.Matrix(4))
 
+    /**
+     * Finds a uniform by its spelled name, or by its author name when exactly one uniform has it.
+     * Two uniforms declared with the same author name must be looked up by their spelled names.
+     */
     internal fun <T : ShType> lookup(name: String, shape: Shape): Uniform<T> {
-        val found = bindings.firstOrNull { it.agslName == name || it.uniform.name == name }?.uniform
-            ?: throw IllegalArgumentException("Shader has no uniform named $name")
+        val spelled = bindings.firstOrNull { it.agslName == name }
+        val found = spelled?.uniform ?: run {
+            val authored = bindings.filter { it.uniform.name == name }
+            require(authored.size <= 1) {
+                "Shader has ${authored.size} uniforms named $name; look one up by its spelled name: " +
+                    authored.joinToString { it.agslName }
+            }
+            authored.firstOrNull()?.uniform
+        } ?: throw IllegalArgumentException("Shader has no uniform named $name")
         require(found.shape == shape) { "Uniform \"$name\" has shape ${found.shape}, was $shape" }
         // T is a phantom of [shape]. The shape check is the runtime witness; the type argument is erased.
         @Suppress("UNCHECKED_CAST")
