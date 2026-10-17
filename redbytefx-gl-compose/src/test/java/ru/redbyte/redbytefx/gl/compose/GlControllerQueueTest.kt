@@ -199,6 +199,25 @@ class GlControllerQueueTest {
     }
 
     @Test
+    fun aDetachedQueueReleasesThePosterOfItsView() {
+        val (program, _) = amountProgram()
+        val controller = GlController(program, GlSurfaceConfig())
+        val queue: (() -> Unit) -> Unit = { }
+        var viewPosts = 0
+        controller.attachQueue(queue, post = { block ->
+            viewPosts++
+            block()
+        })
+        controller.detachQueue(queue)
+        val problem = IllegalStateException("late failure")
+
+        controller.reportFailure(problem)
+
+        assertEquals(0, viewPosts)
+        assertTrue(controller.failure.value === problem)
+    }
+
+    @Test
     fun aTaskQueuedOnTheOldSurfaceCannotDrainTheNewRuntime() {
         val (program, amount) = amountProgram()
         val controller = GlController(program, GlSurfaceConfig())

@@ -60,7 +60,7 @@ public class GlController internal constructor(
     public val failure: State<Throwable?> get() = failureHolder
 
     private var glQueue: ((() -> Unit) -> Unit)? = null
-    private var post: (() -> Unit) -> Unit = { it() }
+    private var post: (() -> Unit) -> Unit = RUN_INLINE
     private var drainTask: (() -> Unit)? = null
 
     @Volatile
@@ -109,7 +109,7 @@ public class GlController internal constructor(
      * The new view has its own GL thread, so a program linked by an older view is dropped here:
      * writing through it from the new thread would fail the runtime's thread check.
      */
-    internal fun attachQueue(queue: (() -> Unit) -> Unit, post: (() -> Unit) -> Unit = { it() }) {
+    internal fun attachQueue(queue: (() -> Unit) -> Unit, post: (() -> Unit) -> Unit = RUN_INLINE) {
         synchronized(lock) {
             glQueue = queue
             this.post = post
@@ -126,11 +126,13 @@ public class GlController internal constructor(
     /**
      * Called when the GL view that attached [queue] goes away. A newer view may already have
      * attached its own queue; that one stays. A drain the old view never ran must not block it.
+     * Its poster is dropped too: it captures the view, and with it the Context.
      * Returns whether [queue] was the current one.
      */
     internal fun detachQueue(queue: (() -> Unit) -> Unit): Boolean = synchronized(lock) {
         if (glQueue !== queue) return false
         glQueue = null
+        post = RUN_INLINE
         drainTask = null
         runtime = null
         discardPendingTextureBindings()
@@ -433,3 +435,5 @@ private fun requireMatrix(values: FloatArray, floats: Int) {
 private fun requireFinite(values: FloatArray) {
     for (value in values) require(value.isFinite()) { "Block values must be finite, was $value" }
 }
+
+private val RUN_INLINE: (() -> Unit) -> Unit = { it() }
