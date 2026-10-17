@@ -500,65 +500,21 @@ private fun walkOnce(
     visit: (ExprNode) -> Unit,
 ) {
     if (seenExpressions.put(expr, true) != null) return
-    visit(expr.node)
-    fun descend(child: Expr<*>) = walkOnce(child, seenFunctions, seenExpressions, followFunctions, visit)
-    when (val node = expr.node) {
-        is ExprNode.Unary -> descend(node.arg)
-        is ExprNode.Binary -> {
-            descend(node.left)
-            descend(node.right)
+    val node = expr.node
+    visit(node)
+    forEachOperand(node) { walkOnce(it, seenFunctions, seenExpressions, followFunctions, visit) }
+    if (node is ExprNode.UserCall && followFunctions && seenFunctions.add(node.function)) {
+        walkOnce(node.function.body, seenFunctions, seenExpressions, followFunctions, visit)
+        commandExprs(node.function.statements).forEach {
+            walkOnce(it, seenFunctions, seenExpressions, followFunctions, visit)
         }
-        is ExprNode.Construct -> node.args.forEach(::descend)
-        is ExprNode.Local -> descend(node.initializer)
-        is ExprNode.Swizzle -> descend(node.source)
-        is ExprNode.Cast -> descend(node.arg)
-        is ExprNode.Sample -> descend(node.coord)
-        is ExprNode.UnclampedSample -> descend(node.coord)
-        is ExprNode.Texture -> {
-            descend(node.sampler)
-            descend(node.uv)
-        }
-        is ExprNode.TextureCube -> {
-            descend(node.sampler)
-            descend(node.direction)
-        }
-        is ExprNode.GlIn -> descend(node.index)
-        is ExprNode.VaryingAt -> descend(node.index)
-        is ExprNode.Call -> node.args.forEach(::descend)
-        is ExprNode.Compare -> {
-            descend(node.left)
-            descend(node.right)
-        }
-        is ExprNode.Select -> {
-            descend(node.condition)
-            descend(node.ifTrue)
-            descend(node.ifFalse)
-        }
-        is ExprNode.UserCall -> {
-            node.args.forEach(::descend)
-            if (followFunctions && seenFunctions.add(node.function)) {
-                descend(node.function.body)
-                commandExprs(node.function.statements).forEach(::descend)
-            }
-        }
-        is ExprNode.Index -> descend(node.index)
-        is ExprNode.Literal,
-        is ExprNode.IntLiteral,
-        is ExprNode.UniformRef,
-        is ExprNode.AttributeRef,
-        is ExprNode.VaryingRef,
-        is ExprNode.Param,
-        is ExprNode.BlockRef,
-        is ExprNode.SlotRef,
-        is ExprNode.Invocation,
-        ExprNode.TessCoord,
-        ExprNode.FragCoord,
-        ExprNode.Resolution,
-        -> Unit
     }
 }
 
 internal interface CodeEmitter {
+    /** Spells [expr] as one statement's value; subexpressions it reads twice are named once. */
+    fun emitRoot(expr: Expr<*>): String
+
     fun emit(expr: Expr<*>): String
 
     fun enterScope()
@@ -573,21 +529,16 @@ internal interface CodeEmitter {
 }
 
 private class GlslEmitter(
-    private val allocator: IdentifierAllocator,
+    allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, String>,
     private val attributes: Map<AttributeHandle, String>,
     private val varyings: Map<Varying<*>, String>,
     private val varyingRead: (Varying<*>) -> String = { varying -> varyings.getValue(varying) },
     private val varyingAt: (Varying<*>, String) -> String = { _, _ -> "" },
-) : CodeEmitter {
-    private val localNames = IdentityHashMap<ExprNode.Local, String>()
-    private val localScopes = ArrayDeque<MutableList<ExprNode.Local>>()
-    private var localIndex = 0
-    private val slotNames = IdentityHashMap<LocalSlot, String>()
-    private var slotIndex = 0
-    override val declarations = mutableListOf<String>()
+) : ScopedEmitter(allocator) {
+    override fun declarationType(shape: Shape): String = glslDeclaration(shape)
 
-    override fun emit(expr: Expr<*>): String = when (val node = expr.node) {
+    override fun spellNode(expr: Expr<*>): String = when (val node = expr.node) {
         is ExprNode.Literal -> formatFloat(node.value)
         is ExprNode.IntLiteral -> node.value.toString()
         is ExprNode.Swizzle -> "${emit(node.source)}.${node.mask}"
@@ -596,12 +547,12 @@ private class GlslEmitter(
             UnaryOp.Neg -> "(-${emit(node.arg)})"
             UnaryOp.Not -> "(!${emit(node.arg)})"
         }
-        is ExprNode.Binary -> "(${emit(node.left)} ${arithSymbol(node.op)} ${emit(node.right)})"
+        is ExprNode.Binary -> "(${emit(node.left)} ${node.op.symbol} ${emit(node.right)})"
         is ExprNode.Construct -> {
             val args = node.args.joinToString(", ") { emit(it) }
             "${spell(expr.shape, ShaderTarget.Gles30)}($args)"
         }
-        is ExprNode.Local -> local(node, expr.shape)
+        is ExprNode.Local -> emit(expr)
         is ExprNode.UniformRef -> uniforms[node.uniform] ?: throw ProgramException(
             ProgramCode.ForeignUniform,
             "Uniform \"${node.uniform.name}\" does not belong to this shader",
@@ -633,38 +584,6 @@ private class GlslEmitter(
         is ExprNode.Sample,
         is ExprNode.UnclampedSample,
         -> error("GLSL stage cannot spell ${node::class.simpleName}")
-    }
-
-    private fun local(node: ExprNode.Local, shape: Shape): String {
-        localNames[node]?.let { return it }
-        val initializer = emit(node.initializer)
-        val name = allocator.reserve(glslLocalBase(node.suggestedName, localIndex))
-        localIndex += 1
-        declarations += "  ${glslDeclaration(shape)} $name = $initializer;"
-        localNames[node] = name
-        localScopes.lastOrNull()?.add(node)
-        return name
-    }
-
-    override fun enterScope() {
-        localScopes.addLast(mutableListOf())
-    }
-
-    override fun leaveScope() {
-        for (node in localScopes.removeLast()) localNames.remove(node)
-    }
-
-    override fun bindSlot(slot: LocalSlot) {
-        if (slotNames.containsKey(slot)) return
-        val name = allocator.reserve(glslLocalBase(slot.suggestedName, slotIndex))
-        slotIndex += 1
-        slotNames[slot] = name
-        declarations += "  ${glslDeclaration(slot.shape)} $name;"
-    }
-
-    override fun slotName(slot: LocalSlot): String {
-        bindSlot(slot)
-        return slotNames.getValue(slot)
     }
 
     private fun indexText(node: ExprNode.Index): String {
@@ -735,22 +654,6 @@ private fun renderStage(
     for (line in declarations) append(line).append('\n')
     for (line in statements) append(line).append('\n')
     append("}\n")
-}
-
-private fun arithSymbol(op: ArithOp): String = when (op) {
-    ArithOp.Add -> "+"
-    ArithOp.Sub -> "-"
-    ArithOp.Mul -> "*"
-    ArithOp.Div -> "/"
-    ArithOp.And -> "&&"
-    ArithOp.Or -> "||"
-}
-
-private fun glslLocalBase(suggested: String?, index: Int): String {
-    if (suggested.isNullOrBlank()) return "l$index"
-    val safe = suggested.first().let { it.isLetter() || it == '_' } &&
-        suggested.all { it == '_' || it.isLetterOrDigit() }
-    return if (safe) suggested else sanitizeSuggestedIdentifier(suggested, "l")
 }
 
 internal fun spellCompute(
@@ -1223,7 +1126,7 @@ private fun assignment(
 
 private fun emitExpr(emitter: CodeEmitter, expr: Expr<*>): Pair<List<String>, String> {
     val before = emitter.declarations.size
-    val text = emitter.emit(expr)
+    val text = emitter.emitRoot(expr)
     val fresh = emitter.declarations.drop(before)
     if (before < emitter.declarations.size) {
         emitter.declarations.subList(before, emitter.declarations.size).clear()

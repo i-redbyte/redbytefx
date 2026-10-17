@@ -60,7 +60,7 @@ class StdlibPortTest {
         fun maskCount(straight: Boolean) = Regex("clamp\\(")
             .findAll(source(straight).substringAfter("half4 main("))
             .count()
-        assertEquals(4, maskCount(straight = false))
+        assertEquals(1, maskCount(straight = false))
         assertEquals(1, maskCount(straight = true))
     }
 

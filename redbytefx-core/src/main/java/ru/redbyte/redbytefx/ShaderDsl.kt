@@ -584,7 +584,7 @@ public class ShaderDsl internal constructor(
         val emitter = AgslEmitter(IdentifierAllocator(occupied), uniformNames, identityFunctions(usedFunctions))
         val statements = spellStageStatements(fragmentStatements, emitter, varyingNames)
         val declarations = emitter.declarations.toList()
-        val rendered = emitter.emit(body)
+        val rendered = emitter.emitRoot(body)
         val resultDeclarations = emitter.declarations.drop(declarations.size)
         val output = if (isMedVec4(body.shape)) rendered else "half4($rendered)"
         return ShaderProgram(
@@ -1201,18 +1201,13 @@ public class FragmentDsl internal constructor(
 }
 
 private class AgslEmitter(
-    private val allocator: IdentifierAllocator,
+    allocator: IdentifierAllocator,
     private val uniforms: Map<Uniform<*>, UniformBinding>,
     private val ownedFunctions: IdentityHashMap<UserFunction, Boolean>? = null,
-) : CodeEmitter {
-    private val localNames = IdentityHashMap<ExprNode.Local, String>()
-    private val localScopes = ArrayDeque<MutableList<ExprNode.Local>>()
-    private var localIndex = 0
-    private val slotNames = IdentityHashMap<LocalSlot, String>()
-    private var slotIndex = 0
-    override val declarations = mutableListOf<String>()
+) : ScopedEmitter(allocator) {
+    override fun declarationType(shape: Shape): String = spell(shape, ShaderTarget.Agsl)
 
-    override fun emit(expr: Expr<*>): String = when (val node = expr.node) {
+    override fun spellNode(expr: Expr<*>): String = when (val node = expr.node) {
         is ExprNode.Literal -> formatFloat(node.value)
         is ExprNode.IntLiteral -> node.value.toString()
         is ExprNode.Swizzle -> "${emit(node.source)}.${node.mask}"
@@ -1226,7 +1221,7 @@ private class AgslEmitter(
             val args = node.args.joinToString(", ") { emit(it) }
             "${spell(expr.shape, ShaderTarget.Agsl)}($args)"
         }
-        is ExprNode.Local -> local(node, expr.shape)
+        is ExprNode.Local -> emit(expr)
         is ExprNode.SlotRef -> slotName(node.slot)
         is ExprNode.UniformRef -> uniforms[node.uniform]?.agslName ?: throw ProgramException(
             ProgramCode.ForeignUniform,
@@ -1236,7 +1231,7 @@ private class AgslEmitter(
         ExprNode.Resolution -> RB_RESOLUTION_UNIFORM
         is ExprNode.Sample -> "rb_sample(${emit(node.coord)})"
         is ExprNode.UnclampedSample -> "$RB_INPUT_UNIFORM.eval(${emit(node.coord)})"
-        is ExprNode.Call -> call(node)
+        is ExprNode.Call -> call(node.function, node.args)
         is ExprNode.Param -> node.name
         is ExprNode.Compare -> spellCompare(node.op, node.left, node.right, ::emit)
         is ExprNode.Select -> "(${emit(node.condition)} ? ${emit(node.ifTrue)} : ${emit(node.ifFalse)})"
@@ -1247,7 +1242,7 @@ private class AgslEmitter(
                     "Function \"${node.function.name}\" does not belong to this shader",
                 )
             }
-            call(ExprNode.Call(node.function.name, node.args))
+            call(node.function.name, node.args)
         }
         is ExprNode.Texture,
         is ExprNode.TextureCube,
@@ -1262,45 +1257,11 @@ private class AgslEmitter(
         -> error("AGSL cannot spell ${node::class.simpleName}")
     }
 
-    private fun call(node: ExprNode.Call): String {
-        val args = node.args.joinToString(", ") { emit(it) }
-        return "${node.function}($args)"
-    }
-
-    private fun local(node: ExprNode.Local, shape: Shape): String {
-        localNames[node]?.let { return it }
-        val initializer = emit(node.initializer)
-        val name = allocator.reserve(localBase(node.suggestedName, localIndex))
-        localIndex += 1
-        declarations += "  ${spell(shape, ShaderTarget.Agsl)} $name = $initializer;"
-        localNames[node] = name
-        localScopes.lastOrNull()?.add(node)
-        return name
-    }
-
-    override fun enterScope() {
-        localScopes.addLast(mutableListOf())
-    }
-
-    override fun leaveScope() {
-        for (node in localScopes.removeLast()) localNames.remove(node)
-    }
-
-    override fun bindSlot(slot: LocalSlot) {
-        if (slotNames.containsKey(slot)) return
-        val name = allocator.reserve(localBase(slot.suggestedName, slotIndex))
-        slotIndex += 1
-        slotNames[slot] = name
-        declarations += "  ${spell(slot.shape, ShaderTarget.Agsl)} $name;"
-    }
-
-    override fun slotName(slot: LocalSlot): String {
-        bindSlot(slot)
-        return slotNames.getValue(slot)
-    }
+    private fun call(function: String, args: List<Expr<*>>): String =
+        "$function(${args.joinToString(", ") { emit(it) }})"
 }
 
-private val ArithOp.symbol: String
+internal val ArithOp.symbol: String
     get() = when (this) {
         ArithOp.Add -> "+"
         ArithOp.Sub -> "-"
@@ -1309,19 +1270,6 @@ private val ArithOp.symbol: String
         ArithOp.And -> "&&"
         ArithOp.Or -> "||"
     }
-
-private fun localBase(suggested: String?, index: Int): String {
-    if (suggested.isNullOrBlank() || !isSafeIdentifier(suggested)) {
-        return suggested?.let { sanitizeSuggestedIdentifier(it, "l") } ?: "l$index"
-    }
-    return suggested
-}
-
-private fun isSafeIdentifier(value: String): Boolean {
-    val first = value.first()
-    if (!(first.isLetter() || first == '_')) return false
-    return value.all { it == '_' || it.isLetterOrDigit() }
-}
 
 private fun agslReservedNames(): Set<String> = buildSet {
     addAll(RESERVED_USER_FUNCTION_NAMES)
@@ -1345,7 +1293,7 @@ private fun renderAgslFunctions(
         val emitter = AgslEmitter(locals, uniforms, ownedFunctions)
         val statements = spellStageStatements(function.statements, emitter, varyingNames)
         val declarations = emitter.declarations.toList()
-        val body = emitter.emit(function.body)
+        val body = emitter.emitRoot(function.body)
         val resultDeclarations = emitter.declarations.drop(declarations.size)
         val signature = function.parameters.joinToString(", ") {
             "${spell(it.shape, ShaderTarget.Agsl)} ${it.name}"
