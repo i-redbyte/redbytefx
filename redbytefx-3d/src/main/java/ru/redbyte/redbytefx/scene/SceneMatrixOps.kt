@@ -38,7 +38,7 @@ public fun inverse(matrix: FloatArray, out: FloatArray = FloatArray(MATRIX_FLOAT
     require(matrix.size >= MATRIX_FLOATS && out.size >= MATRIX_FLOATS) {
         "Matrix inverse needs $MATRIX_FLOATS floats"
     }
-    require((0 until MATRIX_FLOATS).all { matrix[it].isFinite() }) { "Matrix values must be finite" }
+    requireFiniteMatrix(matrix, "Matrix values must be finite")
     val a00 = matrix[0].toDouble()
     val a01 = matrix[1].toDouble()
     val a02 = matrix[2].toDouble()
@@ -109,6 +109,11 @@ public fun inverse(matrix: FloatArray, out: FloatArray = FloatArray(MATRIX_FLOAT
     out[14] = r14.toFloat()
     out[15] = r15.toFloat()
     return out
+}
+
+/** Checks the first [MATRIX_FLOATS] values by index, without a range iterator per call. */
+internal fun requireFiniteMatrix(matrix: FloatArray, message: String) {
+    for (index in 0 until MATRIX_FLOATS) require(matrix[index].isFinite()) { message }
 }
 
 internal fun fitsFloat(value: Double): Boolean = value.isFinite() && abs(value) <= Float.MAX_VALUE

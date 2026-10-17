@@ -10,6 +10,15 @@ import kotlin.math.PI
 
 class SceneMatrixTest {
     @Test
+    fun invertingIntoAReusedMatrixAllocatesNothing() {
+        val model = translation(1f, 2f, 3f)
+        val out = FloatArray(16)
+        val calls = 10_000
+        val bytes = allocatedBytes { repeat(calls) { inverse(model, out) } }
+        org.junit.Assert.assertTrue("allocated $bytes bytes for $calls calls", bytes < calls)
+    }
+
+    @Test
     fun transposeSupportsCallerStorageAndInPlaceUpdates() {
         val source = FloatArray(MATRIX_FLOATS) { it.toFloat() }
         val expected = floatArrayOf(

@@ -362,7 +362,7 @@ class GlControllerQueueTest {
         val matrix = FloatArray(16)
         var value = 0f
 
-        val writes = 1_000
+        val writes = 10_000
         val bytes = allocatedBytes {
             repeat(writes) {
                 value += 1f

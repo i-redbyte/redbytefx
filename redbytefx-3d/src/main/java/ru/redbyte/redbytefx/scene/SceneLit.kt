@@ -142,7 +142,7 @@ private const val NORMAL_MATRIX_FLOATS: Int = 9
 
 private fun requireAffineModel(model: FloatArray) {
     require(model.size >= MATRIX_FLOATS) { "Model needs $MATRIX_FLOATS floats, was ${model.size}" }
-    require((0 until MATRIX_FLOATS).all { model[it].isFinite() }) { "Model values must be finite" }
+    requireFiniteMatrix(model, "Model values must be finite")
     require(model[3] == 0f && model[7] == 0f && model[11] == 0f && model[15] == 1f) {
         "Normal matrix requires an affine model"
     }
