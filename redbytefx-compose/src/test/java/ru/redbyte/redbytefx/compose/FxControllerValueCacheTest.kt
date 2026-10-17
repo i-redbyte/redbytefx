@@ -21,11 +21,12 @@ class FxControllerValueCacheTest {
     fun setFloatInvalidatesRuntimeWhenValueChanges() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
 
         controller.setFloat(param, 0.5f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.floatCalls)
     }
 
@@ -33,13 +34,14 @@ class FxControllerValueCacheTest {
     fun setIntSkipsRuntimeInvalidationWhenValueIsStable() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testIntParam()
 
         controller.setInt(param, 2)
         controller.setInt(param, 2)
         controller.setInt(param, 4)
 
-        assertEquals(2, controller.runtimeInvalidationTick)
+        assertEquals(2, invalidations.count)
         assertEquals(2, instance.intCalls)
     }
 
@@ -47,12 +49,13 @@ class FxControllerValueCacheTest {
     fun setFloatSkipsRuntimeInvalidationWhenValueIsStable() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
 
         controller.setFloat(param, 0.5f)
         controller.setFloat(param, 0.5f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.floatCalls)
     }
 
@@ -60,12 +63,13 @@ class FxControllerValueCacheTest {
     fun setFloat2SkipsRuntimeInvalidationWhenValueIsStable() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloat2Param()
 
         controller.setFloat2(param, 0.25f, 0.75f)
         controller.setFloat2(param, 0.25f, 0.75f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.float2Calls)
     }
 
@@ -73,12 +77,13 @@ class FxControllerValueCacheTest {
     fun setFloat3SkipsRuntimeInvalidationWhenValueIsStable() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloat3Param()
 
         controller.setFloat3(param, 0.25f, 0.5f, 0.75f)
         controller.setFloat3(param, 0.25f, 0.5f, 0.75f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.float3Calls)
     }
 
@@ -86,12 +91,13 @@ class FxControllerValueCacheTest {
     fun setFloat4SkipsRuntimeInvalidationWhenValueIsStable() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloat4Param()
 
         controller.setFloat4(param, 0.1f, 0.2f, 0.3f, 0.4f)
         controller.setFloat4(param, 0.1f, 0.2f, 0.3f, 0.4f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.float4Calls)
     }
 
@@ -99,10 +105,11 @@ class FxControllerValueCacheTest {
     fun setResolutionInvalidatesRuntimeWhenSizeChanges() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.setResolution(320f, 180f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
         assertEquals(320f, instance.lastResolutionWidth)
         assertEquals(180f, instance.lastResolutionHeight)
@@ -112,11 +119,12 @@ class FxControllerValueCacheTest {
     fun setResolutionSkipsDuplicateSizeUpdates() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.setResolution(320f, 180f)
         controller.setResolution(320f, 180f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
     }
 
@@ -124,11 +132,12 @@ class FxControllerValueCacheTest {
     fun setResolutionClampsNonPositiveValuesBeforeForwarding() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.setResolution(0f, -5f)
         controller.setResolution(Float.POSITIVE_INFINITY, Float.NaN)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
         assertEquals(1f, instance.lastResolutionWidth)
         assertEquals(1f, instance.lastResolutionHeight)
@@ -138,11 +147,12 @@ class FxControllerValueCacheTest {
     fun setResolutionSkipsDifferentNonPositiveInputsThatClampSame() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.setResolution(0f, -5f)
         controller.setResolution(-10f, 0f)
 
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
         assertEquals(1f, instance.lastResolutionWidth)
         assertEquals(1f, instance.lastResolutionHeight)
@@ -152,10 +162,11 @@ class FxControllerValueCacheTest {
     fun syncResolutionDoesNotInvalidateRuntime() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.syncResolution(320f, 180f)
 
-        assertEquals(0, controller.runtimeInvalidationTick)
+        assertEquals(0, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
         assertEquals(320f, instance.lastResolutionWidth)
         assertEquals(180f, instance.lastResolutionHeight)
@@ -165,11 +176,12 @@ class FxControllerValueCacheTest {
     fun syncResolutionSkipsDuplicateSizeUpdates() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.syncResolution(320f, 180f)
         controller.syncResolution(320f, 180f)
 
-        assertEquals(0, controller.runtimeInvalidationTick)
+        assertEquals(0, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
     }
 
@@ -177,11 +189,12 @@ class FxControllerValueCacheTest {
     fun syncResolutionSkipsDifferentNonPositiveInputsThatClampSame() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
 
         controller.syncResolution(0f, -5f)
         controller.syncResolution(-10f, 0f)
 
-        assertEquals(0, controller.runtimeInvalidationTick)
+        assertEquals(0, invalidations.count)
         assertEquals(1, instance.resolutionCalls)
         assertEquals(1f, instance.lastResolutionWidth)
         assertEquals(1f, instance.lastResolutionHeight)

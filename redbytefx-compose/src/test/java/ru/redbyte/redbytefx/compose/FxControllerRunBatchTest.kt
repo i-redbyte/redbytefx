@@ -27,6 +27,7 @@ class FxControllerRunBatchTest {
     fun backgroundWriteCannotChangeControllerState() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
         val failure = AtomicReference<Throwable?>()
         val worker = Thread {
@@ -41,12 +42,13 @@ class FxControllerRunBatchTest {
         assertFalse(worker.isAlive)
         assertTrue(failure.get() is IllegalStateException)
         assertEquals(0, instance.floatCalls)
-        assertEquals(0, controller.runtimeInvalidationTick)
+        assertEquals(0, invalidations.count)
     }
 
     @Test
     fun listenerCanUnsubscribeDuringInvalidation() {
         val controller = FxController(TrackingFxInstance())
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
         var calls = 0
         lateinit var listener: () -> Unit
@@ -64,6 +66,7 @@ class FxControllerRunBatchTest {
     fun runBatchCoalescesRuntimeInvalidationTick() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
 
         controller.runBatch {
@@ -73,25 +76,27 @@ class FxControllerRunBatchTest {
         }
 
         assertEquals(3, instance.floatCalls)
-        assertEquals(1, controller.runtimeInvalidationTick)
+        assertEquals(1, invalidations.count)
     }
 
     @Test
     fun withoutRunBatchEachChangeStillInvalidates() {
         val instance = TrackingFxInstance()
         val controller = FxController(instance)
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
 
         controller.setFloat(param, 0.25f)
         controller.setFloat(param, 0.75f)
 
         assertEquals(2, instance.floatCalls)
-        assertEquals(2, controller.runtimeInvalidationTick)
+        assertEquals(2, invalidations.count)
     }
 
     @Test
     fun removingOneHostLeavesTheOtherSubscribed() {
         val controller = FxController(TrackingFxInstance())
+        val invalidations = controller.invalidationCounter()
         val param = testFloatParam()
         var firstInvalidations = 0
         var secondInvalidations = 0

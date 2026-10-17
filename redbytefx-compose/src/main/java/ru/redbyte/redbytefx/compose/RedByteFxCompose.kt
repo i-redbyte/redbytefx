@@ -6,10 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -70,8 +67,6 @@ public class FxController internal constructor(
     private var controllerBatchDepth: Int = 0
     private var runtimeInvalidationListeners = emptyArray<() -> Unit>()
     private var pendingHostInvalidate: Boolean = false
-    internal var runtimeInvalidationTick: Int by mutableIntStateOf(0)
-        private set
     private var cachedPlatformRenderEffect: AndroidRenderEffect? = null
     private var cachedComposeRenderEffect: androidx.compose.ui.graphics.RenderEffect? = null
     internal val composeRenderEffect: androidx.compose.ui.graphics.RenderEffect
@@ -229,8 +224,8 @@ public class FxController internal constructor(
         }
     }
 
+    /** Each attached [redbyteFx] node redraws through its listener; no snapshot state is written. */
     private fun invalidateRuntime() {
-        runtimeInvalidationTick += 1
         val listeners = runtimeInvalidationListeners
         for (listener in listeners) listener()
     }
@@ -539,7 +534,6 @@ private class RedByteFxNode(
             drawContent()
             return
         }
-        controller.runtimeInvalidationTick
         controller.syncResolution(size.width, size.height)
         val renderEffect = controller.composeRenderEffect
         if (appliedRenderEffect !== renderEffect) {
