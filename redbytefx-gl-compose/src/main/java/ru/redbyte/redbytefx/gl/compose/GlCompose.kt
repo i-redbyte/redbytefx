@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.FrameClock
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
 import ru.redbyte.redbytefx.ShaderProgram
@@ -58,31 +59,20 @@ public fun GlController.bindTime(
     isPlaying: Boolean = true,
     offsetSeconds: Float = 0f,
 ) {
-    val state = remember(this, param) { GlTimeBindingState() }
+    val clock = remember(this, param) { FrameClock() }
     LaunchedEffect(this, param, isPlaying, offsetSeconds) {
         if (!isPlaying) {
-            state.lastFrameNanos = NO_FRAME
-            set(param, offsetSeconds + state.elapsedSeconds)
+            clock.pause()
+            set(param, clock.secondsWithOffset(offsetSeconds))
             return@LaunchedEffect
         }
         while (true) {
             withFrameNanos { frameNanos ->
-                val lastFrameNanos = state.lastFrameNanos
-                if (lastFrameNanos != NO_FRAME) {
-                    state.elapsedSeconds += (frameNanos - lastFrameNanos) / 1_000_000_000f
-                }
-                state.lastFrameNanos = frameNanos
-                set(param, offsetSeconds + state.elapsedSeconds)
+                clock.tick(frameNanos)
+                set(param, clock.secondsWithOffset(offsetSeconds))
             }
         }
     }
-}
-
-private const val NO_FRAME = Long.MIN_VALUE
-
-private class GlTimeBindingState {
-    var elapsedSeconds: Float = 0f
-    var lastFrameNanos: Long = NO_FRAME
 }
 
 /**

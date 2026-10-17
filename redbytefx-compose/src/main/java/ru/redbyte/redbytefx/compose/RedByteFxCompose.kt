@@ -24,6 +24,7 @@ import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.platform.InspectorInfo
 import ru.redbyte.redbytefx.AgslInstance
 import ru.redbyte.redbytefx.Flt
+import ru.redbyte.redbytefx.FrameClock
 import ru.redbyte.redbytefx.High
 import ru.redbyte.redbytefx.IntS
 import ru.redbyte.redbytefx.Med
@@ -280,7 +281,9 @@ public fun rememberFxController(program: ShaderProgram): FxController {
  * The [param] handle must belong to the same compiled effect that created this controller.
  *
  * When [isPlaying] becomes `false`, the current time value is preserved. Resuming continues from
- * the paused value instead of restarting from zero. [offsetSeconds] shifts the reported time
+ * the paused value instead of restarting from zero. Time accumulates in whole nanoseconds through
+ * [FrameClock], so it does not drift, and a long gap between frames advances it by at most
+ * [FrameClock.DEFAULT_MAX_STEP_NANOS]. [offsetSeconds] shifts the reported time
  * without resetting the internally accumulated phase.
  *
  * Prefer this over manually ticking [setFloat] from composable code.
@@ -291,23 +294,19 @@ public fun FxController.bindTime(
     isPlaying: Boolean = true,
     offsetSeconds: Float = 0f,
 ) {
-    val state = remember(this, param) { TimeBindingState() }
+    val clock = remember(this, param) { FrameClock() }
 
     LaunchedEffect(this, param, isPlaying, offsetSeconds) {
         if (!isPlaying) {
-            state.hasLastFrame = false
-            setFloat(param, offsetSeconds + state.elapsedSeconds)
+            clock.pause()
+            setFloat(param, clock.secondsWithOffset(offsetSeconds))
             return@LaunchedEffect
         }
 
         while (true) {
             withFrameNanos { frameNanos ->
-                if (state.hasLastFrame) {
-                    state.elapsedSeconds += (frameNanos - state.lastFrameNanos) / 1_000_000_000f
-                }
-                state.lastFrameNanos = frameNanos
-                state.hasLastFrame = true
-                setFloat(param, offsetSeconds + state.elapsedSeconds)
+                clock.tick(frameNanos)
+                setFloat(param, clock.secondsWithOffset(offsetSeconds))
             }
         }
     }
@@ -552,12 +551,6 @@ private class RedByteFxNode(
         }
         drawLayer(graphicsLayer)
     }
-}
-
-internal class TimeBindingState {
-    var elapsedSeconds: Float = 0f
-    var lastFrameNanos: Long = 0L
-    var hasLastFrame: Boolean = false
 }
 
 internal fun sanitizeControllerResolution(value: Float): Float =
