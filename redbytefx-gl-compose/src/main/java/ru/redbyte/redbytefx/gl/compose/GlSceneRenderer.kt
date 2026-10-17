@@ -15,7 +15,6 @@ import ru.redbyte.redbytefx.gl.GlException
 import ru.redbyte.redbytefx.gl.GlProgramRuntime
 import ru.redbyte.redbytefx.gl.GlTextureUnits
 import ru.redbyte.redbytefx.gl.IndexElementKind
-import java.util.IdentityHashMap
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -34,7 +33,7 @@ internal val LINK_CODES: Set<GlCode> = setOf(
 internal const val HELD_MESH_FRAMES: Long = 60L
 
 /** GPU names for one mesh on the current EGL context. */
-private class HeldMesh {
+private class HeldMesh : FrameStamped {
     var buffer = 0
     var floats = 0
     var vertexCount = 0
@@ -42,10 +41,15 @@ private class HeldMesh {
     var elements: IndexElementKind? = null
     var indexCount = 0
     var vao = 0
-    var drawnFrame = 0L
+    override var drawnFrame = 0L
     var enabledAttribs = IntArray(0)
     var enabledAttribCount = 0
     var sourceRevision = -1L
+
+    /** Runtime whose attribute locations this VAO holds; null after its names change. */
+    var attribsFor: GlProgramRuntime? = null
+    var instanceBuffer = 0
+    var instanceFloats = 0
 }
 
 internal class SceneRenderer(
@@ -60,13 +64,13 @@ internal class SceneRenderer(
     private val mesh: GlMesh get() = meshes.current
     private val nameSlot = IntArray(1)
     private val surface = HeldMesh()
-    private var heldMeshes = IdentityHashMap<GlMesh, HeldMesh>()
+    private val heldMeshes = HeldMeshes<HeldMesh>()
+    private val evicted = ArrayList<HeldMesh>()
+    private var activeRuntime: GlProgramRuntime? = null
     private val upload: (FloatArray, IntArray?) -> Unit = { vertices, indices -> replaceSurface(vertices, indices) }
     private var frame: GlFrame? = null
     private var presentRuntime: GlProgramRuntime? = null
     private var colorTarget: GlColorTarget? = null
-    private var instanceBuffer = 0
-    private var instanceFloats = 0
     private var frameNumber = 0L
     private var aspect = 1f
     private var viewWidth = 0
@@ -144,6 +148,7 @@ internal class SceneRenderer(
 
     /** Uploads a new surface mesh into the existing buffers and starts a frame for it. */
     private fun switchSurfaceMesh(runtime: GlProgramRuntime, next: GlMesh) {
+        surface.attribsFor = null
         val arrays = next.arrays
         fill(runtime, surface, next.stride, arrays.vertices, arrays.indices, arrays.revision)
         frame = GlFrame(runtime, upload, next, presentRuntime)
@@ -168,6 +173,7 @@ internal class SceneRenderer(
             requireOffscreenTarget(renderToTexture, draws.offscreen().size)
             appliedDepthTest = null
             runtime.use()
+            activeRuntime = runtime
             execute(runtime, draws, current.material)
         } finally {
             draws.reset()
@@ -261,13 +267,38 @@ internal class SceneRenderer(
         val indexCount = if (held.element != 0) held.indexCount else null
         val executed = executedDrawCount(wholeMesh, first, count, indexCount, held.vertexCount)
         if (executed == 0) return
-        runtime.use()
+        if (activeRuntime !== runtime) {
+            runtime.use()
+            activeRuntime = runtime
+        }
         depthTest(target)
         if (appliedPipeline !== pipeline) {
             applyPipeline(pipeline, GlesPipelineOps)
             appliedPipeline = pipeline
         }
         GLES30.glBindVertexArray(held.vao)
+        if (held.attribsFor !== runtime) configureAttribs(runtime, target, held)
+        try {
+            if (instances != null) bindInstances(runtime, held, instances)
+            if (target.patchVertices > 0) GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, target.patchVertices)
+            runtime.drawRange(
+                mode = target.mode,
+                vertexCount = held.vertexCount,
+                first = first,
+                count = executed,
+                elements = held.elements,
+                instanceCount = instances?.let { it.size / MODEL_MATRIX_FLOATS },
+            )
+        } finally {
+            if (instances != null) clearInstances(runtime)
+        }
+    }
+
+    /**
+     * Points the VAO at the mesh buffer for [runtime]'s attribute locations. The VAO keeps this
+     * state, so it runs again only when the program or the GL names change.
+     */
+    private fun configureAttribs(runtime: GlProgramRuntime, target: GlMesh, held: HeldMesh) {
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, held.buffer)
         val attribs = target.attribs
         var nextCount = 0
@@ -287,26 +318,14 @@ internal class SceneRenderer(
         if (held.enabledAttribs.size < nextCount) held.enabledAttribs = IntArray(nextCount)
         attribScratch.copyInto(held.enabledAttribs, 0, 0, nextCount)
         held.enabledAttribCount = nextCount
-        if (held.element != 0) GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, held.element)
-        try {
-            if (instances != null) bindInstances(runtime, instances)
-            if (target.patchVertices > 0) GLES32.glPatchParameteri(GLES32.GL_PATCH_VERTICES, target.patchVertices)
-            runtime.drawRange(
-                mode = target.mode,
-                vertexCount = held.vertexCount,
-                first = first,
-                count = executed,
-                elements = held.elements,
-                instanceCount = instances?.let { it.size / MODEL_MATRIX_FLOATS },
-            )
-        } finally {
-            if (instances != null) clearInstances(runtime)
-        }
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, held.element)
+        held.attribsFor = runtime
     }
 
-    private fun bindInstances(runtime: GlProgramRuntime, instances: FloatArray) {
-        if (instanceBuffer == 0) instanceBuffer = runtime.createBuffer()
-        instanceFloats = runtime.replaceArrayBuffer(instanceBuffer, instanceFloats, instances)
+    /** Each mesh keeps its own instance buffer, so draws of different sizes do not reallocate one. */
+    private fun bindInstances(runtime: GlProgramRuntime, held: HeldMesh, instances: FloatArray) {
+        if (held.instanceBuffer == 0) held.instanceBuffer = runtime.createBuffer()
+        held.instanceFloats = runtime.replaceArrayBuffer(held.instanceBuffer, held.instanceFloats, instances)
         for (column in MODEL_COLUMNS.indices) {
             val location = runtime.attribLocation(MODEL_COLUMNS[column])
             if (location < 0) continue
@@ -337,7 +356,7 @@ internal class SceneRenderer(
         }
         val created = HeldMesh()
         created.drawnFrame = frameNumber
-        heldMeshes[target] = created
+        heldMeshes.put(target, created)
         fill(runtime, created, target.stride, arrays.vertices, arrays.indices, arrays.revision)
         return created
     }
@@ -354,8 +373,12 @@ internal class SceneRenderer(
         if (held.vao == 0) {
             GLES30.glGenVertexArrays(1, nameSlot, 0)
             held.vao = nameSlot[0]
+            held.attribsFor = null
         }
-        if (held.buffer == 0) held.buffer = runtime.createBuffer()
+        if (held.buffer == 0) {
+            held.buffer = runtime.createBuffer()
+            held.attribsFor = null
+        }
         held.floats = runtime.replaceArrayBuffer(held.buffer, held.floats, vertices)
         held.vertexCount = vertices.size / stride
         if (preserveIndices) {
@@ -368,13 +391,17 @@ internal class SceneRenderer(
                 GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0)
                 runtime.deleteBuffer(held.element)
                 held.element = 0
+                held.attribsFor = null
             }
             held.elements = null
             held.indexCount = 0
             held.sourceRevision = revision
             return
         }
-        if (held.element == 0) held.element = runtime.createBuffer()
+        if (held.element == 0) {
+            held.element = runtime.createBuffer()
+            held.attribsFor = null
+        }
         held.elements = runtime.elementBufferData(held.element, indices)
         held.indexCount = indices.size
         held.sourceRevision = revision
@@ -386,15 +413,9 @@ internal class SceneRenderer(
     }
 
     private fun evictIdleMeshes(runtime: GlProgramRuntime) {
-        val iterator = heldMeshes.values.iterator()
-        while (iterator.hasNext()) {
-            val held = iterator.next()
-            if (frameNumber - held.drawnFrame >= HELD_MESH_FRAMES) {
-                deleteNames(runtime, held)
-                iterator.remove()
-            }
-        }
-        if (heldMeshes.isEmpty()) heldMeshes = IdentityHashMap()
+        heldMeshes.evictIdle(frameNumber, evicted)
+        for (index in evicted.indices) deleteNames(runtime, evicted[index])
+        evicted.clear()
     }
 
     private fun deleteNames(runtime: GlProgramRuntime, held: HeldMesh) {
@@ -404,6 +425,10 @@ internal class SceneRenderer(
         held.element = 0
         if (buffer != 0) runtime.deleteBuffer(buffer)
         if (element != 0 && element != buffer) runtime.deleteBuffer(element)
+        if (held.instanceBuffer != 0) runtime.deleteBuffer(held.instanceBuffer)
+        held.instanceBuffer = 0
+        held.instanceFloats = 0
+        held.attribsFor = null
         if (held.vao != 0) {
             nameSlot[0] = held.vao
             GLES30.glDeleteVertexArrays(1, nameSlot, 0)
@@ -416,8 +441,7 @@ internal class SceneRenderer(
         val runtime = slot.runtime
         if (contextAlive && runtime != null) {
             deleteNames(runtime, surface)
-            for (held in heldMeshes.values) deleteNames(runtime, held)
-            if (instanceBuffer != 0) runtime.deleteBuffer(instanceBuffer)
+            heldMeshes.forEachHeld { deleteNames(runtime, it) }
             colorTarget?.let { runtime.deleteColorTarget(it) }
             presentRuntime?.destroy()
         }
@@ -430,9 +454,11 @@ internal class SceneRenderer(
         surface.vao = 0
         surface.enabledAttribCount = 0
         surface.sourceRevision = -1L
-        heldMeshes = IdentityHashMap()
-        instanceBuffer = 0
-        instanceFloats = 0
+        surface.instanceBuffer = 0
+        surface.instanceFloats = 0
+        surface.attribsFor = null
+        heldMeshes.clear()
+        activeRuntime = null
         colorTarget = null
         presentRuntime = null
         frame = null
