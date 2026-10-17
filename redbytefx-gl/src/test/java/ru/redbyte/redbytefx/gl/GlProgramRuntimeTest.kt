@@ -85,6 +85,17 @@ class GlProgramRuntimeTest {
     }
 
     @Test
+    fun deletingABlockBufferLeavesTheSharedBindingPointAlone() {
+        val device = RecordingGlDevice()
+        val buffer = GlBlockBuffer(device, storage = false, binding = 0)
+        buffer.write(ByteArray(16))
+        val bindsBefore = device.writes.count { it == "bindBuffer" }
+        buffer.delete()
+
+        assertEquals(bindsBefore, device.writes.count { it == "bindBuffer" })
+    }
+
+    @Test
     fun blockUploadReusesThePreviousByteBuffer() {
         val device = RecordingGlDevice()
         val buffer = GlBlockBuffer(device, storage = false, binding = 0)

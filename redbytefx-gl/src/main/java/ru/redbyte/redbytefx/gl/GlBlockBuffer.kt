@@ -88,9 +88,12 @@ internal class GlBlockBuffer(
         if (storage) device.bindShaderStorageBase(name, binding) else device.bindUniformBufferBase(name, binding)
     }
 
+    /**
+     * Deletes the buffer. `glDeleteBuffers` already unbinds it wherever it is bound, so the binding
+     * point, which another program on the context may now use, is left alone.
+     */
     fun delete() {
         if (name != 0) {
-            if (storage) device.bindShaderStorageBase(0, binding) else device.bindUniformBufferBase(0, binding)
             device.deleteBuffer(name)
             name = 0
         }
