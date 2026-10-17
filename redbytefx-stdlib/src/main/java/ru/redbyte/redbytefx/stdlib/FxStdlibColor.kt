@@ -19,11 +19,11 @@ public fun premultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> = ru.r
  */
 public fun unpremultiply(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
     val alpha = color.a
-    val nonzero = alpha gt 0.000001f
+    val nonzero = alpha gt MEDIUMP_ALPHA_EPSILON
     return ru.redbyte.redbytefx.color(
-        r = ifElse(nonzero, color.r / max(alpha, 0.000001f), 0f.lit.toMed()),
-        g = ifElse(nonzero, color.g / max(alpha, 0.000001f), 0f.lit.toMed()),
-        b = ifElse(nonzero, color.b / max(alpha, 0.000001f), 0f.lit.toMed()),
+        r = ifElse(nonzero, color.r / max(alpha, MEDIUMP_ALPHA_EPSILON), 0f.lit.toMed()),
+        g = ifElse(nonzero, color.g / max(alpha, MEDIUMP_ALPHA_EPSILON), 0f.lit.toMed()),
+        b = ifElse(nonzero, color.b / max(alpha, MEDIUMP_ALPHA_EPSILON), 0f.lit.toMed()),
         a = alpha,
     )
 }
@@ -204,3 +204,10 @@ public fun filmicTonemap(color: Expr<Vec4<Flt<Med>>>): Expr<Vec4<Flt<Med>>> {
     val rgb = filmicTonemap(straight)
     return premultiply(ru.redbyte.redbytefx.color(rgb.toMed(), color.a))
 }
+
+/**
+ * Smallest alpha divided by in mediump. A half float flushes values below its normal range
+ * (about 6.1e-5) to zero on many GPUs, so a smaller epsilon would not prevent division by zero.
+ * 8-bit alpha never gets this close to zero without being zero.
+ */
+internal const val MEDIUMP_ALPHA_EPSILON: Float = 1f / 1024f

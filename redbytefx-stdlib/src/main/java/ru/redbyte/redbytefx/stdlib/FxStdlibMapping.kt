@@ -79,7 +79,7 @@ public fun posterize(
 ): Expr<Vec4<Flt<Med>>> {
     val medLevels = levels.toMed()
     val alpha = color.a
-    val safeAlpha = max(alpha, 0.000001f)
+    val safeAlpha = max(alpha, MEDIUMP_ALPHA_EPSILON)
     return color(
         r = posterize(color.r / safeAlpha, medLevels) * alpha,
         g = posterize(color.g / safeAlpha, medLevels) * alpha,

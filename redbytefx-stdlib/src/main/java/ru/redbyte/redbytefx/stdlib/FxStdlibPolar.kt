@@ -27,8 +27,12 @@ public fun polarAngle01(
     center: Expr<Vec2<Flt<High>>> = float2(0.5f, 0.5f),
 ): Expr<Flt<High>> {
     val delta = uv - center
-    return fract(atan(delta.y, delta.x) / TAU + 1f)
+    // atan(0, 0) is undefined in GLSL and AGSL; the nudge makes the center angle 0 and moves any
+    // other angle by far less than a pixel.
+    return fract(atan(delta.y, delta.x + ATAN_ORIGIN_NUDGE) / TAU + 1f)
 }
+
+private const val ATAN_ORIGIN_NUDGE = 1e-7f
 
 /**
  * Packs the radial distance and normalized angle of [uv] around [center] into a `float2`.

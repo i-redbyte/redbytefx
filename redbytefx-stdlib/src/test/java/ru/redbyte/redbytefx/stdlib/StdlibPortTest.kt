@@ -81,6 +81,31 @@ class StdlibPortTest {
     }
 
     @Test
+    fun mediumPrecisionAlphaGuardsStayInsideTheHalfFloatNormalRange() {
+        val source = shader(ShaderTarget.Agsl) {
+            fragment {
+                val straight = color(float3(0.7f, 0.5f, 0.3f), fragCoord.x / resolution.x)
+                posterize(unpremultiply(straight), 4f.lit)
+            }
+        }.agslSource()
+
+        assertFalse(source.contains("1.0E-6"))
+        assertTrue(source.contains("9.765625E-4"))
+    }
+
+    @Test
+    fun polarAngleIsDefinedAtItsCenter() {
+        val source = shader(ShaderTarget.Gles30) {
+            fragment {
+                val angle = polarAngle01(fragCoord / resolution)
+                vec4(angle, angle, angle, 1f.lit)
+            }
+        }.fragmentSource()
+
+        assertTrue(source, Regex("atan\\([^,]+, \\([^)]*\\+ 1\\.0E-7\\)\\)").containsMatchIn(source))
+    }
+
+    @Test
     fun premultipliedBlendModesUseAlphaOnBothBackends() {
         fun source(target: ShaderTarget) = shader(target) {
             fragment {
