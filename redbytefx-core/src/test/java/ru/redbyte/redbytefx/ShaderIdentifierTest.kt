@@ -30,6 +30,36 @@ class ShaderIdentifierTest {
     }
 
     @Test
+    fun prefixedNamesKeepTheirOneOneOneSpelling() {
+        assertEquals("u_length", sanitizeIdentifier("length", "u_"))
+        assertEquals("a_texture", sanitizeIdentifier("texture", "a_"))
+        assertEquals("v_sample", sanitizeIdentifier("sample", "v_"))
+        val vertex = shader(ShaderTarget.Gles30) {
+            vertex {
+                val texture = attributeVec2("texture")
+                glPosition(vec4(texture.x, texture.y, 0f.lit, 1f.lit))
+            }
+            fragment { vec4(1f.lit, 1f.lit, 1f.lit, 1f.lit) }
+        }.vertexSource()
+        assertTrue(vertex, vertex.contains(" a_texture;"))
+    }
+
+    @Test
+    fun aCollidingNameEndingInAnUnderscoreNeverGetsADoubleUnderscore() {
+        val names = IdentifierAllocator()
+        assertEquals("value_", names.reserve("value_"))
+        assertEquals("value_1", names.reserve("value_"))
+        val source = shader(ShaderTarget.Gles30) {
+            fragment {
+                val first = let(fragCoord.x, "value_")
+                val second = let(fragCoord.y, "value_")
+                vec4(first, second, 0f.lit, 1f.lit)
+            }
+        }.fragmentSource()
+        assertFalse(source, "__" in source)
+    }
+
+    @Test
     fun glslSourceStaysAsciiAndAvoidsKeywords() {
         val source = shader(ShaderTarget.Gles30) {
             val bright = uniform("яркость", 1f)

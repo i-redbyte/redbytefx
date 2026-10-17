@@ -14,11 +14,13 @@ internal class IdentifierAllocator(
 
     fun reserve(base: String): String {
         if (occupied.add(base)) return base
+        // A base that already ends in '_' takes the number directly: GLSL ES reserves "__".
+        val stem = if (base.endsWith('_')) base else "${base}_"
         var suffix = nextSuffix[base] ?: 1
-        var candidate = "${base}_$suffix"
+        var candidate = "$stem$suffix"
         while (!occupied.add(candidate)) {
             suffix += 1
-            candidate = "${base}_$suffix"
+            candidate = "$stem$suffix"
         }
         nextSuffix[base] = suffix + 1
         return candidate

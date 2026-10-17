@@ -8,7 +8,17 @@ package ru.redbyte.redbytefx
  * The result never starts with a digit, never uses the `gl_` / `sk_` prefixes or `__`, and is never
  * a keyword, a reserved word, a type, or a builtin function of either language.
  */
-internal fun sanitizeSuggestedIdentifier(raw: String, leadingDigitPrefix: String): String {
+internal fun sanitizeSuggestedIdentifier(raw: String, leadingDigitPrefix: String): String =
+    avoidReserved(baseIdentifier(raw, leadingDigitPrefix))
+
+/** [sanitizeSuggestedIdentifier] that always starts with [prefix], such as `u_` for uniforms. */
+internal fun sanitizeIdentifier(raw: String, prefix: String): String {
+    val base = baseIdentifier(raw, leadingDigitPrefix = prefix)
+    return avoidReserved(if (base.startsWith(prefix)) base else prefix + base)
+}
+
+/** ASCII snake_case form of [raw] that does not start with a digit; reserved words are not checked. */
+private fun baseIdentifier(raw: String, leadingDigitPrefix: String): String {
     val ascii = transliterate(raw)
     val cleaned = buildString {
         ascii.forEachIndexed { index, ch ->
@@ -26,14 +36,7 @@ internal fun sanitizeSuggestedIdentifier(raw: String, leadingDigitPrefix: String
             }
         }
     }.trim('_').ifBlank { FALLBACK_IDENTIFIER }
-    val undigited = if (cleaned.first() in '0'..'9') "$leadingDigitPrefix$cleaned" else cleaned
-    return avoidReserved(undigited)
-}
-
-/** [sanitizeSuggestedIdentifier] that always starts with [prefix], such as `u_` for uniforms. */
-internal fun sanitizeIdentifier(raw: String, prefix: String): String {
-    val cleaned = sanitizeSuggestedIdentifier(raw, leadingDigitPrefix = prefix)
-    return if (cleaned.startsWith(prefix)) cleaned else prefix + cleaned
+    return if (cleaned.first() in '0'..'9') "$leadingDigitPrefix$cleaned" else cleaned
 }
 
 /** Base name for a `let` local or a mutable slot. A safe ASCII suggestion keeps its spelling. */
