@@ -124,21 +124,6 @@ internal class PlanetScene(
     val albedo: Uniform<Sampler2D>,
 )
 
-internal class PlanetBody(
-    val x: Float,
-    val y: Float,
-    val z: Float,
-    val scale: Float,
-    val kind: Float,
-)
-
-internal class PlanetOrbit(
-    val radius: Float,
-    val tilt: Float,
-    val spin: Float,
-    val speed: Float,
-)
-
 internal class PlanetPhoto(
     val width: Int,
     val height: Int,
@@ -150,6 +135,7 @@ private data class PlanetPointer(val x: Float, val y: Float, val serial: Int, va
 
 internal class PlanetRig {
     val camera = CameraMatrices()
+    val frameData = PlanetFrameData()
 
     @Volatile private var pointer = PlanetPointer(0f, 0f, 0, 0)
 
@@ -334,80 +320,81 @@ internal fun planetRingMesh(): GlMesh {
     )
 }
 
-internal fun planetBodies(moons: Int, seconds: Float, yaw: Float): List<PlanetBody> {
-    val count = moons.coerceIn(0, PLANET_MOON_LIMIT)
-    val bodies = ArrayList<PlanetBody>(count + 1)
-    bodies.add(PlanetBody(0f, 0f, 0f, 1f, PLANET_BODY))
-    for (index in 0 until count) {
-        val place = moonPosition(index, seconds, yaw)
-        bodies.add(PlanetBody(place[0], place[1], place[2], PLANET_MOON_SCALE, PLANET_MOON))
+/**
+ * Per-frame instance data of the planet scene, rewritten in place. One array is kept per moon
+ * count because an instanced draw reads its instance count from the array size.
+ */
+internal class PlanetFrameData {
+    private val bodies = Array(PLANET_MOON_LIMIT + 1) { moons -> FloatArray((moons + 1) * MATRIX_FLOATS) }
+    private val orbits = Array(PLANET_MOON_LIMIT + 1) { moons -> FloatArray(moons * MATRIX_FLOATS) }
+    private val eye = FloatArray(3)
+    private val light = FloatArray(3)
+    private val point = FloatArray(3)
+
+    /** The planet followed by [moons] moons, one column-major model matrix each. */
+    fun bodies(moons: Int, seconds: Float, yaw: Float): FloatArray {
+        val count = moons.coerceIn(0, PLANET_MOON_LIMIT)
+        val out = bodies[count]
+        writeBody(out, 0, 0f, 0f, 0f, 1f, PLANET_BODY)
+        for (index in 0 until count) {
+            val phase = seconds * orbitSpeed(index) + yaw * (0.65f + index * 0.4f)
+            planetOrbitPoint(index, yaw, cos(phase), sin(phase), point)
+            writeBody(out, index + 1, point[0], point[1], point[2], PLANET_MOON_SCALE, PLANET_MOON)
+        }
+        return out
     }
-    return bodies
+
+    /** One ring matrix per moon orbit. */
+    fun orbits(moons: Int, yaw: Float): FloatArray {
+        val count = moons.coerceIn(0, PLANET_MOON_LIMIT)
+        val out = orbits[count]
+        for (index in 0 until count) writeOrbit(out, index, index, yaw)
+        return out
+    }
+
+    fun eye(yaw: Float, pitch: Float): FloatArray {
+        eye[0] = sin(yaw * 0.35f) * 0.85f
+        eye[1] = 0.42f + pitch * 0.4f
+        eye[2] = 3.25f
+        return eye
+    }
+
+    fun light(yaw: Float, pitch: Float, heat: Float): FloatArray {
+        val span = 0.7f + heat * 0.45f
+        light[0] = sin(yaw + 0.6f) * span
+        light[1] = 0.25f + pitch * 0.9f + heat * 0.55f
+        light[2] = cos(yaw + 0.6f)
+        return light
+    }
 }
 
-internal fun planetInstances(moons: Int, seconds: Float, yaw: Float): FloatArray {
-    val bodies = planetBodies(moons, seconds, yaw)
-    val packed = FloatArray(bodies.size * 16)
-    bodies.forEachIndexed { index, body -> writeBody(packed, index, body) }
-    return packed
-}
+private const val MATRIX_FLOATS = 16
 
-internal fun planetOrbitInstances(moons: Int, yaw: Float): FloatArray {
-    val count = moons.coerceIn(0, PLANET_MOON_LIMIT)
-    if (count == 0) return FloatArray(0)
-    val packed = FloatArray(count * 16)
-    for (index in 0 until count) writeOrbit(packed, index, planetOrbit(index, yaw))
-    return packed
-}
+private fun orbitRadius(index: Int): Float = 1.42f + index * 0.26f
 
-internal fun planetOrbitMatrix(index: Int, yaw: Float): FloatArray {
-    val packed = FloatArray(16)
-    writeOrbit(packed, 0, planetOrbit(index, yaw))
-    return packed
-}
+private fun orbitTilt(index: Int): Float = 0.22f + index * 0.27f
 
-internal fun planetOrbit(index: Int, yaw: Float): PlanetOrbit = PlanetOrbit(
-    radius = 1.42f + index * 0.26f,
-    tilt = 0.22f + index * 0.27f,
-    spin = index * 0.9f + yaw * (0.22f + index * 0.11f),
-    speed = 0.4f + index * 0.18f,
-)
+private fun orbitSpin(index: Int, yaw: Float): Float = index * 0.9f + yaw * (0.22f + index * 0.11f)
 
-internal fun orbitPoint(orbit: PlanetOrbit, cosine: Float, sine: Float): FloatArray {
-    val tiltCos = cos(orbit.tilt)
-    val tiltSin = sin(orbit.tilt)
-    val yawCos = cos(orbit.spin)
-    val yawSin = sin(orbit.spin)
-    return floatArrayOf(
-        orbit.radius * (cosine * yawCos - sine * tiltCos * yawSin),
-        orbit.radius * (sine * tiltSin),
-        orbit.radius * (cosine * yawSin + sine * tiltCos * yawCos),
-    )
-}
+private fun orbitSpeed(index: Int): Float = 0.4f + index * 0.18f
 
-internal fun moonPosition(index: Int, seconds: Float, yaw: Float): FloatArray {
-    val orbit = planetOrbit(index, yaw)
-    val phase = seconds * orbit.speed + yaw * (0.65f + index * 0.4f)
-    return orbitPoint(orbit, cos(phase), sin(phase))
+/** The point at angle (cosine, sine) on orbit [index] for camera [yaw], written into [out]. */
+internal fun planetOrbitPoint(index: Int, yaw: Float, cosine: Float, sine: Float, out: FloatArray): FloatArray {
+    val radius = orbitRadius(index)
+    val tilt = orbitTilt(index)
+    val spin = orbitSpin(index, yaw)
+    val tiltCos = cos(tilt)
+    val tiltSin = sin(tilt)
+    val yawCos = cos(spin)
+    val yawSin = sin(spin)
+    out[0] = radius * (cosine * yawCos - sine * tiltCos * yawSin)
+    out[1] = radius * (sine * tiltSin)
+    out[2] = radius * (cosine * yawSin + sine * tiltCos * yawCos)
+    return out
 }
 
 internal fun nextPlanetHeat(heat: Float, drag: Float, dt: Float): Float =
     (heat + drag * 1.8f - dt * 0.18f).coerceIn(0.04f, 1f)
-
-internal fun planetLight(yaw: Float, pitch: Float, heat: Float): FloatArray {
-    val span = 0.7f + heat * 0.45f
-    return floatArrayOf(
-        sin(yaw + 0.6f) * span,
-        0.25f + pitch * 0.9f + heat * 0.55f,
-        cos(yaw + 0.6f),
-    )
-}
-
-internal fun planetEye(yaw: Float, pitch: Float): FloatArray = floatArrayOf(
-    sin(yaw * 0.35f) * 0.85f,
-    0.42f + pitch * 0.4f,
-    3.25f,
-)
 
 internal fun planetTapped(x: Float, y: Float, travel: Float): Boolean =
     travel < PLANET_TAP_TRAVEL && x * x + y * y < PLANET_TAP_RADIUS * PLANET_TAP_RADIUS
@@ -532,17 +519,17 @@ internal fun DemoPlanet() {
 
 private fun PlanetRig.render(scene: PlanetScene, frame: GlFrame) {
     advance(frame.seconds)
-    val eye = planetEye(yaw, pitch)
+    val eye = frameData.eye(yaw, pitch)
     frame.runtime.set(scene.view, lookAt(eye[0], eye[1], eye[2], 0f, 0f, 0f, 0f, 1f, 0f, camera.view))
     frame.runtime.set(scene.projection, perspective(0.9f, frame.aspect, 0.08f, 40f, camera.projection))
-    val light = planetLight(yaw, pitch, heat)
+    val light = frameData.light(yaw, pitch, heat)
     frame.runtime.set(scene.light, light[0], light[1], light[2])
     frame.runtime.set(scene.heat, heat)
     frame.runtime.set(scene.mode, mode.get().toFloat())
     syncTextures(frame.runtime, scene.albedo)
     val count = moons.get().coerceIn(0, PLANET_MOON_LIMIT)
-    frame.draw(scene.mesh, instances = planetInstances(count, frame.seconds, yaw))
-    val orbits = planetOrbitInstances(count, yaw)
+    frame.draw(scene.mesh, instances = frameData.bodies(count, frame.seconds, yaw))
+    val orbits = frameData.orbits(count, yaw)
     if (orbits.isNotEmpty()) frame.draw(scene.rings, instances = orbits)
 }
 
@@ -652,27 +639,30 @@ private fun planetNdcX(x: Float, width: Int): Float = x / width.coerceAtLeast(1)
 
 private fun planetNdcY(y: Float, height: Int): Float = 1f - y / height.coerceAtLeast(1) * 2f
 
-private fun writeBody(out: FloatArray, index: Int, body: PlanetBody) {
-    val base = index * 16
-    out[base] = body.scale
+@Suppress("LongParameterList")
+private fun writeBody(out: FloatArray, index: Int, x: Float, y: Float, z: Float, scale: Float, kind: Float) {
+    val base = index * MATRIX_FLOATS
+    out[base] = scale
     out[base + 1] = 0f
     out[base + 2] = 0f
-    out[base + 3] = body.kind
-    out[base + 5] = body.scale
-    out[base + 10] = body.scale
-    out[base + 12] = body.x
-    out[base + 13] = body.y
-    out[base + 14] = body.z
+    out[base + 3] = kind
+    out[base + 5] = scale
+    out[base + 10] = scale
+    out[base + 12] = x
+    out[base + 13] = y
+    out[base + 14] = z
     out[base + 15] = 1f
 }
 
-private fun writeOrbit(out: FloatArray, slot: Int, orbit: PlanetOrbit) {
-    val tiltCos = cos(orbit.tilt)
-    val tiltSin = sin(orbit.tilt)
-    val yawCos = cos(orbit.spin)
-    val yawSin = sin(orbit.spin)
-    val radius = orbit.radius
-    val base = slot * 16
+private fun writeOrbit(out: FloatArray, slot: Int, index: Int, yaw: Float) {
+    val tilt = orbitTilt(index)
+    val spin = orbitSpin(index, yaw)
+    val tiltCos = cos(tilt)
+    val tiltSin = sin(tilt)
+    val yawCos = cos(spin)
+    val yawSin = sin(spin)
+    val radius = orbitRadius(index)
+    val base = slot * MATRIX_FLOATS
     out[base] = radius * yawCos
     out[base + 1] = 0f
     out[base + 2] = radius * yawSin

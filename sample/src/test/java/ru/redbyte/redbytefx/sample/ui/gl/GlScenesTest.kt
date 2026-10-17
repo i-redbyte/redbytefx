@@ -163,53 +163,67 @@ class GlScenesTest {
     fun draggingThePlanetHeatsItAndMovesEachMoon() {
         assertTrue(nextPlanetHeat(0.2f, 0.4f, 0.016f) > 0.2f)
         assertTrue(nextPlanetHeat(0.5f, 0f, 0.5f) < 0.5f)
-        val cool = planetLight(0.2f, 0.1f, 0.1f)
-        val turned = planetLight(1.4f, 0.1f, 0.1f)
-        val hot = planetLight(0.2f, 0.1f, 1f)
+        val data = PlanetFrameData()
+        val cool = data.light(0.2f, 0.1f, 0.1f).copyOf()
+        val turned = data.light(1.4f, 0.1f, 0.1f).copyOf()
+        val hot = data.light(0.2f, 0.1f, 1f).copyOf()
         assertTrue(abs(cool[0] - turned[0]) + abs(cool[2] - turned[2]) > 0.1f)
         assertTrue(hot[1] > cool[1])
         assertTrue(planetTapped(0.05f, -0.08f, 6f))
         assertTrue(!planetTapped(0.9f, 0.2f, 6f))
         assertTrue(!planetTapped(0.05f, 0f, 80f))
 
-        val rest = planetBodies(PLANET_MOON_LIMIT, 0.2f, 0.1f)
-        val spun = planetBodies(PLANET_MOON_LIMIT, 0.2f, 1.3f)
-        assertEquals(PLANET_MOON_LIMIT + 1, rest.size)
-        assertEquals(1, planetBodies(0, 1f, 1f).size)
-        assertEquals(0f, rest[0].x, 0.0001f)
-        assertEquals(0f, rest[0].y, 0.0001f)
-        assertEquals(0f, rest[0].z, 0.0001f)
-        assertEquals(PLANET_BODY, rest[0].kind, 0.0001f)
+        val rest = data.bodies(PLANET_MOON_LIMIT, 0.2f, 0.1f).copyOf()
+        val spun = data.bodies(PLANET_MOON_LIMIT, 0.2f, 1.3f).copyOf()
+        assertEquals((PLANET_MOON_LIMIT + 1) * 16, rest.size)
+        assertEquals(16, data.bodies(0, 1f, 1f).size)
+        assertEquals(0f, rest[12], 0.0001f)
+        assertEquals(0f, rest[13], 0.0001f)
+        assertEquals(0f, rest[14], 0.0001f)
+        assertEquals(PLANET_BODY, rest[3], 0.0001f)
         for (index in 1..PLANET_MOON_LIMIT) {
-            val moon = rest[index]
-            val previous = rest[index - 1]
-            val moved = abs(moon.x - spun[index].x) + abs(moon.y - spun[index].y) + abs(moon.z - spun[index].z)
-            val apart = abs(moon.x - previous.x) + abs(moon.y - previous.y) + abs(moon.z - previous.z)
-            assertEquals(PLANET_MOON, moon.kind, 0.0001f)
-            assertTrue(apart > 0.2f)
-            assertTrue(moved > 0.05f)
+            val base = index * 16
+            val previous = base - 16
+            val moved = (12..14).sumOf { abs(rest[base + it] - spun[base + it]).toDouble() }
+            val apart = (12..14).sumOf { abs(rest[base + it] - rest[previous + it]).toDouble() }
+            assertEquals(PLANET_MOON, rest[base + 3], 0.0001f)
+            assertTrue(apart > 0.2)
+            assertTrue(moved > 0.05)
         }
-        val packed = planetInstances(3, 0.4f, 0.2f)
+        val packed = data.bodies(3, 0.4f, 0.2f)
         assertEquals(4 * 16, packed.size)
         assertEquals(1f, packed[0], 0.0001f)
         assertEquals(PLANET_BODY, packed[3], 0.0001f)
         assertEquals(1f, packed[15], 0.0001f)
         assertEquals(PLANET_MOON_SCALE, packed[16], 0.0001f)
         assertEquals(PLANET_MOON, packed[19], 0.0001f)
-        assertEquals(0, planetOrbitInstances(0, 0.2f).size)
-        val orbits = planetOrbitInstances(2, 0.4f)
+        assertEquals(0, data.orbits(0, 0.2f).size)
+        val orbits = data.orbits(2, 0.4f)
         assertEquals(2 * 16, orbits.size)
         assertEquals(PLANET_RING, orbits[3], 0.0001f)
-        val orbit = planetOrbit(1, 0.4f)
-        val matrix = planetOrbitMatrix(1, 0.4f)
-        val ahead = orbitPoint(orbit, 1f, 0f)
-        val side = orbitPoint(orbit, 0f, 1f)
-        assertEquals(ahead[0], matrix[0], 0.0001f)
-        assertEquals(ahead[1], matrix[1], 0.0001f)
-        assertEquals(ahead[2], matrix[2], 0.0001f)
-        assertEquals(side[0], matrix[8], 0.0001f)
-        assertEquals(side[1], matrix[9], 0.0001f)
-        assertEquals(side[2], matrix[10], 0.0001f)
+        val ahead = planetOrbitPoint(1, 0.4f, 1f, 0f, FloatArray(3))
+        val side = planetOrbitPoint(1, 0.4f, 0f, 1f, FloatArray(3))
+        for (axis in 0..2) {
+            assertEquals(ahead[axis], orbits[16 + axis], 0.0001f)
+            assertEquals(side[axis], orbits[24 + axis], 0.0001f)
+        }
+    }
+
+    @Test
+    fun planetFrameDataIsRewrittenInPlaceEveryFrame() {
+        val data = PlanetFrameData()
+        val frames = 10_000
+        var seconds = 0f
+        val bytes = allocatedBytes {
+            repeat(frames) {
+                seconds += 0.016f
+                data.eye(seconds, 0.1f)
+                data.light(seconds, 0.1f, 0.3f)
+                data.bodies(PLANET_MOON_LIMIT, seconds, 0.4f)
+                data.orbits(PLANET_MOON_LIMIT, 0.4f)
+            }
+        }
+        assertTrue("allocated $bytes bytes for $frames frames", bytes < frames)
     }
 
     @Test
