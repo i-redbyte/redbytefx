@@ -26,8 +26,6 @@ import kotlin.jvm.JvmName
 
 private const val MAX_QUEUED_GL_TASKS = 128
 
-private typealias UniformWrite = (GlProgramRuntime) -> Unit
-
 /**
  * GLES uniform writer for one [ShaderProgram] rendered by [GlSurface].
  *
@@ -63,25 +61,23 @@ public class GlController internal constructor(
 
     private var glQueue: ((() -> Unit) -> Unit)? = null
     private var post: (() -> Unit) -> Unit = { it() }
+    private var drainTask: (() -> Unit)? = null
 
     @Volatile
     internal var runtime: GlProgramRuntime? = null
         private set
     private val lock = Any()
-    private val ownedUniforms = IdentityHashMap<Uniform<*>, Boolean>().apply {
-        for (entry in program.spelledUniforms()) put(entry.uniform, true)
+    private val uniformSlots = IdentityHashMap<Uniform<*>, UniformSlot>().apply {
+        for (entry in program.spelledUniforms()) put(entry.uniform, UniformSlot(entry.uniform))
     }
-    private val ownedUniformBlocks = IdentityHashMap<UniformBlock, Boolean>().apply {
-        for (block in program.uniformBlocks) put(block, true)
+    private val uniformBlockSlots = IdentityHashMap<UniformBlock, BlockSlot>().apply {
+        for (block in program.uniformBlocks) put(block, BlockSlot(block))
     }
-    private val ownedStorageBlocks = IdentityHashMap<StorageBlock, Boolean>().apply {
-        for (block in program.storageBlocks) put(block, true)
+    private val storageBlockSlots = IdentityHashMap<StorageBlock, BlockSlot>().apply {
+        for (block in program.storageBlocks) put(block, BlockSlot(block))
     }
-    private val latest = IdentityHashMap<Uniform<*>, UniformWrite>()
-    private val pending = IdentityHashMap<Uniform<*>, UniformWrite>()
-    private val pendingOrder = ArrayDeque<Uniform<*>>()
-    private val uniformBlockWrites = CoalescedWrites<UniformBlock>()
-    private val storageBlockWrites = CoalescedWrites<StorageBlock>()
+    private val allSlots: List<WriteSlot> = uniformSlots.values + uniformBlockSlots.values + storageBlockSlots.values
+    private val pendingSlots = ArrayDeque<WriteSlot>()
     private val tasks = ArrayDeque<(GlProgramRuntime) -> Unit>()
     private var queueGeneration = 0L
     private var drainQueued = false
@@ -119,6 +115,8 @@ public class GlController internal constructor(
             runtime = null
             discardPendingTextureBindings()
             queueGeneration++
+            val generation = queueGeneration
+            drainTask = { drainIfCurrent(queue, generation) }
             drainQueued = false
         }
         scheduleDrain()
@@ -132,6 +130,7 @@ public class GlController internal constructor(
     internal fun detachQueue(queue: (() -> Unit) -> Unit): Boolean = synchronized(lock) {
         if (glQueue !== queue) return false
         glQueue = null
+        drainTask = null
         runtime = null
         discardPendingTextureBindings()
         queueGeneration++
@@ -147,14 +146,9 @@ public class GlController internal constructor(
         val generation = synchronized(lock) {
             if (glQueue !== queue) return
             runtime = linked
-            for (entry in latest) {
-                if (!pending.containsKey(entry.key)) {
-                    pending[entry.key] = entry.value
-                    pendingOrder.addLast(entry.key)
-                }
+            for (slot in allSlots) {
+                if (slot.replayable) markPending(slot)
             }
-            replay(uniformBlockWrites)
-            replay(storageBlockWrites)
             queueGeneration
         }
         publishFailure(null)
@@ -176,32 +170,42 @@ public class GlController internal constructor(
 
     /** A texture name is valid only on the context that received its bind. */
     private fun discardPendingTextureBindings() {
-        val iterator = pending.keys.iterator()
-        while (iterator.hasNext()) {
-            if (!latest.containsKey(iterator.next())) iterator.remove()
+        for (slot in uniformSlots.values) slot.forgetTexture()
+        pendingSlots.removeAll { slot ->
+            val stale = !slot.replayable
+            if (stale) slot.pending = false
+            stale
         }
-        pendingOrder.removeAll { !pending.containsKey(it) }
+    }
+
+    private fun markPending(slot: WriteSlot) {
+        if (slot.pending) return
+        slot.pending = true
+        pendingSlots.addLast(slot)
     }
 
     private fun scheduleDrain() {
-        val scheduled = synchronized(lock) {
-            val queue = glQueue ?: return
+        val queue: (() -> Unit) -> Unit
+        val task: () -> Unit
+        synchronized(lock) {
+            queue = glQueue ?: return
+            task = drainTask ?: return
             if (drainQueued) return
             drainQueued = true
-            queue to queueGeneration
         }
-        val (queue, generation) = scheduled
-        queue {
-            val current = synchronized(lock) {
-                if (glQueue !== queue || queueGeneration != generation) {
-                    false
-                } else {
-                    drainQueued = false
-                    true
-                }
+        queue(task)
+    }
+
+    private fun drainIfCurrent(queue: (() -> Unit) -> Unit, generation: Long) {
+        val current = synchronized(lock) {
+            if (glQueue !== queue || queueGeneration != generation) {
+                false
+            } else {
+                drainQueued = false
+                true
             }
-            if (current) drainPending(queue, generation)
         }
+        if (current) drainPending(queue, generation)
     }
 
     /** GL thread. Publishes [error] as [failure] instead of letting it end the GL thread. */
@@ -215,161 +219,147 @@ public class GlController internal constructor(
     }
 
     /**
-     * Applies queued uniform writes, then [runOnGl] blocks, one at a time.
-     * Must run on the GL thread. A write or block that throws is reported and not retried;
-     * the rest of the drain still runs.
+     * Applies pending writes in the order they were first made, then [runOnGl] blocks, one at a
+     * time. Must run on the GL thread. A write is applied under the lock, so a UI-thread write of
+     * the same handle never tears; a task runs outside it. Anything that throws is reported and
+     * not retried; the rest of the drain still runs.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun drainPending(queue: (() -> Unit) -> Unit, generation: Long) {
         while (true) {
-            val action = nextDrainAction(queue, generation) ?: return
+            val task = synchronized(lock) {
+                if (glQueue !== queue || queueGeneration != generation) return
+                val linked = runtime ?: return
+                val slot = pendingSlots.removeFirstOrNull()
+                if (slot != null) {
+                    slot.pending = false
+                    try {
+                        slot.applyTo(linked)
+                    } catch (error: Exception) {
+                        reportFailure(error)
+                    }
+                    null
+                } else {
+                    val next = tasks.removeFirstOrNull() ?: return
+                    next to linked
+                }
+            } ?: continue
             try {
-                action()
+                task.first(task.second)
             } catch (error: Exception) {
                 reportFailure(error)
             }
         }
     }
 
-    private fun nextDrainAction(queue: (() -> Unit) -> Unit, generation: Long): (() -> Unit)? = synchronized(lock) {
-        if (glQueue !== queue || queueGeneration != generation) return null
-        val linked = runtime ?: return null
-        poll(pending, pendingOrder)?.let { write -> return { write(linked) } }
-        poll(uniformBlockWrites)?.let { write -> return { write(linked) } }
-        poll(storageBlockWrites)?.let { write -> return { write(linked) } }
-        tasks.removeFirstOrNull()?.let { task -> return { task(linked) } }
-        null
-    }
+    private fun uniformSlot(uniform: Uniform<*>): UniformSlot =
+        requireNotNull(uniformSlots[uniform]) { "Uniform does not belong to this shader" }
 
-    private fun <K : Any> poll(
-        pendingWrites: IdentityHashMap<K, UniformWrite>,
-        order: ArrayDeque<K>,
-    ): UniformWrite? {
-        val key = order.removeFirstOrNull() ?: return null
-        return pendingWrites.remove(key)
-    }
+    private fun requireUniformBlock(block: UniformBlock): BlockSlot =
+        requireNotNull(uniformBlockSlots[block]) { "Uniform block does not belong to this shader" }
 
-    private fun <K : Any> poll(writes: CoalescedWrites<K>): UniformWrite? {
-        return poll(writes.pending, writes.pendingOrder)
-    }
+    private fun requireStorageBlock(block: StorageBlock): BlockSlot =
+        requireNotNull(storageBlockSlots[block]) { "Storage block does not belong to this shader" }
 
-    private fun <K : Any> replay(writes: CoalescedWrites<K>) {
-        for (entry in writes.latest) {
-            if (!writes.pending.containsKey(entry.key)) {
-                writes.pending[entry.key] = entry.value
-                writes.pendingOrder.addLast(entry.key)
-            }
-        }
-    }
-
-    private fun <K : Any> enqueueRetained(writes: CoalescedWrites<K>, key: K, write: UniformWrite) {
+    private inline fun write(slot: WriteSlot, store: () -> Unit) {
         synchronized(lock) {
-            if (!writes.pending.containsKey(key)) writes.pendingOrder.addLast(key)
-            writes.pending[key] = write
-            writes.latest[key] = write
+            store()
+            markPending(slot)
         }
         scheduleDrain()
     }
 
-    private fun enqueue(uniform: Uniform<*>, retained: Boolean, write: UniformWrite) {
-        requireUniform(uniform)
-        synchronized(lock) {
-            if (!pending.containsKey(uniform)) pendingOrder.addLast(uniform)
-            pending[uniform] = write
-            if (retained) latest[uniform] = write else latest.remove(uniform)
-        }
-        scheduleDrain()
+    private fun writeFloats(
+        uniform: Uniform<*>,
+        kind: UniformWriteKind,
+        x: Float,
+        y: Float = 0f,
+        z: Float = 0f,
+        w: Float = 0f,
+    ) {
+        val slot = uniformSlot(uniform)
+        write(slot) { slot.storeFloats(kind, x, y, z, w) }
     }
 
-    private fun requireUniform(uniform: Uniform<*>) {
-        require(ownedUniforms.containsKey(uniform)) { "Uniform does not belong to this shader" }
+    private fun writeInt(uniform: Uniform<*>, kind: UniformWriteKind, value: Int) {
+        val slot = uniformSlot(uniform)
+        write(slot) { slot.storeInt(kind, value) }
     }
 
-    private fun requireUniformBlock(block: UniformBlock) {
-        require(ownedUniformBlocks.containsKey(block)) { "Uniform block does not belong to this shader" }
-    }
-
-    private fun requireStorageBlock(block: StorageBlock) {
-        require(ownedStorageBlocks.containsKey(block)) { "Storage block does not belong to this shader" }
+    private fun writeMatrix(uniform: Uniform<*>, values: FloatArray, floats: Int) {
+        val slot = uniformSlot(uniform)
+        requireMatrix(values, floats)
+        write(slot) { slot.storeMatrix(values) }
     }
 
     @JvmName("setHighFloat")
     public fun set(uniform: Uniform<Flt<High>>, value: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, value) }
+        writeFloats(uniform, UniformWriteKind.Float, value)
     }
 
     @JvmName("setMedFloat")
     public fun set(uniform: Uniform<Flt<Med>>, value: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, value) }
+        writeFloats(uniform, UniformWriteKind.Float, value)
     }
 
     public fun set(uniform: Uniform<Vec2<Flt<High>>>, x: Float, y: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y) }
+        writeFloats(uniform, UniformWriteKind.Vec2, x, y)
     }
 
     @JvmName("setMedVec2")
     public fun set(uniform: Uniform<Vec2<Flt<Med>>>, x: Float, y: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y) }
+        writeFloats(uniform, UniformWriteKind.Vec2, x, y)
     }
 
     public fun set(uniform: Uniform<Vec3<Flt<High>>>, x: Float, y: Float, z: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y, z) }
+        writeFloats(uniform, UniformWriteKind.Vec3, x, y, z)
     }
 
     @JvmName("setMedVec3")
     public fun set(uniform: Uniform<Vec3<Flt<Med>>>, x: Float, y: Float, z: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y, z) }
+        writeFloats(uniform, UniformWriteKind.Vec3, x, y, z)
     }
 
     public fun set(uniform: Uniform<Vec4<Flt<High>>>, x: Float, y: Float, z: Float, w: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y, z, w) }
+        writeFloats(uniform, UniformWriteKind.Vec4, x, y, z, w)
     }
 
     @JvmName("setMedVec4")
     public fun set(uniform: Uniform<Vec4<Flt<Med>>>, x: Float, y: Float, z: Float, w: Float) {
-        enqueue(uniform, retained = true) { it.set(uniform, x, y, z, w) }
+        writeFloats(uniform, UniformWriteKind.Vec4, x, y, z, w)
     }
 
     public fun set(uniform: Uniform<IntS>, value: Int) {
-        enqueue(uniform, retained = true) { it.set(uniform, value) }
+        writeInt(uniform, UniformWriteKind.Int, value)
     }
 
     public fun set(uniform: Uniform<BoolS>, value: Boolean) {
-        enqueue(uniform, retained = true) { it.set(uniform, value) }
+        writeInt(uniform, UniformWriteKind.Bool, if (value) 1 else 0)
     }
 
     @JvmName("bindSampler2D")
     public fun bind(uniform: Uniform<Sampler2D>, texture: Int) {
-        enqueue(uniform, retained = false) { it.bind(uniform, texture) }
+        writeInt(uniform, UniformWriteKind.Texture2D, texture)
     }
 
     @JvmName("bindSamplerCube")
     public fun bind(uniform: Uniform<SamplerCube>, texture: Int) {
-        enqueue(uniform, retained = false) { it.bind(uniform, texture) }
+        writeInt(uniform, UniformWriteKind.TextureCube, texture)
     }
 
-    /** Scene. Copies [values] before queuing the GL write. */
+    /** Scene. Copies [values] into the pending write; the caller may reuse the array at once. */
     public fun setMat2(uniform: Uniform<Mat2>, values: FloatArray) {
-        requireUniform(uniform)
-        requireMatrix(values, 4)
-        val snapshot = values.copyOf()
-        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
+        writeMatrix(uniform, values, 4)
     }
 
-    /** Scene. Copies [values] before queuing the GL write. */
+    /** Scene. Copies [values] into the pending write; the caller may reuse the array at once. */
     public fun setMat3(uniform: Uniform<Mat3>, values: FloatArray) {
-        requireUniform(uniform)
-        requireMatrix(values, 9)
-        val snapshot = values.copyOf()
-        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
+        writeMatrix(uniform, values, 9)
     }
 
-    /** Scene. Copies [values] before queuing the GL write. */
+    /** Scene. Copies [values] into the pending write; the caller may reuse the array at once. */
     public fun setMat4(uniform: Uniform<Mat4>, values: FloatArray) {
-        requireUniform(uniform)
-        requireMatrix(values, 16)
-        val snapshot = values.copyOf()
-        enqueue(uniform, retained = true) { it.set(uniform, snapshot) }
+        writeMatrix(uniform, values, 16)
     }
 
     /**
@@ -378,13 +368,12 @@ public class GlController internal constructor(
      */
     @JvmName("setUniformBlock")
     public fun set(block: UniformBlock, values: FloatArray) {
-        requireUniformBlock(block)
+        val slot = requireUniformBlock(block)
         require(values.size == block.floatCount) {
             "Uniform block \"${block.name}\" expects ${block.floatCount} floats, was ${values.size}"
         }
         requireFinite(values)
-        val snapshot = values.copyOf()
-        enqueueRetained(uniformBlockWrites, block) { it.set(block, snapshot) }
+        write(slot) { slot.store(values) }
     }
 
     /**
@@ -393,11 +382,10 @@ public class GlController internal constructor(
      */
     @JvmName("setStorageBlock")
     public fun set(block: StorageBlock, values: FloatArray) {
-        requireStorageBlock(block)
+        val slot = requireStorageBlock(block)
         block.byteSize(values.size)
         requireFinite(values)
-        val snapshot = values.copyOf()
-        enqueueRetained(storageBlockWrites, block) { it.set(block, snapshot) }
+        write(slot) { slot.store(values) }
     }
 
     /**
@@ -429,10 +417,4 @@ private fun requireMatrix(values: FloatArray, floats: Int) {
 
 private fun requireFinite(values: FloatArray) {
     for (value in values) require(value.isFinite()) { "Block values must be finite, was $value" }
-}
-
-private class CoalescedWrites<K : Any> {
-    val latest = IdentityHashMap<K, UniformWrite>()
-    val pending = IdentityHashMap<K, UniformWrite>()
-    val pendingOrder = ArrayDeque<K>()
 }

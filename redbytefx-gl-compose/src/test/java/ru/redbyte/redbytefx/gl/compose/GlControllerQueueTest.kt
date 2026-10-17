@@ -345,6 +345,37 @@ class GlControllerQueueTest {
     }
 
     @Test
+    fun steadyUniformWritesAndDrainsAllocateNothing() {
+        lateinit var amount: Uniform<Flt<High>>
+        lateinit var model: Uniform<Mat4>
+        val program = shader(ShaderTarget.Gles30) {
+            amount = uniform("amount", 0f)
+            model = uniformMat4("model")
+            vertex { glPosition(vec4(0f.lit, 0f.lit, 0f.lit, 1f.lit)) }
+            fragment { vec4(amount.expr, 0f.lit, 0f.lit, 1f.lit) }
+        }
+        val controller = GlController(program, GlSurfaceConfig())
+        val queued = ArrayDeque<() -> Unit>(16)
+        val queue: (() -> Unit) -> Unit = { queued.addLast(it) }
+        controller.attachQueue(queue)
+        controller.attachRuntime(queue, GlProgramRuntime(program, FloatDevice()).also { it.link() })
+        val matrix = FloatArray(16)
+        var value = 0f
+
+        val writes = 1_000
+        val bytes = allocatedBytes {
+            repeat(writes) {
+                value += 1f
+                matrix[0] = value
+                controller.set(amount, value)
+                controller.setMat4(model, matrix)
+                while (queued.isNotEmpty()) queued.removeFirst().invoke()
+            }
+        }
+        assertTrue("allocated $bytes bytes for $writes writes", bytes < writes)
+    }
+
+    @Test
     fun the129thGlTaskFailsAndTheFirstOneStays() {
         val (program, amount) = amountProgram()
         val controller = GlController(program, GlSurfaceConfig())
