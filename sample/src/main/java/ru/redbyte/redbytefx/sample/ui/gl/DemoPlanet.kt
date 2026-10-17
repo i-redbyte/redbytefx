@@ -699,10 +699,11 @@ private fun openPlanetBitmap(context: Context, uri: Uri): Bitmap? {
         return null
     }
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+    val plan = planetDecodePlan(bounds.outWidth, bounds.outHeight, PLANET_PHOTO_EDGE)
     val options = BitmapFactory.Options().apply {
-        inSampleSize = planetSampleSize(bounds.outWidth, bounds.outHeight, PLANET_PHOTO_EDGE)
+        inSampleSize = plan.sampleSize
         inPreferredConfig = Bitmap.Config.ARGB_8888
-        inPremultiplied = false
+        inPremultiplied = plan.premultiplied
     }
     return try {
         resolver.openInputStream(uri)?.use { stream ->
@@ -714,6 +715,15 @@ private fun openPlanetBitmap(context: Context, uri: Uri): Bitmap? {
         null
     }
 }
+
+/**
+ * How a gallery photo is decoded. It stays premultiplied: Canvas, which scales it next, rejects an
+ * unpremultiplied bitmap with alpha. [bitmapToRgba] reads straight colors through getPixels anyway.
+ */
+internal class PlanetDecodePlan(val sampleSize: Int, val premultiplied: Boolean)
+
+internal fun planetDecodePlan(width: Int, height: Int, edge: Int): PlanetDecodePlan =
+    PlanetDecodePlan(planetSampleSize(width, height, edge), premultiplied = true)
 
 private fun planetSampleSize(width: Int, height: Int, edge: Int): Int {
     var sample = 1
