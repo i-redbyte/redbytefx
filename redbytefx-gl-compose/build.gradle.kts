@@ -42,7 +42,7 @@ kotlin {
 dependencies {
     api(project(":redbytefx-gl"))
     api(project(":redbytefx-core"))
-    implementation(project(":redbytefx-3d"))
+    api(project(":redbytefx-3d"))
 
     api(platform(libs.androidx.compose.bom))
     api(libs.androidx.compose.ui)
